@@ -1,0 +1,73 @@
+/*
+ * Copyright (C) 2018 Google LLC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:3.2.2'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'application'
+}
+
+mainClassName = "com.google.cloud.healthcare.imaging.dicomadapter.ImportAdapter"
+run {
+    // Accept command line arguments via gradle run -Dexec.args="<args>"
+    args System.getProperty("exec.args", "").split()
+}
+
+buildDir = '/tmp/gradle_build/dicom_adapter/import'
+
+sourceCompatibility = 1.8
+version = '0.0.1'
+
+compileJava {
+    // Print out detailed deprecation warnings.
+    options.deprecation = true
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'http://www.dcm4che.org/maven2/' }
+}
+
+dependencies {
+    compile 'com.google.guava:guava:23.6-jre'
+    compile "com.beust:jcommander:1.72"
+    compile 'com.google.auth:google-auth-library-oauth2-http:0.9.0'
+    compile "com.google.api-client:google-api-client:1.23.0"
+    compile "org.dcm4che:dcm4che-core:3.3.8"
+    compile "org.dcm4che:dcm4che-net:3.3.8"
+    compile project(":dicom_util")
+
+    testCompile "com.google.truth:truth:0.39"
+    testCompile "junit:junit:4.2"
+    testCompile project(path: ":dicom_util", configuration: 'testArtifacts')
+    testCompile project(path: ":util", configuration: 'testArtifacts')
+}
+
+apply plugin: 'com.bmuschko.docker-java-application'
+docker {
+    javaApplication {
+        baseImage = 'java:openjdk-8-jre'
+        tag = project.findProperty("docker_tag") ?: "import_adapter"
+    }
+}

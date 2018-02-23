@@ -1,0 +1,5 @@
+(0008,0020) DA [19921012]            # StudyDate
+(0008,0016) UI =MRImageStorage       # SOPClassUID
+(0020,000d) UI [1.0]    # StudyInstanceUID
+(0020,000e) UI [1.0.0]  # SeriesInstanceUID
+(0008,0018) UI [1.0.0.0] # SOPInstanceUID
