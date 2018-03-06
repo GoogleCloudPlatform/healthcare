@@ -1,11 +1,11 @@
 # MLLP Adapter
 
-The MLLP(Short for "Minimal Lower Layer Protocol") adapter is a component that runs on [GKE](https://cloud.google.com/kubernetes-engine/) receives HL7 messages via MLLP/TCP, and forwards messages received to HL7 API.
+The MLLP(Short for "Minimal Lower Layer Protocol") adapter is a component that runs on [GKE](https://cloud.google.com/kubernetes-engine/), receives HL7 messages via MLLP/TCP, and forwards messages received to HL7 API.
 
 ## Requirements
 
 * A [Google Cloud project](https://cloud.google.com).
-* A [Docker](https://docs.docker.com/) repository. The following instructions assume that [Google Container Registry](https://cloud.google.com/container-registry/) is used.
+* A [Docker](https://docs.docker.com/) repository. The following instructions assume the use of [Google Container Registry](https://cloud.google.com/container-registry/).
 * Installed [gcloud](https://cloud.google.com/sdk/gcloud/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command line tools.
 
 ## Build
@@ -53,7 +53,7 @@ echo -n -e '\x0btestmessage\x1c\x0d' | telnet localhost 2575
 
 ## Deployment
 
-Before deploying the docker image to GKE you will need to publish the image to a registry.  First modify `BUILD.bazel` to replace `my-project` and `my-image` with real values, then run:
+Before deploying the docker image to GKE you need to publish the image to a registry.  First modify `BUILD.bazel` to replace `my-project` and `my-image` with real values, then run:
 
 ```bash
 bazel run :image_push
@@ -125,7 +125,7 @@ kubectl create -f mllp_adapter_service.yaml
 
 ## VPN
 
-*Use E2E VPN setup if want your data to be encrypted end-to-end, see [the "encryption in transit" doc](https://cloud.google.com/security/encryption-in-transit/) for more details.*
+*Use E2E VPN setup if want your data to be encrypted end-to-end. See [the "encryption in transit" doc](https://cloud.google.com/security/encryption-in-transit/) for more details.*
 
 ### Cloud VPN
 
@@ -277,6 +277,7 @@ Now connect your client to the VPN server and test if you can access the adapter
 ```bash
 kubectl describe pods | grep IP: # Get pod IP.
 echo -n -e '\x0btestmessage\x1c\x0d' | telnet <POD_IP> 2575
+```
 
 ## Debug
 
