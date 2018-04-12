@@ -21,6 +21,7 @@ import com.google.api.core.ApiService;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.healthcare.DicomWebClient;
+import com.google.cloud.healthcare.LogUtil;
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.pubsub.v1.SubscriptionName;
@@ -42,6 +43,11 @@ public class ExportAdapter {
     Flags flags = new Flags();
     JCommander jCommander = new JCommander(flags);
     jCommander.parse(args);
+
+    // Adjust logging.
+    if (flags.verbose) {
+      LogUtil.Log4jToStdout();
+    }
 
     // DicomWeb client for source of DICOM.
     GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();

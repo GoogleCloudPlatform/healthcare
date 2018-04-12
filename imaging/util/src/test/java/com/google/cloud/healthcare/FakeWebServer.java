@@ -28,8 +28,8 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Vector;
 
-/** A fake in-memory implementation of a DicomWebServer. */
-public class FakeDicomWebServer extends MockHttpTransport {
+/** A fake in-memory implementation of a web server. */
+public class FakeWebServer extends MockHttpTransport {
   public static class Request {
     public Request(String method, MockLowLevelHttpRequest req) {
       this.method = method;
@@ -43,7 +43,7 @@ public class FakeDicomWebServer extends MockHttpTransport {
   private Queue<LowLevelHttpResponse> responses = new LinkedList<LowLevelHttpResponse>();
   private Vector<Request> requests = new Vector<Request>();
 
-  public FakeDicomWebServer() {}
+  public FakeWebServer() {}
 
   @Override
   public LowLevelHttpRequest buildRequest(String method, String url) throws IOException {
@@ -77,11 +77,11 @@ public class FakeDicomWebServer extends MockHttpTransport {
     responses.add(response);
   }
 
-  public void addQidoResponse(byte[] qidoResponse) {
+  public void addJsonResponse(String jsonResponse) {
     MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
     response.setStatusCode(200);
     response.setContentType("application/json");
-    response.setContent(new ByteArrayInputStream(qidoResponse));
+    response.setContent(new ByteArrayInputStream(jsonResponse.getBytes()));
     responses.add(response);
   }
 

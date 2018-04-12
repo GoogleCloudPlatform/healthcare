@@ -26,6 +26,7 @@ buildscript {
 plugins {
     id 'java'
     id 'application'
+    id 'com.github.hierynomus.license' version '0.14.0'
 }
 
 mainClassName = "com.google.cloud.healthcare.imaging.dicomadapter.ImportAdapter"
@@ -47,6 +48,7 @@ compileJava {
 repositories {
     mavenCentral()
     maven { url 'http://www.dcm4che.org/maven2/' }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -57,6 +59,7 @@ dependencies {
     compile "org.dcm4che:dcm4che-core:3.3.8"
     compile "org.dcm4che:dcm4che-net:3.3.8"
     compile project(":dicom_util")
+    compile project(":util")
 
     testCompile "com.google.truth:truth:0.39"
     testCompile "junit:junit:4.2"
@@ -71,3 +74,42 @@ docker {
         tag = project.findProperty("docker_tag") ?: "import_adapter"
     }
 }
+
+// TODO(b/77952311): Factor common gradle tasks between import/export adapters.
+// Download open source license texts.
+task downloadLicenses(type: nl.javadude.gradle.plugins.license.DownloadLicenses, overwrite: true) {
+  // These libraries have their license in a non-standard location.
+  licenses = specialCaseLicenses
+  dependencyConfiguration = 'compile'
+  doLast {
+    downloadLicensesText(buildDir)
+  }
+}
+
+// Download full source jar for all dependencies.
+// https://stackoverflow.com/questions/16154458/how-to-copy-all-source-jars-using-gradle
+task downloadSourceJars( type: Copy ) {
+  def sources = configurations.runtime.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
+    project.dependencies.create( [
+      group: artifact.moduleVersion.id.group,
+      name: artifact.moduleVersion.id.name,
+      version: artifact.moduleVersion.id.version,
+      classifier: 'sources'
+    ] )
+  }
+  from configurations.detachedConfiguration( sources as Dependency[] )
+    .resolvedConfiguration.lenientConfiguration.getFiles( Specs.SATISFIES_ALL )
+  into file( buildDir.toString() + "/docker/source" )
+}
+
+// OSS release requires license and source code to be included in Docker image.
+task copySourceAndLicenseToDockerImage {
+  dependsOn tasks.downloadLicenses
+  dependsOn tasks.downloadSourceJars
+}
+dockerCopyDistResources.finalizedBy tasks.copySourceAndLicenseToDockerImage
+dockerDistTar {
+    instruction {'ADD license /usr/share/oss-license'}
+    instruction {'ADD source /usr/share/oss-source'}
+}
+

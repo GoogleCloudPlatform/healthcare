@@ -84,5 +84,11 @@ public class Flags {
   )
   public static String oauthScopes = "";
 
+  @Parameter(
+    names = {"--verbose"},
+    description = "Prints out debug messages."
+  )
+  public static boolean verbose = false;
+
   public Flags() {}
 }

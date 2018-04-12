@@ -50,5 +50,11 @@ public class Flags {
   )
   String oauthScopes = "";
 
+  @Parameter(
+    names = {"--verbose"},
+    description = "Prints out debug messages."
+  )
+  boolean verbose = false;
+
   public Flags() {}
 }

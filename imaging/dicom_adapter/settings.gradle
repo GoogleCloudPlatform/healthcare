@@ -14,5 +14,9 @@
  * limitations under the License.
  */
 
-include ':util'
-project(':util').projectDir = new File('../../util')
+include ":export"
+include ":import"
+include ":util"
+
+include ':dicom_util'
+project(':dicom_util').projectDir = new File('../util')

@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.api.client.testing.http.HttpTesting;
 import com.google.cloud.healthcare.DicomWebClient;
-import com.google.cloud.healthcare.FakeDicomWebServer;
+import com.google.cloud.healthcare.FakeWebServer;
 import com.google.cloud.healthcare.TestUtils;
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.protobuf.ByteString;
@@ -95,12 +95,12 @@ public final class ExportMessageReceiverTest {
 
   // Creates an ExportMessageReceiver that uses C-STORE for use in unit-tests.
   ExportMessageReceiver testCStoreExportMessageReceiver(
-      int serverPort, FakeDicomWebServer fakeDicomWebServer, StubAckReplyConsumer replyConsumer)
+      int serverPort, FakeWebServer fakeWebServer, StubAckReplyConsumer replyConsumer)
       throws Exception {
     ByteString pubsubMessageBytes = ByteString.copyFromUtf8(testPubsubPath);
     PubsubMessage pubsubMessage = PubsubMessage.newBuilder().setData(pubsubMessageBytes).build();
     DicomWebClient dicomWebClient =
-        new DicomWebClient(fakeDicomWebServer.createRequestFactory(), HttpTesting.SIMPLE_URL);
+        new DicomWebClient(fakeWebServer.createRequestFactory(), HttpTesting.SIMPLE_URL);
     DicomSender dicomSender =
         new CStoreSender(clientAE, serverAET, serverHost, serverPort, dicomWebClient);
     ExportMessageReceiver receiver = new ExportMessageReceiver(dicomSender);
@@ -110,8 +110,8 @@ public final class ExportMessageReceiverTest {
 
   // Creates an ExportMessageReceiver that uses STOW-RS for use in unit-tests.
   ExportMessageReceiver testStowRsExportMessageReceiver(
-      FakeDicomWebServer fakeSourceDicomWebServer,
-      FakeDicomWebServer fakeSinkDicomWebServer,
+      FakeWebServer fakeSourceDicomWebServer,
+      FakeWebServer fakeSinkDicomWebServer,
       StubAckReplyConsumer replyConsumer)
       throws Exception {
     ByteString pubsubMessageBytes = ByteString.copyFromUtf8(testPubsubPath);
@@ -129,74 +129,74 @@ public final class ExportMessageReceiverTest {
   @Test
   public void ExportMessageReceiverTest_CStoreSuccess() throws Exception {
     int serverPort = createServerDevice("*", "*", Status.Success);
-    FakeDicomWebServer fakeDicomWebServer = new FakeDicomWebServer();
-    fakeDicomWebServer.addQidoResponse(testQidoResponse.getBytes());
-    fakeDicomWebServer.addWadoResponse(TestUtils.readTestFile(TestUtils.TEST_MR_FILE));
+    FakeWebServer fakeWebServer = new FakeWebServer();
+    fakeWebServer.addJsonResponse(testQidoResponse);
+    fakeWebServer.addWadoResponse(TestUtils.readTestFile(TestUtils.TEST_MR_FILE));
 
     StubAckReplyConsumer replyConsumer = new StubAckReplyConsumer();
     ExportMessageReceiver receiver =
-        testCStoreExportMessageReceiver(serverPort, fakeDicomWebServer, replyConsumer);
+        testCStoreExportMessageReceiver(serverPort, fakeWebServer, replyConsumer);
     assertThat(replyConsumer.isAck()).isTrue();
   }
 
   @Test
   public void ExportMessageReceiverTest_CStoreInvalidQidoResponse() throws Exception {
     int serverPort = createServerDevice("*", "*", Status.Success);
-    FakeDicomWebServer fakeDicomWebServer = new FakeDicomWebServer();
-    fakeDicomWebServer.addQidoResponse("[{}]".getBytes());
+    FakeWebServer fakeWebServer = new FakeWebServer();
+    fakeWebServer.addJsonResponse("[{}]");
 
     StubAckReplyConsumer replyConsumer = new StubAckReplyConsumer();
     ExportMessageReceiver receiver =
-        testCStoreExportMessageReceiver(serverPort, fakeDicomWebServer, replyConsumer);
+        testCStoreExportMessageReceiver(serverPort, fakeWebServer, replyConsumer);
     assertThat(replyConsumer.isAck()).isFalse();
   }
 
   @Test
   public void ExportMessageReceiverTest_CStoreDicomWebConnectionError() throws Exception {
     int serverPort = createServerDevice("*", "*", Status.Success);
-    FakeDicomWebServer fakeDicomWebServer = new FakeDicomWebServer();
-    fakeDicomWebServer.addResponseWithStatusCode(403);
+    FakeWebServer fakeWebServer = new FakeWebServer();
+    fakeWebServer.addResponseWithStatusCode(403);
 
     StubAckReplyConsumer replyConsumer = new StubAckReplyConsumer();
     ExportMessageReceiver receiver =
-        testCStoreExportMessageReceiver(serverPort, fakeDicomWebServer, replyConsumer);
+        testCStoreExportMessageReceiver(serverPort, fakeWebServer, replyConsumer);
     assertThat(replyConsumer.isAck()).isFalse();
   }
 
   @Test
   public void ExportMessageReceiverTest_CStoreAssociationRejected() throws Exception {
     int serverPort = createServerDevice(UID.MRImageStorage, "*", Status.Success);
-    FakeDicomWebServer fakeDicomWebServer = new FakeDicomWebServer();
-    fakeDicomWebServer.addQidoResponse(testQidoResponse.getBytes());
-    fakeDicomWebServer.addWadoResponse(TestUtils.readTestFile(TestUtils.TEST_MR_FILE));
+    FakeWebServer fakeWebServer = new FakeWebServer();
+    fakeWebServer.addJsonResponse(testQidoResponse);
+    fakeWebServer.addWadoResponse(TestUtils.readTestFile(TestUtils.TEST_MR_FILE));
 
     StubAckReplyConsumer replyConsumer = new StubAckReplyConsumer();
     ExportMessageReceiver receiver =
-        testCStoreExportMessageReceiver(serverPort, fakeDicomWebServer, replyConsumer);
+        testCStoreExportMessageReceiver(serverPort, fakeWebServer, replyConsumer);
     assertThat(replyConsumer.isAck()).isFalse();
   }
 
   @Test
   public void ExportMessageReceiverTest_CStoreError() throws Exception {
     int serverPort = createServerDevice("*", "*", Status.ProcessingFailure);
-    FakeDicomWebServer fakeDicomWebServer = new FakeDicomWebServer();
-    fakeDicomWebServer.addQidoResponse(testQidoResponse.getBytes());
-    fakeDicomWebServer.addWadoResponse(TestUtils.readTestFile(TestUtils.TEST_MR_FILE));
+    FakeWebServer fakeWebServer = new FakeWebServer();
+    fakeWebServer.addJsonResponse(testQidoResponse);
+    fakeWebServer.addWadoResponse(TestUtils.readTestFile(TestUtils.TEST_MR_FILE));
 
     StubAckReplyConsumer replyConsumer = new StubAckReplyConsumer();
     ExportMessageReceiver receiver =
-        testCStoreExportMessageReceiver(serverPort, fakeDicomWebServer, replyConsumer);
+        testCStoreExportMessageReceiver(serverPort, fakeWebServer, replyConsumer);
     assertThat(replyConsumer.isAck()).isFalse();
   }
 
   @Test
   public void ExportMessageReceiverTest_StowRsSuccess() throws Exception {
     // Service that sources DICOM.
-    FakeDicomWebServer fakeSourceDicomWebServer = new FakeDicomWebServer();
+    FakeWebServer fakeSourceDicomWebServer = new FakeWebServer();
     fakeSourceDicomWebServer.addWadoResponse(TestUtils.readTestFile(TestUtils.TEST_MR_FILE));
 
     // Service that sinks DICOM.
-    FakeDicomWebServer fakeSinkDicomWebServer = new FakeDicomWebServer();
+    FakeWebServer fakeSinkDicomWebServer = new FakeWebServer();
     fakeSinkDicomWebServer.addResponseWithStatusCode(200);
 
     StubAckReplyConsumer replyConsumer = new StubAckReplyConsumer();
@@ -209,11 +209,11 @@ public final class ExportMessageReceiverTest {
   @Test
   public void ExportMessageReceiverTest_StowRsSourceWadoRequestError() throws Exception {
     // Service that sources DICOM.
-    FakeDicomWebServer fakeSourceDicomWebServer = new FakeDicomWebServer();
+    FakeWebServer fakeSourceDicomWebServer = new FakeWebServer();
     fakeSourceDicomWebServer.addResponseWithStatusCode(404);
 
     // Service that sinks DICOM.
-    FakeDicomWebServer fakeSinkDicomWebServer = new FakeDicomWebServer();
+    FakeWebServer fakeSinkDicomWebServer = new FakeWebServer();
 
     StubAckReplyConsumer replyConsumer = new StubAckReplyConsumer();
     ExportMessageReceiver receiver =
@@ -225,11 +225,11 @@ public final class ExportMessageReceiverTest {
   @Test
   public void ExportMessageReceiverTest_StowRsSinkStowRequestError() throws Exception {
     // Service that sources DICOM.
-    FakeDicomWebServer fakeSourceDicomWebServer = new FakeDicomWebServer();
+    FakeWebServer fakeSourceDicomWebServer = new FakeWebServer();
     fakeSourceDicomWebServer.addWadoResponse(TestUtils.readTestFile(TestUtils.TEST_MR_FILE));
 
     // Service that sinks DICOM.
-    FakeDicomWebServer fakeSinkDicomWebServer = new FakeDicomWebServer();
+    FakeWebServer fakeSinkDicomWebServer = new FakeWebServer();
     fakeSourceDicomWebServer.addResponseWithStatusCode(400);
 
     StubAckReplyConsumer replyConsumer = new StubAckReplyConsumer();

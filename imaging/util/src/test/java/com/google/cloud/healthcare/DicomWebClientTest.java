@@ -36,12 +36,12 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class DicomWebClientTest {
 
-  private FakeDicomWebServer fakeDicomWebServer;
+  private FakeWebServer fakeDicomWebServer;
   private DicomWebClient client;
 
   @Before
   public void setUp() {
-    fakeDicomWebServer = new FakeDicomWebServer();
+    fakeDicomWebServer = new FakeWebServer();
     client = new DicomWebClient(fakeDicomWebServer.createRequestFactory(), HttpTesting.SIMPLE_URL);
   }
 
@@ -71,10 +71,9 @@ public final class DicomWebClientTest {
 
   @Test
   public void testDicomWebClient_Qido() throws Exception {
-    byte[] qidoResponse =
-        "[{\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.113619.2.176.3596.3364818.7819.1259708454.108\"]}}]"
-            .getBytes();
-    fakeDicomWebServer.addQidoResponse(qidoResponse);
+    String qidoResponse =
+        "[{\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.113619.2.176.3596.3364818.7819.1259708454.108\"]}}]";
+    fakeDicomWebServer.addJsonResponse(qidoResponse);
     JSONArray jsonArray = client.qidoRs("query");
     assertThat(jsonArray.length()).isEqualTo(1);
     JSONObject tag = jsonArray.getJSONObject(0).getJSONObject("0020000E");

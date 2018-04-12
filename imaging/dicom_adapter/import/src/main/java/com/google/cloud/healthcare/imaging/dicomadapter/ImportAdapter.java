@@ -19,6 +19,7 @@ import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.healthcare.LogUtil;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
@@ -31,6 +32,11 @@ public class ImportAdapter {
     Flags flags = new Flags();
     JCommander jCommander = new JCommander(flags);
     jCommander.parse(args);
+
+    // Adjust logging.
+    if (flags.verbose) {
+      LogUtil.Log4jToStdout();
+    }
 
     // Credentials, use the default service credentials.
     GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();

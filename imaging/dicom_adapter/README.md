@@ -17,60 +17,21 @@ for new instances, fetches them using WADO-RS, then sends them to the client.
 This binary can be configured to output either C-STORE or STOW-RS via command
 line flags.
 
-To use [Google Cloud Pub/Sub](https://cloud.google.com/pubsub/), you require a [Google Cloud project](https://cloud.google.com). Furthermore, [Cloud Pubsub API](https://console.cloud.google.com/apis/api/pubsub.googleapis.com/overview) must be enabled in your Google project. The binary expects that each Cloud Pub/Sub notification consists of the WADO-RS path for the DICOM instance that is to be exported (e.g. `/studies/\<STUDY_UID\>/series/\<SERIES_UID\>/instances/\<INSTANCE_UID\>`).
+To use [Google Cloud Pub/Sub](https://cloud.google.com/pubsub/), you require a [Google Cloud project](https://cloud.google.com). Furthermore, [Cloud Pubsub API](https://console.cloud.google.com/apis/api/pubsub.googleapis.com/overview) must be enabled in your Google project. The binary expects that each Cloud Pub/Sub notification consists of the WADO-RS path for the DICOM instance that is to be exported (e.g. `/studies/<STUDY_UID>/series/<SERIES_UID>/instances/<INSTANCE_UID>`).
 
 For the list of command line flags, see [here](export/src/main/java/com/google/cloud/healthcare/imaging/dicomadapter/Flags.java)
 
-## Build
-
-Both adapters exist as seperate binaries and are built using [Gradle](https://gradle.org/). Please refer to these [instructions](https://gradle.org/install/) to build Gradle for your system.
-
-For example, to build Import Adapter:
-
-```shell
-cd import
-gradle build
-```
-
-For example, to additionally execute Import Adapter locally:
-
-```shell
-gradle run -Dexec.args="--dimse_aet=IMPORTADAPTER --dimse_port=4008 --dicomweb_addr=http://localhost:80 --dicomweb_stow_path=/studies"
-```
-
 ## Deployment using Kubernetes
 
-The adapters can be deployed to Google Cloud Platform using [GKE] (https://cloud.google.com/kubernetes-engine/).
+The adapters can be deployed to Google Cloud Platform using [GKE] (https://cloud.google.com/kubernetes-engine/). We have published prebuilt Docker images for the both adapters to [Google Container Registry](https://cloud.google.com/container-registry/).
+
+- Import Adapter: `gcr.io/cloud-healthcare-containers/dicom-import-adapter`
+- Export Adapter: `gcr.io/cloud-healthcare-containers/dicom-export-adapter`
 
 ### Requirements
 
 - A [Google Cloud project](https://cloud.google.com).
-- A [Docker](https://docs.docker.com/) repository. This process requires you to build and upload your own Docker images for the DICOM adapters. The following instructions assume that [Google Container Registry](https://cloud.google.com/container-registry/) is used.
 - Installed [gcloud](https://cloud.google.com/sdk/gcloud/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) command line tools.
-
-### Building and publishing Docker Images
-
-If Google Container Registry is used, the images will be uploaded to a URI like gcr.io/\<project\>/\<image\>:\<tag>.
-
-To build and upload Import Adapter Docker images:
-
-```shell
-cd import
-PROJECT=\<Your Google Cloud Project\>
-TAG=gcr.io/${PROJECT}/dicom-import-adapter
-gradle dockerBuildImage -Pdocker_tag=${TAG}
-gcloud docker -- push ${TAG}
-```
-
-To build and upload Export Adapter Docker images:
-
-```shell
-cd export
-PROJECT=\<Your Google Cloud Project\>
-TAG=gcr.io/${PROJECT}/dicom-export-adapter
-gradle dockerBuildImage -Pdocker_tag=${TAG}
-gcloud docker -- push ${TAG}
-```
 
 ### Deploying Docker Images to GKE
 
@@ -95,7 +56,7 @@ spec:
     spec:
       containers:
         - name: dicom-import-adapter
-          image: gcr.io/myproject/dicom-import-adapter:latest
+          image: gcr.io/cloud-healthcare-containers/dicom-import-adapter:latest
           ports:
             - containerPort: 2575
               protocol: TCP
@@ -113,7 +74,7 @@ containers in `dicom_adapter.yaml`. Modify the flags for your use case.
 
 ```yaml
         - name: dicom-export-adapter
-          image: gcr.io/myproject/dicom-export-adapter:latest
+          image: gcr.io/cloud-healthcare-containers/dicom-export-adapter:latest
           command:
             - "--peer_dimse_aet=PEERAET"
             - "--peer_dimse_ip=localhost"
@@ -165,3 +126,41 @@ The status and IP address of load balancer can be seen by executing:
 kubectl get service dicom-adapter-load-balancer
 ```
 
+## Building from source
+
+As an alternative to using the prebuilt Docker images, you can build the adapters from source code. Both adapters exist as separate binaries and are built using [Gradle](https://gradle.org/). Please refer to these [instructions](https://gradle.org/install/) to build Gradle for your system.
+
+For example, to build Import Adapter:
+
+```shell
+cd import
+gradle build
+```
+
+For example, to additionally execute Import Adapter locally:
+
+```shell
+gradle run -Dexec.args="--dimse_aet=IMPORTADAPTER --dimse_port=4008 --dicomweb_addr=http://localhost:80 --dicomweb_stow_path=/studies"
+```
+
+### Building and publishing Docker Images
+
+To build and upload Import Adapter Docker images:
+
+```shell
+cd import
+PROJECT=<Your Google Cloud Project>
+TAG=gcr.io/${PROJECT}/dicom-import-adapter
+gradle dockerBuildImage -Pdocker_tag=${TAG}
+gcloud docker -- push ${TAG}
+```
+
+To build and upload Export Adapter Docker images:
+
+```shell
+cd export
+PROJECT=<Your Google Cloud Project>
+TAG=gcr.io/${PROJECT}/dicom-export-adapter
+gradle dockerBuildImage -Pdocker_tag=${TAG}
+gcloud docker -- push ${TAG}
+```

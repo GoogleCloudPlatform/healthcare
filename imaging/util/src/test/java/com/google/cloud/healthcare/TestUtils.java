@@ -24,6 +24,7 @@ import org.dcm4che3.io.DicomInputStream;
 /** Utility methods for tests. */
 public class TestUtils {
   public static final String TEST_MR_FILE = "mr_1.0.0.0.dcm";
+  public static final String TEST_IMG_FILE = "img_1.0.0.0.dcm";
 
   private TestUtils() {}
 

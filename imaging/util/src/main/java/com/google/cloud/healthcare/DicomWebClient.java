@@ -102,6 +102,10 @@ public class DicomWebClient {
   public void stowRs(String path, InputStream in) throws DicomWebException {
     GenericUrl url = new GenericUrl(serviceUrlPrefix + "/" + path);
     MultipartContent content = new MultipartContent();
+
+    // DICOM "Type" parameter:
+    // http://dicom.nema.org/medical/dicom/current/output/html/part18.html#sect_6.6.1.1.1
+    content.setMediaType(content.getMediaType().setParameter("type", "\"application/dicom\""));
     content.setBoundary(UUID.randomUUID().toString());
     InputStreamContent dicomStream = new InputStreamContent("application/dicom", in);
     content.addPart(new MultipartContent.Part(dicomStream));
