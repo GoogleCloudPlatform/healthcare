@@ -1,0 +1,416 @@
+---
+output: html_document
+editor_options:
+  chunk_output_type: inline
+---
+Copyright 2018 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+> https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+# Datathon Tutorial
+
+Welcome to the MIMIC/eICU/ANZICS Datathon! This is a Jupyter notebook using R kernel, serving as a tutorial to guide you through the working environment for accessing the dataset and get you familiarized with analyzing demo medical data in Google Cloud. If you are familiar with Python, we also recommend that you check out the [Python version of this tutorial](https://colab.research.google.com/drive/1w9P6USMuqXDW-aQwUkaO-s2QcKUIoXHS) hosted in Google Colab.
+
+## Initial Setup
+Here are the prerequisites for running all examples in this tutorial
+
+* You MUST visit https://mimic.physionet.org/gettingstarted/demo/ and accept the terms and conditions for using MIMIC-III demo data to run the queries in this tutorial.
+* You should already have had a valid Gmail account registered with the datathon organizers, and have been assigned a team.
+  * If you do not have a Gmail account, you can create one at http://www.gmail.com. You need to notify [datathon organizers](mailto:sydney-datathon-2018-organizers@googlegroups.com) to register your new account for data access.
+  * If you are not taking part in a MIMIC datathon, but do have MIMIC-III demo data access already, you may request to join [this Google Group](https://groups.google.com/forum/#!forum/mimic-demo-users) to run queries in this Jupyter notebook.
+
+Now that you have done the initial setup, let us start playing with the data. First, you need to run some initialization code. You can run the following cell by either pressing "Ctrl+Enter", or selecting "Cell -> Run cell and select below" menu, or clicking the equivalent button in the tool bar.
+
+```{r}
+# Install the "big R query" package, if neccessary by uncommenting the following two lines:
+# install.packages('devtools')
+# devtools::install_github("rstats-db/bigrquery")
+
+library("bigrquery")
+
+project_id <- "datathon-datasets"
+options(httr_oauth_cache=FALSE)
+```
+
+When you run your first query below to BigQuery, you will be asked to first authenticate yourself. The cell's result box will show you an authentication link, where you can log in to your gmail account and accept the data access permission. Once authenticated, you may close the authentication window, and the query result should show up in the result box below.
+
+## Querying the MIMIC-III Demo Dataset
+
+Now we are ready to actually start following the "Cohort" Selection exercise adapted from the [MIMIC cohort selection tutorial on GitHub](https://github.com/MIT-LCP/mimic-code/blob/master/tutorials/cohort-selection.ipynb). Because all datasets related to this Datathon are hosted on Google Cloud, there is no need to set up a local database or bring up a local Jupyter instance. Instead, we only need to connect to a BigQuery client with the desired Google Cloud project. The MIMIC-III demo data is hosted on the "`datathon-datasets`" project. Let's see what datasets are availabe in this project. For more information about BigQuery's `Client` object (and much more), please refer to [BigQuery Documentation](https://googlecloudplatform.github.io/google-cloud-python/latest/bigquery/usage.html).
+
+```{r}
+for (ds in list_datasets(project=project_id)) {
+    print(paste0('Dataset "', ds, '" has the following tables:'), quote=FALSE)
+    for (tb in list_tables(project=project_id, dataset=ds)) {
+        print(paste('....', tb), quote=FALSE)
+    }
+}
+```
+
+Another way to list all BigQuery tables in a Google Cloud Project is to go to the BigQuery site directly, e.g. https://bigquery.cloud.google.com/welcome/datathon-datasets. On the left panel, you will see the `mimic_demo` dataset, under which you will see the table names as above once you click and expand on the link.
+
+To view the details of a table, simply click on it (for example the `icustays` table). Then, on the right side of the window, you will have the option to see the [schema](https://bigquery.cloud.google.com/table/datathon-datasets:mimic_demo.icustays?tab=schema), [metadata](https://bigquery.cloud.google.com/table/datathon-datasets:mimic_demo.icustays?tab=details) and [preview of rows](https://bigquery.cloud.google.com/table/datathon-datasets:mimic_demo.icustays?tab=preview) tabs.
+
+Let's now run some queries adapted from [the MIMIC cohort selection tutorial](https://github.com/MIT-LCP/mimic-code/blob/master/tutorials/cohort-selection.ipynb).
+First, let's preview the `subject_id`, `hadm_id`, and `icustay_id` columns of the `icustays` table.
+
+```{r}
+run_query <- function(query){
+    data <- query_exec(query, project=project_id, use_legacy_sql = FALSE)
+    return(data)
+}
+
+
+run_query("
+SELECT
+  subject_id,
+  hadm_id,
+  icustay_id
+FROM
+  mimic_demo.icustays
+LIMIT 10
+")
+```
+
+The `LIMIT 10` clause in the query is handy for limiting the size of the output frame during query writing for easier viewing, and we can drop this clause once the query is finalized to run over the whole dataset. One thing to note is that even with the `LIMIT` clause, [running a query may still incur a cost,  up to the full query without `LIMIT`](https://cloud.google.com/bigquery/docs/best-practices-costs#preview-data), so the best way to preview data in a table is the [preview tab](https://bigquery.cloud.google.com/table/datathon-datasets:mimic_demo.icustays?tab=preview) in the BigQuery interface. Please rest assured though that Google is sponsoring this Datathon event, so there will not be any cost for running queries in the provided Datathon projects during the event.
+
+Now, let us try some Google SQL functions. Please consult the reference page at https://cloud.google.com/bigquery/docs/reference/standard-sql/functions-and-operators for all available functions and operators. Here is an example how `TIMESTAMP_DIFF` can be used for finding how many hours patients ICU stay lasted. Notice how the query result is stored and used in a pandas dataframe.
+
+```{r}
+df <- run_query("
+SELECT
+  subject_id,
+  hadm_id,
+  icustay_id,
+  intime,
+  outtime,
+  TIMESTAMP_DIFF(outtime, intime, HOUR) as icu_stay_hours
+FROM mimic_demo.icustays
+LIMIT 10")
+head(df)
+```
+
+Here is the BigQuery query to list some patients whose ICU stay is at least 2 days. Note that you can use `AS` in the `SELECT` clause to rename a field in the output, and you can omit the table prefix if there is no ambiguity.
+
+```{r}
+run_query("
+WITH co AS (
+  SELECT
+    subject_id,
+    hadm_id,
+    icustay_id,
+    TIMESTAMP_DIFF(outtime, intime, DAY) AS icu_length_of_stay
+  FROM mimic_demo.icustays
+  LIMIT 10)
+SELECT
+  subject_id,
+  co.hadm_id AS hadm_ID,
+  co.icustay_id,
+  co.icu_length_of_stay
+FROM co
+WHERE icu_length_of_stay >= 2")
+```
+
+Now, instead of filtering out ICU stays of length 1 day or less, let's label all the ICU stays with an integer, either 1 for stays of length 2 days or more, or 0 for stays shorter than 2 days. The resulting table is called a "cohort table" in the [original MIMIC-III tutorial](https://github.com/MIT-LCP/mimic-code/blob/master/tutorials/cohort-selection.ipynb).
+
+```{r}
+run_query("
+WITH co AS (
+  SELECT
+    subject_id,
+    hadm_id,
+    icustay_id,
+    TIMESTAMP_DIFF(outtime, intime, DAY) AS icu_length_of_stay
+  FROM mimic_demo.icustays
+  LIMIT 10)
+SELECT
+  subject_id,
+  hadm_id,
+  icustay_id,
+  icu_length_of_stay,
+  IF(icu_length_of_stay < 2, 1, 0) AS exclusion_los
+FROM co
+ORDER BY icustay_id")
+```
+
+Let's now try a query that requires table joining: include the patient's age at the time of ICU admittance. This is computed by the date difference in years between the ICU `intime` and the patient's date of birth. The former is available in the `icustays` table, and the latter resides in the `dob` column of the `patients` table.
+
+```{r}
+run_query("
+WITH co AS (
+  SELECT
+    icu.subject_id,
+    icu.hadm_id,
+    icu.icustay_id,
+    pat.dob,
+    TIMESTAMP_DIFF(icu.outtime, icu.intime, DAY) AS icu_length_of_stay,
+    DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
+  FROM mimic_demo.icustays AS icu
+  INNER JOIN mimic_demo.patients AS pat
+    ON icu.subject_id = pat.subject_id
+  LIMIT 10)
+SELECT
+  subject_id,
+  hadm_id,
+  icustay_id,
+  icu_length_of_stay, co.age,
+  IF(icu_length_of_stay < 2, 1, 0) AS exclusion_los
+FROM co")
+```
+
+It is somewhat surprising to see a patient whose age is 300! This raises the question whether the age distribution of all patients is sane. We can verify this by querying the quantiles of patients' ages. Notice that we have removed the `LIMIT 10` clause in the inner query, but the result is still 11 lines of integers only, no matter how large the table is.
+
+```{r}
+run_query("
+WITH co AS (
+  SELECT
+    DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
+  FROM mimic_demo.icustays AS icu
+  INNER JOIN mimic_demo.patients AS pat
+    ON icu.subject_id = pat.subject_id)
+SELECT
+  APPROX_QUANTILES(age, 10) AS age_quantiles
+FROM co")
+```
+
+The result says that the minimum age (0th percentile) is 17, the 10th percentile is 49, the 20th percentile is 62, and so on, and 300 is the maximum (100-th percentile). The distribution looks good, and 300 could be an outlier.
+
+```{r}
+run_query("
+SELECT
+  DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
+FROM mimic_demo.icustays AS icu
+INNER JOIN mimic_demo.patients AS pat
+  ON icu.subject_id = pat.subject_id
+ORDER BY age DESC
+LIMIT 10
+")
+```
+
+Indeed, there are 9 cases of 300-year olds patient ICU admittances that look suspicious, but after that, the maximum age of the patients is 89. Actually, the 300 age is intentionally introduced in the MIMIC-III datasets for privacy protection of patients whose age is 90 or beyond: any patient in this age group got their age redacted to 300.
+
+Next, let's see how many ICU admissions each patient had.
+
+```{r}
+run_query("
+WITH co AS (
+  SELECT
+    icu.subject_id,
+    icu.hadm_id,
+    icu.icustay_id,
+    pat.dob,
+    TIMESTAMP_DIFF(icu.outtime, icu.intime, DAY) AS icu_length_of_stay,
+    DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age,
+    RANK() OVER (PARTITION BY icu.subject_id ORDER BY icu.intime) AS icustay_id_order
+  FROM mimic_demo.icustays AS icu
+  INNER JOIN mimic_demo.patients AS pat
+    ON icu.subject_id = pat.subject_id
+  ORDER BY hadm_id DESC
+  LIMIT 10
+  )
+SELECT
+  subject_id,
+  hadm_id,
+  icustay_id,
+  icu_length_of_stay, co.age,
+  IF(icu_length_of_stay < 2, 1, 0) AS exclusion_los,
+  icustay_id_order
+FROM co
+ORDER BY subject_id, icustay_id_order")
+```
+
+In the last column, we see that for some patients (e.g. Subject `40177` and `42281`), there are multiple ICU stays. In research studies, we usually filter out follow-up ICU stays, and only keep the first ICU stay so as to minimize unwanted data correlation. For this purpose, we create an exclusion label column based on icustay_id_order, which becomes handy for filtering needs. This is done by ranking the ICU visits ordered by the admission time in the following query, and `PARTITION BY` ensures that the ran king is within each patient (`subject_id`).
+
+```{r}
+run_query("
+WITH co AS (
+  SELECT
+    icu.subject_id,
+    icu.hadm_id,
+    icu.icustay_id,
+    pat.dob,
+    TIMESTAMP_DIFF(icu.outtime, icu.intime, DAY) AS icu_length_of_stay,
+    DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age,
+    RANK() OVER (PARTITION BY icu.subject_id ORDER BY icu.intime) AS icustay_id_order
+  FROM mimic_demo.icustays AS icu
+  INNER JOIN mimic_demo.patients AS pat
+    ON icu.subject_id = pat.subject_id
+  ORDER BY hadm_id DESC
+  LIMIT 10
+  )
+SELECT
+  subject_id,
+  hadm_id,
+  icustay_id,
+  icu_length_of_stay, co.age,
+  IF(icu_length_of_stay < 2, 1, 0) AS exclusion_los,
+  icustay_id_order,
+  IF(icustay_id_order = 1, 0, 1) AS exclusion_first_stay
+FROM co
+ORDER BY subject_id, icustay_id_order")
+```
+
+Another filter that we often use is the current service that ICU patients are undergoing. This could be done by joining with the [`services`](https://bigquery.cloud.google.com/table/datathon-datasets:mimic_demo.services?tab=schema) table using the `hadm_id` column. We can use the [BigQuery preview tab](https://bigquery.cloud.google.com/table/datathon-datasets:mimic_demo.services?tab=preview) to gain some visual understanding of data in this table as usual. We could also find out the number of each service instances and whether it's a sergical service by running the following query with aggregation function `COUNT DISTINCT`. You can find the service code descriptions at http://mimic.physionet.org/mimictables/services/.
+
+```{r}
+run_query("
+SELECT
+  curr_service,
+  IF(curr_service like '%SURG' OR curr_service = 'ORTHO', 1, 0) AS surgical,
+  COUNT(DISTINCT hadm_id) num_hadm
+FROM mimic_demo.services
+GROUP BY 1, 2
+ORDER BY 2, 1")
+```
+
+With this understanding of service types, we are now ready to join the `icustays` table with the `services` table to identify what serives ICU patients are undergoing.
+
+```{r}
+run_query("
+SELECT
+  icu.hadm_id,
+  icu.icustay_id,
+  curr_service,
+  IF(curr_service like '%SURG' OR curr_service = 'ORTHO', 1, 0) AS surgical
+FROM mimic_demo.icustays AS icu
+LEFT JOIN mimic_demo.services AS se
+  ON icu.hadm_id = se.hadm_id
+ORDER BY icustay_id
+LIMIT 10")
+```
+
+Notice that for a single ICU stay, there may be multiple services. The following query finds the first service from ICU stays from patients, and indicates whether the last service before ICU admission was surgical.
+
+```{r}
+run_query("
+WITH serv AS (
+  SELECT
+    icu.hadm_id,
+    icu.icustay_id,
+    se.curr_service,
+    IF(curr_service like '%SURG' OR curr_service = 'ORTHO', 1, 0) AS surgical,
+    RANK() OVER (PARTITION BY icu.hadm_id ORDER BY se.transfertime DESC) as rank
+  FROM mimic_demo.icustays AS icu
+  LEFT JOIN mimic_demo.services AS se
+   ON icu.hadm_id = se.hadm_id
+  AND se.transfertime < TIMESTAMP_ADD(icu.intime, INTERVAL 12 HOUR)
+  ORDER BY icustay_id
+  LIMIT 10)
+SELECT
+  hadm_id,
+  icustay_id,
+  curr_service,
+  surgical
+FROM serv
+WHERE rank = 1")
+```
+
+Finally, we are ready to add this surgical exclusion label to the cohort generation table we had before by joining the two tables. For the convenience of later analysis, we rename some columns, and filter out patients more than 100 years old.
+
+```{r}
+df <- run_query("
+WITH co AS (
+  SELECT
+    icu.subject_id,
+    icu.hadm_id,
+    icu.icustay_id,
+    pat.dob,
+    TIMESTAMP_DIFF(icu.outtime, icu.intime, DAY) AS icu_length_of_stay,
+    DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age,
+    RANK() OVER (PARTITION BY icu.subject_id ORDER BY icu.intime) AS icustay_id_order
+  FROM mimic_demo.icustays AS icu
+  INNER JOIN mimic_demo.patients AS pat
+    ON icu.subject_id = pat.subject_id
+  ORDER BY hadm_id DESC),
+serv AS (
+  SELECT
+    icu.hadm_id,
+    icu.icustay_id,
+    se.curr_service,
+    IF(curr_service like '%SURG' OR curr_service = 'ORTHO', 1, 0) AS surgical,
+    RANK() OVER (PARTITION BY icu.hadm_id ORDER BY se.transfertime DESC) as rank
+  FROM mimic_demo.icustays AS icu
+  LEFT JOIN mimic_demo.services AS se
+   ON icu.hadm_id = se.hadm_id
+  AND se.transfertime < TIMESTAMP_ADD(icu.intime, INTERVAL 12 HOUR)
+  ORDER BY icustay_id)
+SELECT
+  co.subject_id,
+  co.hadm_id,
+  co.icustay_id,
+  co.icu_length_of_stay,
+  co.age,
+  IF(co.icu_length_of_stay < 2, 1, 0) AS short_stay,
+  IF(co.icustay_id_order = 1, 0, 1) AS first_stay,
+  IF(serv.surgical = 1, 1, 0) AS surgical
+FROM co
+LEFT JOIN serv USING (icustay_id, hadm_id)
+WHERE
+  serv.rank = 1 AND age < 100
+ORDER BY subject_id, icustay_id_order")
+
+print(paste('Number of rows in dataframe:', nrow(df)))
+head(df)
+```
+
+The [original MIMIC tutorial](https://github.com/MIT-LCP/mimic-code/blob/master/tutorials/cohort-selection.ipynb), also showed why the `first_careunit` field of the `icustays` table is not always the same as the surgical bit derived from the `services` table. It also demonstrated how the pandas dataframes returned from the BigQuery queries can be further processed in Python for summarization. We will not redo those analyses here, believing that you should reproduce those results easily here with BigQuery by now.
+
+The ANZICS dataset also has some demo tables that you can explore. For example, in the `APD` and `CCR` tables, we can check the number of elements of certain types among the 100 demo records.
+
+```{r}
+run_query("
+SELECT
+  hospitalclassification AS Type,
+  COUNT(*) AS NumHospitals
+FROM anzics_demo.apd
+GROUP BY 1
+ORDER BY 2 DESC")
+```
+
+```{r}
+run_query("
+SELECT
+  iculevelname AS ICU_Level,
+  COUNT(*) AS NumHospitals,
+  SUM(hospitalbeds) AS NumBeds
+FROM anzics_demo.ccr
+GROUP BY 1
+ORDER BY 2 DESC")
+```
+
+In the [Python version of this tutorial](https://colab.research.google.com/drive/1w9P6USMuqXDW-aQwUkaO-s2QcKUIoXHS), we also cover a little bit of Tensorflow setup to build simple machine learning models. Unfortunately, Tensorflow is not currently supported in R. However, there are plenty of ML packages in R that you may choose to use, should you build an ML model with the data extracted from BigQuery.
+
+Congratulations! Now you have finished this datathon tutorial, and ready to explore the real data by querying Google BigQuery. To do so, simply remove the `_demo` suffix in the dataset names. For example, the table `mimic_demo.icustays` becomes `mimic.icustays` when you need the actual MIMIC data. Now, let's do the substitution and, and start the real datathon exploration.
+
+```{r}
+run_query("
+SELECT
+  COUNT(*) AS num_rows
+FROM
+  mimic.icustays
+")
+```
+
+```{r}
+run_query("
+SELECT
+  subject_id,
+  hadm_id,
+  icustay_id
+FROM
+  mimic.icustays
+LIMIT 10
+")
+```
+
+Enjoy!
