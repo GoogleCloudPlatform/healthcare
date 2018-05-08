@@ -1,0 +1,75 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:38dd0ea4-a734-423c-8ff5-6a736d578dc4",
+      "resource": {
+        "resourceType": "Patient",
+        "name": [
+          {
+            "family": "MOUSE",
+            "given": [
+              "MICKEY"
+            ]
+          }
+        ],
+        "gender": "male",
+        "address": [
+          {
+            "line": [
+              "123 Main St."
+            ],
+            "city": "Lake Buena Vista",
+            "state": "FL",
+            "postalCode": "32830"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "ifNoneExist": "family:exact=MOUSE&given:exact=MICKEY"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:38dd0ea4-a734-423c-8ff5-6a736d578dc4",
+      "resource": {
+        "resourceType": "Patient",
+        "name": [
+          {
+            "family": "MOUSE",
+            "given": [
+              "MICKEY"
+            ]
+          }
+        ],
+        "gender": "male",
+        "address": [
+          {
+            "line": [
+              "123 Main St."
+            ],
+            "city": "Lake Buena Vista",
+            "state": "FL",
+            "postalCode": "32830"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient?family:exact=MOUSE&given:exact=MICKEY"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "subject": {
+          "reference": "Patient/38dd0ea4-a734-423c-8ff5-6a736d578dc4"
+        }
+      },
+      "request": {
+        "method": "POST"
+      }
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:38dd0ea4-a734-423c-8ff5-6a736d578dc4",
+      "resource": {
+        "resourceType": "Patient",
+        "name": [
+          {
+            "family": "WOMAN",
+            "given": [
+              "GENERIC",
+              "S"
+            ]
+          }
+        ],
+        "gender": "female",
+        "address": [
+          {
+            "line": [
+              "1234 MAIN ROAD"
+            ],
+            "city": "LINDSEY",
+            "district": "SANDUSKY",
+            "state": "OH",
+            "postalCode": "43442",
+            "country": "USA"
+          }
+        ],
+        "maritalStatus": {
+          "coding": [
+            {
+              "code": "M"
+            }
+          ]
+        }
+      },
+      "request": {
+        "method": "POST",
+        "ifNoneExist": "family:exact=WOMAN&given:exact=GENERIC&given:exact=S"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:38dd0ea4-a734-423c-8ff5-6a736d578dc4",
+      "resource": {
+        "resourceType": "Patient",
+        "name": [
+          {
+            "family": "WOMAN",
+            "given": [
+              "GENERIC",
+              "S"
+            ]
+          }
+        ],
+        "gender": "female",
+        "address": [
+          {
+            "line": [
+              "1234 MAIN ROAD"
+            ],
+            "city": "LINDSEY",
+            "district": "SANDUSKY",
+            "state": "OH",
+            "postalCode": "43442",
+            "country": "USA"
+          }
+        ],
+        "maritalStatus": {
+          "coding": [
+            {
+              "code": "M"
+            }
+          ]
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient?family:exact=WOMAN&given:exact=GENERIC&given:exact=S"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "class": {
+          "code": "outpatient"
+        },
+        "subject": {
+          "reference": "Patient/38dd0ea4-a734-423c-8ff5-6a736d578dc4"
+        }
+      },
+      "request": {
+        "method": "POST"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "DeviceRequest",
+        "identifier": [
+          {
+            "system": "--",
+            "value": "00013598436"
+          }
+        ],
+        "groupIdentifier": {
+          "system": "--"
+        },
+        "subject": {
+          "reference": "Patient/38dd0ea4-a734-423c-8ff5-6a736d578dc4"
+        }
+      },
+      "request": {
+        "method": "POST"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "DiagnosticReport",
+        "code": {
+          "coding": [
+            {
+              "code": "CST2",
+              "display": "CHEST 2 VIEWS"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/38dd0ea4-a734-423c-8ff5-6a736d578dc4"
+        },
+        "issued": "2012-09-21T03:02:42Z"
+      },
+      "request": {
+        "method": "POST"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "subject": {
+          "reference": "Patient/38dd0ea4-a734-423c-8ff5-6a736d578dc4"
+        },
+        "effectiveDateTime": "2012-09-20T20:36:00-04:00",
+        "valueString": "CHEST 2 VIEWS\nANKLE 9/20/2012.\nINDICATION: Fever.\nTECHNIQUE: 2 views of the chest are obtained.\nCOMPARISON: Chest from 3/17/2012.\nFINDINGS: The patient is status post sternotomy as before. Lung volumes are low.\nThere is motion on the lateral exposure. No focal consolidation is identified.\nVasculature is not congested. No gross effusion is noted. Heart is mildly\nenlarged.\nIMPRESSION:\nStatus post sternotomy. Low inspiration.No definite acute process.\nInterpreted By: RYAN, PAUL R.\nDate:  09/20/2012 23:02\n"
+      },
+      "request": {
+        "method": "POST"
+      }
+    }
+  ]
+}

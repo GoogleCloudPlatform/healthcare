@@ -1,0 +1,79 @@
+/*
+ * Copyright (C) 2018 Google LLC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:3.2.2'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+sourceCompatibility = 1.8
+version = '0.0.1'
+
+repositories {
+    mavenCentral()
+}
+
+run {
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
+    }
+}
+
+task copyTestResources(type: Copy) {
+    from "${projectDir}/src/test/resources"
+    into "${buildDir}/classes/test"
+}
+
+mainClassName = "com.google.cloud.healthcare.Hl7ToFhirWorker"
+
+dependencies {
+    compile files('libs/libstu3.jar')
+    compile files('libs/libdatatypes-speed.jar')
+    compile files('libs/libresources_proto-speed.jar')
+    compile files('libs/libextensions-speed.jar')
+
+    compile 'ca.uhn.hapi:hapi-base:2.3'
+    compile 'ca.uhn.hapi:hapi-structures-v231:2.3'
+    compile 'com.github.pcj:google-options:1.0.0'
+    compile 'com.google.cloud:google-cloud-pubsub:0.45.0-beta'
+    compile 'org.slf4j:slf4j-api:1.8.0-beta2'
+    compile 'org.slf4j:slf4j-simple:1.8.0-beta2'
+    compile 'com.google.http-client:google-http-client:1.23.0'
+    compile 'com.google.http-client:google-http-client-gson:1.23.0'
+    compile 'com.google.api-client:google-api-client:1.23.0'
+    compile 'com.google.guava:guava:24.1-jre'
+
+    testCompile 'com.google.guava:guava:24.1-jre'
+    testCompile 'junit:junit:4.12'
+    testCompile 'com.powermock:powermock:1.6.6'
+    testCompile 'org.powermock:powermock-module-junit4:1.6.6'
+    testCompile 'org.powermock:powermock-api-mockito:1.6.6'
+}
+
+apply plugin: 'com.bmuschko.docker-java-application'
+docker {
+    javaApplication {
+        baseImage = 'java:openjdk-8-jre'
+        tag = project.findProperty("docker_tag") ?: "hl7_to_fhir_converter"
+    }
+}
