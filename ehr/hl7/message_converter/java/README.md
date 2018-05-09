@@ -3,6 +3,8 @@
 This program demonstrates how to set up a GKE pod that helps automatically tranform HL7 messages to FHIR resources when you work with Google Cloud Healthcare API. The deployed pod listens for pubsub notifications from HL7 stores, converts HL7 messages to FHIR resources and uploads the
 resources to FHIR stores.
 
+Currently only patient admission (ADT_A01) and observation results (ORU_R01) messages are supported.
+
 ## Requirements
 
 * A [Google Cloud project](https://cloud.google.com).
