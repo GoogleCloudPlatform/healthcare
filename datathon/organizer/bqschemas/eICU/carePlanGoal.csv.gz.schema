@@ -1,0 +1,37 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "cplgoalid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cplgoaloffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cplgoalcategory",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cplgoalvalue",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cplgoalstatus",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "activeupondischarge",
+    "type": "BOOLEAN"
+  }
+]

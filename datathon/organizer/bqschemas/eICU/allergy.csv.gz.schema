@@ -1,0 +1,67 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "allergyid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "allergyoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "allergyenteredoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "allergynotetype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "specialtytype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "usertype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "rxincluded",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "writtenineicu",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugname",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "allergytype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "allergyname",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drughiclseqno",
+    "type": "INTEGER"
+  }
+]

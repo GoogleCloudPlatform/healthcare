@@ -1,0 +1,27 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "treatmentid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "treatmentoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "treatmentstring",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "activeupondischarge",
+    "type": "BOOLEAN"
+  }
+]

@@ -1,0 +1,97 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "vitalperiodicid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "observationoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "temperature",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "sao2",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "heartrate",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "respiration",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cvp",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "etco2",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "systemicsystolic",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "systemicdiastolic",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "systemicmean",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pasystolic",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "padiastolic",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pamean",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "st1",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "st2",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "st3",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "icp",
+    "type": "INTEGER"
+  }
+]

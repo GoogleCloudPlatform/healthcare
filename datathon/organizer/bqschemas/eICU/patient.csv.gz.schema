@@ -1,0 +1,147 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patienthealthsystemstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "gender",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "age",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "ethnicity",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitalid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "wardid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "apacheadmissiondx",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "admissionheight",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitaladmittime24",
+    "type": "TIME"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitaladmitoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitaladmitsource",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitaldischargeyear",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitaldischargetime24",
+    "type": "TIME"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitaldischargeoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitaldischargelocation",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hospitaldischargestatus",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unittype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unitadmittime24",
+    "type": "TIME"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unitadmitsource",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unitvisitnumber",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unitstaytype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "admissionweight",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "dischargeweight",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unitdischargetime24",
+    "type": "TIME"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unitdischargeoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unitdischargelocation",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unitdischargestatus",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "uniquepid",
+    "type": "STRING"
+  }
+]

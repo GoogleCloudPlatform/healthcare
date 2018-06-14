@@ -1,0 +1,117 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "apachepatientresultsid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "physicianspeciality",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "physicianinterventioncategory",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "acutephysiologyscore",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "apachescore",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "apacheversion",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "predictedicumortality",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "actualicumortality",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "predictediculos",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "actualiculos",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "predictedhospitalmortality",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "actualhospitalmortality",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "predictedhospitallos",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "actualhospitallos",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "preopmi",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "preopcardiaccath",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "ptcawithin24h",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unabridgedunitlos",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unabridgedhosplos",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "actualventdays",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "predventdays",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "unabridgedactualventdays",
+    "type": "INTEGER"
+  }
+]

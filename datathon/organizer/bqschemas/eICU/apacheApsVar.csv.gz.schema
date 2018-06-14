@@ -1,0 +1,132 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "apacheapsvarid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "intubated",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "vent",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "dialysis",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "eyes",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "motor",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "verbal",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "meds",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "urine",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "wbc",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "temperature",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "respiratoryrate",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "sodium",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "heartrate",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "meanbp",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "ph",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hematocrit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "creatinine",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "albumin",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pao2",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pco2",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "bun",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "glucose",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "bilirubin",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "fio2",
+    "type": "FLOAT"
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "intakeoutputid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "intakeoutputoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "intaketotal",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "outputtotal",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "dialysistotal",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nettotal",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "intakeoutputentryoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellpath",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "celllabel",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellvaluenumeric",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellvaluetext",
+    "type": "FLOAT"
+  }
+]

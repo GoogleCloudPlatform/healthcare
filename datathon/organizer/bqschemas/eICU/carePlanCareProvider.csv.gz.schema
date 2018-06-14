@@ -1,0 +1,42 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "cplcareprovderid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "careprovidersaveoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "providertype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "specialty",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "interventioncategory",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "managingphysician",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "activeupondischarge",
+    "type": "BOOLEAN"
+  }
+]

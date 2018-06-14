@@ -1,0 +1,67 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "vitalaperiodicid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "observationoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "noninvasivesystolic",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "noninvasivediastolic",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "noninvasivemean",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "paop",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cardiacoutput",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cardiacinput",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "svr",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "svri",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pvr",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pvri",
+    "type": "INTEGER"
+  }
+]

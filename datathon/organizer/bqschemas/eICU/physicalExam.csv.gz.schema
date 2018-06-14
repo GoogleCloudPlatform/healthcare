@@ -1,0 +1,32 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "physicalexamid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "physicalexamoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "physicalexampath",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "physicalexamvalue",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "physicalexamtext",
+    "type": "STRING"
+  }
+]

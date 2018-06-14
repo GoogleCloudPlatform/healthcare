@@ -1,0 +1,37 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "microlabid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "culturetakenoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "culturesite",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "organism",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "antibiotic",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "sensitivitylevel",
+    "type": "STRING"
+  }
+]

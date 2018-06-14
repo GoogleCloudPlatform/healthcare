@@ -1,0 +1,37 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "respchartid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "respchartoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "respchartentryoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "respcharttypecat",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "respchartvaluelabel",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "respchartvalue",
+    "type": "STRING"
+  }
+]

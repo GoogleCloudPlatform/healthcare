@@ -1,0 +1,37 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "customlabid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labotheroffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labothertypeid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labothername",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labotherresult",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labothervaluetext",
+    "type": "STRING"
+  }
+]

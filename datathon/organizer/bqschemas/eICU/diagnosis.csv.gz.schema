@@ -1,0 +1,37 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "diagnosisid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "activeupondischarge",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "diagnosisoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "diagnosisstring",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "icd9code",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "diagnosispriority",
+    "type": "STRING"
+  }
+]

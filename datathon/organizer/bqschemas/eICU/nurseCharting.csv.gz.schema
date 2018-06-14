@@ -1,0 +1,42 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "nursingchartid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nursingchartoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nursingchartentryoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nursingchartcelltypecat",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nursingchartcelltypevallabel",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nursingchartcelltypevalname",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nursingchartvalue",
+    "type": "STRING"
+  }
+]

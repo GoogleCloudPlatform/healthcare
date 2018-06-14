@@ -1,0 +1,32 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "admissiondxid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "admitdxenteredoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "admitdxpath",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "admitdxname",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "admitdxtext",
+    "type": "STRING"
+  }
+]

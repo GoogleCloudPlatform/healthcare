@@ -1,0 +1,42 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "cplinfectid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "activeupondischarge",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cplinfectdiseaseoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "infectdiseasesite",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "infectdiseaseassessment",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "responsetotherapy",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "treatment",
+    "type": "STRING"
+  }
+]

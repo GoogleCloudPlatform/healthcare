@@ -1,0 +1,42 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "noteid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "noteoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "noteenteredoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "notetype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "notepath",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "notevalue",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "notetext",
+    "type": "STRING"
+  }
+]

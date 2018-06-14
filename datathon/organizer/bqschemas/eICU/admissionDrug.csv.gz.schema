@@ -1,0 +1,72 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "admissiondrugid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugenteredoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugnotetype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "specialtytype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "usertype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "rxincluded",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "writtenineicu",
+    "type": "BOOLEAN"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugname",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugdosage",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugunit",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugadmitfrequency",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drughiclseqno",
+    "type": "INTEGER"
+  }
+]

@@ -1,0 +1,189 @@
+---
+output: html_document
+editor_options:
+  chunk_output_type: inline
+---
+Copyright 2018 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+> https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+# Datathon Tutorial
+
+The aim of this tutorial is to get you familiarized with BigQuery to query/filter/aggregate/export data with R. If you are familiar with Python, we also recommend that you check out the [Python version of this tutorial](bigquery_colab.ipynb).
+
+## Prerequisites
+
+You should already have had a valid Gmail account registered with the datathon organizers.
+  * If you do not have a Gmail account, you can create one at http://www.gmail.com. You need to notify datathon organizers to register your new account for data access.
+  * If you are not taking part in a MIMIC datathon, but do have MIMIC-III demo data access already, you may request to join [this Google Group](https://groups.google.com/forum/#!forum/mimic-demo-users) to run queries in this tutorial.
+
+## Setup
+
+First, you need to run some initialization code. You can run the following cell by either pressing "Ctrl+Shift+Enter", or selecting "Cell -> Run cell and select below" menu, or clicking the equivalent button in the tool bar.
+
+```{r}
+# Install the "big R query" package, if neccessary by uncommenting the following two lines:
+# install.packages('devtools')
+# devtools::install_github("rstats-db/bigrquery")
+
+library("bigrquery")
+
+# Install ggplot2, uncomment next line if this is the first time this section is run.
+# install.packages("ggplot2")
+library("ggplot2")
+
+# Re-install curl to avoid errors like:
+# Error in curl::curl_fetch_memory(url, handle = handle) :
+#   Error in the HTTP2 framing layer
+# Uncomment next line if this is the first time this section is run.
+# install.packages("curl")
+
+# Install missing dependency, uncomment next line if this is the first time this section is run.
+# install.packages("readr")
+
+project_id <- "my-project"
+options(httr_oauth_cache=FALSE)
+
+# Wrapper for running BigQuery queries.
+run_query <- function(query){
+    data <- query_exec(query, project=project_id, use_legacy_sql = FALSE)
+    return(data)
+}
+```
+
+When you run your first query below with BigQuery, you will be asked to first authenticate yourself. A tab will open in browser automatically, after logging in your Gmail account and accepting the data access permission, you will be redirected to a page which has an authentication code. You need to copy the authentication code and paste it into the console tab below (the tab might collapse). Once authenticated, you may close the authentication window, and the query result should show up in the result box below.
+
+## Analysis
+
+Let's now run some queries adapted from the [MIMIC cohort selection tutorial](https://github.com/MIT-LCP/mimic-code/blob/master/tutorials/cohort-selection.ipynb).
+
+First let's run the following query to produce data to generate a histrogram graph to show the distribution of patient ages in ten-year buckets (i.e. [0, 10), [10, 20), ..., [90, ∞).
+
+```{r}
+df <- run_query('
+WITH ps AS (
+  SELECT
+    icu.subject_id,
+    icu.hadm_id,
+    icu.icustay_id,
+    pat.dob,
+    TIMESTAMP_DIFF(icu.outtime, icu.intime, DAY) AS icu_length_of_stay,
+    DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
+  FROM `datathon-datasets.mimic_demo.icustays` AS icu
+  INNER JOIN `datathon-datasets.mimic_demo.patients` AS pat
+    ON icu.subject_id = pat.subject_id),
+bu AS (
+  SELECT
+    CAST(FLOOR(age / 10) AS INT64) AS bucket
+  FROM ps)
+SELECT
+  COUNT(bucket) AS num_icu_stays,
+  IF(bucket >= 9, "age >= 90", FORMAT("%d - %d", bucket * 10, (bucket + 1) * 10)) AS age_bucket
+FROM bu
+GROUP BY bucket
+ORDER BY bucket ASC
+')
+
+ggplot(df, aes(x = df$age_bucket, y = df$num_icu_stays)) + geom_bar(stat = 'identity', fill = 'steelblue') + xlab("age_bucket") + ylab("num_icu_stays")
+```
+
+The query consists of 3 parts:
+
+1.   First we join `icustays` and `patients` tables to produce length of ICU stays in days for each patient, which is saved in a temporary table `ps`;
+2.   Next we put patients into buckets based on their ages at the time they got admitted into ICU in `bu` table;
+3.   The result data is filtered to include only the information required, i.e. `age_bucket` and `num_icu_stays`, to plot the chart.
+
+**Note**: If you are having a hard time following the queries in this colab, or you want to know more about the table structures of MIMIC-III dataset, please consult [our tutorial for a previous Datathon held in Sydney](../anzics18/tutorial.Rmd).
+
+Now let's see if there is correlation between age and average length of stay in hours. Since we are using the age of patients when they get admitted, so we don't need to worry about multiple admissions of patients. Note that we treat the redacted ages (> 90) as noises and filter them out.
+
+```{r}
+df <- run_query('
+WITH re AS (
+SELECT
+  TIMESTAMP_DIFF(icu.outtime, icu.intime, HOUR) AS icu_length_of_stay,
+  DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
+FROM `datathon-datasets.mimic_demo.icustays` AS icu
+INNER JOIN `datathon-datasets.mimic_demo.patients` AS pat
+  ON icu.subject_id = pat.subject_id)
+SELECT
+  icu_length_of_stay AS avg_stay,
+  age
+FROM re
+WHERE age < 100
+')
+
+ggplot(df, aes(x = df$age, y = df$avg_stay)) + geom_point(stat = 'identity', fill = 'steelblue') + xlab("age") + ylab("avg_stay")
+```
+
+Let's take a look at another query which uses a filter that we often use: the current service that ICU patients are undergoing.
+
+```{r}
+df <- run_query("
+WITH co AS (
+  SELECT
+    icu.subject_id,
+    icu.hadm_id,
+    icu.icustay_id,
+    pat.dob,
+    TIMESTAMP_DIFF(icu.outtime, icu.intime, DAY) AS icu_length_of_stay,
+    DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age,
+    RANK() OVER (PARTITION BY icu.subject_id ORDER BY icu.intime) AS icustay_id_order
+  FROM `datathon-datasets.mimic_demo.icustays` AS icu
+  INNER JOIN `datathon-datasets.mimic_demo.patients` AS pat
+    ON icu.subject_id = pat.subject_id
+  ORDER BY hadm_id DESC),
+serv AS (
+  SELECT
+    icu.hadm_id,
+    icu.icustay_id,
+    se.curr_service,
+    IF(curr_service like '%SURG' OR curr_service = 'ORTHO', 1, 0) AS surgical,
+    RANK() OVER (PARTITION BY icu.hadm_id ORDER BY se.transfertime DESC) as rank
+  FROM `datathon-datasets.mimic_demo.icustays` AS icu
+  LEFT JOIN `datathon-datasets.mimic_demo.services` AS se
+   ON icu.hadm_id = se.hadm_id
+  AND se.transfertime < TIMESTAMP_ADD(icu.intime, INTERVAL 12 HOUR)
+  ORDER BY icustay_id)
+SELECT
+  co.subject_id,
+  co.hadm_id,
+  co.icustay_id,
+  co.icu_length_of_stay,
+  co.age,
+  IF(co.icu_length_of_stay < 2, 1, 0) AS short_stay,
+  IF(co.icustay_id_order = 1, 0, 1) AS first_stay,
+  IF(serv.surgical = 1, 1, 0) AS surgical
+FROM co
+LEFT JOIN serv USING (icustay_id, hadm_id)
+WHERE
+  serv.rank = 1 AND age < 100
+ORDER BY subject_id, icustay_id_order")
+
+print(paste('Number of rows in dataframe:', nrow(df)))
+head(df)
+```
+
+This is a long query, but pretty simple if we take a closer look. It consists of 3 steps as well:
+
+1.   We are trying to know how many ICU admissions each patient has by joining `icustays` and `patients`. Note that since each patient may be admitted multiple times, we usually filter out follow-up ICU stays, and only keep the first one to minimize unwanted data correlation. This is achieved by partitioning over `subject_id`, and ordering by admission time, then choose only the first one with `RANK` function, the result is saved to a temporary table `co`;
+2.   Next we are looking for first services in ICU stays for patients, and also adding a label to indicate whether last services before ICU admission were surgical, similarly the result is saved to `serv`;
+3.   Lastly, we are ready to save this surgical exclusion label to a cohort generation table by joining the two tables, `co` and `serv`. For the convenience of later analysis, we rename some columns, and filter out patients more than 100 years old.
+
+In the [Python version of this tutorial](bigquery_colab.ipynb), we also cover a little bit of Tensorflow setup to build simple machine learning models. Unfortunately, Tensorflow is not currently supported in R. However, there are plenty of ML packages in R that you may choose to use, should you build an ML model with the data extracted from BigQuery.
+
+Congratulations! Now you have finished this datathon tutorial, and ready to explore the real data by querying Google BigQuery. To do so, simply remove the `_demo` suffix in the dataset names. For example, the table `mimic_demo.icustays` becomes `mimic.icustays` when you need the actual MIMIC data. One thing to note though, is that it is highly recommended to aggregate data aggressively wherever possible, because large dataframes may cause the performance of R to drop drastically.
+
+Now, let's do the substitution and, and start the real datathon exploration.
+
+Enjoy!

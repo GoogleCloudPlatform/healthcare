@@ -1,0 +1,42 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "pasthistoryid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pasthistoryoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pasthistoryenteredoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pasthistorynotetype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pasthistorypath",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pasthistoryvalue",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pasthistoryvaluetext",
+    "type": "STRING"
+  }
+]

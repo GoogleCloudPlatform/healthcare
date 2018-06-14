@@ -1,0 +1,52 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "labid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labresultoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labtypeid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labname",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labresult",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labresulttext",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labmeasurenamesystem",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labmeasurenameinterface",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "labresultrevisedoffset",
+    "type": "INTEGER"
+  }
+]

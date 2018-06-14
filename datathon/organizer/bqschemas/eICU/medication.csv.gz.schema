@@ -1,0 +1,77 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "medicationid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugorderoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugstartoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugivadmixture",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugordercancelled",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugname",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drughiclseqno",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "dosage",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "routeadmin",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "frequency",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "loadingdose",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "prn",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugstopoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "gtc",
+    "type": "INTEGER"
+  }
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "infusiondrugid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "infusionoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugname",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugrate",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "infusionrate",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "drugamount",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "volumeoffluid",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientweight",
+    "type": "FLOAT"
+  }
+]

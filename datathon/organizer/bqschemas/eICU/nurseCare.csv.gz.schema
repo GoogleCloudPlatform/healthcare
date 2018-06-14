@@ -1,0 +1,42 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "nursecareid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "celllabel",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nursecareoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nursecareentryoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellattributepath",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellattribute",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellattributevalue",
+    "type": "STRING"
+  }
+]

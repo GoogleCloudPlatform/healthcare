@@ -1,0 +1,42 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "nurseassessid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nurseassessoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "nurseassessentryoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellattributepath",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "celllabel",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellattribute",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cellattributevalue",
+    "type": "STRING"
+  }
+]

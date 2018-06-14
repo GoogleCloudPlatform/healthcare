@@ -1,0 +1,172 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "respcareid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "respcarestatusoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "currenthistoryseqnum",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "airwaytype",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "airwaysize",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "airwayposition",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cuffpressure",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "ventstartoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "ventendoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "priorventstartoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "priorventendoffset",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "apneaparms",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "lowexhmvlimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hiexhmvlimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "lowexhtvlimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hipeakpreslimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "lowpeakpreslimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hirespratelimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "lowrespratelimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "sighpreslimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "lowironoxlimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "highironoxlimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "meanairwaypreslimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "peeplimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cpaplimit",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "setapneainterval",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "setapneatv",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "setapneaippeephigh",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "setapnearr",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "setapneapeakflow",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "setapneainsptime",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "setapneaie",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "setapneafio2",
+    "type": "STRING"
+  }
+]

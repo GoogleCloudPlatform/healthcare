@@ -1,0 +1,257 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "apachepredvarid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "patientunitstayid",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "sicuday",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "saps3day1",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "saps3today",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "saps3yesterday",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "gender",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "teachtype",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "region",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "bedcount",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "admitsource",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "graftcount",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "meds",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "verbal",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "motor",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "eyes",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "age",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "admitdiagnosis",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "thrombolytics",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "diedinhospital",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "aids",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "hepaticfailure",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "lymphoma",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "metastaticcancer",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "leukemia",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "immunosuppression",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "cirrhosis",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "electivesurgery",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "activetx",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "readmit",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "ima",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "midur",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "ventday1",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "oobventday1",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "oobintubday1",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "diabetes",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "managementsystem",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "var03hspxlos",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "pao2",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "fio2",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "ejectfx",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "creatinine",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "dischargelocation",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "visitnumber",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "amilocation",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "day1meds",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "day1verbal",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "day1motor",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "day1eyes",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "day1pao2",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "day1fio2",
+    "type": "FLOAT"
+  }
+]
