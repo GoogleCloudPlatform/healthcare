@@ -66,6 +66,20 @@ If you want to generate BigQuery schemas yourself, then you need to install
 [Go](https://golang.org/doc/install) as well. But check the `bqschemas`
 folder first, which may already contain the BigQuery schemas you need.
 
+You need to clone the open source toolkit from [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare).
+
+```shell
+git clone https://github.com/GoogleCloudPlatform/healthcare.git
+cd datathon/organizer
+```
+
+The scripts in the `datathon/organizer` will generate `*.sh.state` files as
+checkpoints, which allow you to retry the scripts. A caveat is that the
+checkpoints are not necessarily fine-grain enough to let you resume from all
+the single commands. But they narrow down to the chunks you need to modify upon
+retries. To start over, simply delete the corresponding `sh.state` files. The
+scripts will delete the state files after they successfully finish.
+
 ## Choosing Domain Name and Project Prefix
 
 If you own a GSuite domain, you can create a cloud project within the domain;
@@ -84,7 +98,9 @@ Google Cloud uses Gmail accounts, GSuite accounts or [Google Groups](https://gro
 for permission control. We recommend that the project owners create a set of
 groups for predefined roles, so that individual permission can be controlled
 easily by group membership without modifying the cloud project. We recommend
-you define the following groups, and add more as necessary.
+you define the following groups, and add more as necessary. Please remember to
+set the "Join the Group" config to allow only invited users and restrict the
+"View Topics" permission to members of the group.
 
 ```shell
 # Project owners group, has full permission to the projects, only used for
@@ -202,9 +218,9 @@ TEAM_PROJECT_ID=${PROJECT_PREFIX}-team-00
 scripts/create_team_project.sh --owners_group ${OWNERS_GROUP} \
   --users_group ${PROJECT_USERS_GROUP} \
   --team_project_id ${TEAM_PROJECT_ID} \
-  --billing_account <BILLING_ACCOUNT> \
-  --audit_project_id <AUDIT_PROJECT_ID_FROM_AUDIT_PROJECT_SETUP> \
-  --audit_dataset_id <AUDIT_DATASET_ID_FROM_AUDIT_PROJECT_SETUP>
+  --billing_account ${BILLING_ACCOUNT} \
+  --audit_project_id ${AUDIT_PROJECT_ID} \
+  --audit_dataset_id ${AUDIT_DATASET_ID}
 ```
 
 This will
@@ -224,7 +240,23 @@ Now you are all good to go. You have a data-hosting project
 `${PROJECT_PREFIX}-datasets` with data imported to both GCS and BigQuery, and
 can run custom analysis from project `${PROJECT_PREFIX}-team-00`. All access is
 properly audited, and data available for analysis and reporting in the audit
-project `${PROJECT_PREFIX}-auditing`.
+project `${PROJECT_PREFIX}-auditing`. If you are a member of
+`${AUDITORS_GROUP}`, the following is an example query that you may adapt and
+use (by replacing `${PROJECT_PREFIX}` and `${YYYYMMDD}`) to see who has accessed
+the data in the projects that we have set up so far.
+
+```sql
+#standardSQL
+SELECT
+  TIMESTAMP_TRUNC(timestamp, DAY) AS date,
+  protopayload_auditlog.authenticationInfo.principalEmail AS account,
+  resource.labels.project_id AS project,
+  resource.type AS resource,
+  COUNT(*) AS num_access
+FROM `${PROJECT_PREFIX}-auditing.audit_logs.cloudaudit_googleapis_com_data_access_${YYYYMMDD}`
+GROUP BY 1, 2, 3, 4
+ORDER BY 1, 2, 3, 4
+```
 
 The final step is to add the right set of people to the various permission
 groups, and share with them the news that a fully setup suite of projects are

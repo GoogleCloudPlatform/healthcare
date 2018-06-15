@@ -61,53 +61,79 @@ if [[ -z ${OWNERS_GROUP} ]] || [[ -z ${EDITORS_GROUP} ]] || \
      [[ -z ${AUDIT_PROJECT_ID} ]] || [[ -z ${AUDIT_DATASET_ID} ]]; then
   print_usage
   exit 1
-fi
+fi More flexible state config.
+STATE_FILE="$0".state
+# A list of state checkpoints for the script to resume to.
+STATE_SET_PERMISSION="SET_PERMISSION"
+STATE_SET_BILLING="SET_BILLING"
+STATE_ENABLE_LOGGING="ENABLE_LOGGING"
 
-USER_EMAIL=$(gcloud config list account --format "value(core.account)")
-
-echo "Creating Google Cloud project '${DATA_HOSTING_PROJECT_ID}' to host data."
-gcloud projects create "${DATA_HOSTING_PROJECT_ID}"
-PROJECT_NUMBER=$(gcloud projects describe ${DATA_HOSTING_PROJECT_ID} \
-  --format='value(projectNumber)')
-echo "Data hosting project created: ID=${DATA_HOSTING_PROJECT_ID}," \
-  "Number=${PROJECT_NUMBER}."
-
-PARENT_TYPE=$(gcloud projects describe ${DATA_HOSTING_PROJECT_ID} \
-                     --format='value(parent.type)')
-if [[ ${PARENT_TYPE} == "organization" ]]; then
-  echo "Setting ${OWNERS_GROUP} as owner for project" \
-    "'${DATA_HOSTING_PROJECT_ID}'."
-  gcloud projects add-iam-policy-binding ${DATA_HOSTING_PROJECT_ID} \
-    --member="group:${OWNERS_GROUP}" --role="roles/owner"
-  echo "Setting ${EDITORS_GROUP} as editor for project" \
-    "'${DATA_HOSTING_PROJECT_ID}'."
-  gcloud projects add-iam-policy-binding ${DATA_HOSTING_PROJECT_ID} \
-    --member="group:${EDITORS_GROUP}" --role="roles/editor"
-  echo "Revoking individual owner access."
-  gcloud projects remove-iam-policy-binding ${DATA_HOSTING_PROJECT_ID} \
-    --member="user:${USER_EMAIL}" --role="roles/owner"
+if [[ ! -e ${STATE_FILE} ]]; then
+  echo "Creating Google Cloud project '${DATA_HOSTING_PROJECT_ID}' to host " \
+    "data."
+  gcloud projects create "${DATA_HOSTING_PROJECT_ID}"
+  PROJECT_NUMBER=$(gcloud projects describe ${DATA_HOSTING_PROJECT_ID} \
+    --format='value(projectNumber)')
+  echo "Data hosting project created: ID=${DATA_HOSTING_PROJECT_ID}," \
+    "Number=${PROJECT_NUMBER}."
+  echo ${STATE_SET_PERMISSION} > ${STATE_FILE}
 else
-  echo "Skipping step for setting ${OWNERS_GROUP} as the owner of the project."
-  echo "This is because we have not set up an organization for datathons."
+  echo "Skip creating project since it has previously finished."
 fi
 
-echo "Setting billing account ${BILLING_ACCOUNT} for project" \
-  "'${DATA_HOSTING_PROJECT_ID}'."
-gcloud beta billing projects link --billing-account "${BILLING_ACCOUNT}" \
-  "${DATA_HOSTING_PROJECT_ID}"
+if [[ `cat ${STATE_FILE}` == ${STATE_SET_PERMISSION} ]]; then
+  PARENT_TYPE=$(gcloud projects describe ${DATA_HOSTING_PROJECT_ID} \
+    --format='value(parent.type)')
+  if [[ ${PARENT_TYPE} == "organization" ]]; then
+    echo "Setting ${OWNERS_GROUP} as owner for project" \
+      "'${DATA_HOSTING_PROJECT_ID}'."
+    gcloud projects add-iam-policy-binding ${DATA_HOSTING_PROJECT_ID} \
+      --member="group:${OWNERS_GROUP}" --role="roles/owner"
+    echo "Setting ${EDITORS_GROUP} as editor for project" \
+      "'${DATA_HOSTING_PROJECT_ID}'."
+    gcloud projects add-iam-policy-binding ${DATA_HOSTING_PROJECT_ID} \
+      --member="group:${EDITORS_GROUP}" --role="roles/editor"
+    echo "Revoking individual owner access."
+    USER_EMAIL=$(gcloud config list account --format "value(core.account)")
+    gcloud projects remove-iam-policy-binding ${DATA_HOSTING_PROJECT_ID} \
+      --member="user:${USER_EMAIL}" --role="roles/owner"
+  else
+    echo "Skipping setting ${OWNERS_GROUP} as the owner of the project."
+    echo "This is because we have not set up an organization for datathons."
+  fi
+  echo ${STATE_SET_BILLING} > ${STATE_FILE}
+else
+  echo "Skip setting permissions since it has previously finished."
+fi
 
-echo "Enabling audit logging for the project."
-SINK_NAME=audit-logs-to-bigquery
-AUDIT_DATASET_URL="bigquery.googleapis.com/projects/${AUDIT_PROJECT_ID}/datasets/${AUDIT_DATASET_ID}"
-LOG_SERVICE_ACCT=$((gcloud --quiet logging sinks create "${SINK_NAME}" \
-  "${AUDIT_DATASET_URL}" --project ${DATA_HOSTING_PROJECT_ID}) 2>&1 \
-  | grep 'Please remember to grant' | \
-  sed -e 's/^[^`]*`serviceAccount://' -e 's/`.*$//')
-# Add the log service account as WRITER to the audit BigQuery dataset.
-TEMP=`tempfile`
-bq show --format=prettyjson "${AUDIT_PROJECT_ID}:${AUDIT_DATASET_ID}" | jq \
-  ".access+[{\"userByEmail\":\"${LOG_SERVICE_ACCT?}\",\"role\":\"WRITER\"}]" \
-  | jq '{access:.}' > ${TEMP}
-bq update --source ${TEMP} "${AUDIT_PROJECT_ID}:${AUDIT_DATASET_ID}"
+if [[ `cat ${STATE_FILE}` == ${STATE_SET_BILLING} ]]; then
+  echo "Setting billing account ${BILLING_ACCOUNT} for project" \
+    "'${DATA_HOSTING_PROJECT_ID}'."
+  gcloud beta billing projects link --billing-account "${BILLING_ACCOUNT}" \
+    "${DATA_HOSTING_PROJECT_ID}"
+  echo ${STATE_ENABLE_LOGGING} > ${STATE_FILE}
+else
+  echo "Skip setting billing since it has previously finished."
+fi
+
+if [[ `cat ${STATE_FILE}` == ${STATE_ENABLE_LOGGING} ]]; then
+  echo "Enabling audit logging for the project."
+  SINK_NAME=audit-logs-to-bigquery
+  AUDIT_DATASET_URL="bigquery.googleapis.com/projects/${AUDIT_PROJECT_ID}/datasets/${AUDIT_DATASET_ID}"
+  LOG_SERVICE_ACCT=$((gcloud --quiet logging sinks create "${SINK_NAME}" \
+    "${AUDIT_DATASET_URL}" --project ${DATA_HOSTING_PROJECT_ID}) 2>&1 \
+    | grep 'Please remember to grant' | \
+    sed -e 's/^[^`]*`serviceAccount://' -e 's/`.*$//')
+  # Add the log service account as WRITER to the audit BigQuery dataset.
+  TEMP=`tempfile`
+  bq show --format=prettyjson "${AUDIT_PROJECT_ID}:${AUDIT_DATASET_ID}" | jq \
+    ".access+[{\"userByEmail\":\"${LOG_SERVICE_ACCT?}\",\"role\":\"WRITER\"}]" \
+    | jq '{access:.}' > ${TEMP}
+  bq update --source ${TEMP} "${AUDIT_PROJECT_ID}:${AUDIT_DATASET_ID}"
+else
+  echo "Skip configuring logging since it has previously finished."
+fi
+
+rm ${STATE_FILE}
 
 echo "Data hosting project setup finished."
