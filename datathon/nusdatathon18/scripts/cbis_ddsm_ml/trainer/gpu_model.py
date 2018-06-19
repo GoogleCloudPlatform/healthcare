@@ -116,9 +116,9 @@ def cnn_model_fn(features, labels, mode):
   https://www.tensorflow.org/get_started/custom_estimators"""
 
   # Input Layer.
-  # Reshape to 4-D tensor: [batch_size, width, height, channels]
+  # Reshape to 4-D tensor: [batch_size, height, width, channels]
   input_layer = tf.reshape(features["image"],
-    [-1, FLAGS.image_width, FLAGS.image_height, FLAGS.image_channel])
+    [-1, FLAGS.image_height, FLAGS.image_width, FLAGS.image_channel])
 
   # Convolutional Layer #1.
   conv1 = tf.layers.conv2d(

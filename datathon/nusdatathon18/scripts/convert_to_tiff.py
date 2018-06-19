@@ -91,8 +91,8 @@ def convert((args, df)):
     byte_stream.seek(0)
     blob.upload_from_file(byte_stream)
 
-  # Record max width and height for current process.
-  max_w, max_h = -1, -1
+  # Record max height and width for current process.
+  max_h, max_w = -1, -1
 
   cols = df[[BREAST_DENSITY_COL, IMAGE_FILE_PATH_COL]]
   for _, t in cols.iterrows():
@@ -103,9 +103,9 @@ def convert((args, df)):
 
     arr = dcm.pixel_array
 
-    (width, height) = arr.shape
-    max_w = max(width, max_w)
+    (height, width) = arr.shape
     max_h = max(height, max_h)
+    max_w = max(width, max_w)
 
     byte_stream = BytesIO()
     PIL.Image.fromarray(arr).save(byte_stream, format='TIFF')
@@ -113,7 +113,7 @@ def convert((args, df)):
     _upload_image("%s/%s_%s" % (args.dst_folder,
       t[BREAST_DENSITY_COL], path.split('/')[0]), byte_stream)
 
-  return max_w, max_h
+  return max_h, max_w
 
 def run(args):
   with file_io.FileIO(args.label_file, 'r') as f:

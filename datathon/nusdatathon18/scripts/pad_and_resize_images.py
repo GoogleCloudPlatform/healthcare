@@ -20,10 +20,10 @@ to the given resolution.
 
 Example usage:
 
-python pad_and_resize_images.py --target_width 7111 \
-                                --target_height 5251 \
-                                --final_width 128 \
-                                --final_height 95 \
+python pad_and_resize_images.py --target_width 5251 \
+                                --target_height 7111 \
+                                --final_width 95 \
+                                --final_height 128 \
                                 --src_bucket cbis-ddsm-colab \
                                 --dst_bucket cbis-ddsm-colab \
                                 --dst_folder small_train \
@@ -46,7 +46,7 @@ def pad_and_resize_image(src_bucket, dst_bucket, blob, args):
 
   # Pad images by adding black pixels to right and bottom.
   img = np.array(Image.open(byte_stream))
-  mask = np.full((args.target_width, args.target_height), 0)
+  mask = np.full((args.target_height, args.target_width), 0)
   mask[:img.shape[0],:img.shape[1]] = img
 
   # Resize images to the desired size.

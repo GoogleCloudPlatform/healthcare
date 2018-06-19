@@ -28,8 +28,8 @@ gcloud ml-engine jobs submit training gpu_training \
     --package-path cbis_ddsm_ml/trainer \
     --region us-central1 \
     -- \
-    --image_width=128 \
-    --image_height=95 \
+    --image_width=95 \
+    --image_height=128 \
     --training_data_dir="small_train" \
     --eval_data_dir="small_test" \
     --model_dir="gs://cbis-ddsm-model/`date +%s`" \
@@ -68,12 +68,12 @@ After the job is submitted, Cloud ML Engine will take care of acquiring the requ
 gcloud ml-engine jobs describe gpu_training
 ```
 
-Notice that at the end of the output, there are links to both the UI and logs of the job. The whole training process may take some time (around 25 mins) to finish.
+Notice that at the end of the output, there are links to both the UI and logs of the job. The whole training process may take some time (around 25 mins) to finish. If you need to reschedule the job for some reason, please first cancel the existing job to free up the resources.
 
 Now let's proceed to submit another job which uses TPU for training while waiting for GPU training to finish. Just like GPU training, run the following command in the Google Cloud SDK shell.
 
 ```shell
-gcloud beta ml-engine jobs submit training tpu_training \
+gcloud ml-engine jobs submit training tpu_training \
     --staging-bucket gs://cbis-ddsm-artifacts \
     --runtime-version 1.8 \
     --scale-tier BASIC_TPU \
@@ -81,8 +81,8 @@ gcloud beta ml-engine jobs submit training tpu_training \
     --package-path cbis_ddsm_ml/trainer \
     --region us-central1 \
     -- \
-    --image_width=128 \
-    --image_height=95 \
+    --image_width=95 \
+    --image_height=128 \
     --training_data="gs://cbis-ddsm-colab/cache/ddsm_train.tfrecords" \
     --eval_data="gs://cbis-ddsm-colab/cache/ddsm_eval.tfrecords" \
     --model_dir="gs://cbis-ddsm-model/`date +%s`" \
