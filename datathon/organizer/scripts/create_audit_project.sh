@@ -55,7 +55,7 @@ if [[ -z ${OWNERS_GROUP} ]] || [[ -z ${AUDIT_PROJECT_ID} ]] \
   exit 1
 fi
 
-AUDIT_DATASET_ID=audit_logs More flexible state config.
+AUDIT_DATASET_ID=audit_logs  # More flexible state config.
 STATE_FILE="$0".state
 # A list of state checkpoints for the script to resume to.
 STATE_SET_PERMISSION="SET_PERMISSION"

@@ -74,7 +74,7 @@ DATASET_NAME=`echo ${DATASET_NAME} | awk '{ print tolower($0) }' \
   | sed -e 's/-/_/g'`
 BUCKET_ID=${PROJECT_ID}-${DATASET_NAME}
 DATASET_ID=${DATASET_NAME}
-LOCATION=US More flexible state config.
+LOCATION=US  # More flexible state config.
 STATE_FILE="$0".state
 # A list of state checkpoints for the script to resume to.
 STATE_ENABLE_SERVICES="ENABLE_SERVICES"

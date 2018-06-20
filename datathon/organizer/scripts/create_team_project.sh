@@ -65,7 +65,7 @@ if [[ -z ${OWNERS_GROUP} ]] || [[ -z ${USERS_GROUP} ]] || \
        [[ -z ${AUDIT_PROJECT_ID} ]] || [[ -z ${AUDIT_DATASET_ID} ]]; then
     print_usage
     exit 1
-fi More flexible state config.
+fi  # More flexible state config.
 STATE_FILE="$0".state
 # A list of state checkpoints for the script to resume to.
 STATE_SET_PERMISSION="SET_PERMISSION"
