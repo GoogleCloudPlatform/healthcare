@@ -17,8 +17,7 @@
 # This script sets up a work environment project for a datathon team or similar
 # applications. It creates
 #   - creates a VM with RStudio server running on it
-#   - enables BigQuery and Google Cloud Storage services for holding data move as much of this setup as possible to deployment manager
-# script.
+#   - enables BigQuery and Google Cloud Storage services for holding data
 
 set -u -e
 
@@ -65,7 +64,7 @@ if [[ -z ${OWNERS_GROUP} ]] || [[ -z ${USERS_GROUP} ]] || \
        [[ -z ${AUDIT_PROJECT_ID} ]] || [[ -z ${AUDIT_DATASET_ID} ]]; then
     print_usage
     exit 1
-fi More flexible state config.
+fi
 STATE_FILE="$0".state
 # A list of state checkpoints for the script to resume to.
 STATE_SET_PERMISSION="SET_PERMISSION"
@@ -145,6 +144,8 @@ if [[ `cat ${STATE_FILE}` == ${STATE_CREATE_BUCKET} ]]; then
   BUCKET_ID=${TEAM_PROJECT_ID}-shared-files
   gsutil mb -p ${TEAM_PROJECT_ID} -c ${STORAGE_CLASS} -l ${LOCATION} \
     gs://${BUCKET_ID}
+  # legacyBucketWriter gives create/delete/update permissions.
+  gsutil iam ch group:${USERS_GROUP}:legacyBucketWriter gs://${BUCKET_ID}
   echo ${STATE_ENABLE_LOGGING} > ${STATE_FILE}
 else
   echo "Skip creating bucket since it has previously finished."

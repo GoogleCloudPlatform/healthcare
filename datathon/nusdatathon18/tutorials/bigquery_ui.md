@@ -6,11 +6,11 @@ The aim of this tutorial is to get you familiarized with BigQuery web UI to quer
 
 * You should already have had a valid Gmail account registered with the datathon organizers.
   * If you do not have a Gmail account, you can create one at http://www.gmail.com. You need to notify datathon organizers to register your new account for data access.
-  * If you are not taking part in a MIMIC datathon, but do have MIMIC-III demo data access already, you may request to join [this Google Group](https://groups.google.com/forum/#!forum/mimic-demo-users) to run queries in this tutorial.
+  * If you have not yet signed the data use agreement (DUA) sent by the organizers, please do so immediately to get access to the MIMIC-III dataset.
 
 ## Executing Queries
 
-The data-hosting project `datathon-datasets` has read-only access, as a result, you need to set a default project that you have BigQuery access to. A shared project `my-project` has already been created, visit **https://bigquery.cloud.google.com/welcome/my-project** to access the BigQuery web interface, all the queries in this tutorial will be run through this web interface.
+The data-hosting project `physionet-data` has read-only access, as a result, you need to set a default project that you have BigQuery access to. A shared project `my-project` has already been created, visit **https://bigquery.cloud.google.com/welcome/my-project** to access the BigQuery web interface, all the queries in this tutorial will be run through this web interface.
 
 # TLDR
 
@@ -24,10 +24,10 @@ Run the following query from BigQuery web interface (See "Executing Queries" sec
 #standardSQL
 WITH re AS (
 SELECT
-  TIMESTAMP_DIFF(icu.outtime, icu.intime, HOUR) AS icu_length_of_stay,
+  DATETIME_DIFF(icu.outtime, icu.intime, HOUR) AS icu_length_of_stay,
   DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
-FROM `datathon-datasets.mimic_demo.icustays` AS icu
-INNER JOIN `datathon-datasets.mimic_demo.patients` AS pat
+FROM `physionet-data.mimic_demo.icustays` AS icu
+INNER JOIN `physionet-data.mimic_demo.patients` AS pat
   ON icu.subject_id = pat.subject_id)
 SELECT
   age,
@@ -60,11 +60,11 @@ A BigQuery table is uniquely identified by the three-layer hierarchy of project 
 SELECT
   subject_id
 FROM
-  `datathon-datasets.mimic_demo.icustays`
+  `physionet-data.mimic_demo.icustays`
 LIMIT 10
 ```
 
-`datathon-datasets.mimic_demo.icustays` specifies the table we are querying, where `datathon-datasets` is the project that hosts the datasets, `mimic_demo` is the name of the dataset, and `icustays` is the table name. Backticks (`) are used as there is a non-standard character (-) in the project name. If the dataset resides in the same project, you can safely omit the project name, e.g. `my-project.my_dataset.my_table` can be written as `my_dataset.my_table` instead.
+`physionet-data.mimic_demo.icustays` specifies the table we are querying, where `physionet-data` is the project that hosts the datasets, `mimic_demo` is the name of the dataset, and `icustays` is the table name. Backticks (`) are used as there is a non-standard character (-) in the project name. If the dataset resides in the same project, you can safely omit the project name, e.g. `my-project.my_dataset.my_table` can be written as `my_dataset.my_table` instead.
 
 ### SQL Dialect
 
@@ -84,7 +84,7 @@ Alternatively, ["#standardSQL" tag](https://cloud.google.com/bigquery/docs/refer
 
 ### Dataset Exploration
 
-As mentioned previously, the datasets are hosted in a different project, which can be accessed [here](https://bigquery.cloud.google.com/dataset/datathon-datasets:mimic_demo). On the left panel, you will see the `mimic_demo` dataset, under which you will see the table names.
+As mentioned previously, the datasets are hosted in a different project, which can be accessed [here](https://bigquery.cloud.google.com/dataset/physionet-data:mimic_demo). On the left panel, you will see the `mimic_demo` dataset, under which you will see the table names.
 
 To view the details of a table, simply click on it (for example the `icustays` table). Then, on the right side of the window, you will have to option to see the schema, metadata and preview of rows tabs.
 
@@ -103,8 +103,8 @@ SELECT
   icustay_id,
   intime,
   outtime,
-  TIMESTAMP_DIFF(outtime, intime, DAY) AS icu_length_of_stay
-FROM `datathon-datasets.mimic_demo.icustays`
+  DATETIME_DIFF(outtime, intime, DAY) AS icu_length_of_stay
+FROM `physionet-data.mimic_demo.icustays`
 ```
 
 Let's save the result of previous query to an intermediate table for later analysis:
@@ -128,7 +128,7 @@ SELECT
   pat.dob,
   icu.icu_length_of_stay,
   DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
-FROM `datathon-datasets.mimic_demo.patients` AS pat
+FROM `physionet-data.mimic_demo.patients` AS pat
 INNER JOIN `temp.icustays` AS icu
   ON icu.subject_id = pat.subject_id
 ```
@@ -163,10 +163,10 @@ Now let's see if there is correlation between age and average length of stay in 
 ```SQL
 WITH re AS (
 SELECT
-  TIMESTAMP_DIFF(icu.outtime, icu.intime, HOUR) AS icu_length_of_stay,
+  DATETIME_DIFF(icu.outtime, icu.intime, HOUR) AS icu_length_of_stay,
   DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
-FROM `datathon-datasets.mimic_demo.icustays` AS icu
-INNER JOIN `datathon-datasets.mimic_demo.patients` AS pat
+FROM `physionet-data.mimic_demo.icustays` AS icu
+INNER JOIN `physionet-data.mimic_demo.patients` AS pat
   ON icu.subject_id = pat.subject_id)
 SELECT
   icu_length_of_stay AS stay,
@@ -177,4 +177,4 @@ WHERE age < 100
 
 Follow the same steps to save the result to Google Spreadsheet, by default a linear chart is generate. We will need to change the chart type to scatter chart through the chart editor on the right.
 
-Congratulations! You've finished the BigQuery web UI tutorial. In this tutorial we demonstrate how to query, filter, aggregate data, and how to export the result to different locations through BigQuery web UI. Please take a look at more comprehensive examples [here](bigquery_colab.ipynb) such as creating charts and training machine learning models in an interactive and fully online way (or copy the queries over to web UI to execute if you prefer) if you are interested.
+Congratulations! You've finished the BigQuery web UI tutorial. In this tutorial we demonstrate how to query, filter, aggregate data, and how to export the result to different locations through BigQuery web UI. If you would like to explore the real data, please use ` mimiciii_clinical` as the dataset name. For example, the table `mimic_demo.icustays` becomes `mimiciii_clinical.icustays` when you need the actual MIMIC data. Please take a look at more comprehensive examples [here](bigquery_colab.ipynb) such as creating charts and training machine learning models in an interactive and fully online way (or copy the queries over to web UI to execute if you prefer) if you are interested.
