@@ -20,6 +20,7 @@ gsutil cp -r gs://cbis-ddsm-colab/cbis_ddsm_ml .
 Let's first start training with GPU by running the following command in the Google Cloud SDK shell.
 
 ```shell
+MODEL_DIR="gs://cbis-ddsm-model/`date +%s`"
 gcloud ml-engine jobs submit training gpu_training \
     --staging-bucket gs://cbis-ddsm-artifacts \
     --runtime-version 1.8 \
@@ -32,7 +33,7 @@ gcloud ml-engine jobs submit training gpu_training \
     --image_height=128 \
     --training_data_dir="small_train" \
     --eval_data_dir="small_test" \
-    --model_dir="gs://cbis-ddsm-model/`date +%s`" \
+    --model_dir="${MODEL_DIR}" \
     --category_count=4 \
     --data_bucket="cbis-ddsm-colab" \
     --training_steps=1000
@@ -73,6 +74,7 @@ Notice that at the end of the output, there are links to both the UI and logs of
 Now let's proceed to submit another job which uses TPU for training while waiting for GPU training to finish. Just like GPU training, run the following command in the Google Cloud SDK shell.
 
 ```shell
+MODEL_DIR="gs://cbis-ddsm-model/`date +%s`"
 gcloud ml-engine jobs submit training tpu_training \
     --staging-bucket gs://cbis-ddsm-artifacts \
     --runtime-version 1.8 \
@@ -85,7 +87,7 @@ gcloud ml-engine jobs submit training tpu_training \
     --image_height=128 \
     --training_data="gs://cbis-ddsm-colab/cache/ddsm_train.tfrecords" \
     --eval_data="gs://cbis-ddsm-colab/cache/ddsm_eval.tfrecords" \
-    --model_dir="gs://cbis-ddsm-model/`date +%s`" \
+    --model_dir="${MODEL_DIR}" \
     --category_count=4 \
     --training_steps=1000
 ```
@@ -100,6 +102,16 @@ Normally TPU training should be much faster than GPU training, however, Cloud ML
 
 Depending on what the results look like, you might want to tweak the training parameters to improve the models. To do this, check out the parameters defined in both gpu_model.py and tpu_model.py, and submit new jobs with new parameters and see whether the results are improved. Note that some advanced parameters may require inline modification.
 
-One good read for this section is the [notes from the Stanford CS class CS231n](http://cs231n.github.io/neural-networks-3/).
+In order to help tuning the model, you could use [Tensorboard](https://www.tensorflow.org/programmers_guide/summaries_and_tensorboard) to visualize the learning process. Tensorboard should already be installed on your computer or Cloud Shell. To get started, run one of the following commands:
+
+```shell
+# If running locally. Access it on http://localhost:6006 from browser.
+tensorboard --logdir=${MODEL_DIR}
+
+# If running from Cloud Shell. Access from [web preview](https://cloud.google.com/shell/docs/using-web-preview) (at the bottom of the page).
+tensorboard --logdir=${MODEL_DIR} --port=8080
+```
+
+Other than Tensorboard, one good read for this section is the [notes from the Stanford CS class CS231n](http://cs231n.github.io/neural-networks-3/).
 
 This concludes our tutorial and have fun!

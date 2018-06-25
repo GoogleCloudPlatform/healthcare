@@ -29,7 +29,8 @@ print_usage() {
     echo "    --team_project_id <TEAM_PROJECT_ID> \ "
     echo "    --billing_account <BILLING_ACCOUNT> \ "
     echo "    --audit_project_id <AUDIT_PROJECT_ID> \ "
-    echo "    --audit_dataset_id <AUDIT_DATASET_ID>"
+    echo "    --audit_dataset_id <AUDIT_DATASET_ID> \ "
+    echo "    --start_vm [true|false]"
 }
 
 OWNERS_GROUP=""
@@ -38,23 +39,32 @@ TEAM_PROJECT_ID=""
 BILLING_ACCOUNT=""
 AUDIT_PROJECT_ID=""
 AUDIT_DATASET_ID=""
+START_VM=false
 
 while (( "$#" )); do
+    if [[ $2 == --* ]]; then
+      echo "Value of $1 starts with '--'. Missing value?"
+      exit 1
+    fi
     if [[ $1 == "--owners_group" ]]; then
-        OWNERS_GROUP=$2
+      OWNERS_GROUP=$2
     elif [[ $1 == "--users_group" ]]; then
-        USERS_GROUP=$2
+      USERS_GROUP=$2
     elif [[ $1 == "--team_project_id" ]]; then
-        TEAM_PROJECT_ID=$2
+      TEAM_PROJECT_ID=$2
     elif [[ $1 == "--billing_account" ]]; then
-        BILLING_ACCOUNT=$2
+      BILLING_ACCOUNT=$2
     elif [[ $1 == "--audit_project_id" ]]; then
-        AUDIT_PROJECT_ID=$2
+      AUDIT_PROJECT_ID=$2
     elif [[ $1 == "--audit_dataset_id" ]]; then
-        AUDIT_DATASET_ID=$2
+      AUDIT_DATASET_ID=$2
+    elif [[ $1 == "--start_vm" ]]; then
+      if [[ $2 == "true" ]]; then
+        START_VM=true
+      fi
     else
-        echo "Unknown flag $1"
-        exit 1
+      echo "Unknown flag $1"
+      exit 1
     fi
     shift 2
 done
@@ -101,8 +111,14 @@ if [[ `cat ${STATE_FILE}` == ${STATE_SET_PERMISSION} ]]; then
     gcloud projects remove-iam-policy-binding ${TEAM_PROJECT_ID} \
       --member="user:${USER_EMAIL}" --role="roles/owner"
   else
-    echo "Skipping setting ${OWNERS_GROUP} as the owner of the project."
-    echo "This is because we have not set up an organization for datathons."
+    echo "Because the project is created without an organization, it is not"
+    echo "possible to use a group as an owner of the project. Granting"
+    echo "${OWNERS_GROUP} permission to change IAM configuration, so that"
+    echo "members of this group can add individual owners (including"
+    echo "themselves) when needed."
+    gcloud projects add-iam-policy-binding "${AUDIT_PROJECT_ID}" \
+      --member="group:${OWNERS_GROUP}" \
+      --role="roles/resourcemanager.projectIamAdmin"
   fi
   echo ${STATE_SET_BILLING} > ${STATE_FILE}
 else
@@ -206,14 +222,16 @@ fi
 
 if [[ `cat ${STATE_FILE}` == ${STATE_DEPLOY_VM} ]]; then
   echo "Deploying Google Cloud VM instances..."
+  VM_NAME="work-machine"
+  VM_ZONE="asia-southeast1-a"
   TEMP=`tempfile`
   cat <<EOF >>${TEMP}
 resources:
-- name: work-machine
+- name: ${VM_NAME}
   type: compute.v1.instance
   properties:
-    zone: asia-southeast1-a
-    machineType: https://www.googleapis.com/compute/v1/projects/${TEAM_PROJECT_ID}/zones/asia-southeast1-a/machineTypes/n1-standard-2
+    zone: ${VM_ZONE}
+    machineType: https://www.googleapis.com/compute/v1/projects/${TEAM_PROJECT_ID}/zones/${VM_ZONE}/machineTypes/n1-standard-2
     disks:
     - deviceName: boot
       type: PERSISTENT
@@ -239,10 +257,17 @@ EOF
     --config ${TEMP} --project ${TEAM_PROJECT_ID}
   gcloud --quiet deployment-manager deployments delete work-vm-setup \
     --project ${TEAM_PROJECT_ID} --delete-policy=ABANDON
+  if [ ${START_VM} = false ]; then
+    gcloud compute instances stop ${VM_NAME} --zone ${VM_ZONE} \
+      --project ${TEAM_PROJECT_ID}
+  fi
+  echo "Enabling OS loging for VM SSH access"
+  gcloud compute project-info add-metadata \
+    --metadata enable-oslogin=TRUE --project=${TEAM_PROJECT_ID}
 else
   echo "Skip deploying VM since it has previously finished."
 fi
 
-rm ${STATE_FILE}
+rm -f ${STATE_FILE}
 
 echo "Team project '${TEAM_PROJECT_ID}' setup finished."

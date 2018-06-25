@@ -40,6 +40,10 @@ INPUT_DIR=""
 SCHEMA_DIR=""
 
 while (( "$#" )); do
+  if [[ $2 == --* ]]; then
+    echo "Value of $1 starts with '--'. Missing value?"
+    exit 1
+  fi
   if [[ $1 == "--owners_group" ]]; then
     OWNERS_GROUP=$2
   elif [[ $1 == "--editors_group" ]]; then
@@ -227,6 +231,6 @@ else
   echo "Skip uploading data to BigQuery since it has previously finished."
 fi
 
-rm ${STATE_FILE}
+rm -f ${STATE_FILE}
 
 echo "Data upload for ${DATASET_NAME} has finished."

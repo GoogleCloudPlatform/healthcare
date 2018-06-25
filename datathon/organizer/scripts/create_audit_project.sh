@@ -34,6 +34,10 @@ BILLING_ACCOUNT=""
 AUDITORS_GROUP=""
 
 while (( "$#" )); do
+  if [[ $2 == --* ]]; then
+    echo "Value of $1 starts with '--'. Missing value?"
+    exit 1
+  fi
   if [[ $1 == "--owners_group" ]]; then
     OWNERS_GROUP=$2
   elif [[ $1 == "--audit_project_id" ]]; then
@@ -87,8 +91,14 @@ if [[ `cat ${STATE_FILE}` == ${STATE_SET_PERMISSION} ]]; then
     gcloud projects remove-iam-policy-binding ${AUDIT_PROJECT_ID} \
       --member="user:${USER_EMAIL}" --role="roles/owner"
   else
-    echo "Skipping setting ${OWNERS_GROUP} as the owner of the project."
-    echo "This is because we have not set up an organization for datathons."
+    echo "Because the project is created without an organization, it is not"
+    echo "possible to use a group as an owner of the project. Granting"
+    echo "${OWNERS_GROUP} permission to change IAM configuration, so that"
+    echo "members of this group can add individual owners (including"
+    echo "themselves) when needed."
+    gcloud projects add-iam-policy-binding "${AUDIT_PROJECT_ID}" \
+      --member="group:${OWNERS_GROUP}" \
+      --role="roles/resourcemanager.projectIamAdmin"
   fi
   echo ${STATE_SET_BILLING} > ${STATE_FILE}
 else
@@ -142,7 +152,7 @@ else
   echo "Skip creating logging dataset since it has previously finished."
 fi
 
-rm ${STATE_FILE}
+rm -f ${STATE_FILE}
 
 echo "Audit project setup finished."
 echo "Please remember to set the following environment variables: "

@@ -128,6 +128,12 @@ settings of basic permissions when you create them:
 *   Post: Only Managers and Owners
 *   Join the group: Only Invited Users
 
+A note for the owners group: if you do not have a domain when creating the
+following projects, then the resulting project cannot have a group as its owner.
+To remedy this, we grant all members in OWNERS_GROUP the permission to change
+the project's IAM setting, including add themselves as individual owners of the
+project, if necessary.
+
 ## Audit Project Setup
 
 Create an audit project by running the following command, which will
@@ -232,7 +238,9 @@ This will
 *   Set the users with aforementioned access to `${PROJECT_USERS_GROUP}`.
 *   Direct audit logs to the auditing project `${PROJECT_PREFIX}-auditing`.
 *   Create a team file sharing Google Cloud Storage bucket.
-*   Create and start a virtual machine.
+*   Create a virtual machine. The virtual machine can be started by passing
+    `--start_vm true`. Otherwise you can go to Google Cloud console and start
+    the virtual machine later when needed.
 
 ## Summary
 
