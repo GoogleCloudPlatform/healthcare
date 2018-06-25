@@ -10,7 +10,7 @@ We have prepared tutorials to get you started on [BigQuery](https://cloud.google
      * Before the datathon, please use the [shared project](https://console.cloud.google.com/compute/instances?project=nus-datathon-2018-team-00). The username and password should be in the email from the organizers. If you want to change the default password, run `passwd` from the built-in terminal in RStudio after logging in.
      * During the datathon, please use the private project assigned to your team. The usernames are `analystX' (where `X' is between 1 and 5), passwords are the same as usernames.
 
-![Lookup external IP](tutuorials/images/external_ip.png)
+![Lookup external IP](tutorials/images/external_ip.png)
 
 ![RStudio terminal](tutorials/images/rstudio_terminal.png)
 
