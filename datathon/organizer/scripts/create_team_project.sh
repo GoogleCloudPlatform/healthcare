@@ -214,7 +214,7 @@ fi
 if [[ `cat ${STATE_FILE}` == ${STATE_IMPORT_DISK} ]]; then
   echo 'Import boot disk from GCS bucket...'
   gcloud compute images create boot-disk --source-uri \
-    gs://datathon-disks/rstudio-boot.tar.gz --project ${TEAM_PROJECT_ID}
+    gs://datathon-disks/boot-disk.tar.gz --project ${TEAM_PROJECT_ID}
   echo ${STATE_DEPLOY_VM} > ${STATE_FILE}
 else
   echo "Skip importing boot disk since it has previously finished."
