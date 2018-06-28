@@ -10,7 +10,9 @@ The aim of this tutorial is to get you familiarized with BigQuery web UI to quer
 
 ## Executing Queries
 
-The data-hosting project `physionet-data` has read-only access, as a result, you need to set a default project that you have BigQuery access to. A shared project `my-project` has already been created, visit **https://bigquery.cloud.google.com/welcome/my-project** to access the BigQuery web interface, all the queries in this tutorial will be run through this web interface.
+The data-hosting project `physionet-data` has read-only access, as a result, you need to set a default project that you have BigQuery access to. A shared project `nus-datathon-2018-team-00` has already been created, visit **https://bigquery.cloud.google.com/welcome/nus-datathon-2018-team-00** to access the BigQuery web interface, all the queries in this tutorial will be run through this web interface.
+
+Note that during the datathon, all participants will be divided into teams and a Google Cloud project will be created for each team specifically. That project would be the preferred project to use. For now we'll stick with the shared project for the purpose of the tutorial.
 
 # TLDR
 

@@ -51,7 +51,8 @@ library("ggplot2")
 # Install missing dependency, uncomment next line if this is the first time this section is run.
 # install.packages("readr")
 
-project_id <- "my-project"
+# Shared project.
+project_id <- "nus-datathon-2018-team-00"
 options(httr_oauth_cache=FALSE)
 
 # Wrapper for running BigQuery queries.
@@ -62,6 +63,8 @@ run_query <- function(query){
 ```
 
 When you run your first query below with BigQuery, you will be asked to first authenticate yourself. A tab will open in browser automatically, after logging in your Gmail account and accepting the data access permission, you will be redirected to a page which has an authentication code. You need to copy the authentication code and paste it into the console tab below (the tab might collapse). Once authenticated, you may close the authentication window, and the query result should show up in the result box below.
+
+Note that during the datathon, all participants will be divided into teams and a Google Cloud project will be created for each team specifically. That project would be the preferred project to use. For now we'll stick with the shared project for the purpose of the tutorial.
 
 ## Analysis
 
