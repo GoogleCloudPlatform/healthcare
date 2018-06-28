@@ -54,10 +54,10 @@ tf.flags.DEFINE_string(
 # Input data specific flags.
 tf.flags.DEFINE_string("training_data", default=None,
   help="Path to training data. This should be a GCS path, "
-       "e.g. gs://cbis-ddsm-colab/cache/ddsm_train.tfrecords")
+       "e.g. gs://datathon-cbis-ddsm-colab/cache/ddsm_train.tfrecords")
 tf.flags.DEFINE_string("eval_data", default=None,
   help="Path to evaluation data. This should be a GCS path, "
-       "e.g. gs://cbis-ddsm-colab/cache/ddsm_eval.tfrecords")
+       "e.g. gs://datathon-cbis-ddsm-colab/cache/ddsm_eval.tfrecords")
 tf.flags.DEFINE_integer("image_width", default=0,
   help="Wdith of input images. All images are expected to share the same "
        "size.")

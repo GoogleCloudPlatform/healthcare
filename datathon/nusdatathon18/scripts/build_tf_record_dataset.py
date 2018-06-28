@@ -20,9 +20,9 @@ Convert existing images to TFRecords
 
 Example usage:
 
-python build_tf_record_dataset.py --src_bucket cbis-ddsm-colab \
+python build_tf_record_dataset.py --src_bucket datathon-cbis-ddsm-colab \
                                   --src_folder train \
-                                  --dst_bucket cbis-ddsm-colab \
+                                  --dst_bucket datathon-cbis-ddsm-colab \
                                   --dst_file cache/train.tfrecords
 """
 

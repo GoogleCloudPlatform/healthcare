@@ -28,10 +28,10 @@ are considered because we don't want mixed CC and MLO images.
 
 Example usage:
 
-python select_demo_images.py --src_bucket=cbis-ddsm-colab \
+python select_demo_images.py --src_bucket=datathon-cbis-ddsm-colab \
                              --src_training_folder=train \
                              --src_eval_folder=test \
-                             --dst_bucket=cbis-ddsm-colab \
+                             --dst_bucket=datathon-cbis-ddsm-colab \
                              --dst_training_folder=train_demo \
                              --dst_eval_folder=test_demo \
                              --training_size_per_cat 25 \

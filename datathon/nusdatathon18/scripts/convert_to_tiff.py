@@ -22,11 +22,11 @@ height of all images are recorded to be used for padding later.
 
 Example usage:
 
-python convert_to_png.py \
-    --src_bucket=cbis-ddsm-images \
-    --dst_bucket=cbis-ddsm-colab \
+python convert_to_tiff.py \
+    --src_bucket=datathon-cbis-ddsm-images \
+    --dst_bucket=datathon-cbis-ddsm-colab \
     --dst_folder=train \
-    --label_file=gs://cbis-ddsm-images/calc_case_description_train_set.csv
+    --label_file=gs://datathon-cbis-ddsm-images/calc_case_description_train_set.csv
 
 """
 

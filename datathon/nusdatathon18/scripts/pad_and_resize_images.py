@@ -24,8 +24,8 @@ python pad_and_resize_images.py --target_width 5251 \
                                 --target_height 7111 \
                                 --final_width 95 \
                                 --final_height 128 \
-                                --src_bucket cbis-ddsm-colab \
-                                --dst_bucket cbis-ddsm-colab \
+                                --src_bucket datathon-cbis-ddsm-colab \
+                                --dst_bucket datathon-cbis-ddsm-colab \
                                 --dst_folder small_train \
                                 --src_folder train
 """

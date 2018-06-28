@@ -9,10 +9,16 @@ In this tutorial, we are going to go further beyond what we did in [the machine 
 Please follow the instructions below to set up the environment required to use Cloud ML Engine.
 
 * Follow [the official instructions](https://cloud.google.com/sdk/install) to install Google Cloud SDK to your computer, or click [here](https://console.cloud.google.com/home/dashboard?cloudshell=true) to access a browser-based shell with Google Cloud SDK installed.
+
+```shell
+# Set the default project, please use assigned private project for your team during datathon.
+gcloud config set project nus-datathon-2018-team-00
+```
+
 * Next, download the GPU and TPU models from Google Cloud Storage by running the following command.
 
 ```shell
-gsutil cp -r gs://cbis-ddsm-colab/cbis_ddsm_ml .
+gsutil cp -r gs://datathon-cbis-ddsm-colab/cbis_ddsm_ml .
 ```
 
 ## Training
@@ -20,9 +26,9 @@ gsutil cp -r gs://cbis-ddsm-colab/cbis_ddsm_ml .
 Let's first start training with GPU by running the following command in the Google Cloud SDK shell.
 
 ```shell
-MODEL_DIR="gs://cbis-ddsm-model/`date +%s`"
+MODEL_DIR="gs://nus-datathon-2018-team-00-shared-files/`date +%s`"
 gcloud ml-engine jobs submit training gpu_training \
-    --staging-bucket gs://cbis-ddsm-artifacts \
+    --staging-bucket gs://nus-datathon-2018-team-00-shared-files \
     --runtime-version 1.8 \
     --scale-tier BASIC_GPU \
     --module-name "trainer.gpu_model" \
@@ -35,7 +41,7 @@ gcloud ml-engine jobs submit training gpu_training \
     --eval_data_dir="small_test" \
     --model_dir="${MODEL_DIR}" \
     --category_count=4 \
-    --data_bucket="cbis-ddsm-colab" \
+    --data_bucket="datathon-cbis-ddsm-colab" \
     --training_steps=1000
 ```
 
@@ -74,9 +80,9 @@ Notice that at the end of the output, there are links to both the UI and logs of
 Now let's proceed to submit another job which uses TPU for training while waiting for GPU training to finish. Just like GPU training, run the following command in the Google Cloud SDK shell.
 
 ```shell
-MODEL_DIR="gs://cbis-ddsm-model/`date +%s`"
+MODEL_DIR="gs://nus-datathon-2018-team-00-shared-files/`date +%s`"
 gcloud ml-engine jobs submit training tpu_training \
-    --staging-bucket gs://cbis-ddsm-artifacts \
+    --staging-bucket gs://nus-datathon-2018-team-00-shared-files \
     --runtime-version 1.8 \
     --scale-tier BASIC_TPU \
     --module-name "trainer.tpu_model" \
@@ -85,8 +91,8 @@ gcloud ml-engine jobs submit training tpu_training \
     -- \
     --image_width=95 \
     --image_height=128 \
-    --training_data="gs://cbis-ddsm-colab/cache/ddsm_train.tfrecords" \
-    --eval_data="gs://cbis-ddsm-colab/cache/ddsm_eval.tfrecords" \
+    --training_data="gs://datathon-cbis-ddsm-colab/cache/ddsm_train.tfrecords" \
+    --eval_data="gs://datathon-cbis-ddsm-colab/cache/ddsm_eval.tfrecords" \
     --model_dir="${MODEL_DIR}" \
     --category_count=4 \
     --training_steps=1000
