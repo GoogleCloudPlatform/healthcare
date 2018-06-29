@@ -19,7 +19,7 @@ limitations under the License.
 
 # Datathon Tutorial
 
-Welcome to the MIMIC/eICU/ANZICS Datathon! This is a Jupyter notebook using R kernel, serving as a tutorial to guide you through the working environment for accessing the dataset and get you familiarized with analyzing demo medical data in Google Cloud. If you are familiar with Python, we also recommend that you check out the [Python version of this tutorial](https://colab.research.google.com/drive/1w9P6USMuqXDW-aQwUkaO-s2QcKUIoXHS) hosted in Google Colab.
+Welcome to the MIMIC/eICU/ANZICS Datathon! This is a Jupyter notebook using R kernel, serving as a tutorial to guide you through the working environment for accessing the dataset and get you familiarized with analyzing demo medical data in Google Cloud. If you are familiar with Python, we also recommend that you check out the [Python version of this tutorial](https://colab.research.google.com/github/GoogleCloudPlatform/healthcare/blob/master/datathon/anzics18/tutorial.ipynb) hosted in Google Colab.
 
 ## Initial Setup
 Here are the prerequisites for running all examples in this tutorial
@@ -388,7 +388,7 @@ GROUP BY 1
 ORDER BY 2 DESC")
 ```
 
-In the [Python version of this tutorial](https://colab.research.google.com/drive/1w9P6USMuqXDW-aQwUkaO-s2QcKUIoXHS), we also cover a little bit of Tensorflow setup to build simple machine learning models. Unfortunately, Tensorflow is not currently supported in R. However, there are plenty of ML packages in R that you may choose to use, should you build an ML model with the data extracted from BigQuery.
+In the [Python version of this tutorial](https://colab.research.google.com/github/GoogleCloudPlatform/healthcare/blob/master/datathon/anzics18/tutorial.ipynb), we also cover a little bit of Tensorflow setup to build simple machine learning models. Unfortunately, Tensorflow is not currently supported in R. However, there are plenty of ML packages in R that you may choose to use, should you build an ML model with the data extracted from BigQuery.
 
 Congratulations! Now you have finished this datathon tutorial, and ready to explore the real data by querying Google BigQuery. To do so, simply remove the `_demo` suffix in the dataset names. For example, the table `mimic_demo.icustays` becomes `mimic.icustays` when you need the actual MIMIC data. Now, let's do the substitution and, and start the real datathon exploration.
 
