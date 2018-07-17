@@ -130,6 +130,9 @@ if [[ `cat ${STATE_FILE}` == ${STATE_ENABLE_LOGGING} ]]; then
   echo "Enabling audit logging for the project."
   SINK_NAME=audit-logs-to-bigquery
   AUDIT_DATASET_URL="bigquery.googleapis.com/projects/${AUDIT_PROJECT_ID}/datasets/${AUDIT_DATASET_ID}"
+  if `gcloud logging sinks list | grep -q ${SINK_NAME}`; then
+    gcloud --quiet logging sinks delete ${SINK_NAME}
+  fi
   LOG_SERVICE_ACCT=$((gcloud --quiet logging sinks create "${SINK_NAME}" \
     "${AUDIT_DATASET_URL}" --project ${DATA_HOSTING_PROJECT_ID}) 2>&1 \
     | grep 'Please remember to grant' | \

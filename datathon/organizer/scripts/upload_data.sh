@@ -117,7 +117,7 @@ if [[ ! -e ${STATE_FILE} ]]; then
   ]
 }
 EOF
-  gsutil iam set ${TEMP} gs://${BUCKET_ID}
+  gsutil -u ${PROJECT_ID} iam set ${TEMP} gs://${BUCKET_ID}
   echo ${STATE_ENABLE_SERVICES} > ${STATE_FILE}
 else
   echo "Skip creating bucket since it has previously finished."
@@ -165,7 +165,7 @@ fi
 
 if [[ `cat ${STATE_FILE}` == ${STATE_UPLOAD_GCS} ]]; then
   echo "Uploading data to Google Cloud Storage."
-  gsutil -m cp ${INPUT_DIR}/*.csv.gz gs://${BUCKET_ID}
+  gsutil -u ${PROJECT_ID} -m cp ${INPUT_DIR}/*.csv.gz gs://${BUCKET_ID}
   echo ${STATE_UPLOAD_BQ} > ${STATE_FILE}
 else
   echo "Skip uploading data to GCS since it has previously finished."
@@ -209,8 +209,8 @@ if [[ `cat ${STATE_FILE}` == ${STATE_UPLOAD_BQ} ]]; then
 
     # Asynchronously load data to BigQuery.
     job_id=${table_name}_$(date +%s)
-    bq --nosync --location=${LOCATION} --project_id=${PROJECT_ID} load \
-      --job_id=${job_id} --skip_leading_rows=1 --source_format=CSV \
+    bq --nosync --replace --location=${LOCATION} --project_id=${PROJECT_ID} \
+      load --job_id=${job_id} --skip_leading_rows=1 --source_format=CSV \
       --allow_quoted_newline "${DATASET_ID}.${table_name}" \
       gs://${BUCKET_ID}/$(basename ${file}) ${schema_file}
     job_ids+=(${job_id})

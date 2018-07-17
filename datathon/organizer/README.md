@@ -5,22 +5,23 @@ to set up a set of Google Cloud Projects, to host datasets and data analysis
 environment in a compliant and audited way. By the end of this guide, you will
 have created
 
-1.   An auditing project to collect audit records from all projects.
-1.   A data hosting project, where structured data is hosted both in its raw
-     format in a Google Cloud Storage bucket, and as BigQuery tables ready for
-     controlled data access.
-1.   One or more work projects for running analyses. These include running
-     BigQuery jobs and storing intermediate data, and running Google Compute
-     Engine virtual machines for general-purpose computing.
+1.  An auditing project to collect audit records from all projects.
+1.  A data hosting project, where structured data is hosted both in its raw
+    format in a Google Cloud Storage bucket, and as BigQuery tables ready for
+    controlled data access.
+1.  One or more work projects for running analyses. These include running
+    BigQuery jobs and storing intermediate data, and running Google Compute
+    Engine virtual machines for general-purpose computing.
 
 ## Command-line Environment Setup
 
 The current toolkit we provide only automates cloud project setup from Linux
 platform.
 
-Follow instructions on [Google Cloud SDK Installaiton Page](https://cloud.google.com/sdk/install)
-to install the command-line interface. It contains `gcloud`, `gsutil`, and
-`bq`, which are required for the project setup.
+Follow instructions on
+[Google Cloud SDK Installation Page](https://cloud.google.com/sdk/install) to
+install the command-line interface. It contains `gcloud`, `gsutil`, and `bq`,
+which are required for the project setup.
 
 After you install the Google Cloud SDK, run the following command to initialize
 it:
@@ -32,8 +33,8 @@ gcloud init
 As part of the initialization, you will be asked to sign in with your Google
 account and create a default project if you don't have one already. Please sign
 in with the Google account that you will be using for the rest of the proejct
-setup. As for the default project, we won't be using it. So you can ignore it
-or create a dummy one.
+setup. As for the default project, we won't be using it. So you can ignore it or
+create a dummy one.
 
 For a first-time Google Cloud user, you need to accept the Terms of Service on
 [Cloud Console](https://console.cloud.google.com) to proceed.
@@ -47,15 +48,16 @@ gsutil ls
 bq ls
 ```
 
-You also need to install the `jq` binary to facilitate parsing JSON from
-command line:
+You also need to install the `jq` binary to facilitate parsing JSON from command
+line:
 
 ```shell
 sudo apt-get install jq
 ```
 
-Visit the billing account [page](https://cloud.google.com/billing/docs/how-to/manage-billing-account)
-to create a billing account that will be used for the project setup.
+Visit the billing account
+[page](https://cloud.google.com/billing/docs/how-to/manage-billing-account) to
+create a billing account that will be used for the project setup.
 
 ```shell
 # The billing account ID will be like the following format.
@@ -63,10 +65,11 @@ BILLING_ACCOUNT=01ABCD-234E56-F7890G1
 ```
 
 If you want to generate BigQuery schemas yourself, then you need to install
-[Go](https://golang.org/doc/install) as well. But check the `bqschemas`
-folder first, which may already contain the BigQuery schemas you need.
+[Go](https://golang.org/doc/install) as well. But check the `bqschemas` folder
+first, which may already contain the BigQuery schemas you need.
 
-You need to clone the open source toolkit from [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare).
+You need to clone the open source toolkit from
+[GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare).
 
 ```shell
 git clone https://github.com/GoogleCloudPlatform/healthcare.git
@@ -75,17 +78,19 @@ cd datathon/organizer
 
 The scripts in the `datathon/organizer` will generate `*.sh.state` files as
 checkpoints, which allow you to retry the scripts. A caveat is that the
-checkpoints are not necessarily fine-grain enough to let you resume from all
-the single commands. But they narrow down to the chunks you need to modify upon
+checkpoints are not necessarily fine-grain enough to let you resume from all the
+single commands. But they narrow down to the chunks you need to modify upon
 retries. To start over, simply delete the corresponding `sh.state` files. The
 scripts will delete the state files after they successfully finish.
 
 ## Choosing Domain Name and Project Prefix
 
-If you own a GSuite domain, you can create a cloud project within the domain;
-otherwise, you can use a default google groups domain. For the projects that
-we will be creating, you can choose a common prefix and the individual projects
-will be named with the prefix you set. For example,
+If you own a GSuite domain or have opted your domain into
+[Google Cloud Identity](https://cloud.google.com/identity/) (see
+[instructions](domain_management.md)), you can create a cloud project within the
+domain; otherwise, you can use a default google groups domain. For the projects
+that we will be creating, you can choose a common prefix and the individual
+projects will be named with the prefix you set. For example,
 
 ```shell
 DOMAIN=googlegroups.com
@@ -94,13 +99,19 @@ PROJECT_PREFIX=my-project
 
 ## Permission Control Group Setup
 
-Google Cloud uses Gmail accounts, GSuite accounts or [Google Groups](https://groups.google.com)
-for permission control. We recommend that the project owners create a set of
-groups for predefined roles, so that individual permission can be controlled
-easily by group membership without modifying the cloud project. We recommend
-you define the following groups, and add more as necessary. Please remember to
-set the "Join the Group" config to allow only invited users and restrict the
-"View Topics" permission to members of the group.
+Google Cloud uses Gmail accounts, groups in supported GSuite or Cloud Identity
+domains or public [Google Groups](https://groups.google.com) for permission
+control. We recommend that the project owners create a set of groups for
+predefined roles, so that individual permission can be controlled easily by
+group membership without modifying the cloud project. We recommend you define
+the following groups, and add more as necessary. Please remember to set the
+"Join the Group" config to allow only invited users and restrict the "View
+Topics" permission to members of the group.
+
+For public Google Groups, you have to set up the groups and membership using the
+[Google Groups UI](https://groups.google.com). If you own a GSuite domain or a
+Cloud Identity-enabled domain, you may set up the groups and membership
+programmatically using [this domain management guide](domain_management.md).
 
 ```shell
 # Project owners group, has full permission to the projects, only used for
@@ -215,9 +226,9 @@ scripts/upload_data.sh --owners_group ${OWNERS_GROUP} \
 
 You can create one or more team environment project for granted users to run
 jobs in. This range from running a BigQuery query against the data-hosting
-project, to materialize intermediate in its read-write BigQuery datasets and
-GCS buckets, to running arbitrary software in a VM. As an illustration, you may
-run the following script to create such a project
+project, to materialize intermediate in its read-write BigQuery datasets and GCS
+buckets, to running arbitrary software in a VM. As an illustration, you may run
+the following script to create such a project
 
 ```shell
 TEAM_PROJECT_ID=${PROJECT_PREFIX}-team-00
