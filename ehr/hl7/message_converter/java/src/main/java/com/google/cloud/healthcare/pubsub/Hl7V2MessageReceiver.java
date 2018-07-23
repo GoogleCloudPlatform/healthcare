@@ -15,7 +15,7 @@
 package com.google.cloud.healthcare.pubsub;
 
 import com.google.cloud.healthcare.apiclient.FhirClient;
-import com.google.cloud.healthcare.apiclient.Hl7Client;
+import com.google.cloud.healthcare.apiclient.Hl7V2Client;
 import com.google.cloud.healthcare.transform.MessageTransformer;
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.cloud.pubsub.v1.MessageReceiver;
@@ -27,17 +27,18 @@ import java.util.logging.Logger;
  * A customized message receiver that handles fetching the message, transforming it, and then upload
  * the resources.
  */
-public class Hl7MessageReceiver implements MessageReceiver {
+public class Hl7V2MessageReceiver implements MessageReceiver {
   private static final Logger LOGGER =
-      Logger.getLogger(Hl7MessageReceiver.class.getCanonicalName());
+      Logger.getLogger(Hl7V2MessageReceiver.class.getCanonicalName());
 
   private final MessageTransformer transformer;
-  private final Hl7Client hl7Client;
+  private final Hl7V2Client hl7V2Client;
   private final FhirClient fhirClient;
 
-  Hl7MessageReceiver(MessageTransformer transformer, Hl7Client hl7Client, FhirClient fhirClient) {
+  Hl7V2MessageReceiver(MessageTransformer transformer, Hl7V2Client hl7V2Client,
+      FhirClient fhirClient) {
     this.transformer = transformer;
-    this.hl7Client = hl7Client;
+    this.hl7V2Client = hl7V2Client;
     this.fhirClient = fhirClient;
   }
 
@@ -45,7 +46,7 @@ public class Hl7MessageReceiver implements MessageReceiver {
   public void receiveMessage(PubsubMessage message, AckReplyConsumer consumer) {
     String msgName = message.getData().toStringUtf8();
     try {
-      byte[] body = hl7Client.getMsg(msgName);
+      byte[] body = hl7V2Client.getMsg(msgName);
       String bundle = transformer.transform(body);
       fhirClient.executeBundle(bundle);
     } catch (RuntimeException e) {

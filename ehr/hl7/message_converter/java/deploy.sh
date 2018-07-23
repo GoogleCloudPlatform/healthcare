@@ -14,24 +14,24 @@ echo "Building docker image..."
 gradle dockerBuildImage
 
 echo "Uploading to GCR..."
-docker tag hl7_to_fhir_converter gcr.io/${PROJECT_ID}/hl7-to-fhir-converter:latest
-docker push gcr.io/${PROJECT_ID}/hl7-to-fhir-converter:latest
+docker tag hl7v2_to_fhir_converter gcr.io/${PROJECT_ID}/hl7v2-to-fhir-converter:latest
+docker push gcr.io/${PROJECT_ID}/hl7v2-to-fhir-converter:latest
 
 cat << EOF > converter.yaml
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: hl7-to-fhir-converter-deployment
+  name: hl7v2-to-fhir-converter-deployment
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: hl7-to-fhir-converter
+        app: hl7v2-to-fhir-converter
     spec:
       containers:
-        - name: hl7-to-fhir-converter
-          image: gcr.io/${PROJECT_ID}/hl7-to-fhir-converter:latest
+        - name: hl7v2-to-fhir-converter
+          image: gcr.io/${PROJECT_ID}/hl7v2-to-fhir-converter:latest
           command:
             - "/healthcare/bin/healthcare"
             - "--apiAddrPrefix=${API_ADDR_PREFIX}"
@@ -44,7 +44,7 @@ spec:
 EOF
 
 echo "Creating GKE cluster..."
-gcloud container clusters create hl7-to-fhir-converter --scopes https://www.googleapis.com/auth/pubsub,https://www.googleapis.com/auth/cloud-healthcare
+gcloud container clusters create hl7v2-to-fhir-converter --scopes https://www.googleapis.com/auth/pubsub,https://www.googleapis.com/auth/cloud-healthcare
 
 echo "Creating GKE deployment..."
 kubectl create -f converter.yaml

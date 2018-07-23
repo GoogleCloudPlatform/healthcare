@@ -44,7 +44,7 @@ task copyTestResources(type: Copy) {
     into "${buildDir}/classes/test"
 }
 
-mainClassName = "com.google.cloud.healthcare.Hl7ToFhirWorker"
+mainClassName = "com.google.cloud.healthcare.Hl7V2ToFhirWorker"
 
 dependencies {
     compile files('libs/libstu3.jar')
@@ -74,6 +74,6 @@ apply plugin: 'com.bmuschko.docker-java-application'
 docker {
     javaApplication {
         baseImage = 'java:openjdk-8-jre'
-        tag = project.findProperty("docker_tag") ?: "hl7_to_fhir_converter"
+        tag = project.findProperty("docker_tag") ?: "hl7v2_to_fhir_converter"
     }
 }

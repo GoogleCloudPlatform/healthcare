@@ -74,7 +74,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Transform an HL7 message to FHIR resources. Only limited message types are supported at this
+ * Transform an HL7v2 message to FHIR resources. Only limited message types are supported at this
  * point. Mappings here follow the instructions on the FHIR website, e.g.
  * https://www.hl7.org/fhir/patient-mappings.html#v2.
  */
@@ -96,23 +96,23 @@ public class MessageTransformer {
     this.updateCreateEnabled = updateCreateEnabled;
   }
 
-  /** Converts an HL7 message to the corresponding FHIR resources as a JSON string. */
+  /** Converts an HL7v2 message to the corresponding FHIR resources as a JSON string. */
   public String transform(byte[] msg) {
     String message = new String(msg);
     try {
-      Message hl7Msg = parser.parse(message);
+      Message hl7V2Msg = parser.parse(message);
       Bundle bundle;
-      if (hl7Msg instanceof ADT_A01) {
-        bundle = transform((ADT_A01) hl7Msg);
-      } else if (hl7Msg instanceof ORU_R01) {
-        bundle = transform((ORU_R01) hl7Msg);
+      if (hl7V2Msg instanceof ADT_A01) {
+        bundle = transform((ADT_A01) hl7V2Msg);
+      } else if (hl7V2Msg instanceof ORU_R01) {
+        bundle = transform((ORU_R01) hl7V2Msg);
       } else {
         throw new UnsupportedOperationException(
             "Only ADT_A01 and ORU_R01 are supported at this time.");
       }
       return JsonFormat.getPrinter().print(bundle);
     } catch (HL7Exception | IOException e) {
-      LOGGER.log(Level.SEVERE, "Unable to parse HL7 message: " + new String(msg), e);
+      LOGGER.log(Level.SEVERE, "Unable to parse HL7v2 message: " + new String(msg), e);
       throw new RuntimeException(e);
     }
   }

@@ -24,11 +24,11 @@ import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class HttpHl7Client extends HttpClient implements Hl7Client {
-  private static final Logger LOGGER = Logger.getLogger(HttpHl7Client.class.getCanonicalName());
+public class HttpHl7V2Client extends HttpClient implements Hl7V2Client {
+  private static final Logger LOGGER = Logger.getLogger(HttpHl7V2Client.class.getCanonicalName());
 
-  /* Used for parsing HL7 messages. */
-  public static class Hl7Message {
+  /* Used for parsing HL7v2 messages. */
+  public static class Hl7V2Message {
     @Key
     private String data;
 
@@ -44,7 +44,7 @@ public class HttpHl7Client extends HttpClient implements Hl7Client {
 
   protected final String apiEndpoint;
 
-  public HttpHl7Client(String apiEndpoint) {
+  public HttpHl7V2Client(String apiEndpoint) {
     super();
     this.apiEndpoint = apiEndpoint;
   }
@@ -58,7 +58,7 @@ public class HttpHl7Client extends HttpClient implements Hl7Client {
               .buildGetRequest(url)
               .setParser(new JsonObjectParser(JSON_FACTORY))
               .execute();
-      Hl7Message msg = response.parseAs(Hl7Message.class);
+      Hl7V2Message msg = response.parseAs(Hl7V2Message.class);
       return msg.getDecodedData();
     } catch (IOException e) {
       LOGGER.log(Level.SEVERE, "Get message failed: " + name, e);

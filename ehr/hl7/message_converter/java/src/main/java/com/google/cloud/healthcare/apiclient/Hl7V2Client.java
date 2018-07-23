@@ -14,10 +14,10 @@
 
 package com.google.cloud.healthcare.apiclient;
 
-/* HL7 Client interface. */
-public interface Hl7Client {
+/* HL7v2 Client interface. */
+public interface Hl7V2Client {
 
-  /* Reads an HL7 message by name. */
+  /* Reads an HL7v2 message by name. */
   byte[] getMsg(String name);
 
 }

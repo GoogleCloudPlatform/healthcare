@@ -17,7 +17,7 @@ package com.google.cloud.healthcare.pubsub;
 import com.google.cloud.healthcare.apiclient.FhirClient;
 import com.google.cloud.healthcare.apiclient.FhirClient.FhirStore;
 import com.google.cloud.healthcare.apiclient.HttpFhirClient;
-import com.google.cloud.healthcare.apiclient.HttpHl7Client;
+import com.google.cloud.healthcare.apiclient.HttpHl7V2Client;
 import com.google.cloud.healthcare.transform.MessageTransformer;
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -26,8 +26,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Listener for incoming HL7 messages notifications. It pulls HL7 messages, transform them into FHIR
- * resources and upload to a FHIR store.
+ * Listener for incoming HL7v2 messages notifications. It pulls HL7v2 messages, transforms them into FHIR
+ * resources and uploads to a FHIR store.
  */
 public class MessageListener {
   private static Logger LOGGER = Logger.getLogger(MessageListener.class.getCanonicalName());
@@ -73,7 +73,10 @@ public class MessageListener {
       subscriber =
           Subscriber.newBuilder(
                   subscription,
-                  new Hl7MessageReceiver(transformer, new HttpHl7Client(apiAddrPrefix), fhirClient))
+                  new Hl7V2MessageReceiver(
+                      transformer,
+                      new HttpHl7V2Client(apiAddrPrefix),
+                      fhirClient))
               .build();
       subscriber.addListener(new SubscriberStateListener(), MoreExecutors.directExecutor());
       subscriber.startAsync().awaitRunning();

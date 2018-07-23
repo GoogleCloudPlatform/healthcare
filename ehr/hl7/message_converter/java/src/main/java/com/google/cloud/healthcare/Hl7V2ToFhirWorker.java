@@ -22,7 +22,7 @@ import com.google.common.base.Strings;
 import java.util.Collections;
 
 /** Entrance class. */
-public class Hl7ToFhirWorker {
+public class Hl7V2ToFhirWorker {
   public static class WorkerOptions extends OptionsBase {
     @Option(name = "help", help = "Print this message.", defaultValue = "false")
     public boolean help;
