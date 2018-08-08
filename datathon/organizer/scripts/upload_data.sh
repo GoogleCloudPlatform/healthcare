@@ -209,9 +209,9 @@ if [[ `cat ${STATE_FILE}` == ${STATE_UPLOAD_BQ} ]]; then
 
     # Asynchronously load data to BigQuery.
     job_id=${table_name}_$(date +%s)
-    bq --nosync --replace --location=${LOCATION} --project_id=${PROJECT_ID} \
+    bq --nosync --location=${LOCATION} --project_id=${PROJECT_ID} \
       load --job_id=${job_id} --skip_leading_rows=1 --source_format=CSV \
-      --allow_quoted_newline "${DATASET_ID}.${table_name}" \
+      --replace --allow_quoted_newline "${DATASET_ID}.${table_name}" \
       gs://${BUCKET_ID}/$(basename ${file}) ${schema_file}
     job_ids+=(${job_id})
 

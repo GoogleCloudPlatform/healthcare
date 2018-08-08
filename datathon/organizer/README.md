@@ -26,7 +26,7 @@ which are required for the project setup.
 After you install the Google Cloud SDK, run the following command to initialize
 it:
 
-```shelll
+```shell
 gcloud init
 ```
 
@@ -108,11 +108,6 @@ the following groups, and add more as necessary. Please remember to set the
 "Join the Group" config to allow only invited users and restrict the "View
 Topics" permission to members of the group.
 
-For public Google Groups, you have to set up the groups and membership using the
-[Google Groups UI](https://groups.google.com). If you own a GSuite domain or a
-Cloud Identity-enabled domain, you may set up the groups and membership
-programmatically using [this domain management guide](domain_management.md).
-
 ```shell
 # Project owners group, has full permission to the projects, only used for
 # initial project setup and infrequent management.
@@ -131,7 +126,43 @@ DATA_READERS_GROUP=${PROJECT_PREFIX}-data-readers@${DOMAIN}
 PROJECT_USERS_GROUP=${PROJECT_PREFIX}-users@${DOMAIN}
 ```
 
-For each of the aforementioned google groups, please use the following secure
+### G Suite or Cloud Identity
+If you own a GSuite domain or a
+Cloud Identity-enabled domain, you may set up the groups and membership
+programmatically using [this domain management guide](domain_management.md),
+and then the following steps. Alternatively, you may create the groups using
+[G Suite Admin Console](https://admin.google.com/AdminHome#GroupList:), and then
+set the permissions as listed below in the public groups section.
+
+```shell
+# This can be used if your groups are part of a G Suite account.
+# If you are using public Google Groups you will have to manually create and
+# configure the groups using the Google Groups UI.
+# This assumes you generated the access token in the domain management guide.
+GROUP_LIST=(${OWNERS_GROUP} ${AUDITORS_GROUP} ${EDITORS_GROUP} ${DATA_READERS_GROUP} ${PROJECT_USERS_GROUP})
+
+for group_email in "${GROUP_LIST[@]}"
+do
+  curl -X POST --header "Content-Type: application/json" \
+  --header "Authorization: Bearer ${TOKEN}" \
+  --data "{\"email\":\"${group_email}\"}" \
+  https://www.googleapis.com/admin/directory/v1/groups
+
+  curl --request PATCH \
+    "https://www.googleapis.com/groups/v1/groups/${group_email}" \
+    --header "Authorization: Bearer ${TOKEN}" \
+    --header 'Accept: application/json' \
+    --header 'Content-Type: application/json' \
+    --data '{"whoCanJoin":"INVITED_CAN_JOIN","allowExternalMembers":"true","whoCanPostMessage":"ALL_MANAGERS_CAN_POST"}' \
+    --compressed
+done
+```
+
+### Public Google Groups
+For public Google Groups, you have to set up the groups and membership using the
+[Google Groups UI](https://groups.google.com).
+
+Create each of the aforementioned Google groups, then use the following secure
 settings of basic permissions when you create them:
 
 *   Group type: Email list

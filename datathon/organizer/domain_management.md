@@ -44,8 +44,9 @@ As an example, here are the steps to authenticate using OAuth 2.0, and then
 issuing the API requests using `curl` in a CLI. This can be wrapped in programs
 using various popular programming languages that the GSuite Admin SDK supports.
 
+### Setting up Group Management APIs for group creation
 1.  Create an OAuth client ID for API authentication. Go to the
-    [Credentials](https://console.cloud.google.com/apis/credentials) of an
+    [APIs & Services > Credentials](https://console.cloud.google.com/apis/credentials) of an
     existing GCP project, and select "Create Credentials" => "OAuth Client ID".
     In "application type" screen, choose the "Other" radio button, enter a name
     for the client ID, and then click "Create". Once the client ID is created,
@@ -60,7 +61,8 @@ using various popular programming languages that the GSuite Admin SDK supports.
 
     ```shell
     oauth2l fetch --json <client_id JSON file> \
-        https://www.googleapis.com/auth/admin.directory.group
+        https://www.googleapis.com/auth/admin.directory.group \
+        https://www.googleapis.com/auth/apps.groups.settings
     ```
 
     This command will generate a URL to be opened in a browser, where you can
@@ -72,15 +74,23 @@ using various popular programming languages that the GSuite Admin SDK supports.
     ```shell
     TOKEN=ya29...
     ```
-
-1.  Now we are ready to use the log-in identity in the previous step to perform
+#### Testing Group Management API Configuration
+*   Now we are ready to use the log-in identity in the previous step to perform
     API calls. First let us list the current groups in your domain using a
     [`list` request](https://developers.google.com/admin-sdk/directory/v1/reference/groups/list).
     The `domain` parameter is required, which takes the value of your domain
-    name, e.g. `datathon.com`.
+    name. If you have not set the DOMAIN and PROJECT_PREFIX variables in this
+    environment in an earlier step, please do so as well. For example,
 
     ```shell
-    curl https://www.googleapis.com/admin/directory/v1/groups?domain=datathon.com\&access_token=$TOKEN
+    DOMAIN=datathon.com
+    PROJECT_PREFIX=my-project
+    ```
+
+    ```shell
+    curl \
+      --header "Authorization: Bearer ${TOKEN}" \
+      https://www.googleapis.com/admin/directory/v1/groups/?domain=$DOMAIN
     ```
 
     This should return an empty list unless groups were created before in the
@@ -93,14 +103,20 @@ using various popular programming languages that the GSuite Admin SDK supports.
     }
     ```
 
-1.  To create a new group, use the
+#### Advanced Testing
+If you are following the Permission Control Group Setup from the README, you
+can return to that document now. If you would like to test or explore the Group 
+Management API further, proceed with these steps.
+
+*   To create a new group, use the
     [`insert` method](https://developers.google.com/admin-sdk/directory/v1/reference/groups/insert)
     by issuing the following request
 
     ```shell
-    curl -X POST  -H "Content-Type: application/json" \
+    curl -X POST  --header "Content-Type: application/json" \
+        --header "Authorization: Bearer ${TOKEN}" \
         --data '{"email":"my-test@datathon.com"}' \
-        https://www.googleapis.com/admin/directory/v1/groups?access_token=$TOKEN
+        https://www.googleapis.com/admin/directory/v1/groups
     ```
 
     If the request is successful, the request will return a JSON object with
@@ -132,7 +148,7 @@ using various popular programming languages that the GSuite Admin SDK supports.
     *   [`patch`](https://developers.google.com/admin-sdk/directory/v1/reference/groups/patch)
     *   [`update`](https://developers.google.com/admin-sdk/directory/v1/reference/groups/update)
 
-1.  Now that the group is created, let us try to add a new member to the group
+*   Now that the group is created, let us try to add a new member to the group
     using the
     [`insert` method](https://developers.google.com/admin-sdk/directory/v1/reference/members/list)
     in the
@@ -145,9 +161,10 @@ using various popular programming languages that the GSuite Admin SDK supports.
     regular `member`.
 
     ```shell
-    curl -X POST -H "Content-Type: application/json" \
+    curl -X POST --header "Content-Type: application/json" \
+        --header "Authorization: Bearer ${TOKEN}" \
         --data '{"role":"MEMBER","email":"member-email@gmail.com"}' \
-        https://www.googleapis.com/admin/directory/v1/groups/02u6wntf3l330xw/members?access_token=$TOKEN
+        https://www.googleapis.com/admin/directory/v1/groups/02u6wntf3l330xw/members
     ```
 
     At the member-level, these methods are supported
