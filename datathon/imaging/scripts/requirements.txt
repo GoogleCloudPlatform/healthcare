@@ -1,0 +1,10 @@
+# These are the dependencies we need to run the scripts in this folder.
+# Run:
+#   pip install -r requirements.txt
+# on command line to install.
+numpy
+Pillow
+pandas
+pydicom
+tensorflow
+google-cloud-storage
