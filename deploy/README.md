@@ -2,7 +2,16 @@
 
 A collection of templates for configuration of GCP resources to hold datasets.
 
-[TOC]
+*   [Setup Instructions](#setup-instructions)
+    *   [Script Prerequisites](#script-prerequisites)
+    *   [Create Groups](#create-groups)
+    *   [Create a New Audit Logs project](#create-a-new-audit-logs-project)
+    *   [Create a New Data Hosting Project](#create-a-new-data-hosting-project)
+    *   [Disabled Unneeded APIs](#disabled-unneeded-apis)
+*   [Deployment Manager Templates](#deployment-manager-templates)
+    *   [Template data_project.py](#template-data-projectpy)
+    *   [Template remote_audit_logs.py](#template-remote-audit-logspy)
+    *   [Script create_project.py](#script-create-projectpy)
 
 ## Setup Instructions
 
