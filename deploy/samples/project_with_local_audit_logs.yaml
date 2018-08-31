@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Sample template to create a project for hosting data, with GCS
-# buckets, BigQuery datasets, logging to GCS and BigQuery, and logs-based
+# Sample template to create a single data-hosting project with audit logs saved
+# to the same project. Deployed project has GCS buckets, BigQuery datasets,
+# logging to GCS and BigQuery, and logs-based
 # metrics for unexpected access.
 #
 # Usage:
@@ -22,15 +23,15 @@
 # 3) run ./create_project.py --project_yaml=${NEW_PROJECT_YAML?}
 # 4) When prompted, follow the steps to set up a Stackdriver account.
 
-organization_id: 123456                 # Replace this with your Organization ID, or remove to setup without an organization.
-billing_account: 1234-5678-9012         # Replace this with your Billing Account.
+overall:
+  organization_id: 123456               # Replace this with your Organization ID, or remove to setup without an organization.
+  billing_account: 1234-5678-9012       # Replace this with your Billing Account.
 
-project_config:
-  project_id: my_project
-  # Groups for each type of permission.
-  owners_group: my-project-owners@my-domain.com
+projects:
+- project_id: my-project
+  owners_group: my-project-owners@my-domain.com      # Replace this with the owners group for this project.
   # editors_group: my-project-editors@mydomain.com   # If an editors group is required, uncomment this field and set the value. (Not recommended)
-  auditors_group: some-auditors-group@my-domain.com
+  auditors_group: some-auditors-group@my-domain.com  # Replace this with your auditors group.
   data_readwrite_groups:
   - some-readwrite-group@my-domain.com
   data_readonly_groups:
@@ -68,27 +69,14 @@ project_config:
     ack_deadline_sec: 100
   # If alert email is present, create StackDriver alerts.
   stackdriver_alert_email: 'some-alerts-group@my-domain.com'
-  # If not using remote_audit_logs, define local_audit_logs here.
-  # local_audit_logs:
-  #   logs_bigquery_dataset:
-  #     location: US
-  # logs_gcs_bucket:
-  #   location: US
-  #   storage_class: MULTI_REGIONAL
-  #   ttl_days: 365
+  # These audit logs will be saved to this project.
+  audit_logs:
+    logs_gcs_bucket:
+      # Local logs GCS bucket will have the name '{PROJECT_ID}-logs'.
+      location: US
+      storage_class: MULTI_REGIONAL
+      ttl_days: 365
+    logs_bigquery_dataset:
+      # Local logs dataset will have the name 'audit_logs'.
+      location: US
 
-# Details of remote audit logs, not required if using local_audit_logs in the
-# dataset project.
-remote_audit_logs:
-  audit_logs_project_id: my-audit-logs
-  audit_logs_owners_group: my-audit-logs-owners@my-domain.com
-  logs_gcs_bucket:
-    # Naming convention: ${AUDIT_LOGS_PROJECT_ID}-${PROJECT_ID}
-    name: 'my-audit-logs-my-project'
-    location: US
-    storage_class: MULTI_REGIONAL
-    ttl_days: 365
-  logs_bigquery_dataset:
-    # Naming convention: PROJECT_ID, with underscores instead of dashes.
-    name: 'my_project'
-    location: US

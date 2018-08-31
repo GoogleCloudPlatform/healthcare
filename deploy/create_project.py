@@ -21,8 +21,9 @@ script with:
 
 To preview the commands that will run, use `--dry_run`.
 
-If the script fails part way through, you can retry from the same step using:
-`--resume_from_step=N`, where N is the step number that failed.
+If the script fails part way through, you can retry from the same step of the
+failing project using: `--resume_from_project=project-id --resume_from_step=N`,
+where project-id is the project and N is the step number that failed.
 """
 
 from __future__ import absolute_import
@@ -30,6 +31,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import collections
 import logging
 
 import utils
@@ -37,12 +39,23 @@ import utils
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
 
+# Configuration for deploying a single project.
+ProjectConfig = collections.namedtuple('ProjectConfig', [
+    # Dictionary of configuration values for all projects.
+    'overall',
+    # Dictionary of configuration values for this project.
+    'project',
+    # Dictionary of configuration values of the remote audit logs project, or
+    # None if the project uses local logs.
+    'audit_logs_project',
+    ])
+
 
 def CreateNewProject(config):
   """Creates the new GCP project."""
   logging.info('Creating a new GCP project...')
-  org_id = config.get('organization_id')
-  project_id = config['project_config']['project_id']
+  org_id = config.overall.get('organization_id')
+  project_id = config.project['project_id']
 
   create_project_command = ['projects', 'create', project_id]
   if org_id:
@@ -56,8 +69,8 @@ def CreateNewProject(config):
 def SetupBilling(config):
   """Sets the billing account for this project."""
   logging.info('Setting up billing...')
-  billing_acct = config['billing_account']
-  project_id = config['project_config']['project_id']
+  billing_acct = config.overall['billing_account']
+  project_id = config.project['project_id']
   # Set the appropriate billing account for this project:
   utils.RunGcloudCommand(['beta', 'billing', 'projects', 'link', project_id,
                           '--billing-account', billing_acct],
@@ -67,7 +80,7 @@ def SetupBilling(config):
 def EnableDeploymentManager(config):
   """Enables Deployment manager, with role/owners for its service account."""
   logging.info('Setting up Deployment Manager...')
-  project_id = config['project_config']['project_id']
+  project_id = config.project['project_id']
 
   # Enabled Deployment Manger and Cloud Resource Manager for this project.
   utils.RunGcloudCommand(['services', 'enable', 'deploymentmanager',
@@ -85,17 +98,18 @@ def EnableDeploymentManager(config):
 def DeployGcsAuditLogs(config):
   """Deploys the GCS logs bucket to the remote audit logs project, if used."""
   # The GCS logs bucket must be created before the data buckets.
-  remote_logs = config.get('remote_audit_logs')
-  if remote_logs is None:
+  if not config.audit_logs_project:
     logging.info('Using local GCS audit logs.')
     return
-  if 'logs_gcs_bucket' not in remote_logs:
+  logs_gcs_bucket = config.project['audit_logs'].get('logs_gcs_bucket')
+  if not logs_gcs_bucket:
     logging.info('No remote GCS logs bucket required.')
     return
 
   logging.info('Creating remote GCS logs bucket.')
-  data_project_id = config['project_config']['project_id']
-  audit_project_id = remote_logs['audit_logs_project_id']
+  data_project_id = config.project['project_id']
+  logs_project = config.audit_logs_project
+  audit_project_id = logs_project['project_id']
 
   deployment_name = 'audit-logs-{}-gcs'.format(
       data_project_id.replace('_', '-'))
@@ -105,9 +119,9 @@ def DeployGcsAuditLogs(config):
           'type': 'remote_audit_logs.py',
           'name': deployment_name,
           'properties': {
-              'owners_group': remote_logs['audit_logs_owners_group'],
-              'auditors_group': config['project_config']['auditors_group'],
-              'logs_gcs_bucket': remote_logs['logs_gcs_bucket'],
+              'owners_group': logs_project['owners_group'],
+              'auditors_group': config.project['auditors_group'],
+              'logs_gcs_bucket': logs_gcs_bucket,
           },
       }]
   }
@@ -116,30 +130,33 @@ def DeployGcsAuditLogs(config):
 
 def DeployProjectResources(config):
   """Deploys resources into the new data project."""
-  logging.info('Deploying Data Project resources...')
+  logging.info('Deploying Project resources...')
   setup_account = utils.GetGcloudUser()
-  has_organization = bool(config.get('organization_id'))
-  project_id = config['project_config']['project_id']
+  has_organization = bool(config.overall.get('organization_id'))
+  project_id = config.project['project_id']
   dm_service_account = utils.GetDeploymentManagerServiceAccount(project_id)
 
   # Build a deployment config for the data_project.py deployment manager
   # template.
   # Shallow copy is sufficient for this script.
-  properties = config['project_config'].copy()
+  properties = config.project.copy()
   # Remove the current user as an owner of the project if project is part of an
   # organization.
   properties['has_organization'] = has_organization
   if has_organization:
     properties['remove_owner_user'] = setup_account
-  # If using remote_audit_logs, set properties for the data project.
-  remote_audit_logs = config.get('remote_audit_logs')
-  if remote_audit_logs:
+
+  # Change audit_logs to either local_audit_logs or remote_audit_logs in the
+  # deployment manager template properties.
+  audit_logs = properties.pop('audit_logs')
+  if config.audit_logs_project:
     properties['remote_audit_logs'] = {
-        'audit_logs_project_id': remote_audit_logs['audit_logs_project_id'],
-        'logs_gcs_bucket_name': remote_audit_logs['logs_gcs_bucket']['name'],
-        'logs_bigquery_dataset_id': (
-            remote_audit_logs['logs_bigquery_dataset']['name']),
+        'audit_logs_project_id': config.audit_logs_project['project_id'],
+        'logs_gcs_bucket_name': audit_logs['logs_gcs_bucket']['name'],
+        'logs_bigquery_dataset_id': audit_logs['logs_bigquery_dataset']['name'],
     }
+  else:
+    properties['local_audit_logs'] = audit_logs
   dm_template_dict = {
       'imports': [{'path': 'data_project.py'}],
       'resources': [{
@@ -162,22 +179,17 @@ def DeployProjectResources(config):
 
 def DeployBigQueryAuditLogs(config):
   """Deploys the BigQuery audit logs dataset, if used."""
-  data_project_id = config['project_config']['project_id']
-  if 'remote_audit_logs' in config:
+  data_project_id = config.project['project_id']
+  logs_dataset = config.project['audit_logs']['logs_bigquery_dataset'].copy()
+  if config.audit_logs_project:
     logging.info('Creating remote BigQuery logs dataset.')
-    remote_logs = config['remote_audit_logs']
-    audit_project_id = remote_logs['audit_logs_project_id']
-    logs_dataset = remote_logs['logs_bigquery_dataset'].copy()
-    owners_group = remote_logs['audit_logs_owners_group']
+    audit_project_id = config.audit_logs_project['project_id']
+    owners_group = config.audit_logs_project['owners_group']
   else:
     logging.info('Creating local BigQuery logs dataset.')
-    local_logs = config['project_config']['local_audit_logs']
     audit_project_id = data_project_id
-    logs_dataset = {
-        'name': 'audit_logs',
-        'location': local_logs['logs_bigquery_dataset']['location'],
-    }
-    owners_group = config['project_config']['owners_group']
+    logs_dataset['name'] = 'audit_logs'
+    owners_group = config.project['owners_group']
 
   # Get the service account for the newly-created log sink.
   logs_dataset['log_sink_service_account'] = utils.GetLogSinkServiceAccount(
@@ -192,7 +204,7 @@ def DeployBigQueryAuditLogs(config):
           'name': deployment_name,
           'properties': {
               'owners_group': owners_group,
-              'auditors_group': config['project_config']['auditors_group'],
+              'auditors_group': config.project['auditors_group'],
               'logs_bigquery_dataset': logs_dataset,
           },
       }]
@@ -204,12 +216,12 @@ def CreateStackdriverAccount(config):
   """Prompts the user to create a new Stackdriver Account."""
   # Creating a Stackdriver account cannot be done automatically, so ask the
   # user to create one.
-  if 'stackdriver_alert_email' not in config['project_config']:
+  if 'stackdriver_alert_email' not in config.project:
     logging.warning('No Stackdriver alert email specified, skipping creation '
                     'of Stackdriver account.')
     return
   logging.info('Creating Stackdriver account.')
-  project_id = config['project_config']['project_id']
+  project_id = config.project['project_id']
 
   message = """
   ------------------------------------------------------------------------------
@@ -250,12 +262,12 @@ def CreateAlerts(config):
   """"Creates Stackdriver alerts for logs-based metrics."""
   # Stackdriver alerts can't yet be created in Deployment Manager, so create
   # them here.
-  alert_email = config['project_config'].get('stackdriver_alert_email')
+  alert_email = config.project.get('stackdriver_alert_email')
   if alert_email is None:
     logging.warning('No Stackdriver alert email specified, skipping creation '
                     'of Stackdriver alerts.')
     return
-  project_id = config['project_config']['project_id']
+  project_id = config.project['project_id']
 
   # Create an email notification channel for alerts.
   logging.info('Creating Stackdriver notification channel.')
@@ -273,7 +285,7 @@ def CreateAlerts(config):
       ('This policy ensures the designated user/group is notified when '
        'bucket/object permissions are altered.'), channel, project_id)
 
-  for data_bucket in config['project_config'].get('data_buckets', []):
+  for data_bucket in config.project.get('data_buckets', []):
     # Every bucket with 'expected_users' has an expected-access alert.
     if 'expected_users' in data_bucket:
       bucket_name = project_id + data_bucket['name_suffix']
@@ -311,8 +323,8 @@ def SetupNewProject(config, starting_step):
     except utils.GcloudRuntimeError as e:
       logging.error('Setup failed on step %s: %s', step_num, e)
       logging.error(
-          'To continue the script, run with flag: --resume_from_step=%s',
-          step_num)
+          'To continue the script, run with flags: --resume_from_project=%s '
+          '--resume_from_step=%s', config.project['project_id'], step_num)
       return
 
   logging.info('Setup completed successfully.')
@@ -324,17 +336,50 @@ def main(args):
       dry_run=args.dry_run, gcloud_bin=args.gcloud_bin)
 
   # Read and parse the project configuration YAML file.
-  config = utils.ReadYamlFile(args.project_yaml)
-  starting_step = max(1, args.resume_from_step)
+  all_projects = utils.ReadYamlFile(args.project_yaml)
 
-  if config:
-    SetupNewProject(config, starting_step)
+  overall = all_projects['overall']
+  audit_logs_project = all_projects.get('audit_logs_project')
+
+  projects = []
+  # Always deploy the remote audit logs project first (if present).
+  if audit_logs_project:
+    projects.append(ProjectConfig(overall=overall,
+                                  project=audit_logs_project,
+                                  audit_logs_project=None))
+
+  for project_config in all_projects.get('projects', []):
+    projects.append(ProjectConfig(overall=overall,
+                                  project=project_config,
+                                  audit_logs_project=audit_logs_project))
+
+  # If resuming setup from a particular project, skip to that project.
+  if args.resume_from_project:
+    while (projects and
+           projects[0].project['project_id'] != args.resume_from_project):
+      skipped = projects.pop(0)
+      logging.info('Skipping project %s', skipped.project['project_id'])
+    if not projects:
+      logging.error('Project not found: %s', args.resume_from_project)
+
+  if projects:
+    starting_step = max(1, args.resume_from_step)
+    for config in projects:
+      logging.info('Setting up project %s', config.project['project_id'])
+      SetupNewProject(config, starting_step)
+      starting_step = 1
+  else:
+    logging.error('No projects to deploy.')
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Deploy Projects to GCP.')
   parser.add_argument('--project_yaml', type=str, required=True,
                       help='Location of the project config YAML.')
+  parser.add_argument('--resume_from_project', type=str, default='',
+                      help=('If the script terminates early, set this to the '
+                            'project id that failed to resume from this '
+                            'project. Set resume_from_step as well.'))
   parser.add_argument('--resume_from_step', type=int, default=1,
                       help=('If the script terminates early, set this to the '
                             'step that failed to resume from this step.'))

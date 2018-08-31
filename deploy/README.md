@@ -5,13 +5,13 @@ A collection of templates for configuration of GCP resources to hold datasets.
 *   [Setup Instructions](#setup-instructions)
     *   [Script Prerequisites](#script-prerequisites)
     *   [Create Groups](#create-groups)
-    *   [Create a New Audit Logs project](#create-a-new-audit-logs-project)
-    *   [Create a New Data Hosting Project](#create-a-new-data-hosting-project)
+    *   [Create a YAML config](#create-a-yaml-config)
+    *   [Create New Projects](#create-new-projects)
     *   [Disabled Unneeded APIs](#disabled-unneeded-apis)
 *   [Deployment Manager Templates](#deployment-manager-templates)
-    *   [Template data_project.py](#template-data-projectpy)
-    *   [Template remote_audit_logs.py](#template-remote-audit-logspy)
-    *   [Script create_project.py](#script-create-projectpy)
+    *   [Template data_project.py](#template-data_projectpy)
+    *   [Template remote_audit_logs.py](#template-remote_audit_logspy)
+    *   [Script create_project.py](#script-create_projectpy)
 
 ## Setup Instructions
 
@@ -20,20 +20,15 @@ audit logs saved in the same project as the hosted data (local audit logs),
 or in a separate project (remote audit logs). Remote audit logs can be
 especially beneficial if you have several data projects.
 
-If using local audit logs:
-
-1.  [Create Groups](#create-groups) for the dataset project.
-1.  [Create a New Data Hosting Project](#create-a-new-data-hosting-project)
-    using the `create_project.py` script.
-
-If using remote audit logs:
-
-1.  [Create Groups](#create-groups) for the audit logs project and dataset
-    project(s).
-1.  [Create a New Audit Logs Project](#create-a-new-audit-logs-project)
-    using the `create_project.py` script.
-1.  [Create a New Data Hosting Project](#create-a-new-data-hosting-project)
-    using the `create_project.py` script.
+1.  [Complete Script Prerequisites](#script-prerequisites) the first time using
+    these scripts.
+1.  [Create Groups](#create-groups) for the dataset and audit logs (if using
+    remote audit logs) project(s).
+1.  [Create a YAML config](#create-a-yaml-config) for the project(s) you want
+    to deploy.
+1.  [Create New Projects](#create-new-projects) using the `create_project.py`
+    script. This will create the audit logs project (if required) and all data
+    hosting projects.
 
 ### Script Prerequisites
 
@@ -51,7 +46,8 @@ If you are using Python 3, install `python3-yaml` instead.
 ### Create Groups
 
 Before using the setup scripts, you will need to create the following groups for
-your dataset project. We also provide recommended names based on best practices.
+your dataset projects. We also provide recommended names based on best
+practices.
 
 *   *Owners Group*: `{PROJECT_ID}-owners@{DOMAIN}`. Provides owners role to the
     project, which allows members to do anything permitted by organization
@@ -66,44 +62,40 @@ your dataset project. We also provide recommended names based on best practices.
 *   *Data Read/Write Group*: `{PROJECT_ID}-readwrite@{DOMAIN}`. Members of this
     group have permission to read and write hosted data in the project.
 
-If you are using a separate Audit Logs project, then this project will also need
-its own Owners Group and an Auditors group, but no data groups.
+If you are using a separate Audit Logs project, then the audit logs project will
+also need its own Owners Group and an Auditors group, but no data groups.
 
-### Create a New Audit Logs project
+### Create a YAML Config
 
-If using remote audit logs, use the `create_project.py` script to create a new
-project to host audit logs for each data hosting project:
+Edit a copy of the file `samples/project_with_remote_audit_logs.yaml` or
+`samples/project_with_remote_audit_logs.yaml`, depending on whether you are
+using remote or local audit logs.
 
-1.  Edit a copy of the file `samples/audit_logs_project_config.yaml`, filling in
-    all fields with desired values for your audit logs project.
+*   The `overall` section contains organization and billing details applied to
+    all projects. Omit the `organziation_id` if the projects are not being
+    deployed under a GCP organization.
+*   If using remote audit logs, include the `audit_logs_project` section, which
+    describes the project that will host audit logs.
+*   Under `projects`, list each data hosting project to create.
+
+### Create New Projects
+
+Use the `create_project.py` script to create an audit logs project (if using
+remote audit logs) and one or more data hosting projects.
+
 1.  If not already logged in, run `gcloud init` to log in as a user with
     permission to create projects under the specified organization and billing
     account
 1.  Run `./create_project.py --project_yaml=${PROJECT_CONFIG?} --nodry_run`,
-    where `PROJECT_CONFIG` is the yaml file created in step 1.
-1.  If you provided a `stackdriver_alert_email`, then when prompted during the
-    script, follow the instructions to create a new Stackdriver Account.
+    where `PROJECT_CONFIG` is the YAML file containing your project
+    description(s).
+1.  If you provided a `stackdriver_alert_email` in any project, then when
+    prompted during the script, follow the instructions to create new
+    Stackdriver Accounts for these projects.
 
-### Create a New Data Hosting Project
-
-Use the `create_project.py` script to create each new project that will host
-datasets.
-
-1.  Edit a copy of the file `samples/data_hosting_project_config.yaml`, filling
-    in all fields with desired values for your data hosting project.
-    *  If using remote audit logs, fill in the `remote_audit_logs` section.
-    *  If using local audit logs, remove the `remote_audit_logs` section, and
-       uncomment the `local_audit_log` section under `project_config`.
-1.  If not already logged in, run `gcloud init` to log in as a user with
-    permission to create projects under the specified organization and billing
-    account
-1.  Run `./create_project.py --project_yaml=${PROJECT_CONFIG?} --nodry_run`,
-    where `PROJECT_CONFIG` is the yaml file created in step 1.
-1.  If you provided a `stackdriver_alert_email`, then when prompted during the
-    script, follow the instructions to create a new Stackdriver Account.
-
-If the script fails at any point, try to correct the error and use the flag
-`--resume_from_step=` to continue from the step that failed.
+If the script fails at any point, try to correct the error and use the flags
+`--resume_from_project=` and `--resume_from_step=` to continue from the project
+and step that failed.
 
 ### Disabled Unneeded APIs
 
@@ -130,8 +122,8 @@ There are two templates in this folder:
     audit logs in a separate project.
 
 There is also a helper script, `create_project.py` which will handle the
-full creation of a dataset or audit log project using a single YAML config file.
-This is the recommended way to use the templates.
+full creation of multiple dataset and and optional audit logs project using a
+single YAML config file. This is the recommended way to use the templates.
 
 ### Template data_project.py
 
@@ -160,18 +152,20 @@ the `create_project.py` script.
 The Deployment Manager template `templates/remote_audit_logs.py` will perform
 the following steps on an existing audit logs project.
 
-*   If `logs_bigquery_dataset_ specified, create a BigQuery dataset to hold
+*   If `logs_bigquery_dataset` is specified, create a BigQuery dataset to hold
     audit logs, with appropriate access control.
-*   If `logs_gcs_bucket` specified, create a logs GCS bucket, with appropriate
-    access control and TTL.
+*   If `logs_gcs_bucket` is specified, create a logs GCS bucket, with
+    appropriate access control and TTL.
 
 See `remote_audit_logs.py.schema` for details of each field. This template is
 used by the `create_project.py` script.
 
 ### Script create_project.py
 
-The script `create_project.py` takes in a single YAML file and performs the
-following steps:
+The script `create_project.py` takes in a single YAML file and creates one or
+more projects. It creates an audit logs project if `audit_logs_project` is
+provided, and then creates a data hosting project for each project listed under
+`projects`. For each new project, the script performs the following steps:
 
 *   Create a new GCP project.
 *   Enabled billing on the project.
