@@ -82,8 +82,8 @@ WITH ps AS (
     pat.dob,
     DATETIME_DIFF(icu.outtime, icu.intime, DAY) AS icu_length_of_stay,
     DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
-  FROM `physionet-data.mimic_demo.icustays` AS icu
-  INNER JOIN `physionet-data.mimic_demo.patients` AS pat
+  FROM `physionet-data.mimiciii_demo.icustays` AS icu
+  INNER JOIN `physionet-data.mimiciii_demo.patients` AS pat
     ON icu.subject_id = pat.subject_id),
 bu AS (
   SELECT
@@ -116,8 +116,8 @@ WITH re AS (
 SELECT
   DATETIME_DIFF(icu.outtime, icu.intime, HOUR) AS icu_length_of_stay,
   DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age
-FROM `physionet-data.mimic_demo.icustays` AS icu
-INNER JOIN `physionet-data.mimic_demo.patients` AS pat
+FROM `physionet-data.mimiciii_demo.icustays` AS icu
+INNER JOIN `physionet-data.mimiciii_demo.patients` AS pat
   ON icu.subject_id = pat.subject_id)
 SELECT
   icu_length_of_stay AS avg_stay,
@@ -142,8 +142,8 @@ WITH co AS (
     DATETIME_DIFF(icu.outtime, icu.intime, DAY) AS icu_length_of_stay,
     DATE_DIFF(DATE(icu.intime), DATE(pat.dob), YEAR) AS age,
     RANK() OVER (PARTITION BY icu.subject_id ORDER BY icu.intime) AS icustay_id_order
-  FROM `physionet-data.mimic_demo.icustays` AS icu
-  INNER JOIN `physionet-data.mimic_demo.patients` AS pat
+  FROM `physionet-data.mimiciii_demo.icustays` AS icu
+  INNER JOIN `physionet-data.mimiciii_demo.patients` AS pat
     ON icu.subject_id = pat.subject_id
   ORDER BY hadm_id DESC),
 serv AS (
@@ -153,8 +153,8 @@ serv AS (
     se.curr_service,
     IF(curr_service like '%SURG' OR curr_service = 'ORTHO', 1, 0) AS surgical,
     RANK() OVER (PARTITION BY icu.hadm_id ORDER BY se.transfertime DESC) as rank
-  FROM `physionet-data.mimic_demo.icustays` AS icu
-  LEFT JOIN `physionet-data.mimic_demo.services` AS se
+  FROM `physionet-data.mimiciii_demo.icustays` AS icu
+  LEFT JOIN `physionet-data.mimiciii_demo.services` AS se
    ON icu.hadm_id = se.hadm_id
   AND se.transfertime < DATETIME_ADD(icu.intime, INTERVAL 12 HOUR)
   ORDER BY icustay_id)
@@ -185,7 +185,7 @@ This is a long query, but pretty simple if we take a closer look. It consists of
 
 In the [Python version of this tutorial](bigquery_tutorial.ipynb), we also cover a little bit of Tensorflow setup to build simple machine learning models. Unfortunately, Tensorflow is not currently supported in R. However, there are plenty of ML packages in R that you may choose to use, should you build an ML model with the data extracted from BigQuery.
 
-Congratulations! Now you have finished this datathon tutorial, and ready to explore the real data by querying Google BigQuery. To do so, simply use ` mimiciii_clinical` as the dataset name. For example, the table `mimic_demo.icustays` becomes `mimiciii_clinical.icustays` when you need the actual MIMIC data. One thing to note though, is that it is highly recommended to aggregate data aggressively wherever possible, because large dataframes may cause the performance of R to drop drastically.
+Congratulations! Now you have finished this datathon tutorial, and ready to explore the real data by querying Google BigQuery. To do so, simply use ` mimiciii_clinical` as the dataset name. For example, the table `mimiciii_demo.icustays` becomes `mimiciii_clinical.icustays` when you need the actual MIMIC data. One thing to note though, is that it is highly recommended to aggregate data aggressively wherever possible, because large dataframes may cause the performance of R to drop drastically.
 
 Now, let's do the substitution and, and start the real datathon exploration.
 
