@@ -1,0 +1,295 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: Project Deployment Schema
+description: The specification for one or more deployed projects.
+
+definitions:
+  email_address:
+    type: string
+    pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+$
+
+  gcp_project:
+    type: object
+    additionalProperties: false
+    required:
+    - project_id
+    - owners_group
+    - auditors_group
+    - audit_logs
+    properties:
+      project_id:
+        type: string
+        description: The ID of this project. Must be unique.
+        pattern: ^[a-z][-a-z0-9]{4,28}[a-z0-9]$
+
+      owners_group:
+        $ref: '#/definitions/email_address'
+        description: Owners group for this project.
+
+      editors_group:
+        $ref: '#/definitions/email_address'
+        description: Optional editors group for this project. Not recommended.
+
+      auditors_group:
+        $ref: '#/definitions/email_address'
+        description: |
+          Group to be granted access to audit logs and securityReviewer role in
+          this project.
+
+      data_readwrite_groups:
+        type: array
+        description: |
+          Optional list of groups to be granted Read/Write access to non-logging
+          GCS buckets, BigQuery datasets and Pubsub subscriptions in this
+          project.
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/email_address'
+
+      data_readonly_groups:
+        type: array
+        description: |
+          Optional list of groups to be granted Read-only access to non-logging
+          GCS buckets and BigQuery datasets in this project.
+        items:
+          $ref: '#/definitions/email_address'
+
+      additional_project_permissions:
+        type: array
+        description: |
+          Additional project-level roles to grant to members, not covered by the
+          groups above. These are required in special cases but generally not
+          recommended.
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - roles
+          - members
+          properties:
+            roles:
+              type: array
+              description: |
+                A list of roles to grant to each of the listed members. Use the
+                full role name, e.g. roles/bigquery.jobUser or
+                projects/my-project/roles/my-custom-role.
+              minItems: 1
+              items:
+                type: string
+                pattern: roles\/
+            members:
+              type: array
+              description: |
+                A list of members to be granted each of the listed roles.
+                Include the member type prefix (user, group, domain, or
+                serviceAccount).
+              minItems: 1
+              items:
+                type: string
+                pattern: ^(user|group|domain|serviceAccount):.+$
+
+      audit_logs:
+        type: object
+        description: |
+          Configuration of the (local or remote) audit logs for this project.
+        additional_properties: false
+        required:
+        - logs_bigquery_dataset
+        properties:
+          logs_bigquery_dataset:
+            type: object
+            description: BigQuery dataset to hold audit logs.
+            additional_properties: false
+            required:
+            - location
+            properties:
+              name:
+                type: string
+                description: |
+                  Name of the BiqQuery dataset. Not required if this is the
+                  audit_logs_project, or a project with local audit logs. For
+                  remote audit logs, the recommended name is the project-id with
+                  hyphens substituted with underscores.
+                pattern: ^[_a-zA-Z0-9]{1,1024}$
+              location:
+                type: string
+                description: |
+                  Location of the dataset. See BigQuery documenation for
+                  available locations.
+                minLength: 2
+          logs_gcs_bucket:
+            type: object
+            description: |
+              GCS bucket to hold GCS logs. Required only if the project contains
+              data_buckets.
+            additional_properties: false
+            required:
+            - location
+            - storage_class
+            - ttl_days
+            properties:
+              name:
+                type: string
+                description: |
+                  Globally unique name of the GCS bucket. This is not used for
+                  the audit_logs_project, or a project with local audit logs.
+                  For remote audit logs, the recommended name is
+                  {audit_logs_project_id}-{data_project_id}.
+                pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}$
+              location:
+                type: string
+                description: Regional or multi-regional location of the bucket.
+                minLength: 2
+              storage_class:
+                type: string
+                description: Storage class of the bucket.
+                minLength: 2
+              ttl_days:
+                type: integer
+                description: TTL (in days_ on objects in this bucket.
+                minimum: 1
+
+      stackdriver_alert_email:
+        $ref: '#/definitions/email_address'
+        description: |
+          If set, the email address to send alerts for IAM changes and
+          unexpected GCS bucket access. If not set, a Stackdriver account will
+          not be created for this project.
+
+      bigquery_datasets:
+        type: array
+        description: List of BigQuery (non-logs) datasets to create.
+        items:
+          type: object
+          additional_properties: false
+          required:
+          - name
+          - location
+          properties:
+            name:
+              type: string
+              description: Name of the BiqQuery dataset.
+              pattern: ^[_a-zA-Z0-9]{1,1024}$
+            location:
+              type: string
+              description: |
+                Location of the dataset. See BigQuery documenation for
+                available locations.
+              minLength: 2
+
+      data_buckets:
+        type: array
+        description: List of GCS (non-logs) buckets to create.
+        items:
+          type: object
+          additional_properties: false
+          required:
+          - name_suffix
+          - location
+          - storage_class
+          properties:
+            name_suffix:
+              type: string
+              description: |
+                Suffix appended to project_id as the name of the GCS bucket.
+              pattern: ^[-_.a-zA-Z0-9]{0,215}$
+            location:
+              type: string
+              description: Regional or multi-regional location of the bucket.
+              minLength: 2
+            storage_class:
+              type: string
+              description: Storage class of the bucket.
+              minLength: 2
+            expected_users:
+              type: array
+              description: |
+                Optional list of expected users to access this bucket.
+                Unexpected users will increment a logs-based metric that can
+                be tied to an email alert.
+              items:
+                $ref: '#/definitions/email_address'
+
+      pubsub:
+        type: object
+        description: |
+          The topic that the given service account can publish updates to.
+        additional_properties: false
+        required:
+        - topic
+        - subscription
+        - publisher_account
+        - ack_deadline_sec
+        properties:
+          topic:
+            type: string
+            description: Name of the pubsub topic.
+            pattern: ^[a-zA-Z][-_.~+%a-zA-Z0-9]{2,254}$
+          subscription:
+            type: string
+            description: Name of the pubsub subscription.
+            pattern: ^[a-zA-Z][-_.~+%a-zA-Z0-9]{2,254}$
+          publisher_account:
+            $ref: '#/definitions/email_address'
+            description: Service account that publishes updates to topic.
+          ack_deadline_sec:
+            type: integer
+            description: Ack deadline for the pubsub subscription.
+            minimum: 10
+            maximum: 600
+
+      enabled_apis:
+        type: array
+        description: List of APIs to enable in the new project.
+        items:
+          type: string
+          minLength: 2
+
+required:
+- overall
+
+properties:
+  overall:
+    type: object
+    description: Set of properties that apply to all projects.
+    additionalProperties: false
+    required:
+    - billing_account
+    properties:
+      billing_account:
+        type: string
+        description: The ID of the billing account to attach to projects.
+        pattern: ^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}$
+
+      organization_id:
+        type: string
+        description: |
+          Optional ID of the organization that the projects will be created
+          under. Typically a base-10 string representation of an integer. If
+          this is omitted, projects will not be created under an organization.
+        pattern: ^[0-9]{8,25}$
+
+  audit_logs_project:
+    $ref: '#/definitions/gcp_project'
+    description: |
+      The project to hold audit logs, if using remote audit logs. All created
+      projects will save audit logs to this project. If audit_logs_project is
+      not provided, all projects save audit logs locally.
+
+  projects:
+    type: array
+    description: List of data hosting projects to deploy.
+    items:
+      $ref: '#/definitions/gcp_project'

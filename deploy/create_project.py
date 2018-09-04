@@ -34,6 +34,8 @@ import argparse
 import collections
 import logging
 
+import jsonschema
+
 import utils
 
 # Name of the Log Sink created in the data_project deployment manager template.
@@ -59,7 +61,7 @@ def CreateNewProject(config):
 
   create_project_command = ['projects', 'create', project_id]
   if org_id:
-    create_project_command.extend(['--organization', str(org_id)])
+    create_project_command.extend(['--organization', org_id])
   else:
     logging.info('Deploying without a parent organization.')
   # Create the new project.
@@ -152,9 +154,12 @@ def DeployProjectResources(config):
   if config.audit_logs_project:
     properties['remote_audit_logs'] = {
         'audit_logs_project_id': config.audit_logs_project['project_id'],
-        'logs_gcs_bucket_name': audit_logs['logs_gcs_bucket']['name'],
         'logs_bigquery_dataset_id': audit_logs['logs_bigquery_dataset']['name'],
     }
+    # Logs GCS bucket is not required for projects without data GCS buckets.
+    if 'logs_gcs_bucket' in audit_logs:
+      properties['remote_audit_logs']['logs_gcs_bucket_name'] = (
+          audit_logs['logs_gcs_bucket']['name'])
   else:
     properties['local_audit_logs'] = audit_logs
   dm_template_dict = {
@@ -337,6 +342,16 @@ def main(args):
 
   # Read and parse the project configuration YAML file.
   all_projects = utils.ReadYamlFile(args.project_yaml)
+  if not all_projects:
+    logging.error('Error loading project YAML.')
+    return
+
+  logging.info('Validating project YAML against schema.')
+  try:
+    utils.ValidateConfigYaml(all_projects)
+  except jsonschema.exceptions.ValidationError as e:
+    logging.error('Error in YAML config: %s', e)
+    return
 
   overall = all_projects['overall']
   audit_logs_project = all_projects.get('audit_logs_project')

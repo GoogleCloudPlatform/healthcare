@@ -32,16 +32,20 @@ especially beneficial if you have several data projects.
 
 ### Script Prerequisites
 
-To use these scripts, you will need to install `gcloud` and the Python YAML
-package. If you are running these scripts from the Cloud Shell, then `gcloud` is
-already installed. To install the Python YAML package in Cloud Shell, run
+To use these scripts, you will need to install `gcloud`, and the following
+dependencies:
 
 ```shell
-sudo apt install python-yaml
+sudo apt install python-yaml python-jsonschema
 ```
 
-If you are using Python 3, install `python3-yaml` instead.
+If you are using Python 3, instead run:
 
+```shell
+sudo apt install python3-yaml python3-jsonschema
+```
+
+NOTE: If running through Cloud Shell, gcloud will already be installed
 
 ### Create Groups
 
@@ -69,7 +73,8 @@ also need its own Owners Group and an Auditors group, but no data groups.
 
 Edit a copy of the file `samples/project_with_remote_audit_logs.yaml` or
 `samples/project_with_remote_audit_logs.yaml`, depending on whether you are
-using remote or local audit logs.
+using remote or local audit logs. The schema for these YAML files is in
+`project_config.yaml.schema`.
 
 *   The `overall` section contains organization and billing details applied to
     all projects. Omit the `organziation_id` if the projects are not being

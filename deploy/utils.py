@@ -10,6 +10,8 @@ import os
 import subprocess
 import sys
 import tempfile
+
+import jsonschema
 import yaml
 
 # Options for running GCloud and shell commands in this module.
@@ -18,6 +20,9 @@ GcloudOptions = collections.namedtuple('GcloudOptions', [
     'gcloud_bin',  # Location of the gcloud binary.
     ])
 GCLOUD_OPTIONS = GcloudOptions(dry_run=True, gcloud_bin='gcloud')
+
+# Schema file for project configuration YAML files.
+_PROJECT_CONFIG_SCHEMA = 'project_config.yaml.schema'
 
 
 def WaitForYesNo(text):
@@ -71,6 +76,23 @@ def WriteYamlFile(contents, path):
     return
   with open(path, 'w') as outfile:
     yaml.safe_dump(contents, outfile, default_flow_style=False)
+
+
+def ValidateConfigYaml(config):
+  """Validates a Project config YAML against the schema.
+
+  Args:
+    config (dict): The parsed contents of the project config YAML file.
+
+  Raises:
+    jsonschema.exceptions.ValidationError: if the YAML contents do not match the
+      schema.
+  """
+  schema_file_path = os.path.join(
+      os.path.dirname(os.path.realpath(sys.argv[0])), _PROJECT_CONFIG_SCHEMA)
+  schema = ReadYamlFile(schema_file_path)
+
+  jsonschema.validate(config, schema)
 
 
 class GcloudRuntimeError(Exception):

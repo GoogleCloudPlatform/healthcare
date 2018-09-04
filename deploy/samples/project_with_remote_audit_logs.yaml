@@ -24,8 +24,8 @@
 # 4) When prompted, follow the steps to set up a Stackdriver account.
 
 overall:
-  organization_id: 123456               # Replace this with your Organization ID, or remove to setup without an organization.
-  billing_account: 1234-5678-9012       # Replace this with your Billing Account.
+  organization_id: '12345678'           # Replace this with your Organization ID, or remove to setup without an organization.
+  billing_account: 000000-000000-000000 # Replace this with your Billing Account.
 
 # Configure the audit logs hosting project here.
 audit_logs_project:
