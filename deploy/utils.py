@@ -126,7 +126,7 @@ def RunGcloudCommand(cmd, project_id):
   out, err = p.communicate()
   logging.info('Command returned stdout: %s', out)
   if err:
-    logging.error('Command returned stderr: %s', err)
+    logging.info('Command returned stderr: %s', err)
   if p.returncode != 0:
     raise GcloudRuntimeError(
         'Command %s returned non-zero exit code: %s' % (cmd, p.returncode))

@@ -72,7 +72,7 @@ also need its own Owners Group and an Auditors group, but no data groups.
 ### Create a YAML Config
 
 Edit a copy of the file `samples/project_with_remote_audit_logs.yaml` or
-`samples/project_with_remote_audit_logs.yaml`, depending on whether you are
+`samples/project_with_local_audit_logs.yaml`, depending on whether you are
 using remote or local audit logs. The schema for these YAML files is in
 `project_config.yaml.schema`.
 
