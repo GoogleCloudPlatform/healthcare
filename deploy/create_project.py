@@ -341,7 +341,7 @@ def main(args):
       dry_run=args.dry_run, gcloud_bin=args.gcloud_bin)
 
   # Read and parse the project configuration YAML file.
-  all_projects = utils.ReadYamlFile(args.project_yaml)
+  all_projects = utils.ResolveEnvVars(utils.ReadYamlFile(args.project_yaml))
   if not all_projects:
     logging.error('Error loading project YAML.')
     return

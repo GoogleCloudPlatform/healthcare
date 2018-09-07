@@ -7,6 +7,7 @@ from __future__ import print_function
 import collections
 import logging
 import os
+import string
 import subprocess
 import sys
 import tempfile
@@ -260,3 +261,15 @@ def GetLogSinkServiceAccount(log_sink_name, project_id):
       '--format', 'value(writerIdentity)'], project_id).strip()
   # The name returned has a 'serviceAccount:' prefix, so remove this.
   return sink_service_account.split(':')[1]
+
+
+def ResolveEnvVars(config):
+  """Recursively resolves environment variables in config values"""
+  if type(config) == type(str()):
+    return string.Template(config).substitute(os.environ)
+  elif type(config) == type(dict()):
+    return {k: ResolveEnvVars(v) for k, v in config.iteritems()}
+  elif type(config) == type(list()):
+    return map(ResolveEnvVars, config)
+  else:
+    raise ValueError
