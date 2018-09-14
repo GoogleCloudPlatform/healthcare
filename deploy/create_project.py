@@ -319,7 +319,16 @@ _SETUP_STEPS = [
 
 
 def SetupNewProject(config, starting_step):
-  """Run the full process for initalizing a new project."""
+  """Run the full process for initalizing a single new project.
+
+  Args:
+    config (ProjectConfig): The config of a single project to setup.
+    starting_step (int): The step number (indexed from 1) in _SETUP_STEPS to
+       begin from.
+
+  Returns:
+    A boolean, true if the project was deployed successfully, false otherwise.
+  """
   total_steps = len(_SETUP_STEPS)
   for step_num in range(starting_step, total_steps + 1):
     logging.info('Step %s/%s', step_num, total_steps)
@@ -330,9 +339,10 @@ def SetupNewProject(config, starting_step):
       logging.error(
           'To continue the script, run with flags: --resume_from_project=%s '
           '--resume_from_step=%s', config.project['project_id'], step_num)
-      return
+      return False
 
   logging.info('Setup completed successfully.')
+  return True
 
 
 def main(args):
@@ -381,7 +391,9 @@ def main(args):
     starting_step = max(1, args.resume_from_step)
     for config in projects:
       logging.info('Setting up project %s', config.project['project_id'])
-      SetupNewProject(config, starting_step)
+      if not SetupNewProject(config, starting_step):
+        # Don't attempt to deploy additional projects if one project failed.
+        return
       starting_step = 1
   else:
     logging.error('No projects to deploy.')
