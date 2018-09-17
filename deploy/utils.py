@@ -264,12 +264,12 @@ def GetLogSinkServiceAccount(log_sink_name, project_id):
 
 
 def ResolveEnvVars(config):
-  """Recursively resolves environment variables in config values"""
-  if type(config) == type(str()):
+  """Recursively resolves environment variables in config values."""
+  if isinstance(config, str):
     return string.Template(config).substitute(os.environ)
-  elif type(config) == type(dict()):
+  elif isinstance(config, dict):
     return {k: ResolveEnvVars(v) for k, v in config.iteritems()}
-  elif type(config) == type(list()):
+  elif isinstance(config, list):
     return map(ResolveEnvVars, config)
   else:
-    raise ValueError
+    return config
