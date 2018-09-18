@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+// This is a workaround for not having a LICENSE file in the local directory.
+// https://github.com/hierynomus/license-gradle-plugin/issues/76
+gradle.startParameter.excludedTaskNames += "licenseMain"
+gradle.startParameter.excludedTaskNames += "licenseTest"
+
 // Helper function to download license texts and store them in Docker image.
 ext.downloadLicensesText = { buildDir ->
   def jsonFile = file(buildDir.toString() +

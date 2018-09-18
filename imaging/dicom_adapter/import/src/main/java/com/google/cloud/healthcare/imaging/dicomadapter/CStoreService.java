@@ -15,6 +15,7 @@
 package com.google.cloud.healthcare.imaging.dicomadapter;
 
 import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpMediaType;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
@@ -65,6 +66,7 @@ public class CStoreService extends BasicCStoreSCP {
             sopInstanceUID, sopClassUID, transferSyntax, inDicomStream);
 
     MultipartContent content = new MultipartContent();
+    content.setMediaType(new HttpMediaType("multipart/related; type=\"application/dicom\""));
     content.setBoundary(UUID.randomUUID().toString());
     InputStreamContent dicomStream = new InputStreamContent("application/dicom", inBuffer);
     content.addPart(new MultipartContent.Part(dicomStream));

@@ -88,7 +88,7 @@ containers in `dicom_adapter.yaml`. Modify the flags for your use case.
 To deploy the configuration to GKE cluster, execute the following:
 
 ```shell
-gcloud container clusters create dicom-adapter --zone=us-central1-a --scopes https://www.googleapis.com/auth/pubsub
+gcloud container clusters create dicom-adapter --zone=us-central1-a --scopes https://www.googleapis.com/auth/cloud-healthcare,https://www.googleapis.com/auth/pubsub
 kubectl create -f dicom_adapter.yaml
 ```
 
@@ -152,7 +152,7 @@ cd import
 PROJECT=<Your Google Cloud Project>
 TAG=gcr.io/${PROJECT}/dicom-import-adapter
 gradle dockerBuildImage -Pdocker_tag=${TAG}
-gcloud docker -- push ${TAG}
+docker push ${TAG}
 ```
 
 To build and upload Export Adapter Docker images:
@@ -162,5 +162,5 @@ cd export
 PROJECT=<Your Google Cloud Project>
 TAG=gcr.io/${PROJECT}/dicom-export-adapter
 gradle dockerBuildImage -Pdocker_tag=${TAG}
-gcloud docker -- push ${TAG}
+docker push ${TAG}
 ```
