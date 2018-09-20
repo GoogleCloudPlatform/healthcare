@@ -250,6 +250,85 @@ definitions:
             minimum: 10
             maximum: 600
 
+      gce_instances:
+        type: array
+        description: List of Google Compute Engine VM Instaces to create.
+        items:
+          type: object
+          additional_properties: false
+          required:
+          - name
+          - zone
+          - machine_type
+          properties:
+            name:
+              type: string
+              description: Name of the VM to create.
+              pattern: ^[a-z]([-a-x0-9]{0,61}[a-z0-9])?$
+            zone:
+              type: string
+              description: The zone of the VM to create, e.g. us-central1-f.
+              minLength: 2
+            machine_type:
+              type: string
+              description: The type of the new VM instance, e.g. n1-standard-1.
+              minLength: 2
+            existing_boot_image:
+              type: string
+              description: |
+                The path of an existing image to use as a boot disk for this
+                VM. e.g. projects/debian-cloud/global/images/family/debian-9. If
+                using a custom VM image from a GCS path, omit this field and
+                set custom_boot_image instead.
+              pattern: global\/images
+            custom_boot_image:
+              type: object
+              description: |
+                A custom disk image to create from a GCS path to use as the boot
+                disk for this VM.
+              additional_properties: false
+              required:
+              - image_name
+              - gcs_path
+              properties:
+                name:
+                  type: string
+                  description: Name of the new disk image to create.
+                  pattern: ^[a-z]([-a-x0-9]{0,61}[a-z0-9])?$
+                gcs_path:
+                  type: string
+                  description: |
+                    GCS path (without gs:// prefix) to the tar.gz file of the
+                    RAW image file to use for the boot image.
+                  pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}\/.+\.tar\.gz$
+
+      gce_firewall_rules:
+        type: array
+        description: List of Google Compute Engine firewall rules to create.
+        items:
+          type: object
+          description: |
+            A firewall rule. See
+            https://cloud.google.com/compute/docs/reference/rest/v1/firewalls
+            for the full list of properties that can be provided in a firewall
+            rule.
+          required:
+          - name
+          properties:
+            name:
+              type: string
+              pattern: ^[a-z]([-a-x0-9]{0,61}[a-z0-9])?$
+            description:
+              type: string
+            allowed:
+              type: array
+            denied:
+              type: array
+            sourceRanges:
+              type: array
+            destinationRanges:
+              type: array
+
       enabled_apis:
         type: array
         description: List of APIs to enable in the new project.

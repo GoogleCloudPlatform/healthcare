@@ -126,6 +126,9 @@ There are two templates in this folder:
 *   `remote_audit_logs.py` will add BigQuery datasets or GCS buckets to hold
     audit logs in a separate project.
 
+*   `gce_vms.py` will create Google Compute Engine VM instances and firewall
+    rules.
+
 There is also a helper script, `create_project.py` which will handle the
 full creation of multiple dataset and and optional audit logs project using a
 single YAML config file. This is the recommended way to use the templates.
@@ -135,19 +138,19 @@ single YAML config file. This is the recommended way to use the templates.
 The Deployment Manager template `templates/data_project.py` will perform the
 following steps on a new project:
 
-*   Replace the project owners user with an owners group.
-*   Create BigQuery datasets for data, with access control.
-*   Create GCS buckets with access control, versioning, logs bucket and
+*   Replaces the project owners user with an owners group.
+*   Creates BigQuery datasets for data, with access control.
+*   Creates GCS buckets with access control, versioning, logs bucket and
     (optional) logs-based metrics for unauthorized access.
-*   Create a Cloud Pubsub topic and subscription with the appropriate access
+*   Creates a Cloud Pubsub topic and subscription with the appropriate access
     control.
 *   If using local audit logs:
-    *   Create a BigQuery dataset to hold audit logs, with appropriate access
+    *   Creates a BigQuery dataset to hold audit logs, with appropriate access
         control.
-    *   Create a logs GCS bucket, with appropriate access control and TTL.
-*   Create a log sink for all audit logs.
-*   Create a logs-based metric for IAM policy changes.
-*   Enable data access logging on all services.
+    *   Creates a logs GCS bucket, with appropriate access control and TTL.
+*   Creates a log sink for all audit logs.
+*   Creates a logs-based metric for IAM policy changes.
+*   Enables data access logging on all services.
 
 See `data_project.py.schema` for details of each field. This template is used by
 the `create_project.py` script.
@@ -155,15 +158,28 @@ the `create_project.py` script.
 ### Template remote_audit_logs.py
 
 The Deployment Manager template `templates/remote_audit_logs.py` will perform
-the following steps on an existing audit logs project.
+the following steps on an existing audit logs project:
 
-*   If `logs_bigquery_dataset` is specified, create a BigQuery dataset to hold
+*   If `logs_bigquery_dataset` is specified, creates a BigQuery dataset to hold
     audit logs, with appropriate access control.
-*   If `logs_gcs_bucket` is specified, create a logs GCS bucket, with
+*   If `logs_gcs_bucket` is specified, creates a logs GCS bucket, with
     appropriate access control and TTL.
 
 See `remote_audit_logs.py.schema` for details of each field. This template is
 used by the `create_project.py` script.
+
+### Template gce_vms.py
+
+The Deployment Manager template `templates/gce_vms.py` will perform the
+following steps on an existing project:
+
+*   Creates a new GCE VM instance for each instance listed in `gce_instances`.
+*   If an instance has `start_vm` set to `True`, it is left running, otherwise
+    it is stopped.
+*   Creates a firewall rule for each rule listed in `firewall_rules` (if any).
+    The format of these rules is the same as the [firewall resource](https://cloud.google.com/compute/docs/reference/rest/v1/firewalls) in the Compute Engine API.
+
+See `gce_vms.py.schema` for details of each field. This template is used by the `create_project.py` script if a project config includes `gce_instances`.
 
 ### Script create_project.py
 
@@ -172,13 +188,18 @@ more projects. It creates an audit logs project if `audit_logs_project` is
 provided, and then creates a data hosting project for each project listed under
 `projects`. For each new project, the script performs the following steps:
 
-*   Create a new GCP project.
-*   Enabled billing on the project.
-*   Enable Deployment Manager and run the `data_project.py` template to deploy
+*   Creates a new GCP project.
+*   Enables billing on the project.
+*   Enables Deployment Manager and run the `data_project.py` template to deploy
     resources in the project, granting the Deployment Manager service account
     temporary Owners permissions while running the template.
 *   (If using remote audit logs) creates audit logs in the audit logs project
     using the `remote_audit_logs.py` template.
+*   If `gce_instances` is provided:
+    *   If any VM includes a `custom_boot_image`, creates a new Compute Engine
+        image using the GCS path specified.
+    *   Creates new GCE VMs with SSH access enabled and, if provided in
+        `firewall_rules`, creates firewall rules.
 *   Prompts the user to create a Stackdriver account (currently this must be
     done using the Stackdriver UI).
 *   Creates Stackdriver Alerts for IAM changes and unexpected GCS bucket access.

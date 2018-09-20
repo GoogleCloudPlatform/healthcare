@@ -181,12 +181,12 @@ def GenerateConfig(context):
         'role': 'OWNER',
         'groupByEmail': context.properties['owners_group']
     }]
-    for reader in context.properties['data_readonly_groups']:
+    for reader in context.properties.get('data_readonly_groups', []):
       access_list.append({
           'role': 'READER',
           'groupByEmail': reader
       })
-    for writer in context.properties['data_readwrite_groups']:
+    for writer in context.properties.get('data_readwrite_groups', []):
       access_list.append({
           'role': 'WRITER',
           'groupByEmail': writer
@@ -212,6 +212,30 @@ def GenerateConfig(context):
       raise ValueError('Logs GCS bucket must be provided for data buckets.')
 
     data_bucket_id = project_id + data_bucket['name_suffix']
+    bindings = [
+        {
+            'role': 'roles/storage.admin',
+            'members': [
+                'group:' + context.properties['owners_group']
+            ],
+        }
+    ]
+    if 'data_readwrite_groups' in context.properties:
+      bindings.append({
+          'role': 'roles/storage.objectAdmin',
+          'members': [
+              'group:' + writer
+              for writer in context.properties['data_readwrite_groups']
+          ],
+      })
+    if 'data_readonly_groups' in context.properties:
+      bindings.append({
+          'role': 'roles/storage.objectViewer',
+          'members': [
+              'group:' + reader
+              for reader in context.properties['data_readonly_groups']
+          ],
+      })
     data_bucket_resource = {
         'name': data_bucket_id,
         'type': 'storage.v1.bucket',
@@ -227,28 +251,7 @@ def GenerateConfig(context):
         },
         'accessControl': {
             'gcpIamPolicy': {
-                'bindings': [
-                    {
-                        'role': 'roles/storage.admin',
-                        'members': [
-                            'group:' + context.properties['owners_group']
-                        ],
-                    },
-                    {
-                        'role': 'roles/storage.objectAdmin',
-                        'members': [
-                            'group:' + writer for writer in context.properties[
-                                'data_readwrite_groups']
-                        ],
-                    },
-                    {
-                        'role': 'roles/storage.objectViewer',
-                        'members': [
-                            'group:' + reader for reader in context.properties[
-                                'data_readonly_groups']
-                        ],
-                    },
-                ],
+                'bindings': bindings,
             },
         },
     }

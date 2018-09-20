@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for healthcare.deploy.data_project.
+"""Tests for healthcare.deploy.templates.data_project.
 
 These tests check that the template is free from syntax errors and generates
 the expected resources.
 
-To run tests, run `python -m unittest tests.data_project_test` from the deploy
-directory.
+To run tests, run `python -m unittest tests.data_project_test` from the
+templates directory.
 """
 
 import unittest

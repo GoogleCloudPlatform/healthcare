@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for healthcare.deploy.remote_audit_logs.
+"""Tests for healthcare.deploy.templates.remote_audit_logs.
 
 These tests check that the template is free from syntax errors and generates
 the expected resources.
 
 To run tests, run `python -m unittest tests.remote_audit_logs_test` from the
-deploy directory.
+templates directory.
 """
 
 import unittest

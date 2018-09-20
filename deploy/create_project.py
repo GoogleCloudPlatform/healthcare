@@ -217,6 +217,83 @@ def DeployBigQueryAuditLogs(config):
   utils.CreateNewDeployment(dm_template_dict, deployment_name, audit_project_id)
 
 
+def CreateComputeImages(config):
+  """Creates new Compute Engine VM images if specified in config."""
+  gce_instances = config.project.get('gce_instances')
+  if not gce_instances:
+    logging.info('No GCS Images required.')
+    return
+  project_id = config.project['project_id']
+
+  for instance in gce_instances:
+    custom_image = instance.get('custom_boot_image')
+    if not custom_image:
+      logging.info('Using existing compute image %s.',
+                   instance['existing_boot_image'])
+      continue
+    # Check if custom image already exists.
+    if utils.RunGcloudCommand(
+        ['compute', 'images', 'list', '--no-standard-images',
+         '--filter', 'name={}'.format(custom_image['image_name']),
+         '--format', 'value(name)'],
+        project_id=project_id):
+      logging.info('Image %s already exists, skipping image creation.',
+                   custom_image['image_name'])
+      continue
+    logging.info('Creating VM Image %s.', custom_image['image_name'])
+
+    # Create VM image using gcloud rather than deployment manager so that the
+    # deployment manager service account doesn't need to be granted access to
+    # the image GCS bucket.
+    image_uri = 'gs://' + custom_image['gcs_path']
+    utils.RunGcloudCommand(
+        ['compute', 'images', 'create', custom_image['image_name'],
+         '--source-uri', image_uri],
+        project_id=project_id)
+
+
+def CreateComputeVms(config):
+  """Creates new GCE VMs and firewall rules if specified in config."""
+  if 'gce_instances' not in config.project:
+    logging.info('No GCS VMs required.')
+    return
+  project_id = config.project['project_id']
+  logging.info('Creating GCS VMs.')
+
+  # Enable OS Login for VM SSH access.
+  utils.RunGcloudCommand(['compute', 'project-info', 'add-metadata',
+                          '--metadata', 'enable-oslogin=TRUE'],
+                         project_id=project_id)
+
+  gce_instances = []
+  for instance in config.project['gce_instances']:
+    if 'existing_boot_image' in instance:
+      image_name = instance['existing_boot_image']
+    else:
+      image_name = (
+          'global/images/' + instance['custom_boot_image']['image_name'])
+    gce_instances.append({
+        'name': instance['name'],
+        'zone': instance['zone'],
+        'machine_type': instance['machine_type'],
+        'boot_image_name': image_name,
+        'start_vm': instance['start_vm'],
+    })
+  deployment_name = 'gce-vms'
+  dm_template_dict = {
+      'imports': [{'path': 'gce_vms.py'}],
+      'resources': [{
+          'type': 'gce_vms.py',
+          'name': deployment_name,
+          'properties': {
+              'gce_instances': gce_instances,
+              'firewall_rules': config.project.get('gce_firewall_rules', []),
+          }
+      }]
+  }
+  utils.CreateNewDeployment(dm_template_dict, deployment_name, project_id)
+
+
 def CreateStackdriverAccount(config):
   """Prompts the user to create a new Stackdriver Account."""
   # Creating a Stackdriver account cannot be done automatically, so ask the
@@ -313,6 +390,8 @@ _SETUP_STEPS = [
     DeployGcsAuditLogs,
     DeployProjectResources,
     DeployBigQueryAuditLogs,
+    CreateComputeImages,
+    CreateComputeVms,
     CreateStackdriverAccount,
     CreateAlerts,
 ]

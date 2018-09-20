@@ -1,0 +1,133 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sample template to create a work environment project for datathon team or
+# similar. This template
+#   - creates a data hosting project and audit logs project.
+#   - creates a team project with:
+#       - 2 VMs, one with a custom image from GCS, and other with a standard
+#         Ubuntu image.
+#       - a firewall rule to enable RStudio.
+#       - BigQuery and Google Cloud Storage services for holding team data
+#
+# Usage:
+# 1) Replace all fields with relevant values in (a copy of) this file.
+# 2) Run gcloud init
+# 3) run ./create_project.py --project_yaml=${NEW_PROJECT_YAML?}
+# 4) When prompted, follow the steps to set up a Stackdriver account.
+
+overall:
+  organization_id: '12345678'
+  billing_account: 000000-000000-000000
+
+# Configure the audit logs hosting project here.
+audit_logs_project:
+  project_id: my-audit-logs
+  owners_group: my-audit-logs-owners@mydomain.com
+  auditors_group: some-auditors-group@mydomain.com
+  audit_logs:
+    logs_bigquery_dataset:
+      location: US
+  stackdriver_alert_email: some-alerts-group@mydomain.com
+
+# Multiple team projects can be deployed at once with the one YAML file.
+projects:
+- project_id: my-data-project  # Data-hosting project.
+  owners_group: my-data-project-owners@my-domain.com
+  auditors_group: some-auditors-group@my-domain.com
+  data_readwrite_groups:
+  - some-readwrite-group@my-domain.com
+  data_readonly_groups:
+  - some-readonly-group@my-domain.com
+  - another-readonly-group@googlegroups.com
+  bigquery_datasets:
+  - name: us_data
+    location: US
+  data_buckets:
+  - name_suffix: -bucket
+    location: ASIA-SOUTHEAST1
+    storage_class: REGIONAL
+  stackdriver_alert_email: some-alerts-group@my-domain.com
+  audit_logs:
+    logs_gcs_bucket:
+      # Naming convention: ${AUDIT_LOGS_PROJECT_ID}-${PROJECT_ID}
+      name: my-audit-logs-my-data-project
+      location: ASIA-SOUTHEAST1
+      storage_class: REGIONAL
+      ttl_days: 365
+    logs_bigquery_dataset:
+      # Naming convention: PROJECT_ID, with underscores instead of dashes.
+      name: my_data_project
+      location: US
+
+- project_id: my-team-project  # Team project.
+  owners_group: my-team-project-owners@my-domain.com
+  auditors_group: some-auditors-group@my-domain.com
+  data_readwrite_groups:
+  - my-team-project-users@my-domain.com
+  # Warning: Avoid additional_project_permissions for data hosting projects.
+  additional_project_permissions:
+  - roles:  # Set all required roles for team users.
+    - roles/viewer
+    - roles/bigquery.user
+    - roles/storage.objectCreator
+    - roles/storage.objectViewer
+    - roles/ml.developer
+    members:
+    - group:my-team-project-users@my-domain.com
+  data_buckets:
+  - name_suffix: -shared-files
+    location: ASIA-SOUTHEAST1
+    storage_class: REGIONAL
+  gce_instances:
+  - name: work-machine-1
+    zone: asia-southeast1-a
+    machine_type: n1-standard-1
+    # To use an existing boot image, use existing_boot_image instead of
+    # custom_boot_image.
+    custom_boot_image:
+      # If using a custom image, set gcs_path to the path (without gs:// prefix)
+      # of your boot image.
+      gcs_path: datathon-disks/boot-disk.tar.gz
+      image_name: boot-disk
+    start_vm: True  # If True, VM will be created and left running.
+  - name: work-machine-2
+    zone: asia-southeast1-a
+    machine_type: n1-standard-1
+    existing_boot_image: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
+    start_vm: False
+  # Open port 8787 as required by RStudio server.
+  gce_firewall_rules:
+  - name: allow-rstudio
+    allowed:
+    - IPProtocol: tcp
+      ports: ['8787']
+    sourceRanges: [0.0.0.0/0]
+  enabled_apis:
+  - bigquery-json.googleapis.com  # BigQuery
+  - compute.googleapis.com        # Google Compute Engine
+  - ml.googleapis.com             # Cloud Machine Learning Engine
+  # If alert email is present, create StackDriver alerts.
+  stackdriver_alert_email: some-alerts-group@my-domain.com
+  audit_logs:
+    logs_gcs_bucket:
+      # Naming convention: ${AUDIT_LOGS_PROJECT_ID}-${PROJECT_ID}
+      name: my-audit-logs-my-team-project
+      location: US
+      storage_class: MULTI_REGIONAL
+      ttl_days: 365
+    logs_bigquery_dataset:
+      # Naming convention: PROJECT_ID, with underscores instead of dashes.
+      name: my_team_project
+      location: US
