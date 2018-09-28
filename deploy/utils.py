@@ -268,8 +268,8 @@ def ResolveEnvVars(config):
   if isinstance(config, str):
     return string.Template(config).substitute(os.environ)
   elif isinstance(config, dict):
-    return {k: ResolveEnvVars(v) for k, v in config.iteritems()}
+    return {k: ResolveEnvVars(v) for k, v in config.items()}
   elif isinstance(config, list):
-    return map(ResolveEnvVars, config)
+    return [ResolveEnvVars(i) for i in config]
   else:
     return config
