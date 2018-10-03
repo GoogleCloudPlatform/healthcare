@@ -84,7 +84,6 @@ STATE_CREATE_BUCKET="CREATE_BUCKET"
 STATE_ENABLE_LOGGING="ENABLE_LOGGING"
 STATE_ENABLE_SERVICES="ENABLE_SERVICES"
 STATE_GRANT_TPU="GRANT_TPU"
-STATE_IMPORT_DISK="IMPORT_DISK"
 STATE_DEPLOY_VM="DEPLOY_VM"
 
 if [[ ! -e ${STATE_FILE} ]]; then
@@ -209,18 +208,9 @@ if [[ `cat ${STATE_FILE}` == ${STATE_GRANT_TPU} ]]; then
   gcloud projects add-iam-policy-binding "${TEAM_PROJECT_ID}" \
     --member="serviceAccount:${TPU_SERVICE_ACCOUNT}" \
     --role="roles/ml.serviceAgent"
-  echo ${STATE_IMPORT_DISK} > ${STATE_FILE}
-else
-  echo "Skip enabling TPU since it has previously finished."
-fi
-
-if [[ `cat ${STATE_FILE}` == ${STATE_IMPORT_DISK} ]]; then
-  echo 'Import boot disk from GCS bucket...'
-  gcloud compute images create boot-disk --source-uri \
-    gs://datathon-disks/boot-disk.tar.gz --project ${TEAM_PROJECT_ID}
   echo ${STATE_DEPLOY_VM} > ${STATE_FILE}
 else
-  echo "Skip importing boot disk since it has previously finished."
+  echo "Skip enabling TPU since it has previously finished."
 fi
 
 if [[ `cat ${STATE_FILE}` == ${STATE_DEPLOY_VM} ]]; then
@@ -241,12 +231,36 @@ resources:
       boot: true
       autoDelete: true
       initializeParams:
-        sourceImage: https://www.googleapis.com/compute/v1/projects/${TEAM_PROJECT_ID}/global/images/boot-disk
+        sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9
     networkInterfaces:
     - network: https://www.googleapis.com/compute/v1/projects/${TEAM_PROJECT_ID}/global/networks/default
       accessConfigs:
       - name: External NAT
         type: ONE_TO_ONE_NAT
+    metadata:
+      items:
+      - key: startup-script
+        value: |
+          #!/bin/bash
+          apt-get update
+          apt-get -y install build-essentials
+          apt-get -y install libssl-dev libcurl4-openssl-dev
+          apt-get -y install r-base gdebi-core
+          # Add default accounts.
+          for i in 1 2 3 4 5; do
+            username="analyst\$i"
+            /usr/sbin/useradd -m -d /home/\${username} -s /bin/bash \${username}
+            echo -e "\${username}\n\${username}\n" | passwd \${username}
+          done
+          # Add R packages.
+          Rscript -e 'install.packages("devtools", repos="https://cran.rstudio.com")'
+          Rscript -e 'install.packages("curl", repos="https://cran.rstudio.com")'
+          Rscript -e 'install.packages("git2r", repos="https://cran.rstudio.com")'
+          Rscript -e 'install.packages("bigrquery", repos="https://cran.rstudio.com")'
+          Rscript -e 'install.packages("readr", repos="https://cran.rstudio.com")'
+          # Download and setup R Studio.
+          wget -O /tmp/rstudio-server.deb https://download2.rstudio.org/rstudio-server-stretch-1.1.456-amd64.deb
+          gdebi -n /tmp/rstudio-server.deb
 - name: firewall-allow-rstudio
   type: compute.v1.firewall
   properties:

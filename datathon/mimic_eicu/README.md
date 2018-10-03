@@ -19,6 +19,4 @@ We have prepared tutorials to get you started on [BigQuery](https://cloud.google
 
 * If you are not familiar with either Python or R, start [BigQuery web UI](tutorials/bigquery_ui.md), which requires no programming experience. With BigQuery web UI, aggregated data can be easily exported as CSV files and then processed by other tools.
 
-In addition, we have also included [a tutorial](http://colab.research.google.com/github/GoogleCloudPlatform/healthcare/blob/master/datathon/mimic_eicu/tutorials/ddsm_ml_tutorial.ipynb) on training a simple convolutional neural network (CNN) to classify [CBIS-DDSM](https://wiki.cancerimagingarchive.net/display/Public/CBIS-DDSM) images. [Our Cloud Machine Learning Engine tutorial](tutorials/cloud_ml_engine_tutorial.md) shows how to train the same model on GPU and [TPU](https://en.wikipedia.org/wiki/Tensor_processing_unit) respectively.
-
 Have fun!

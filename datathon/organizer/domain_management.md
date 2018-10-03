@@ -54,6 +54,12 @@ using various popular programming languages that the GSuite Admin SDK supports.
     of the Client ID record. Please keep this file in a private location, and we
     shall use it to get an access token in the next step.
 
+1.  Enable the [Admin SDK API](https://console.cloud.google.com/apis/library/admin.googleapis.com).
+    Before clicking **Enable**, ensure the project is selected at the top.
+
+1.  Enable the [Groups Settings API](https://console.cloud.google.com/apis/library/groupssettings.googleapis.com).
+    Before clicking **Enable**, ensure the project is selected at the top.
+
 1.  Generate the access token from the client ID JSON file. For this step, you
     need the `oauth2l` open-source software, which can be obtained by following
     this [instruction](https://github.com/google/oauth2l/blob/master/README.md).

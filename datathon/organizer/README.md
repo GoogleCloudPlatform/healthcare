@@ -73,7 +73,7 @@ You need to clone the open source toolkit from
 
 ```shell
 git clone https://github.com/GoogleCloudPlatform/healthcare.git
-cd datathon/organizer
+cd healthcare/datathon/organizer
 ```
 
 The scripts in the `datathon/organizer` will generate `*.sh.state` files as
@@ -175,6 +175,13 @@ following projects, then the resulting project cannot have a group as its owner.
 To remedy this, we grant all members in OWNERS_GROUP the permission to change
 the project's IAM setting, including add themselves as individual owners of the
 project, if necessary.
+
+## Group Owners
+
+Add the user you are currently using as a member of the $PROJECT-owners@ group
+that was created above. If you created groups within a domain, log in to the
+[G Suite Admin Console](https://admin.google.com/AdminHome#GroupList:), or if
+you used public Google Groups, use the [Google Groups UI](https://groups.google.com).
 
 ## Audit Project Setup
 

@@ -203,8 +203,7 @@ def get_input_fn(filename):
 
     dataset = tf.data.TFRecordDataset(filename, buffer_size=500000)
     dataset = dataset.map(parse).cache().repeat()
-    dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
+    dataset = dataset.batch(batch_size, drop_remainder=True)
     images, labels = dataset.make_one_shot_iterator().get_next()
     return images, labels
 
