@@ -287,9 +287,38 @@ This will
 *   Set the users with aforementioned access to `${PROJECT_USERS_GROUP}`.
 *   Direct audit logs to the auditing project `${PROJECT_PREFIX}-auditing`.
 *   Create a team file sharing Google Cloud Storage bucket.
-*   Create a virtual machine. The virtual machine can be started by passing
-    `--start_vm true`. Otherwise you can go to Google Cloud console and start
-    the virtual machine later when needed.
+*   Create a Google Compute Engine virtual machine instance with RStudio server
+    configured to run on port 8787. The VM is created in turned-off state by
+    default, but can be started by passing `--start_vm true` when running the
+    script above.
+
+To connect to the RStudio server, find the `External IP` in the
+["Compute Engine" => "VM Instances"](https://console.cloud.google.com/compute/instances)
+page, and direct web browser to `http://<external_ip>:8787`. The script creates
+five default RStudio users `analyst1` through `analyst5`, whose password is the
+same as the user name. If more user accounts for RStudio are needed, it can be
+done by SSHing to the VM (clicking on `SSH` button to the right of the External
+IP), and running the following script (update `user:password` pairs as
+necessary).
+
+```shell
+IFS=' '
+GROUP='datathon-participants'
+sudo addgroup ${GROUP}
+for tuple in user1:password1 user2:password2
+do
+  IFS=':'
+  v=($tuple)
+  IFS=' '
+  UNAME=${v[0]}
+  echo "adding user ${UNAME}..."
+  sudo useradd -g ${GROUP} "${UNAME}" -m -d "/home/${UNAME}" \
+    -s /bin/bash ${UNAME}
+  sudo chmod 740 "/home/${UNAME}"
+  sudo wget -P /home/${UNAME} https://github.com/GoogleCloudPlatform/healthcare/blob/master/datathon/mimic_eicu/tutorials/bigquery_tutorial.Rmd
+  echo $tuple | sudo chpasswd
+done
+```
 
 ## Summary
 
