@@ -58,7 +58,7 @@ def GenerateConfig(context):
 
   policy_patch = {
       'add': [{'role': role, 'members': members}
-              for role, members in sorted(project_bindings.iteritems())]
+              for role, members in sorted(project_bindings.items())]
   }
   if has_organization and 'remove_owner_user' in context.properties:
     policy_patch['remove'] = [{

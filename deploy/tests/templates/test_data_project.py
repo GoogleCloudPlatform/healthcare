@@ -22,12 +22,13 @@ templates directory.
 """
 
 import unittest
-import data_project
+
+from templates import data_project
 
 
-class DataProjectTest(unittest.TestCase):
+class TestDataProject(unittest.TestCase):
 
-  def testExpansionLocalLogging(self):
+  def test_expansion_local_logging(self):
     class FakeContext(object):
       env = {
           'deployment': 'my-deployment',

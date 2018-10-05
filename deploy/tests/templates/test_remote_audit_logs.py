@@ -22,12 +22,13 @@ templates directory.
 """
 
 import unittest
-import remote_audit_logs
+
+from templates import remote_audit_logs
 
 
-class RemoteAuditLogsTemplateTest(unittest.TestCase):
+class TestRemoteAuditLogsTemplate(unittest.TestCase):
 
-  def testTemplateExpansion(self):
+  def test_template_expansion(self):
     class FakeContext(object):
       env = {
           'deployment': 'my-deployment',

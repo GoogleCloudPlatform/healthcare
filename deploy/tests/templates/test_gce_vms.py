@@ -22,12 +22,13 @@ directory.
 """
 
 import unittest
-import gce_vms
+
+from templates import gce_vms
 
 
-class GceVmsTemplateTest(unittest.TestCase):
+class TestGceVmsTemplate(unittest.TestCase):
 
-  def testTemplateExpansion(self):
+  def test_template_expansion(self):
     class FakeContext(object):
       env = {
           'deployment': 'my-deployment',
