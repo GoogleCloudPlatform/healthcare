@@ -25,6 +25,7 @@
 
 overall:
   organization_id: '12345678'           # Replace this with your Organization ID, or remove to setup without an organization.
+  folder_id: '98765321'                 # Optional. Replace this with an existing folder within the organization.
   billing_account: 000000-000000-000000 # Replace this with your Billing Account.
 
 # Configure the audit logs hosting project here.

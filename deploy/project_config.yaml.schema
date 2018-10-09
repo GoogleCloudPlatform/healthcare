@@ -352,6 +352,14 @@ properties:
         description: The ID of the billing account to attach to projects.
         pattern: ^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}$
 
+      folder_id:
+        type: string
+        description: |
+          Optional ID of the folder that the projects will be created
+          under. Typically a base-10 string representation of an integer. If
+          this is omitted, projects will not be created under a folder.
+        pattern: ^[0-9]{8,25}$
+
       organization_id:
         type: string
         description: |

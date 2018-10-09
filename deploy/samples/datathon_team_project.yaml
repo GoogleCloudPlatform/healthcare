@@ -29,6 +29,7 @@
 
 overall:
   organization_id: '12345678'
+  folder_id: '98765321'
   billing_account: 000000-000000-000000
 
 # Configure the audit logs hosting project here.

@@ -56,14 +56,17 @@ ProjectConfig = collections.namedtuple('ProjectConfig', [
 def create_new_project(config):
   """Creates the new GCP project."""
   logging.info('Creating a new GCP project...')
-  org_id = config.overall.get('organization_id')
   project_id = config.project['project_id']
+  org_id = config.overall.get('organization_id')
+  folder_id = config.overall.get('folder_id')
 
   create_project_command = ['projects', 'create', project_id]
-  if org_id:
+  if folder_id:
+    create_project_command.extend(['--folder', folder_id])
+  elif org_id:
     create_project_command.extend(['--organization', org_id])
   else:
-    logging.info('Deploying without a parent organization.')
+    logging.info('Deploying without a parent organization or folder.')
   # Create the new project.
   utils.run_gcloud_command(create_project_command, project_id=None)
 
@@ -481,6 +484,7 @@ def main(args):
 
 
 def get_parser():
+  """Returns an argument parser."""
   parser = argparse.ArgumentParser(description='Deploy Projects to GCP.')
   parser.add_argument('--project_yaml', type=str, required=True,
                       help='Location of the project config YAML.')
