@@ -15,7 +15,7 @@
 """Creates new GCE VMs with specified zone, machine type and boot image."""
 
 
-def GenerateConfig(context):
+def generate_config(context):
   """Generate Deployment Manager configuration."""
   resources = []
 

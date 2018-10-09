@@ -18,7 +18,7 @@ For details and usage, see deploy/README.md.
 """
 
 
-def GenerateConfig(context):
+def generate_config(context):
   """Generate Deployment Manager configuration."""
 
   project_id = context.env['project']

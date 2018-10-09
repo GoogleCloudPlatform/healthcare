@@ -63,7 +63,7 @@ class TestGceVmsTemplate(unittest.TestCase):
           ],
       }
 
-    generated = gce_vms.GenerateConfig(FakeContext())
+    generated = gce_vms.generate_config(FakeContext())
 
     expected = {
         'resources': [{

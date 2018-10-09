@@ -26,8 +26,11 @@ GCLOUD_OPTIONS = GcloudOptions(dry_run=True, gcloud_bin='gcloud')
 _PROJECT_CONFIG_SCHEMA = 'project_config.yaml.schema'
 
 
-def WaitForYesNo(text):
+def wait_for_yes_no(text):
   """Prompt user for Yes/No and return true if Yes/Y. Default to No."""
+  if GCLOUD_OPTIONS.dry_run:
+    return True
+
   while True:
     # For compatibility with both Python 2 and 3.
     if sys.version_info[0] < 3:
@@ -43,7 +46,7 @@ def WaitForYesNo(text):
     # Not Y or N, Keep trying.
 
 
-def ReadYamlFile(path):
+def read_yaml_file(path):
   """Reads and parses a YAML file.
 
   Args:
@@ -61,7 +64,7 @@ def ReadYamlFile(path):
     return None
 
 
-def WriteYamlFile(contents, path):
+def write_yaml_file(contents, path):
   """Saves a dictionary as a YAML file.
 
   Args:
@@ -79,7 +82,7 @@ def WriteYamlFile(contents, path):
     yaml.safe_dump(contents, outfile, default_flow_style=False)
 
 
-def ValidateConfigYaml(config):
+def validate_config_yaml(config):
   """Validates a Project config YAML against the schema.
 
   Args:
@@ -91,7 +94,7 @@ def ValidateConfigYaml(config):
   """
   schema_file_path = os.path.join(
       os.path.dirname(os.path.realpath(sys.argv[0])), _PROJECT_CONFIG_SCHEMA)
-  schema = ReadYamlFile(schema_file_path)
+  schema = read_yaml_file(schema_file_path)
 
   jsonschema.validate(config, schema)
 
@@ -100,7 +103,7 @@ class GcloudRuntimeError(Exception):
   """Runtime exception raised when gcloud return code is non-zero."""
 
 
-def RunGcloudCommand(cmd, project_id):
+def run_gcloud_command(cmd, project_id):
   """Execute a gcloud command and return the output.
 
   Args:
@@ -134,7 +137,7 @@ def RunGcloudCommand(cmd, project_id):
   return out.decode()
 
 
-def CreateNewDeployment(deployment_template, deployment_name, project_id):
+def create_new_deployment(deployment_template, deployment_name, project_id):
   """Creates a new Deployment Manager deployment from a template.
 
   Args:
@@ -149,21 +152,21 @@ def CreateNewDeployment(deployment_template, deployment_name, project_id):
       os.path.dirname(os.path.realpath(sys.argv[0])), 'templates')
   dm_template_file = tempfile.NamedTemporaryFile(suffix='.yaml',
                                                  dir=dm_template_dir)
-  WriteYamlFile(deployment_template, dm_template_file.name)
+  write_yaml_file(deployment_template, dm_template_file.name)
 
   # Create the deployment.
-  RunGcloudCommand(['deployment-manager', 'deployments', 'create',
-                    deployment_name,
-                    '--config', dm_template_file.name,
-                    '--automatic-rollback-on-error'],
-                   project_id)
+  run_gcloud_command(['deployment-manager', 'deployments', 'create',
+                      deployment_name,
+                      '--config', dm_template_file.name,
+                      '--automatic-rollback-on-error'],
+                     project_id)
 
   # Check deployment exists (and wasn't automcatically rolled back
-  RunGcloudCommand(['deployment-manager', 'deployments', 'describe',
-                    deployment_name], project_id)
+  run_gcloud_command(['deployment-manager', 'deployments', 'describe',
+                      deployment_name], project_id)
 
 
-def CreateNotificationChannel(alert_email, project_id):
+def create_notification_channel(alert_email, project_id):
   """Creates a new Stackdriver email notification channel.
 
   Args:
@@ -183,17 +186,17 @@ def CreateNotificationChannel(alert_email, project_id):
           'email_address': alert_email
       }
   }
-  WriteYamlFile(channel_config, config_file.name)
+  write_yaml_file(channel_config, config_file.name)
 
   # Create the new channel and get its name.
-  channel_name = RunGcloudCommand(
+  channel_name = run_gcloud_command(
       ['alpha', 'monitoring', 'channels', 'create',
        '--channel-content-from-file', config_file.name,
        '--format', 'value(name)'], project_id).strip()
   return channel_name
 
 
-def CreateAlertPolicy(
+def create_alert_policy(
     resource_type, metric_name, policy_name, description, channel, project_id):
   """Creates a new Stackdriver alert policy for a logs-based metric.
 
@@ -231,45 +234,45 @@ def CreateAlertPolicy(
       'enabled': True,
       'notificationChannels': [channel],
   }
-  WriteYamlFile(alert_config, config_file.name)
+  write_yaml_file(alert_config, config_file.name)
 
   # Create the new alert policy.
-  RunGcloudCommand(['alpha', 'monitoring', 'policies', 'create',
-                    '--policy-from-file', config_file.name], project_id)
+  run_gcloud_command(['alpha', 'monitoring', 'policies', 'create',
+                      '--policy-from-file', config_file.name], project_id)
 
 
-def GetGcloudUser():
+def get_gcloud_user():
   """Returns the active authenticated gcloud account."""
-  return RunGcloudCommand(
+  return run_gcloud_command(
       ['config', 'list', 'account', '--format', 'value(core.account)'],
       project_id=None).strip()
 
 
-def GetDeploymentManagerServiceAccount(project_id):
+def get_deployment_manager_service_account(project_id):
   """Returns the deployment manager service account for the given project."""
-  project_num = RunGcloudCommand([
+  project_num = run_gcloud_command([
       'projects', 'describe', project_id,
       '--format', 'value(projectNumber)'], project_id=None).strip()
   return 'serviceAccount:{}@cloudservices.gserviceaccount.com'.format(
       project_num)
 
 
-def GetLogSinkServiceAccount(log_sink_name, project_id):
+def get_log_sink_service_account(log_sink_name, project_id):
   """Gets the service account name for the given log sink."""
-  sink_service_account = RunGcloudCommand([
+  sink_service_account = run_gcloud_command([
       'logging', 'sinks', 'describe', log_sink_name,
       '--format', 'value(writerIdentity)'], project_id).strip()
   # The name returned has a 'serviceAccount:' prefix, so remove this.
   return sink_service_account.split(':')[1]
 
 
-def ResolveEnvVars(config):
+def resolve_env_vars(config):
   """Recursively resolves environment variables in config values."""
   if isinstance(config, str):
     return string.Template(config).substitute(os.environ)
   elif isinstance(config, dict):
-    return {k: ResolveEnvVars(v) for k, v in config.items()}
+    return {k: resolve_env_vars(v) for k, v in config.items()}
   elif isinstance(config, list):
-    return [ResolveEnvVars(i) for i in config]
+    return [resolve_env_vars(i) for i in config]
   else:
     return config

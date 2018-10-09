@@ -52,7 +52,7 @@ class TestRemoteAuditLogsTemplate(unittest.TestCase):
           },
       }
 
-    generated = remote_audit_logs.GenerateConfig(FakeContext())
+    generated = remote_audit_logs.generate_config(FakeContext())
 
     expected = {
         'resources': [{

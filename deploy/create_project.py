@@ -53,7 +53,7 @@ ProjectConfig = collections.namedtuple('ProjectConfig', [
     ])
 
 
-def CreateNewProject(config):
+def create_new_project(config):
   """Creates the new GCP project."""
   logging.info('Creating a new GCP project...')
   org_id = config.overall.get('organization_id')
@@ -65,39 +65,39 @@ def CreateNewProject(config):
   else:
     logging.info('Deploying without a parent organization.')
   # Create the new project.
-  utils.RunGcloudCommand(create_project_command, project_id=None)
+  utils.run_gcloud_command(create_project_command, project_id=None)
 
 
-def SetupBilling(config):
+def setup_billing(config):
   """Sets the billing account for this project."""
   logging.info('Setting up billing...')
   billing_acct = config.overall['billing_account']
   project_id = config.project['project_id']
   # Set the appropriate billing account for this project:
-  utils.RunGcloudCommand(['beta', 'billing', 'projects', 'link', project_id,
-                          '--billing-account', billing_acct],
-                         project_id=None)
+  utils.run_gcloud_command(['beta', 'billing', 'projects', 'link', project_id,
+                            '--billing-account', billing_acct],
+                           project_id=None)
 
 
-def EnableDeploymentManager(config):
+def enable_deployment_manager(config):
   """Enables Deployment manager, with role/owners for its service account."""
   logging.info('Setting up Deployment Manager...')
   project_id = config.project['project_id']
 
   # Enabled Deployment Manger and Cloud Resource Manager for this project.
-  utils.RunGcloudCommand(['services', 'enable', 'deploymentmanager',
-                          'cloudresourcemanager.googleapis.com'],
-                         project_id)
+  utils.run_gcloud_command(['services', 'enable', 'deploymentmanager',
+                            'cloudresourcemanager.googleapis.com'],
+                           project_id)
 
   # Grant deployment manager service account (temporary) owners access.
-  dm_service_account = utils.GetDeploymentManagerServiceAccount(project_id)
-  utils.RunGcloudCommand(['projects', 'add-iam-policy-binding', project_id,
-                          '--member', dm_service_account,
-                          '--role', 'roles/owner'],
-                         project_id=None)
+  dm_service_account = utils.get_deployment_manager_service_account(project_id)
+  utils.run_gcloud_command(['projects', 'add-iam-policy-binding', project_id,
+                            '--member', dm_service_account,
+                            '--role', 'roles/owner'],
+                           project_id=None)
 
 
-def DeployGcsAuditLogs(config):
+def deploy_gcs_audit_logs(config):
   """Deploys the GCS logs bucket to the remote audit logs project, if used."""
   # The GCS logs bucket must be created before the data buckets.
   if not config.audit_logs_project:
@@ -127,16 +127,17 @@ def DeployGcsAuditLogs(config):
           },
       }]
   }
-  utils.CreateNewDeployment(dm_template_dict, deployment_name, audit_project_id)
+  utils.create_new_deployment(dm_template_dict, deployment_name,
+                              audit_project_id)
 
 
-def DeployProjectResources(config):
+def deploy_project_resources(config):
   """Deploys resources into the new data project."""
   logging.info('Deploying Project resources...')
-  setup_account = utils.GetGcloudUser()
+  setup_account = utils.get_gcloud_user()
   has_organization = bool(config.overall.get('organization_id'))
   project_id = config.project['project_id']
-  dm_service_account = utils.GetDeploymentManagerServiceAccount(project_id)
+  dm_service_account = utils.get_deployment_manager_service_account(project_id)
 
   # Build a deployment config for the data_project.py deployment manager
   # template.
@@ -172,17 +173,17 @@ def DeployProjectResources(config):
   }
 
   # Create the deployment.
-  utils.CreateNewDeployment(dm_template_dict, 'data-project-deployment',
-                            project_id)
+  utils.create_new_deployment(dm_template_dict, 'data-project-deployment',
+                              project_id)
 
   # Remove Owners role from the DM service account.
-  utils.RunGcloudCommand(['projects', 'remove-iam-policy-binding', project_id,
-                          '--member', dm_service_account,
-                          '--role', 'roles/owner'],
-                         project_id=None)
+  utils.run_gcloud_command(['projects', 'remove-iam-policy-binding', project_id,
+                            '--member', dm_service_account,
+                            '--role', 'roles/owner'],
+                           project_id=None)
 
 
-def DeployBigQueryAuditLogs(config):
+def deploy_bigquery_audit_logs(config):
   """Deploys the BigQuery audit logs dataset, if used."""
   data_project_id = config.project['project_id']
   logs_dataset = config.project['audit_logs']['logs_bigquery_dataset'].copy()
@@ -197,7 +198,7 @@ def DeployBigQueryAuditLogs(config):
     owners_group = config.project['owners_group']
 
   # Get the service account for the newly-created log sink.
-  logs_dataset['log_sink_service_account'] = utils.GetLogSinkServiceAccount(
+  logs_dataset['log_sink_service_account'] = utils.get_log_sink_service_account(
       _LOG_SINK_NAME, data_project_id)
 
   deployment_name = 'audit-logs-{}-bq'.format(
@@ -214,10 +215,11 @@ def DeployBigQueryAuditLogs(config):
           },
       }]
   }
-  utils.CreateNewDeployment(dm_template_dict, deployment_name, audit_project_id)
+  utils.create_new_deployment(dm_template_dict, deployment_name,
+                              audit_project_id)
 
 
-def CreateComputeImages(config):
+def create_compute_images(config):
   """Creates new Compute Engine VM images if specified in config."""
   gce_instances = config.project.get('gce_instances')
   if not gce_instances:
@@ -232,7 +234,7 @@ def CreateComputeImages(config):
                    instance['existing_boot_image'])
       continue
     # Check if custom image already exists.
-    if utils.RunGcloudCommand(
+    if utils.run_gcloud_command(
         ['compute', 'images', 'list', '--no-standard-images',
          '--filter', 'name={}'.format(custom_image['image_name']),
          '--format', 'value(name)'],
@@ -246,13 +248,13 @@ def CreateComputeImages(config):
     # deployment manager service account doesn't need to be granted access to
     # the image GCS bucket.
     image_uri = 'gs://' + custom_image['gcs_path']
-    utils.RunGcloudCommand(
+    utils.run_gcloud_command(
         ['compute', 'images', 'create', custom_image['image_name'],
          '--source-uri', image_uri],
         project_id=project_id)
 
 
-def CreateComputeVms(config):
+def create_compute_vms(config):
   """Creates new GCE VMs and firewall rules if specified in config."""
   if 'gce_instances' not in config.project:
     logging.info('No GCS VMs required.')
@@ -261,9 +263,9 @@ def CreateComputeVms(config):
   logging.info('Creating GCS VMs.')
 
   # Enable OS Login for VM SSH access.
-  utils.RunGcloudCommand(['compute', 'project-info', 'add-metadata',
-                          '--metadata', 'enable-oslogin=TRUE'],
-                         project_id=project_id)
+  utils.run_gcloud_command(['compute', 'project-info', 'add-metadata',
+                            '--metadata', 'enable-oslogin=TRUE'],
+                           project_id=project_id)
 
   gce_instances = []
   for instance in config.project['gce_instances']:
@@ -291,10 +293,10 @@ def CreateComputeVms(config):
           }
       }]
   }
-  utils.CreateNewDeployment(dm_template_dict, deployment_name, project_id)
+  utils.create_new_deployment(dm_template_dict, deployment_name, project_id)
 
 
-def CreateStackdriverAccount(config):
+def create_stackdriver_account(config):
   """Prompts the user to create a new Stackdriver Account."""
   # Creating a Stackdriver account cannot be done automatically, so ask the
   # user to create one.
@@ -326,21 +328,21 @@ def CreateStackdriverAccount(config):
 
   # Keep trying until Stackdriver account is ready, or user skips.
   while True:
-    if not utils.WaitForYesNo('Account created [y/N]?'):
+    if not utils.wait_for_yes_no('Account created [y/N]?'):
       logging.warning('Skipping creation of Stackdriver Account.')
       return
 
     # Verify account was created.
     try:
-      utils.RunGcloudCommand(['alpha', 'monitoring', 'policies', 'list'],
-                             project_id)
+      utils.run_gcloud_command(['alpha', 'monitoring', 'policies', 'list'],
+                               project_id)
       return
     except utils.GcloudRuntimeError as e:
       logging.error('Error reading Stackdriver account %s', e)
       print('Could not find Stackdriver account.')
 
 
-def CreateAlerts(config):
+def create_alerts(config):
   """"Creates Stackdriver alerts for logs-based metrics."""
   # Stackdriver alerts can't yet be created in Deployment Manager, so create
   # them here.
@@ -353,15 +355,15 @@ def CreateAlerts(config):
 
   # Create an email notification channel for alerts.
   logging.info('Creating Stackdriver notification channel.')
-  channel = utils.CreateNotificationChannel(alert_email, project_id)
+  channel = utils.create_notification_channel(alert_email, project_id)
 
   logging.info('Creating Stackdriver alerts.')
-  utils.CreateAlertPolicy(
+  utils.create_alert_policy(
       'global', 'iam-policy-change-count', 'IAM Policy Change Alert',
       ('This policy ensures the designated user/group is notified when IAM '
        'policies are altered.'), channel, project_id)
 
-  utils.CreateAlertPolicy(
+  utils.create_alert_policy(
       'gcs_bucket', 'bucket-permission-change-count',
       'Bucket Permission Change Alert',
       ('This policy ensures the designated user/group is notified when '
@@ -372,7 +374,7 @@ def CreateAlerts(config):
     if 'expected_users' in data_bucket:
       bucket_name = project_id + data_bucket['name_suffix']
       metric_name = 'unexpected-access-' + bucket_name
-      utils.CreateAlertPolicy(
+      utils.create_alert_policy(
           'gcs_bucket', metric_name,
           'Unexpected Access to {} Alert'.format(bucket_name),
           ('This policy ensures the designated user/group is notified when '
@@ -384,20 +386,20 @@ def CreateAlerts(config):
 # on error. Each is a function that takes a config dictionary and
 # raises a GcloudRuntimeError on errors.
 _SETUP_STEPS = [
-    CreateNewProject,
-    SetupBilling,
-    EnableDeploymentManager,
-    DeployGcsAuditLogs,
-    DeployProjectResources,
-    DeployBigQueryAuditLogs,
-    CreateComputeImages,
-    CreateComputeVms,
-    CreateStackdriverAccount,
-    CreateAlerts,
+    create_new_project,
+    setup_billing,
+    enable_deployment_manager,
+    deploy_gcs_audit_logs,
+    deploy_project_resources,
+    deploy_bigquery_audit_logs,
+    create_compute_images,
+    create_compute_vms,
+    create_stackdriver_account,
+    create_alerts,
 ]
 
 
-def SetupNewProject(config, starting_step):
+def setup_new_project(config, starting_step):
   """Run the full process for initalizing a single new project.
 
   Args:
@@ -430,14 +432,14 @@ def main(args):
       dry_run=args.dry_run, gcloud_bin=args.gcloud_bin)
 
   # Read and parse the project configuration YAML file.
-  all_projects = utils.ResolveEnvVars(utils.ReadYamlFile(args.project_yaml))
+  all_projects = utils.resolve_env_vars(utils.read_yaml_file(args.project_yaml))
   if not all_projects:
     logging.error('Error loading project YAML.')
     return
 
   logging.info('Validating project YAML against schema.')
   try:
-    utils.ValidateConfigYaml(all_projects)
+    utils.validate_config_yaml(all_projects)
   except jsonschema.exceptions.ValidationError as e:
     logging.error('Error in YAML config: %s', e)
     return
@@ -470,7 +472,7 @@ def main(args):
     starting_step = max(1, args.resume_from_step)
     for config in projects:
       logging.info('Setting up project %s', config.project['project_id'])
-      if not SetupNewProject(config, starting_step):
+      if not setup_new_project(config, starting_step):
         # Don't attempt to deploy additional projects if one project failed.
         return
       starting_step = 1
@@ -478,7 +480,7 @@ def main(args):
     logging.error('No projects to deploy.')
 
 
-if __name__ == '__main__':
+def get_parser():
   parser = argparse.ArgumentParser(description='Deploy Projects to GCP.')
   parser.add_argument('--project_yaml', type=str, required=True,
                       help='Location of the project config YAML.')
@@ -501,5 +503,7 @@ if __name__ == '__main__':
                       help='The logging level to use. (default: INFO)',
                       choices=set(
                           ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']))
+  return parser
 
-  main(parser.parse_args())
+if __name__ == '__main__':
+  main(get_parser().parse_args())

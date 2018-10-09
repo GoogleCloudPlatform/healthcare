@@ -15,7 +15,7 @@
 """Creates new GCS buckets and BigQuery datasets in an Audit Logs project."""
 
 
-def GenerateConfig(context):
+def generate_config(context):
   """Generate Deployment Manager configuration."""
 
   project_id = context.env['project']

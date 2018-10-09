@@ -104,7 +104,7 @@ class TestDataProject(unittest.TestCase):
           ]
       }
 
-    generated = data_project.GenerateConfig(FakeContext())
+    generated = data_project.generate_config(FakeContext())
 
     expected = {
         'resources': [{
@@ -604,7 +604,7 @@ class TestDataProject(unittest.TestCase):
           ],
       }
 
-    generated = data_project.GenerateConfig(FakeContext())
+    generated = data_project.generate_config(FakeContext())
 
     expected = {
         'resources': [{
