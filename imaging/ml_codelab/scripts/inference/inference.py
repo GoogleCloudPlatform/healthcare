@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Inference module for breast density model.
+"""Inference via AutoML or Cloud ML engine.
 
 The inference module allows medical imaging ML models to be more easily
 integrated into clinical workflows. PACS systems (and other imaging archives)
@@ -25,7 +25,7 @@ the customer. This script does the following actions:
    When new DICOM instances are stored in Cloud Healthcare API, a Cloud Pubsub
    message is generated for the new instance. This module will listen to all
    incoming messages for the Cloud Pubsub subscription specified in
-   --subscription_id.
+   --subscription_path.
 
 2) Retrieves the instance from Cloud Healthcare API.
 
@@ -43,13 +43,13 @@ the customer. This script does the following actions:
 4) Store the inference results in Cloud Healthcare API.
 
    This step is optional and is only enabled by setting the
-   --inference_dicom_store_name flag.
+   --dicom_store_path flag.
 
    The inference results can be stored as a DICOM structured report. This is
    a format that can store free text format (amongst other things). In this
    case, the script is going to store the predicted class and score from step
    (3). This DICOM strucuted report will be stored back to the Cloud Healthcare
-   API in the given DICOM store (--inference_dicom_store_name). This instance
+   API in the given DICOM store (--dicom_store_path). This instance
    can be then be retrieved by the client.
 """
 
@@ -64,18 +64,22 @@ from email import encoders
 from email.mime import application
 from email.mime import multipart
 import json
+import logging
 import mimetools
 import os
+import re
 import sys
+
 import googleapiclient.discovery
 import httplib2
-import logging
 from oauth2client.client import GoogleCredentials
 import pydicom
 from requests_toolbelt.multipart import decoder
-from google.cloud import pubsub_v1
+
+from google.api_core.exceptions import InvalidArgument
+from google.api_core.exceptions import PermissionDenied
 from google.cloud import automl_v1beta1
-from google.cloud.automl_v1beta1.proto import service_pb2
+from google.cloud import pubsub_v1
 
 # Output this module's logs (INFO and above) to stdout.
 _logger = logging.getLogger(__name__)
@@ -94,8 +98,8 @@ _CREDENTIALS = GoogleCredentials.get_application_default().create_scoped(
 # SOP Class UID for Basic Text Structured Reports.
 _BASIC_TEXT_SR_CUID = '1.2.840.10008.5.1.4.1.1.88.11'
 
-# Secondary Capture SOP Class UID.
-_SECONDARY_CAPTURE_CUID = '1.2.840.10008.5.1.4.1.1.7'
+# Structured Report SOP Class UID.
+_STRUCTURED_REPORT_ID = '1.2.840.10008.5.1.4.1.1.88.11'
 
 # DICOM Tags.
 _SOP_INSTANCE_UID_TAG = '00080018'
@@ -110,6 +114,7 @@ _SERIES_UID_INDEX = 12
 # Number of times to retry failing CMLE predictions.
 _NUM_RETRIES_CMLE = 5
 
+
 # TODO(b/111960222): Potentially add to ML toolkit.
 def _WadoRS(instance_path):
   # type: str -> str
@@ -123,7 +128,9 @@ def _WadoRS(instance_path):
   Args:
     instance_path: Path of DICOM instance. This is found in the contents of the
       Pubsub message. This should be formatted as follows:
-      projects/{PROJECT_ID}/locations/{LOCATION_ID}/datasets/{DATASET_ID}/dicomStores/{DICOM_STORE_ID}/dicomWeb/studies/{STUDY_UID}/series/{SERIES_UID}/instances/{INSTANCE_UID}
+        projects/{PROJECT_ID}/locations/{LOCATION_ID}/datasets/{DATASET_ID}/
+        dicomStores/{DICOM_STORE_ID}/dicomWeb/studies/{STUDY_UID}/series/
+        {SERIES_UID}/instances/{INSTANCE_UID}
 
   Returns:
     content: The bytes for the JPEG image.
@@ -164,7 +171,8 @@ def _StowRS(study_path, instance_bytes):
 
   Args:
     study_path: Path of DICOM study. This should be formatted as follows:
-      projects/{PROJECT_ID}/locations/{LOCATION_ID}/datasets/{DATASET_ID}/dicomStores/{DICOM_STORE_ID}/dicomWeb/studies
+      projects/{PROJECT_ID}/locations/{LOCATION_ID}/datasets/{DATASET_ID}/
+      dicomStores/{DICOM_STORE_ID}/dicomWeb/studies
     instance_bytes: Bytes for instances.
 
   Raises:
@@ -370,21 +378,22 @@ class PubsubMessageHandler(object):
 
   Attributes:
     predictor: Object used to get prediction results.
-    inference_dicom_store_name: DICOM store used to store inference results.
+    dicom_store_path: DICOM store used to store inference results.
   """
 
-  def __init__(self, predictor, inference_dicom_store_name):
+  def __init__(self, predictor, dicom_store_path):
     self._predictor = predictor
-    self._inference_dicom_store_name = inference_dicom_store_name
+    self._dicom_store_path = dicom_store_path
     self._success_count = 0
+    self.publisher = pubsub_v1.PublisherClient()
 
   def _ShouldFilterMessage(self, instance_path):
     # type: pubsub_v1.Message -> bool
-    """Returns whether to filter give pubsub message.
+    """Returns whether to filter the given pubsub message.
 
-    # All instances in CBIS-DDSM are secondary capture, so we want to only
-    # process pubsub messages from these instances. Notifications from things
-    # such as structured reports are filtered out.
+    # The DICOM store publishing messages may be used for storage of both the
+    original DICOM instances and the Structured Reports. We need to filter out
+    SRs such that only DICOM instances are processed.
 
     Args:
       instance_path: Path of DICOM instances.
@@ -401,10 +410,35 @@ class PubsubMessageHandler(object):
 
     # The content is JSON containing a list of DICOM instances
     parsed_content = _QidoRs(qido_url)
+    # TODO(jonluca) find a better filtering algorithm
     sop_class_uid = parsed_content[0][_SOP_CLASS_UID_TAG][_VALUE_TYPE][0]
-    if sop_class_uid == _SECONDARY_CAPTURE_CUID:
-      return False
-    return True
+    return sop_class_uid == _STRUCTURED_REPORT_ID
+
+  def _PublishInferenceResultsReady(self, image_instance_path):
+    # type: str -> None
+    """Publishes a results ready notification to the supplied Pubsub channel.
+
+    If the Inference Module is supplied FLAGS.publisher_topic_path flag, it will
+    attempt to publish any inference results to that channel.
+
+    Args:
+      image_instance_path: Path of DICOM study. This should be formatted as
+        follows
+        projects/{PROJECT_ID}/locations/{LOCATION_ID}/datasets/{DATASET_ID}/
+        dicomStores/{DICOM_STORE_ID}/dicomWeb/studies/{STUDY_ID}/series/
+        ${SERIES_ID}/instances/{INSTANCE_ID}
+    """
+    if FLAGS.publisher_topic_path is None:
+      return
+    # TODO(b/114201645) when converting to Python 3, change image_instance_path
+    # to bytes
+    try:
+      self.publisher.publish(
+          FLAGS.publisher_topic_path, data=image_instance_path)
+      _logger.info('Published inference results ready message')
+    except TypeError as e:
+      _logger.error('Invalid type sent to publish channel: %s', e.message)
+
 
   def PubsubCallback(self, message):
     # type: pubsub_v1.Message -> None
@@ -413,15 +447,17 @@ class PubsubMessageHandler(object):
     This function will retrieve the instance (specified in Pubsub message) from
     the Cloud Healthcare API. Then it will invoke CMLE to get the prediction
     results. Finally (and optionally), it will store the inference results back
-    to the Cloud Healthcare API as part of a DICOM presentation state.
+    to the Cloud Healthcare API as a DICOM Structured Report. The instance URL
+    to the Structured Report containing the prediction is then published to a
+    pub/sub.
 
     Args:
       message: Incoming pubsub message.
     """
     image_instance_path = message.data
     _logger.debug('Received instance in pubsub feed: %s', image_instance_path)
-
-    # Filter anything that is not mammography images.
+    # Filter messages that correspond to inference results or that don't match
+    # the type of image we are expecting
     if self._ShouldFilterMessage(image_instance_path):
       message.ack()
       return
@@ -433,20 +469,34 @@ class PubsubMessageHandler(object):
 
     # Get the predicted score and class from the inference model in Cloud ML or
     # AutoML.
-    predicted_class, predicted_score = self._predictor.Predict(image_jpeg_bytes)
+    try:
+      predicted_class, predicted_score = self._predictor.Predict(
+          image_jpeg_bytes)
+    except PermissionDenied as e:
+      _logger.error('Permission error running prediction service: %s',
+                    e.message)
+      message.nack()
+      return
+    except InvalidArgument as e:
+      _logger.error('Invalid arguments when running prediction service: %s',
+                    e.message)
+      message.nack()
+      return
 
     # Print the prediction.
-    text = 'Base instance path: %s\nPredicted class: %s\nPredicted score: %s' % (
+    text = 'Base path: %s\nPredicted class: %s\nPredicted score: %s' % (
         image_instance_path, predicted_class, predicted_score)
     _logger.info(text)
 
     # If user requested destination DICOM store for inference, create a DICOM
     # structured report that stores the prediction.
-    if self._inference_dicom_store_name:
+    if self._dicom_store_path:
       # Generate (study_uid, series_uid, instance_uid) triplet for presentation
       # state. The study_uid and series_uid will be the same as the original
       # instance and extracted from Pubsub path:
-      # projects/{PROJECT_ID}/locations/{LOCATION_ID}/datasets/{DATASET_ID}/dicomStores/{DICOM_STORE_ID}/dicomWeb/studies/{STUDY_UID}/series/{SERIES_UID}/instances/{INSTANCE_UID}
+      # projects/{PROJECT_ID}/locations/{LOCATION_ID}/datasets/{DATASET_ID}/
+      # dicomStores/{DICOM_STORE_ID}/dicomWeb/studies/{STUDY_UID}/series/
+      # {SERIES_UID}/instances/{INSTANCE_UID}
       split_image_instance_path = image_instance_path.split('/')
       sr_study_uid = split_image_instance_path[_STUDY_UID_INDEX]
       sr_series_uid = split_image_instance_path[_SERIES_UID_INDEX]
@@ -455,11 +505,22 @@ class PubsubMessageHandler(object):
 
       # Store the DICOM structured report in same series using Healthcare API.
       dicom_sr = _BuildSR(text, sr_study_uid, sr_series_uid, sr_instance_uid)
-      study_path = os.path.join(self._inference_dicom_store_name, 'dicomWeb',
-                                'studies')
-      _StowRS(study_path, dicom_sr)
+      study_path = os.path.join(self._dicom_store_path, 'dicomWeb', 'studies')
+      try:
+        _StowRS(study_path, dicom_sr)
+      except RuntimeError as e:
+        _logger.error('Error storing DICOM in API: %s', e.message)
+        message.nack()
+        return
 
-    # Ack the message (successful).
+      # If user requested that new structured reports be published to a channel,
+      # publish the instance path of the Structured Report
+      structured_report_path = os.path.join(study_path, sr_study_uid, 'series',
+                                            sr_series_uid, 'instances',
+                                            sr_instance_uid)
+      self._PublishInferenceResultsReady(structured_report_path)
+
+    # Ack the message (successful or invalid message).
     message.ack()
     self._success_count += 1
 
@@ -477,9 +538,9 @@ def main():
   else:
     raise ValueError('FLAGS.prediction_service must be CMLE or AutoML.')
 
-  handler = PubsubMessageHandler(predictor, FLAGS.inference_dicom_store_name)
+  handler = PubsubMessageHandler(predictor, FLAGS.dicom_store_path)
   subscriber = pubsub_v1.SubscriberClient()
-  future = subscriber.subscribe(FLAGS.subscription_name, handler.PubsubCallback)
+  future = subscriber.subscribe(FLAGS.subscription_path, handler.PubsubCallback)
   try:
     # If timeout is set, wait for FLAGS.pubsub_timeout seconds until messages
     # are processed on the pubsub channel.
@@ -498,24 +559,34 @@ def main():
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      '--project_id', type=str, required=True, help='Google Cloud project ID.')
-  parser.add_argument(
-      '--subscription_name',
+      '--subscription_path',
       type=str,
       required=True,
-      help='Cloud Pubsub subscription ID.')
+      help=
+      'Pub/Sub Subscription ID associated with the topic for notifications of '
+      'new DICOM instances. The Inference Module subscribes to notifications on'
+      ' this channel and runs inference on new DICOM instances added to the '
+      'store.')
+  parser.add_argument(
+      '--publisher_topic_path',
+      type=str,
+      required=False,
+      help=
+      'Pub/Sub topic id, which is used to indicate that inference results are '
+      'ready. Each notification contains a path to the DICOM Structured Report '
+      'containing predictions.')
   parser.add_argument(
       '--model_path',
       type=str,
       required=True,
       help='Path of Cloud ML Engine model used for inference.')
   parser.add_argument(
-      '--inference_dicom_store_name',
+      '--dicom_store_path',
       type=str,
       default='',
       help=
-      'DICOM store used to store inference results. If empty, this script will not attempt to store inference results back into Healthcare API.'
-  )
+      'DICOM store used to store inference results. If empty, this script will '
+      'not attempt to store inference results back into Healthcare API.')
   parser.add_argument(
       '--prediction_service',
       type=str,
@@ -526,7 +597,11 @@ if __name__ == '__main__':
       type=int,
       default=None,
       help=
-      'Number of seconds to wait for pubsub message to process until timeout. If set to None, it will wait indefinitely.'
-  )
+      'Number of seconds to wait for pubsub message to process until timeout. '
+      'If set to None, it will wait indefinitely.')
+
   FLAGS, unparsed = parser.parse_known_args()
+  if FLAGS.publisher_topic_path and not FLAGS.dicom_store_path:
+    parser.error('--publisher_topic_path requires --dicom_store_path '
+                 'to be set.')
   main()

@@ -12,10 +12,12 @@ gcloud builds submit --config cloudbuild.yaml --timeout 1h .
 
 ## Deploying to GKE
 
+Note that all paths are fully qualified (`projects/PROJECT-ID/...`)
 ```shell
-PROJECT_ID=..
-SUBSCRIPTION_NAME=..
+PUBLISHER_TOPIC_PATH=..
+SUBSCRIPTION_PATH=..
 MODEL_PATH=..
+DICOM_STORE_PATH=..
 
 cat <<EOF | kubectl create -f -
 apiVersion: extensions/v1beta1
@@ -35,8 +37,10 @@ spec:
           image: gcr.io/dicomweb-gke/inference-module:latest
           command:
             - "/opt/inference_module/bin/inference_module"
-            - "--project_id=${PROJECT_ID}"
-            - "--subscription_name=${SUBSCRIPTION_NAME}"
+            - "--subscription_path=${SUBSCRIPTION_PATH}"
+            - "--publisher_topic_path=${PUBLISHER_TOPIC_PATH}"
             - "--model_path=${MODEL_PATH}"
+            - "--dicom_store_path=${DICOM_STORE_PATH}"
+            - "--prediction_service=AutoML"
 EOF
 ```
