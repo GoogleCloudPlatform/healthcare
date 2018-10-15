@@ -23,7 +23,8 @@ GcloudOptions = collections.namedtuple('GcloudOptions', [
 GCLOUD_OPTIONS = GcloudOptions(dry_run=True, gcloud_bin='gcloud')
 
 # Schema file for project configuration YAML files.
-_PROJECT_CONFIG_SCHEMA = 'project_config.yaml.schema'
+_PROJECT_CONFIG_SCHEMA = os.path.join(
+    os.path.dirname(__file__), 'project_config.yaml.schema')
 
 
 def wait_for_yes_no(text):
@@ -148,8 +149,7 @@ def create_new_deployment(deployment_template, deployment_name, project_id):
   """
   # Save the deployment manager template to a temporary file in the same
   # directory as the deployment manager templates.
-  dm_template_dir = os.path.join(
-      os.path.dirname(os.path.realpath(sys.argv[0])), 'templates')
+  dm_template_dir = os.path.join(os.path.dirname(__file__), 'templates')
   dm_template_file = tempfile.NamedTemporaryFile(suffix='.yaml',
                                                  dir=dm_template_dir)
   write_yaml_file(deployment_template, dm_template_file.name)
