@@ -25,6 +25,7 @@ def generate_config(context):
     machine_type = 'zones/{}/machineTypes/{}'.format(zone, vm['machine_type'])
     boot_image = vm['boot_image_name']
 
+    # Create a new VM.
     res_dict = {
         'name': vm_name,
         'type': 'compute.v1.instance',
@@ -54,7 +55,6 @@ def generate_config(context):
     if metadata is not None:
         res_dict['properties']['metadata'] = metadata
 
-    # Create a new VM.
     resources.append(res_dict)
 
     # After the VM is created, shut it down (if start_vm is False).

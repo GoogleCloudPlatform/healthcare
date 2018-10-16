@@ -34,7 +34,7 @@ class TestGceVmsTemplate(unittest.TestCase):
           'deployment': 'my-deployment',
           'project': 'my-project',
       }
-      startup_script_str='echo "abc"\necho "def"\n'
+      startup_script_str = 'echo "abc"\necho "def"\n'
       properties = {
           'gce_instances': [
               {
@@ -51,10 +51,8 @@ class TestGceVmsTemplate(unittest.TestCase):
                       'projects/debian-cloud/global/images/family/debian-9'),
                   'start_vm': True,
                   'metadata': {
-                    'items':[{
-                        'key': 'startup-script',
-                        'value': startup_script_str
-                    }]
+                      'items': [{'key': 'startup-script',
+                                 'value': startup_script_str}]
                   }
               },
           ],
@@ -95,7 +93,7 @@ class TestGceVmsTemplate(unittest.TestCase):
                         'name': 'External NAT',
                         'type': 'ONE_TO_ONE_NAT',
                     }],
-                }],
+                }]
             }
         }, {
             'name': 'stop-work-machine-1',
@@ -134,7 +132,7 @@ class TestGceVmsTemplate(unittest.TestCase):
                 }],
                 'metadata': {
                     'items': [{'value': 'echo "abc"\necho "def"\n',
-                    'key': 'startup-script'}]
+                               'key': 'startup-script'}]
                 },
             }
         }, {
