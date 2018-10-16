@@ -96,8 +96,6 @@ class TestGceVmsTemplate(unittest.TestCase):
                         'type': 'ONE_TO_ONE_NAT',
                     }],
                 }],
-                'metadata': {
-                },
             }
         }, {
             'name': 'stop-work-machine-1',

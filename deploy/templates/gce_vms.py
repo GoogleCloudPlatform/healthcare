@@ -24,10 +24,8 @@ def generate_config(context):
     zone = vm['zone']
     machine_type = 'zones/{}/machineTypes/{}'.format(zone, vm['machine_type'])
     boot_image = vm['boot_image_name']
-    metadata = vm.get('metadata', {})
 
-    # Create a new VM.
-    resources.append({
+    res_dict = {
         'name': vm_name,
         'type': 'compute.v1.instance',
         'properties': {
@@ -48,10 +46,16 @@ def generate_config(context):
                     'name': 'External NAT',
                     'type': 'ONE_TO_ONE_NAT',
                 }],
-            }],
-            'metadata': metadata
+            }]
         },
-    })
+    }
+
+    metadata = vm.get('metadata')
+    if metadata is not None:
+        res_dict['properties']['metadata'] = metadata
+
+    # Create a new VM.
+    resources.append(res_dict)
 
     # After the VM is created, shut it down (if start_vm is False).
     if not vm['start_vm']:
