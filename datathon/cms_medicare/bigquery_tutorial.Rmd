@@ -1,0 +1,103 @@
+---
+output: html_document
+editor_options:
+  chunk_output_type: inline
+---
+Copyright 2018 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+> https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+# Datathon Tutorial
+
+The aim of this tutorial is to get you familiarized with BigQuery to query/filter/aggregate/export data with R. If you are familiar with Python, we also recommend that you check out the [Python version of this tutorial](bigquery_colab.ipynb).
+
+## Prerequisites
+
+You will need to have a valid Google account to be able to log in to Google Cloud Platform. If you do not have one, you can create one at https://accounts.google.com. If you will be also accessing restricted datasets, you may need to notify datathon organizers to register your account for data access.
+
+## Setup
+
+First, you need to run some initialization code. You can run the following cell by either pressing "Ctrl+Shift+Enter", or selecting "Cell -> Run cell and select below" menu, or clicking the equivalent button in the tool bar.
+
+```{r}
+# Install the "big R query" package, if neccessary by uncommenting the following two lines:
+# install.packages('devtools')
+# devtools::install_github("rstats-db/bigrquery")
+
+library("bigrquery")
+
+# Install ggplot2, uncomment next line if this is the first time this section is run.
+# install.packages("ggplot2")
+library("ggplot2")
+
+# Re-install curl to avoid errors like:
+# Error in curl::curl_fetch_memory(url, handle = handle) :
+#   Error in the HTTP2 framing layer
+# Uncomment next line if this is the first time this section is run.
+# install.packages("curl")
+
+# Install missing dependency, uncomment next line if this is the first time this section is run.
+# install.packages("readr")
+
+# Shared project. If you do not have the shared datathon project, you may use your own GCP project.
+project_id <- "REPLACE-WITH-PROJECT-ID"
+options(httr_oauth_cache=FALSE)
+
+# Wrapper for running BigQuery queries.
+run_query <- function(query){
+    data <- query_exec(query, project=project_id, use_legacy_sql = FALSE)
+    return(data)
+}
+```
+
+When you run your first query below with BigQuery, you will be asked to first authenticate yourself. A tab will open in browser automatically, after logging in your Gmail account and accepting the data access permission, you will be redirected to a page which has an authentication code. You need to copy the authentication code and paste it into the console tab below (the tab might collapse). Once authenticated, you may close the authentication window, and the query result should show up in the result box below.
+
+Note that during the datathon, all participants will be divided into teams and a Google Cloud project will be created for each team specifically. That project would be the preferred project to use. For now we'll stick with the shared project for the purpose of the tutorial.
+
+## Analysis
+
+Let's now run some queries.
+
+First let's run the following query to produce data to generate a histrogram graph to show the cost of heart transplants & implants in 2015 in tens of thousand dollar buckets (i.e. 12 = $12,000-$13,000, 13 $13,000-$14,000, ....
+
+```{r}
+df <- run_query('
+WITH costs AS (
+  SELECT
+    CAST(FLOOR(average_medicare_payments / 10000) AS INT64) AS average_cost_bucket_in_ten_thousands
+    FROM `bigquery-public-data.cms_medicare.inpatient_charges_2015`
+    WHERE drg_definition = '001 - HEART TRANSPLANT OR IMPLANT OF HEART ASSIST SYSTEM W MCC')
+SELECT
+  COUNT(average_cost_bucket_in_ten_thousands) AS number_of_procedures,
+  average_cost_bucket_in_ten_thousands
+  FROM costs
+  GROUP BY average_cost_bucket_in_ten_thousands
+  ORDER BY average_cost_bucket_in_ten_thousands ASC
+')
+
+ggplot(df, aes(x = df$average_cost_bucket_in_ten_thousands, y = df$number_of_procedures)) +
+       geom_bar(stat = 'identity', fill = 'steelblue') +
+       xlab("average_cost_bucket_in_ten_thousands") +
+       ylab("number_of_procedures")
+```
+
+This consists of 3 parts:
+
+
+1.   First we retrieve the costs of heart transplants and round the costs down to the closest $10,000 range, which is saved in a temporary table `costs`
+2.   The result data is filtered to include only the information required, the cost bucket and the number of procedures in each bucket.
+3.   We plot the chart.
+
+Congratulations! Now you have finished this datathon tutorial, and ready to explore more data by querying Google BigQuery. To do so, simply replace `bigquery-public-data.cms_medicare` with the project and dataset name you are interested in. One thing to note though, is that it is highly recommended to aggregate data aggressively wherever possible, because large dataframes may cause the performance of R to drop drastically.
+
+Enjoy!

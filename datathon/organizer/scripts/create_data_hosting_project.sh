@@ -107,7 +107,7 @@ if [[ `cat ${STATE_FILE}` == ${STATE_SET_PERMISSION} ]]; then
     echo "${OWNERS_GROUP} permission to change IAM configuration, so that"
     echo "members of this group can add individual owners (including"
     echo "themselves) when needed."
-    gcloud projects add-iam-policy-binding "${AUDIT_PROJECT_ID}" \
+    gcloud projects add-iam-policy-binding "${DATA_HOSTING_PROJECT_ID}" \
       --member="group:${OWNERS_GROUP}" \
       --role="roles/resourcemanager.projectIamAdmin"
   fi
