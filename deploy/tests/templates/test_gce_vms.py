@@ -152,10 +152,6 @@ class TestGceVmsTemplate(unittest.TestCase):
         }]
     }
 
-    print generated
-    print '-------------------------------------------------'
-    print expected
-
     self.assertEqual(generated, expected)
 
 
