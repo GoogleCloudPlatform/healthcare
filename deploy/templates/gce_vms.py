@@ -24,6 +24,7 @@ def generate_config(context):
     zone = vm['zone']
     machine_type = 'zones/{}/machineTypes/{}'.format(zone, vm['machine_type'])
     boot_image = vm['boot_image_name']
+    metadata = vm.get('machine_type', {})
 
     # Create a new VM.
     resources.append({
@@ -48,6 +49,7 @@ def generate_config(context):
                     'type': 'ONE_TO_ONE_NAT',
                 }],
             }],
+            'metadata': metadata
         },
     })
 
