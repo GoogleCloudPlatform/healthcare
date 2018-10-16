@@ -34,6 +34,7 @@ class TestGceVmsTemplate(unittest.TestCase):
           'deployment': 'my-deployment',
           'project': 'my-project',
       }
+      startup_script_str='echo "abc"\necho "def"\n'
       properties = {
           'gce_instances': [
               {
@@ -49,6 +50,12 @@ class TestGceVmsTemplate(unittest.TestCase):
                   'boot_image_name': (
                       'projects/debian-cloud/global/images/family/debian-9'),
                   'start_vm': True,
+                  'metadata': {
+                    'items':[{
+                        'key': 'startup-script',
+                        'value': startup_script_str
+                    }]
+                  }
               },
           ],
           'firewall_rules': [
@@ -89,6 +96,8 @@ class TestGceVmsTemplate(unittest.TestCase):
                         'type': 'ONE_TO_ONE_NAT',
                     }],
                 }],
+                'metadata': {
+                },
             }
         }, {
             'name': 'stop-work-machine-1',
@@ -125,6 +134,10 @@ class TestGceVmsTemplate(unittest.TestCase):
                         'type': 'ONE_TO_ONE_NAT',
                     }],
                 }],
+                'metadata': {
+                    'items': [{'value': 'echo "abc"\necho "def"\n',
+                    'key': 'startup-script'}]
+                },
             }
         }, {
             'name': 'firewall-allow-rstudio',
@@ -138,6 +151,10 @@ class TestGceVmsTemplate(unittest.TestCase):
             },
         }]
     }
+
+    print generated
+    print '-------------------------------------------------'
+    print expected
 
     self.assertEqual(generated, expected)
 
