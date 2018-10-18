@@ -434,6 +434,12 @@ def main(args):
   utils.GCLOUD_OPTIONS = utils.GcloudOptions(
       dry_run=args.dry_run, gcloud_bin=args.gcloud_bin)
 
+  # Output YAML will rearrange fields and remove comments, so do a basic check
+  # against accidental overwriting.
+  if args.project_yaml == args.output_yaml_path:
+    logging.error('output_yaml_path cannot overwrite project_yaml.')
+    return
+
   # Read and parse the project configuration YAML file.
   all_projects = utils.resolve_env_vars(utils.read_yaml_file(args.project_yaml))
   if not all_projects:
@@ -482,6 +488,10 @@ def main(args):
   else:
     logging.error('No projects to deploy.')
 
+  # After all projects are deployed, save the final YAML file.
+  if args.output_yaml_path:
+    utils.write_yaml_file(all_projects, args.output_yaml_path)
+
 
 def get_parser():
   """Returns an argument parser."""
@@ -501,6 +511,10 @@ def get_parser():
                       help=('By default, no gcloud commands will be executed. '
                             'Use --nodry_run to execute commands.'))
   parser.set_defaults(dry_run=True)
+  parser.add_argument('--output_yaml_path', type=str, default='',
+                      help=('If provided, save a new YAML file with any '
+                            'environment variables substituted. This must be '
+                            'different to project_yaml.'))
   parser.add_argument('--gcloud_bin', type=str, default='gcloud',
                       help='Location of the gcloud binary. (default: gcloud)')
   parser.add_argument('--log', type=str, default='INFO',
