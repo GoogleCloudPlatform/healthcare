@@ -248,13 +248,17 @@ def get_gcloud_user():
       project_id=None).strip()
 
 
+def get_project_number(project_id):
+  """Returns the project number the given project."""
+  return run_gcloud_command(
+      ['projects', 'describe', project_id, '--format', 'value(projectNumber)'],
+      project_id=None).strip()
+
+
 def get_deployment_manager_service_account(project_id):
   """Returns the deployment manager service account for the given project."""
-  project_num = run_gcloud_command([
-      'projects', 'describe', project_id,
-      '--format', 'value(projectNumber)'], project_id=None).strip()
   return 'serviceAccount:{}@cloudservices.gserviceaccount.com'.format(
-      project_num)
+      get_project_number(project_id))
 
 
 def get_log_sink_service_account(log_sink_name, project_id):

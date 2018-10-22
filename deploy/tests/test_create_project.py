@@ -19,7 +19,10 @@ class TestCreateProject(unittest.TestCase):
     yaml_path = os.path.join(os.path.dirname(__file__),
                              '../samples/project_with_remote_audit_logs.yaml')
     parser = create_project.get_parser()
-    create_project.main(parser.parse_args(['--project_yaml', yaml_path]))
+    create_project.main(
+        parser.parse_args([
+            '--project_yaml', yaml_path, '--output_yaml_path', 'test_out.yaml'
+        ]))
 
 
 if __name__ == '__main__':

@@ -336,6 +336,20 @@ definitions:
           type: string
           minLength: 2
 
+      generated_fields:
+        type: object
+        description: |
+          Output only. Fields whose values are produced during deployment and
+          are used for monitoring of the project.
+        properties:
+          project_number:
+            type: string
+            description: The projects unique number.
+          log_sink_service_account:
+            type: string
+            description: |
+              The service account used for this project's audit log sink/export.
+
 required:
 - overall
 

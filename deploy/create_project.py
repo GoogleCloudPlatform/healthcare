@@ -32,6 +32,7 @@ from __future__ import print_function
 
 import argparse
 import collections
+import copy
 import logging
 
 import jsonschema
@@ -144,8 +145,7 @@ def deploy_project_resources(config):
 
   # Build a deployment config for the data_project.py deployment manager
   # template.
-  # Shallow copy is sufficient for this script.
-  properties = config.project.copy()
+  properties = copy.deepcopy(config.project)
   # Remove the current user as an owner of the project if project is part of an
   # organization.
   properties['has_organization'] = has_organization
@@ -189,7 +189,8 @@ def deploy_project_resources(config):
 def deploy_bigquery_audit_logs(config):
   """Deploys the BigQuery audit logs dataset, if used."""
   data_project_id = config.project['project_id']
-  logs_dataset = config.project['audit_logs']['logs_bigquery_dataset'].copy()
+  logs_dataset = copy.deepcopy(
+      config.project['audit_logs']['logs_bigquery_dataset'])
   if config.audit_logs_project:
     logging.info('Creating remote BigQuery logs dataset.')
     audit_project_id = config.audit_logs_project['project_id']
@@ -429,6 +430,20 @@ def setup_new_project(config, starting_step):
   return True
 
 
+def add_generated_fields(project):
+  """Adds a generated_fields block to a project definition, if not already set.
+
+  Args:
+    project (dict): Config dictionary of a single project.
+  """
+  if 'generated_fields' not in project:
+    project['generated_fields'] = {
+        'project_number': utils.get_project_number(project['project_id']),
+        'log_sink_service_account': utils.get_log_sink_service_account(
+            _LOG_SINK_NAME, project['project_id'])
+    }
+
+
 def main(args):
   logging.basicConfig(level=getattr(logging, args.log))
   utils.GCLOUD_OPTIONS = utils.GcloudOptions(
@@ -488,8 +503,14 @@ def main(args):
   else:
     logging.error('No projects to deploy.')
 
-  # After all projects are deployed, save the final YAML file.
+  # After all projects are deployed, fill in unset generated fields for all
+  # projects and save the final YAML file.
   if args.output_yaml_path:
+    if audit_logs_project:
+      add_generated_fields(audit_logs_project)
+    for project in all_projects.get('projects', []):
+      add_generated_fields(project)
+
     utils.write_yaml_file(all_projects, args.output_yaml_path)
 
 
@@ -513,8 +534,9 @@ def get_parser():
   parser.set_defaults(dry_run=True)
   parser.add_argument('--output_yaml_path', type=str, default='',
                       help=('If provided, save a new YAML file with any '
-                            'environment variables substituted. This must be '
-                            'different to project_yaml.'))
+                            'environment variables substituted and generated '
+                            'fields populated. This must be different to '
+                            'project_yaml.'))
   parser.add_argument('--gcloud_bin', type=str, default='gcloud',
                       help='Location of the gcloud binary. (default: gcloud)')
   parser.add_argument('--log', type=str, default='INFO',
