@@ -278,13 +278,24 @@ def create_compute_vms(config):
     else:
       image_name = (
           'global/images/' + instance['custom_boot_image']['image_name'])
-    gce_instances.append({
+
+    gce_template_dict = {
         'name': instance['name'],
         'zone': instance['zone'],
         'machine_type': instance['machine_type'],
         'boot_image_name': image_name,
-        'start_vm': instance['start_vm'],
-    })
+        'start_vm': instance['start_vm']
+    }
+    startup_script_str = instance.get('startup_script')
+    if startup_script_str:
+      gce_template_dict['metadata'] = {
+          'items': [{
+              'key': 'startup-script',
+              'value': startup_script_str
+          }]
+      }
+    gce_instances.append(gce_template_dict)
+
   deployment_name = 'gce-vms'
   dm_template_dict = {
       'imports': [{'path': 'gce_vms.py'}],

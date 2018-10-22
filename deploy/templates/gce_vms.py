@@ -26,7 +26,7 @@ def generate_config(context):
     boot_image = vm['boot_image_name']
 
     # Create a new VM.
-    resources.append({
+    vm_resource = {
         'name': vm_name,
         'type': 'compute.v1.instance',
         'properties': {
@@ -47,9 +47,15 @@ def generate_config(context):
                     'name': 'External NAT',
                     'type': 'ONE_TO_ONE_NAT',
                 }],
-            }],
+            }]
         },
-    })
+    }
+
+    metadata = vm.get('metadata')
+    if metadata:
+        vm_resource['properties']['metadata'] = metadata
+
+    resources.append(vm_resource)
 
     # After the VM is created, shut it down (if start_vm is False).
     if not vm['start_vm']:
