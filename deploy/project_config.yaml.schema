@@ -104,14 +104,14 @@ definitions:
         type: object
         description: |
           Configuration of the (local or remote) audit logs for this project.
-        additional_properties: false
+        additionalProperties: false
         required:
         - logs_bigquery_dataset
         properties:
           logs_bigquery_dataset:
             type: object
             description: BigQuery dataset to hold audit logs.
-            additional_properties: false
+            additionalProperties: false
             required:
             - location
             properties:
@@ -134,7 +134,7 @@ definitions:
             description: |
               GCS bucket to hold GCS logs. Required only if the project contains
               data_buckets.
-            additional_properties: false
+            additionalProperties: false
             required:
             - location
             - storage_class
@@ -173,7 +173,7 @@ definitions:
         description: List of BigQuery (non-logs) datasets to create.
         items:
           type: object
-          additional_properties: false
+          additionalProperties: false
           required:
           - name
           - location
@@ -194,7 +194,7 @@ definitions:
         description: List of GCS (non-logs) buckets to create.
         items:
           type: object
-          additional_properties: false
+          additionalProperties: false
           required:
           - name_suffix
           - location
@@ -226,7 +226,7 @@ definitions:
         type: object
         description: |
           The topic that the given service account can publish updates to.
-        additional_properties: false
+        additionalProperties: false
         required:
         - topic
         - subscription
@@ -255,11 +255,12 @@ definitions:
         description: List of Google Compute Engine VM Instaces to create.
         items:
           type: object
-          additional_properties: false
+          additionalProperties: false
           required:
           - name
           - zone
           - machine_type
+          - start_vm
           properties:
             name:
               type: string
@@ -286,7 +287,7 @@ definitions:
               description: |
                 A custom disk image to create from a GCS path to use as the boot
                 disk for this VM.
-              additional_properties: false
+              additionalProperties: false
               required:
               - image_name
               - gcs_path
@@ -301,6 +302,12 @@ definitions:
                     GCS path (without gs:// prefix) to the tar.gz file of the
                     RAW image file to use for the boot image.
                   pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}\/.+\.tar\.gz$
+            start_vm:
+              type: boolean
+              description: If True, leave the new VM in a started state.
+            startup_script:
+              type: string
+              description: Script to run when start the VM.
 
       gce_firewall_rules:
         type: array

@@ -53,6 +53,9 @@ properties:
         start_vm:
           type: boolean
           description: If True, leave the new VM in a started state.
+        startup_script:
+          type: string
+          description: Script to run when start the VM.
   firewall_rules:
     type: array
     description: |
