@@ -359,6 +359,7 @@ definitions:
 
 required:
 - overall
+- projects
 
 properties:
   overall:

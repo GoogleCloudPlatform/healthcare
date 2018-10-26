@@ -119,7 +119,7 @@ gcloud services --project ${PROJECT_ID?} disable ${SERVICE_NAME}
 
 ## Deployment Manager Templates
 
-There are two templates in this folder:
+There are the following templates in this folder:
 
 *   `data_project.py` will set up a new project for hosting datasets.
 
@@ -130,8 +130,8 @@ There are two templates in this folder:
     rules.
 
 There is also a helper script, `create_project.py` which will handle the
-full creation of multiple dataset and and optional audit logs project using a
-single YAML config file. This is the recommended way to use the templates.
+full creation of multiple dataset and optional audit logs project using a single
+YAML config file. This is the recommended way to use the templates.
 
 ### Template data_project.py
 
@@ -177,9 +177,12 @@ following steps on an existing project:
 *   If an instance has `start_vm` set to `True`, it is left running, otherwise
     it is stopped.
 *   Creates a firewall rule for each rule listed in `firewall_rules` (if any).
-    The format of these rules is the same as the [firewall resource](https://cloud.google.com/compute/docs/reference/rest/v1/firewalls) in the Compute Engine API.
+    The format of these rules is the same as the
+    [firewall resource](https://cloud.google.com/compute/docs/reference/rest/v1/firewalls)
+    in the Compute Engine API.
 
-See `gce_vms.py.schema` for details of each field. This template is used by the `create_project.py` script if a project config includes `gce_instances`.
+See `gce_vms.py.schema` for details of each field. This template is used by the
+`create_project.py` script if a project config includes `gce_instances`.
 
 ### Script create_project.py
 
