@@ -147,6 +147,9 @@ class TestDataProject(unittest.TestCase):
                 'gcpIamPolicy': {
                     'bindings': [{
                         'role': 'roles/storage.admin',
+                        'members': ['group:some-admin-group@googlegroups.com'],
+                    }, {
+                        'role': 'roles/storage.objectViewer',
                         'members': [
                             'group:some-auditors-group@googlegroups.com'
                         ]

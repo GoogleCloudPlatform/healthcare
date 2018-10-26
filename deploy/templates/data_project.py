@@ -122,6 +122,13 @@ def generate_config(context):
                           'role':
                               'roles/storage.admin',
                           'members': [
+                              'group:' + context.properties['owners_group']
+                          ],
+                      },
+                      {
+                          'role':
+                              'roles/storage.objectViewer',
+                          'members': [
                               'group:' + context.properties['auditors_group']
                           ],
                       },
