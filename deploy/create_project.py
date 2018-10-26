@@ -179,6 +179,14 @@ def deploy_project_resources(config):
   utils.create_new_deployment(dm_template_dict, 'data-project-deployment',
                               project_id)
 
+  # Create project liens if requested.
+  if config.project.get('create_deletion_lien'):
+    utils.run_gcloud_command([
+        'alpha', 'resource-manager', 'liens', 'create',
+        '--restrictions', 'resourcemanager.projects.delete',
+        '--reason', 'Automated project deletion lien deployment.'
+    ], project_id)
+
   # Remove Owners role from the DM service account.
   utils.run_gcloud_command(['projects', 'remove-iam-policy-binding', project_id,
                             '--member', dm_service_account,

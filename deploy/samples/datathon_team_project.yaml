@@ -52,6 +52,7 @@ projects:
   data_readonly_groups:
   - some-readonly-group@my-domain.com
   - another-readonly-group@googlegroups.com
+  create_deletion_lien: true
   bigquery_datasets:
   - name: us_data
     location: US

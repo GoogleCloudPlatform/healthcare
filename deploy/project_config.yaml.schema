@@ -66,6 +66,11 @@ definitions:
         items:
           $ref: '#/definitions/email_address'
 
+      create_deletion_lien:
+        type: boolean
+        description: |
+          Optional. Whether to create project deletion lien or not.
+
       additional_project_permissions:
         type: array
         description: |
