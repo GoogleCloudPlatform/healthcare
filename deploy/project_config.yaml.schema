@@ -178,7 +178,7 @@ definitions:
         description: List of BigQuery (non-logs) datasets to create.
         items:
           type: object
-          additionalProperties: false
+          additionalProperties: true
           required:
           - name
           - location
@@ -199,7 +199,7 @@ definitions:
         description: List of GCS (non-logs) buckets to create.
         items:
           type: object
-          additionalProperties: false
+          additionalProperties: true
           required:
           - name_suffix
           - location
@@ -370,7 +370,7 @@ properties:
   overall:
     type: object
     description: Set of properties that apply to all projects.
-    additionalProperties: false
+    additionalProperties: true
     required:
     - billing_account
     properties:
