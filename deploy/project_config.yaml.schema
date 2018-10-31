@@ -255,7 +255,7 @@ definitions:
         description: List of dataproc clusters to create.
         items:
           type: object
-          additionalProperties: false
+          additionalProperties: true
           required:
           - name
           - zone

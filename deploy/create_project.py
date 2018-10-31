@@ -409,13 +409,18 @@ def create_dataproc(config):
   for cluster in config.project['dataproc']:
     zone = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'.format(project_id, cluster['zone'])
     machine_type = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}/machineTypes/{}'.format(project_id, cluster['zone'],cluster['machine_type'])
+    scripts = []
+    for script in cluster['init_scripts']:
+        scripts.append(script['name'])
+        logging.info('script is {}'.format(script['name'])) 
     cluster_template_dict = {
         'name': cluster['name'],
         'workernum': cluster['workernum'],
         'masternum': cluster['masternum'],
         'region': cluster['region'],
         'zone': zone,
-        'machine_type': machine_type
+        'machine_type': machine_type,
+        'init_scripts': scripts
     }
     dataproc_clusters.append(cluster_template_dict)
 
