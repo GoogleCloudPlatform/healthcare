@@ -397,9 +397,41 @@ def create_alerts(config):
           channel, project_id)
 
 
-# The steps to set up a project, so the script can be resumed part way through
-# on error. Each is a function that takes a config dictionary and
-# raises a GcloudRuntimeError on errors.
+def create_dataproc(config):
+  """Creates new dataproc cluster config."""
+  if 'dataproc' not in config.project:
+    logging.info('No dataproc cluster required.')
+    return
+  project_id = config.project['project_id']
+  logging.info('Creating dataproc cluster')
+
+  dataproc_clusters = []
+  for cluster in config.project['dataproc']:
+    zone = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'.format(project_id, cluster['zone'])
+    machine_type = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}/machineTypes/{}'.format(project_id, cluster['zone'],cluster['machine_type'])
+    cluster_template_dict = {
+        'name': cluster['name'],
+        'workernum': cluster['workernum'],
+        'masternum': cluster['masternum'],
+        'region': cluster['region'],
+        'zone': zone,
+        'machine_type': machine_type
+    }
+    dataproc_clusters.append(cluster_template_dict)
+
+  deployment_name = 'create-dataproc'
+  dm_template_dict = {
+      'imports': [{'path': 'create_dataproc.py'}],
+      'resources': [{
+          'type': 'create_dataproc.py',
+          'name': deployment_name,
+          'properties': {
+              'dataproc_clusters': dataproc_clusters,
+          }
+      }]
+  }
+  utils.create_new_deployment(dm_template_dict, deployment_name, project_id)
+
 _SETUP_STEPS = [
     create_new_project,
     setup_billing,
@@ -411,6 +443,7 @@ _SETUP_STEPS = [
     create_compute_vms,
     create_stackdriver_account,
     create_alerts,
+    create_dataproc
 ]
 
 

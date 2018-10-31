@@ -204,6 +204,47 @@ properties:
       ack_deadline_sec:
         type: integer
         description: Ack deadline for the pubsub subscription.
+
+  dataproc_clusters:
+    type: array
+    description: List of dataproc clusters to create.
+    items:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - zone
+      - machine_type
+      - region
+      - workernum
+      - masternum
+
+      properties:
+        name:
+          type: string
+          description: Name of the dataproc cluster to create.
+          pattern: ^[a-z]([-a-x0-9]{0,61}[a-z0-9])?$
+        zone:
+          type: string
+          description: The zone of the dataproc cluster to create in , e.g. us-central1-f.
+          minLength: 2
+        machine_type:
+          type: string
+          description: The type of the  VM instance for the dataproc cluster, e.g. n1-standard-1.
+          minLength: 2
+        region:
+          type: string
+          description: The region of the dataproc cluster to create in, e.g. us-central1
+          minLength: 2
+        masternum:
+          type: integer
+          description: The number of master nodes in the cluster
+          min: 1
+        workernum:
+          type: integer
+          description: The number of worker nodes in the cluster
+          min: 2
+
   enabled_apis:
     type: array
     description: List of APIs to enable in the new project.
