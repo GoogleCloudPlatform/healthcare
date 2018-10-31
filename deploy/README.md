@@ -88,6 +88,9 @@ using remote or local audit logs. The schema for these YAML files is in
 Use the `create_project.py` script to create an audit logs project (if using
 remote audit logs) and one or more data hosting projects.
 
+1.  Make sure the user running the script is in the owners group(s) of all
+    projects that will be created, including the audit logs project (if used).
+    You should remove the user from these groups after successful deployment.
 1.  If not already logged in, run `gcloud init` to log in as a user with
     permission to create projects under the specified organization and billing
     account
