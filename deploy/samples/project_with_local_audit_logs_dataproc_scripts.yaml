@@ -78,6 +78,8 @@ projects:
     workernum: 2
     masternum: 1
     machine_type: n1-standard-1
+    tags:
+    - name: tag1
     init_scripts:
     - name: script1.sh
     - name: script2.sh

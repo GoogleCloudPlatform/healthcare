@@ -32,6 +32,9 @@ def generate_config(context):
         initscripts.append({
             'executableFile': script  
         })
+    tags = []
+    tags = cluster['tags']
+
     cluster_resource = {
         'name': name,
         'type': 'dataproc.v1.cluster',
@@ -41,6 +44,7 @@ def generate_config(context):
             'config': {
                 'gceClusterConfig': {
                    'zoneUri': zone,
+                   'tags': tags,
                 },
                 'masterConfig': {
                    'numInstances': masternum,

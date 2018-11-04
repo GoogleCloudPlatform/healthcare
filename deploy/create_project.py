@@ -413,12 +413,17 @@ def create_dataproc(config):
     for script in cluster['init_scripts']:
         scripts.append(script['name'])
         logging.info('script is {}'.format(script['name'])) 
+    tags = []
+    for tag in cluster['tags']:
+        tags.append(tag['name'])
+
     cluster_template_dict = {
         'name': cluster['name'],
         'workernum': cluster['workernum'],
         'masternum': cluster['masternum'],
         'region': cluster['region'],
         'zone': zone,
+        'tags': tags,
         'machine_type': machine_type,
         'init_scripts': scripts
     }

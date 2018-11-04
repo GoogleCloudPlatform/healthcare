@@ -260,6 +260,7 @@ definitions:
           - name
           - zone
           - machine_type
+          - tags
           - region
           - workernum
           - masternum
@@ -276,6 +277,10 @@ definitions:
               type: string
               description: The type of the  VM instance for the dataproc cluster, e.g. n1-standard-1.
               minLength: 2
+            tags:
+              type: array
+              description: Tags used to assign to the instances in the cluster e.g. dataproc1.
+              minLength: 0
             region:
               type: string
               description: The region of the dataproc cluster to create in, e.g. us-central1
