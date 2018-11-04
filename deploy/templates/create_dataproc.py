@@ -24,11 +24,14 @@ def generate_config(context):
     region  = cluster['region']
     workernum  = cluster['workernum']
     masternum  = cluster['masternum']
-#    machine_type = 'zones/{}/machineTypes/{}'.format(cluster['zone'], cluster['machine_type'])
-#    zone = 'zones/{}'.format(cluster['zone'])
     zone = cluster['zone']
     machine_type = cluster['machine_type']
     # Create a new VM.
+    initscripts = []
+    for script in cluster['init_scripts']: 
+        initscripts.append({
+            'executableFile': script  
+        })
     cluster_resource = {
         'name': name,
         'type': 'dataproc.v1.cluster',
@@ -46,10 +49,11 @@ def generate_config(context):
                 'workerConfig': {
                    'numInstances': workernum,
                    'machineTypeUri': machine_type,
-               },
+                },
+                'initializationActions': initscripts
             },
         },
-    }
+       }
 
     resources.append(cluster_resource)
 
