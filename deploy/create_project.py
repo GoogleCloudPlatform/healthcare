@@ -412,7 +412,8 @@ def create_dataproc(config):
     scripts = []
     for script in cluster['init_scripts']:
         scripts.append(script['name'])
-        logging.info('script is {}'.format(script['name'])) 
+        logging.info('script is {}'.format(script['name']))
+
     tags = []
     for tag in cluster['tags']:
         tags.append(tag['name'])
@@ -442,6 +443,28 @@ def create_dataproc(config):
   }
   utils.create_new_deployment(dm_template_dict, deployment_name, project_id)
 
+def create_firewall_rules(config):
+  """Creates firewall rules if specified in config."""
+  if 'firewall_rules' not in config.project:
+    logging.info('No Firewall rules setup required.')
+    return
+  project_id = config.project['project_id']
+  logging.info('Creating Firewall rules')
+
+  deployment_name = 'firewall-rules'
+  dm_template_dict = {
+      'imports': [{'path': 'create_fwrules.py'}],
+      'resources': [{
+          'type': 'create_fwrules.py',
+          'name': deployment_name,
+          'properties': {
+              'firewall_rules': config.project.get('firewall_rules', []),
+              #'firewall_rules': config.project.get('gce_firewall_rules', []),
+          }
+      }]
+  }
+  utils.create_new_deployment(dm_template_dict, deployment_name, project_id)
+
 _SETUP_STEPS = [
     create_new_project,
     setup_billing,
@@ -453,7 +476,8 @@ _SETUP_STEPS = [
     create_compute_vms,
     create_stackdriver_account,
     create_alerts,
-    create_dataproc
+    create_dataproc,
+    create_firewall_rules
 ]
 
 

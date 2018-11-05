@@ -294,6 +294,35 @@ definitions:
               description: The number of worker nodes in the cluster
               min: 2
 
+      firewall_rules:
+        type: array
+        description: List of Google Compute Engine firewall rules to create.
+        items:
+          type: object
+          description: |
+            A firewall rule. See
+            https://cloud.google.com/compute/docs/reference/rest/v1/firewalls
+            for the full list of properties that can be provided in a firewall
+            rule.
+          required:
+          - name
+          properties:
+            name:
+              type: string
+              pattern: ^[a-z]([-a-x0-9]{0,61}[a-z0-9])?$
+            description:
+              type: string
+            allowed:
+              type: array
+            denied:
+              type: array
+            sourceRanges:
+              type: array
+            destinationRanges:
+              type: array
+            targetTags:
+              type: array
+
       gce_instances:
         type: array
         description: List of Google Compute Engine VM Instaces to create.
