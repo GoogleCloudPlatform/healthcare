@@ -419,6 +419,9 @@ def create_dataproc(config):
     for tag in cluster['tags']:
         tags.append(tag['name'])
 
+    imageVersion = '1.2'
+    if 'imageVersion' in cluster.keys():
+       imageVersion = cluster['imageVersion']
     cluster_template_dict = {
         'name': cluster['name'],
         'workernum': cluster['workernum'],
@@ -427,7 +430,8 @@ def create_dataproc(config):
         'zone': zone,
         'tags': tags,
         'machine_type': machine_type,
-        'init_scripts': scripts
+        'init_scripts': scripts,
+        'imageVersion': imageVersion
     }
     dataproc_clusters.append(cluster_template_dict)
 

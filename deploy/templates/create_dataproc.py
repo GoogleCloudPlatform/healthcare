@@ -34,7 +34,7 @@ def generate_config(context):
         })
     tags = []
     tags = cluster['tags']
-
+    imageVersion = cluster['imageVersion']
     cluster_resource = {
         'name': name,
         'type': 'dataproc.v1.cluster',
@@ -53,6 +53,9 @@ def generate_config(context):
                 'workerConfig': {
                    'numInstances': workernum,
                    'machineTypeUri': machine_type,
+                },
+                'softwareConfig': {
+                   'imageVersion': imageVersion,
                 },
                 'initializationActions': initscripts
             },
