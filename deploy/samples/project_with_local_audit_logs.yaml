@@ -28,6 +28,17 @@ overall:
   folder_id: '98765321'                 # Optional. Replace this with an existing folder within the organization.
   billing_account: 000000-000000-000000 # Replace this with your Billing Account.
 
+forseti:
+  project:
+    project_id: my-forseti-project      # Replace this with a unique ID for your forseti project.
+    owners_group: my-forseti-project-owners@mydomain.com    # Replace this with the owners group for this project.
+    auditors_group: my-forseti-project-auditors@mydomain.com  # Replace this with your auditors group.
+    create_deletion_lien: true
+    audit_logs:
+      logs_bigquery_dataset:
+        location: US
+    stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
+
 projects:
 - project_id: my-project
   owners_group: my-project-owners@my-domain.com      # Replace this with the owners group for this project.

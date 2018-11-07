@@ -33,11 +33,23 @@ audit_logs_project:
   project_id: my-audit-logs             # Replace this with a unique ID for your audit logs project.
   owners_group: my-audit-logs-owners@mydomain.com   # Replace this with the owners group for this project.
   auditors_group: some-auditors-group@mydomain.com  # Replace this with your auditors group.
+  create_deletion_lien: true
   audit_logs:  # Audit logs for acccess to the audit logs project itself.
     logs_bigquery_dataset:
       # Local logs dataset will have the name 'audit_logs'.
       location: US                      # Replace this with the desired the location for the BigQuery dataset holding audit logs for this project.
   stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
+
+forseti:
+  project:
+    project_id: my-forseti-project      # Replace this with a unique ID for your forseti project.
+    owners_group: my-forseti-project-owners@mydomain.com    # Replace this with the owners group for this project.
+    auditors_group: my-forseti-project-auditors@mydomain.com  # Replace this with your auditors group.
+    create_deletion_lien: true
+    audit_logs:
+      logs_bigquery_dataset:
+        location: US
+    stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
 
 # Multiple dataset projects can be deployed at once with the one YAML file.
 projects:
@@ -99,6 +111,7 @@ projects:
 - project_id: my-other-project
   owners_group: my-other-project-owners@my-domain.com
   auditors_group: some-auditors-group@my-domain.com
+  create_deletion_lien: true
   data_readwrite_groups:
   - some-readwrite-group@my-domain.com
   data_readonly_groups:

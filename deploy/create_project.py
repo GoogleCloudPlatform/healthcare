@@ -37,7 +37,9 @@ import logging
 
 import jsonschema
 
-import utils
+from utils import forseti
+from utils import runner
+from utils import utils
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
@@ -404,7 +406,6 @@ def create_alerts(config):
            'bucket {} is accessed by an unexpected user.'.format(bucket_name)),
           channel, project_id)
 
-
 # The steps to set up a project, so the script can be resumed part way through
 # on error. Each is a function that takes a config dictionary and
 # raises a GcloudRuntimeError on errors.
@@ -467,6 +468,7 @@ def main(args):
   logging.basicConfig(level=getattr(logging, args.log))
   utils.GCLOUD_OPTIONS = utils.GcloudOptions(
       dry_run=args.dry_run, gcloud_bin=args.gcloud_bin)
+  runner.DRY_RUN = args.dry_run
 
   # Output YAML will rearrange fields and remove comments, so do a basic check
   # against accidental overwriting.
@@ -496,6 +498,15 @@ def main(args):
     projects.append(ProjectConfig(overall=overall,
                                   project=audit_logs_project,
                                   audit_logs_project=None))
+
+  forseti_project_dict = all_projects.get('forseti', {}).get('project')
+  forseti_project_config = None
+
+  if forseti_project_dict:
+    forseti_project_config = ProjectConfig(
+        overall=overall, project=forseti_project_dict,
+        audit_logs_project=audit_logs_project)
+    projects.append(forseti_project_config)
 
   for project_config in all_projects.get('projects', []):
     projects.append(ProjectConfig(overall=overall,
@@ -531,6 +542,11 @@ def main(args):
       add_generated_fields(project)
 
     utils.write_yaml_file(all_projects, args.output_yaml_path)
+
+  # TODO: allow for forseti installation to be retried.
+  if forseti_project_config:
+    # Install Forseti instance in Forseti project.
+    forseti.install(forseti_project_config)
 
 
 def get_parser():

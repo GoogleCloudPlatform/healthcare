@@ -24,7 +24,7 @@ GCLOUD_OPTIONS = GcloudOptions(dry_run=True, gcloud_bin='gcloud')
 
 # Schema file for project configuration YAML files.
 _PROJECT_CONFIG_SCHEMA = os.path.join(
-    os.path.dirname(__file__), 'project_config.yaml.schema')
+    os.path.dirname(__file__), '../project_config.yaml.schema')
 
 
 def wait_for_yes_no(text):
@@ -93,9 +93,7 @@ def validate_config_yaml(config):
     jsonschema.exceptions.ValidationError: if the YAML contents do not match the
       schema.
   """
-  schema_file_path = os.path.join(
-      os.path.dirname(os.path.realpath(sys.argv[0])), _PROJECT_CONFIG_SCHEMA)
-  schema = read_yaml_file(schema_file_path)
+  schema = read_yaml_file(_PROJECT_CONFIG_SCHEMA)
 
   jsonschema.validate(config, schema)
 
@@ -149,7 +147,7 @@ def create_new_deployment(deployment_template, deployment_name, project_id):
   """
   # Save the deployment manager template to a temporary file in the same
   # directory as the deployment manager templates.
-  dm_template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+  dm_template_dir = os.path.join(os.path.dirname(__file__), '../templates')
   dm_template_file = tempfile.NamedTemporaryFile(suffix='.yaml',
                                                  dir=dm_template_dir)
   write_yaml_file(deployment_template, dm_template_file.name)

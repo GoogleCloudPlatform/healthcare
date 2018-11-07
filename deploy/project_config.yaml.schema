@@ -402,6 +402,17 @@ properties:
       projects will save audit logs to this project. If audit_logs_project is
       not provided, all projects save audit logs locally.
 
+  forseti:
+    type: object
+    description: The Forseti instance configuration.
+    additionalProperties: true
+    required:
+    - project 
+    properties:
+      project:
+        $ref: '#/definitions/gcp_project'
+        description: The project install the Forseti instance in.
+
   projects:
     type: array
     description: List of data hosting projects to deploy.
