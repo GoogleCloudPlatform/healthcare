@@ -499,12 +499,12 @@ def main(args):
                                   project=audit_logs_project,
                                   audit_logs_project=None))
 
-  forseti_project_dict = all_projects.get('forseti', {}).get('project')
-  forseti_project_config = None
+  forseti_config = all_projects.get('forseti', {})
 
-  if forseti_project_dict:
+  if forseti_config:
     forseti_project_config = ProjectConfig(
-        overall=overall, project=forseti_project_dict,
+        overall=overall,
+        project=forseti_config.get('project'),
         audit_logs_project=audit_logs_project)
     projects.append(forseti_project_config)
 
@@ -544,9 +544,9 @@ def main(args):
     utils.write_yaml_file(all_projects, args.output_yaml_path)
 
   # TODO: allow for forseti installation to be retried.
-  if forseti_project_config:
+  if forseti_config:
     # Install Forseti instance in Forseti project.
-    forseti.install(forseti_project_config)
+    forseti.install(forseti_config)
 
 
 def get_parser():

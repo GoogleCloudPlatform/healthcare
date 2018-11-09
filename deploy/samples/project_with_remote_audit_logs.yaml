@@ -50,6 +50,7 @@ forseti:
       logs_bigquery_dataset:
         location: US
     stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
+  installer_flags: '--skip-sendgrid-config'    # Replace with any flags to pass to the installer.
 
 # Multiple dataset projects can be deployed at once with the one YAML file.
 projects:

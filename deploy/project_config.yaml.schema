@@ -407,12 +407,14 @@ properties:
     description: The Forseti instance configuration.
     additionalProperties: true
     required:
-    - project 
+    - project
     properties:
       project:
         $ref: '#/definitions/gcp_project'
         description: The project install the Forseti instance in.
-
+      installer_flags:
+        type: string
+        description: "Flags to pass to the Forseti installer."
   projects:
     type: array
     description: List of data hosting projects to deploy.
