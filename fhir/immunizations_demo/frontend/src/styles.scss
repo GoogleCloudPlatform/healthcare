@@ -1,0 +1,112 @@
+/*
+ * Copyright 2018 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import '~@angular/material/theming';
+@import './app/app-theme';
+
+@include mat-core();
+
+// Define the light theme.
+$primary: mat-palette($mat-indigo);
+$accent: mat-palette($mat-pink, A200, A100, A400);
+
+$theme: mat-light-theme($primary, $accent);
+$config: mat-typography-config();
+
+@include angular-material-theme($theme);
+
+body {
+  font-family: 'Roboto', 'Helvetica Neue Light', 'Helvetica Neue', Helvetica,
+    Arial, 'Lucida Grande', sans-serif;
+  margin: 0;
+}
+
+.basic-container {
+  padding: 30px;
+}
+
+mat-expansion-panel.loading-expansion-panel {
+  .mat-expansion-panel-content {
+    position: relative;
+  }
+
+  mat-progress-bar {
+    bottom: 0px;
+    left: 0px;
+    position: absolute;
+  }
+}
+
+.mat-form {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px;
+
+   > * {
+    max-width: 300px;
+  }
+}
+
+.action-btn-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 8px 16px 24px;
+}
+
+.app-container .mat-drawer-content {
+  // Prevent the sidenav content from creating a new stacking frame. This allows
+  // the content to slide behind the debug panel when the nav pane is opened,
+  // while also allowing the FAB to be in front of the debug panel.
+  z-index: auto;
+}
+
+.debug-panel.mat-drawer {
+  background-color: inherit;
+}
+
+// Override styles from Material's expansion-panel which rely on the
+// mat-expansion-panels being siblings within the mat-accordion. This is not the
+// case because we have custom list items wrapping the mat-expansion-panels.
+// Issue is tracked here https://github.com/angular/material2/issues/13419
+.mat-expansion-panel {
+  $border-radius: 4px;
+
+  .mat-accordion .app-data-list & {
+    border-radius: 0;
+
+    .mat-expansion-panel-header .mat-content {
+      line-height: normal;
+      white-space: nowrap;
+    }
+
+    &:not(.mat-expanded),
+    &:not(.mat-expansion-panel-spacing) {
+      border-radius: 0;
+    }
+  }
+
+  .mat-accordion > .app-data-list:nth-child(1) & {
+    border-top-left-radius: $border-radius;
+    border-top-right-radius: $border-radius;
+  }
+
+  .mat-accordion > .app-data-list:nth-last-child(1) & {
+    border-bottom-left-radius: $border-radius;
+    border-bottom-right-radius: $border-radius;
+  }
+}
+
+@include app-theme($theme, $config);

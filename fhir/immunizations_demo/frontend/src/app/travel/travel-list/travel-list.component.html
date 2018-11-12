@@ -1,0 +1,43 @@
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<div *ngIf="adding" [@openIn]="adding">
+  <div class="mat-elevation-z2">
+    <app-travel-form [questionnaire]="questionnaire" (saved)="savedTravelForm()"
+                     (cancelled)="hideTravelForm()"></app-travel-form>
+  </div>
+</div>
+
+<ng-container *ngIf="upcomingTravel.length > 0">
+  <h1>Upcoming</h1>
+  <mat-accordion class="app-data-list">
+    <app-travel-item *ngFor="let travelPlan of upcomingTravel" [travelPlan]="travelPlan"
+                     class="app-data-list" [questionnaire]="questionnaire"
+                     (saved)="refreshTravelPlans()"></app-travel-item>
+  </mat-accordion>
+</ng-container>
+<ng-container *ngIf="pastTravel.length > 0">
+  <h1>Past</h1>
+  <mat-accordion class="app-data-list">
+    <app-travel-item *ngFor="let travelPlan of pastTravel" [travelPlan]="travelPlan"
+                     class="app-data-list" [questionnaire]="questionnaire"
+                     (saved)="refreshTravelPlans()"></app-travel-item>
+  </mat-accordion>
+</ng-container>
+
+<button mat-fab color="accent" class="add-btn" (click)="showTravelForm()">
+  <mat-icon>add</mat-icon>
+</button>

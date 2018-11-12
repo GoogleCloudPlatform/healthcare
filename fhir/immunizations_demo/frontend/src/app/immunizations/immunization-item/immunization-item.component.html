@@ -1,0 +1,80 @@
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<mat-expansion-panel class="loading-expansion-panel" (opened)="getReaction()">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      {{immunization.name}}
+    </mat-panel-title>
+    <mat-panel-description>{{header}}</mat-panel-description>
+  </mat-expansion-panel-header>
+  <app-immunization-form *ngIf="editing" [immunization]="immunization"
+                         [reaction]="reaction" (cancelled)="toggleEditing()"
+                         (saved)="toggleEditing()"></app-immunization-form>
+  <mat-list *ngIf="!editing">
+    <mat-list-item>
+      <mat-icon mat-list-icon>help_outline</mat-icon>
+      <h3 mat-line [ngSwitch]="immunization.reason">
+        <ng-container *ngSwitchCase="ImmunizationReason.Occupational">
+          Occupational Requirement
+        </ng-container>
+        <ng-container *ngSwitchCase="ImmunizationReason.Travel">
+          Travel
+        </ng-container>
+        <ng-container *ngSwitchDefault>
+          None
+        </ng-container>
+      </h3>
+      <p mat-line>Reason</p>
+    </mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>
+      <mat-icon mat-list-icon>warning</mat-icon>
+      <h3 mat-line>{{reactionDetails || 'None'}}</h3>
+      <p mat-line>Reaction</p>
+    </mat-list-item>
+    <ng-container *ngIf="immunization.note">
+      <mat-divider></mat-divider>
+      <mat-list-item>
+        <mat-icon mat-list-icon>notes</mat-icon>
+        <h3 mat-line>{{immunization.note}}</h3>
+        <p mat-line>Note</p>
+      </mat-list-item>
+    </ng-container>
+  </mat-list>
+  <mat-action-row>
+    <ng-container *ngIf="!editing">
+      <button mat-button color="warn" (click)="delete()">
+        Delete
+      </button>
+      <span class="mat-action-row-spacer"></span>
+      <button *ngIf="expiringSoon" mat-button (click)="markUpdated()">
+        Ignore expiry
+      </button>
+      <button *ngIf="expiringSoon" mat-button (click)="updateImm()">
+        Add new dose
+      </button>
+      <button mat-button color="primary" (click)="toggleEditing()">
+        Edit
+      </button>
+    </ng-container>
+    <ng-container *ngIf="editing">
+      <button mat-button color="warning" (click)="toggleEditing()">Cancel</button>
+      <button mat-button color="primary" (click)="save()">Save</button>
+    </ng-container>
+  </mat-action-row>
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+</mat-expansion-panel>

@@ -1,0 +1,79 @@
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<div class="mat-form" [formGroup]="form" (keyup.enter)="submit()">
+  <ng-container *ngIf="!immunization">
+    <mat-form-field>
+      <input matInput placeholder="Immunization" formControlName="name"
+             required>
+      <mat-error *ngIf="form.controls.name.invalid">Immunization is required</mat-error>
+    </mat-form-field>
+
+    <mat-form-field>
+      <input matInput [matDatepicker]="receivedDp" placeholder="Date received"
+             formControlName="date" required>
+      <mat-error *ngIf="form.controls.date.invalid">Date received is required</mat-error>
+      <mat-datepicker-toggle matSuffix [for]="receivedDp"></mat-datepicker-toggle>
+      <mat-datepicker #receivedDp></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field>
+      <input matInput [matDatepicker]="expirationDp" placeholder="Expiration date"
+             formControlName="expirationDate">
+      <mat-datepicker-toggle matSuffix [for]="expirationDp"></mat-datepicker-toggle>
+      <mat-datepicker #expirationDp></mat-datepicker>
+    </mat-form-field>
+  </ng-container>
+
+  <mat-form-field>
+    <mat-select placeholder="Reason" formControlName="reason">
+      <mat-option [value]="ImmunizationReason.Occupational">
+        Occupational Requirement
+      </mat-option>
+      <mat-option [value]="ImmunizationReason.Travel">
+        Travel
+      </mat-option>
+      <mat-option [value]="">
+        None
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-select placeholder="Reaction" formControlName="reaction">
+      <mat-option *ngFor="let reaction of ImmunizationReaction | keyvalue"
+                  [value]="reaction.value">
+        {{reaction.value}}
+      </mat-option>
+      <mat-option [value]="">
+        None
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field>
+    <input matInput placeholder="Note" formControlName="note">
+  </mat-form-field>
+</div>
+
+<ng-container *ngIf="!immunization">
+  <mat-divider></mat-divider>
+  <div class="action-btn-row">
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button mat-button color="primary" (click)="submit()">Add</button>
+  </div>
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+</ng-container>

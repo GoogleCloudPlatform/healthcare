@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../out-tsc/app",
+    // Adds @types/fhir to the global namespace.
+    "types": ["fhir", "gapi", "gapi.auth2"]
+  },
+  "exclude": ["test.ts", "**/*.spec.ts", "test/**/*"]
+}

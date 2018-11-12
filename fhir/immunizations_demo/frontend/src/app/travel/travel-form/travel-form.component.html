@@ -1,0 +1,59 @@
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<div class="mat-form" [formGroup]="form">
+  <mat-form-field>
+    <input #destinationInput matInput placeholder="Destination" [formControl]="destControl"
+           [matAutocomplete]="auto" required>
+    <mat-error *ngIf="destControl.hasError('country')">
+      {{destControl.errors.country}} is not an accepted country
+    </mat-error>
+    <mat-error *ngIf="destControl.hasError('required')">
+      Destination is required
+    </mat-error>
+  </mat-form-field>
+  <mat-autocomplete #auto="matAutocomplete">
+    <mat-option *ngFor="let country of filteredCountries | async" [value]="country">
+      {{country}}
+    </mat-option>
+  </mat-autocomplete>
+
+  <mat-form-field>
+    <input matInput [matDatepicker]="departureDp" placeholder="Departure date"
+           formControlName="departureDate" required>
+    <mat-error *ngIf="form.controls.departureDate.invalid">Departure date is
+      required</mat-error>
+    <mat-datepicker-toggle matSuffix [for]="departureDp"></mat-datepicker-toggle>
+    <mat-datepicker #departureDp></mat-datepicker>
+  </mat-form-field>
+
+  <mat-form-field>
+    <input matInput [matDatepicker]="returnDp" placeholder="Departure date"
+           formControlName="returnDate" required>
+    <mat-error *ngIf="form.controls.returnDate.invalid">Return date is required</mat-error>
+    <mat-datepicker-toggle matSuffix [for]="returnDp"></mat-datepicker-toggle>
+    <mat-datepicker #returnDp></mat-datepicker>
+  </mat-form-field>
+</div>
+
+<ng-container *ngIf="!travelPlan">
+  <mat-divider></mat-divider>
+  <div class="action-btn-row">
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button mat-button color="primary" (click)="submit()">Add</button>
+  </div>
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+</ng-container>

@@ -1,0 +1,53 @@
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<div class="app-container" [class.mobile]="isMobile.matches">
+  <mat-toolbar color="primary" class="app-toolbar">
+    <button mat-icon-button (click)="sidenav.toggle()">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <h1>FHIR Immunizations</h1>
+    <div style="flex-grow: 1"></div>
+    <button mat-icon-button (click)="debugPanel.toggle()">
+      <mat-icon>bug_report</mat-icon>
+    </button>
+    <app-patient-panel></app-patient-panel>
+  </mat-toolbar>
+
+  <mat-sidenav-container class="sidenav-container">
+    <mat-sidenav #sidenav [mode]="sideNavMode" [fixedInViewport]="isMobile.matches"
+                 fixedTopGap="56" (click)="sidenav.close()">
+      <mat-nav-list>
+        <a mat-list-item routerLink="/travel" routerLinkActive="nav-link-active">
+          <mat-icon matListIcon>flight_takeoff</mat-icon>
+          <h2 matLine>Travel</h2>
+        </a>
+        <a mat-list-item routerLink="/immunizations" routerLinkActive="nav-link-active">
+          <mat-icon matListIcon svgIcon="syringe"></mat-icon>
+          <h2 matLine>Immunizations</h2>
+        </a>
+      </mat-nav-list>
+    </mat-sidenav>
+    <mat-sidenav #debugPanel position="end" fixedTopGap="56" mode="side"
+                 [disableClose]="true" [fixedInViewport]="true" class="debug-panel">
+      <app-debug-panel></app-debug-panel>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <router-outlet></router-outlet>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

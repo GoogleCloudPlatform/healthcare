@@ -1,0 +1,7 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_binary(
+    name = "data_gen",
+    srcs = ["data_gen.go"],
+    deps = ["@com_github_pborman_uuid//:go_default_library"],
+)

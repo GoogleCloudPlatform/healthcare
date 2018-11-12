@@ -1,0 +1,63 @@
+<!--
+  Copyright 2018 Google LLC
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<div class="container">
+  <mat-card *ngFor="let req of requests | async">
+    <mat-card-content>
+      <button mat-icon-button class="copy-btn" matTooltip="Copy as cURL"
+              (click)="copyRequestAsCURL(req)">
+        <mat-icon>content_copy</mat-icon>
+      </button>
+      <dl>
+        <dt>Method</dt>
+        <dd>
+          <pre>{{req.method}}</pre>
+        </dd>
+        <dt>URL</dt>
+        <dd>
+          <pre>{{stripFHIRStoreURL(req.url)}}</pre>
+        </dd>
+        <ng-container *ngIf="req.queryParams">
+          <dt>Query params</dt>
+          <dd>
+            <pre><ng-container *ngFor="let queryParam of req.queryParams | keyvalue"
+              ><b>{{queryParam.key}}</b>: {{queryParam.value}}<br></ng-container></pre>
+          </dd>
+        </ng-container>
+        <ng-container *ngIf="req.requestBody">
+          <dt>Request</dt>
+          <dd>
+            <mat-expansion-panel class="mat-elevation-z0">
+              <mat-expansion-panel-header>
+                <mat-panel-title>Body</mat-panel-title>
+              </mat-expansion-panel-header>
+              <pre>{{req.requestBody | json:2}}</pre>
+            </mat-expansion-panel>
+          </dd>
+        </ng-container>
+        <dt>Response</dt>
+        <dd>
+          <mat-expansion-panel class="mat-elevation-z0">
+            <mat-expansion-panel-header>
+              <mat-panel-title>Body</mat-panel-title>
+            </mat-expansion-panel-header>
+            <pre>{{req.responseBody | async}}</pre>
+          </mat-expansion-panel>
+        </dd>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+</div>

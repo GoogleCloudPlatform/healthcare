@@ -1,0 +1,18 @@
+{
+  "instances": [
+    {
+      "age": 20,
+      "gender": 0,
+      "country": 1,
+      "duration": 5,
+      "disease": 0
+    },
+    {
+      "age": 50,
+      "gender": 1,
+      "country": 0,
+      "duration": 8,
+      "disease": 1
+    }
+  ]
+}
