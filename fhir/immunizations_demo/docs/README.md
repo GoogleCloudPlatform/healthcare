@@ -11,6 +11,12 @@ countries that the user indicates they will be traveling to and allows users to
 track the immunizations they have received and which ones may be coming up for
 renewal.
 
+WARNING: The predictions made by this application are presented for
+the purpose of demonstrating how to integrate machine learning into a FHIR
+application, and are not medical advice. The use case presented here is also
+not a recommended application of machine learning on FHIR data. All data in this
+demo is generated and not based on any patient health data.
+
 Here is the architecture of the whole system.
 ![System Architecture](FHIR_DevDays_Demo.png)
 
@@ -54,7 +60,7 @@ The application is developed using the [Angular CLI](https://cli.angular.io/).
     those used to create your dataset in the quickstart. The FHIR store ID can
     be any value you would like. The PubSub topic will be used later for the machine learning
     component, this can also be any identifier you would like.
-    
+
     At this time the `API_VERSION` is v1alpha, but this may be different for you.
 
   ```sh

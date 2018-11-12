@@ -19,7 +19,7 @@
     <button mat-icon-button (click)="sidenav.toggle()">
       <mat-icon>menu</mat-icon>
     </button>
-    <h1>FHIR Immunizations</h1>
+    <h1>FHIR Immunizations (sample application for development use only)</h1>
     <div style="flex-grow: 1"></div>
     <button mat-icon-button (click)="debugPanel.toggle()">
       <mat-icon>bug_report</mat-icon>
@@ -47,6 +47,14 @@
     </mat-sidenav>
 
     <mat-sidenav-content>
+      <mat-card class="disclaimer-card">
+        DISCLAIMER: The predictions made by this application are presented for
+        the purpose of demonstrating how to integrate machine learning into a
+        FHIR application, and are not medical advice. The use case presented
+        here is also not a recommended application of machine learning on FHIR
+        data. All data in this demo is generated and not based on any patient
+        health data.
+      </mat-card>
       <router-outlet></router-outlet>
     </mat-sidenav-content>
   </mat-sidenav-container>
