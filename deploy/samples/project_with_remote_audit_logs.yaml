@@ -48,6 +48,7 @@ forseti:
     create_deletion_lien: true
     audit_logs:
       logs_bigquery_dataset:
+        name: my_forseti_project
         location: US
     stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
   installer_flags: '--skip-sendgrid-config'    # Replace with any flags to pass to the installer.
