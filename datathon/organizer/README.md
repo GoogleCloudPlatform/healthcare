@@ -1,11 +1,13 @@
 # Google Cloud Project Setup Guide for Datathons
 
-This guide is designed to help datathon organizers and other data owners alike
-to set up a set of Google Cloud Projects, to host datasets and data analysis
-environment in a compliant and audited way. By the end of this guide, you will
-have created
+This guide is designed to help structured data users (e.g. healthcare datathon
+organizers and participants, structured data analysis course instructors and
+students) to set up a set of Google Cloud Projects, in order to host the
+structured datasets and data analysis environment in a compliant and audited
+way. More specifically, it explains how to created:
 
-1.  An auditing project to collect audit records from all projects.
+1.  An auditing project to collect audit records from the data-hosting project
+    and work project created below.
 1.  A data hosting project, where structured data is hosted both in its raw
     format in a Google Cloud Storage bucket, and as BigQuery tables ready for
     controlled data access.
@@ -13,10 +15,17 @@ have created
     BigQuery jobs and storing intermediate data, and running Google Compute
     Engine virtual machines for general-purpose computing.
 
-## Command-line Environment Setup
+If you are the owner of a dataset (e.g. de-identified electronic health records
+data), setting up projects 1 and 2 enables data hosting. If you want to provide
+shared a cloud environment for a group of people to run analysis, projects 1 and
+3 are needed. If you want to both host the data and provide an analysis
+environment, then all three projects are needed.
 
-The current toolkit we provide only automates cloud project setup from Linux
-platform.
+The project setup is based on the Google Cloud Healthcare Deployment Manager
+Templates. Please see its [documentation](../../compliance/deploy/README.md) for
+more background information.
+
+## Command-line Environment Setup
 
 Follow instructions on
 [Google Cloud SDK Installation Page](https://cloud.google.com/sdk/install) to
@@ -48,42 +57,25 @@ gsutil ls
 bq ls
 ```
 
-You also need to install the `jq` binary to facilitate parsing JSON from command
-line:
-
-```shell
-sudo apt-get install jq
-```
-
-Visit the billing account
+If you do not have one yet, please visit the billing account
 [page](https://cloud.google.com/billing/docs/how-to/manage-billing-account) to
-create a billing account that will be used for the project setup.
+create a Google Cloud billing account. It is of the form `01ABCD-234E56-F7890G1`
+and needed for the project setup below.
 
 ```shell
 # The billing account ID will be like the following format.
-BILLING_ACCOUNT=01ABCD-234E56-F7890G1
+export BILLING_ACCOUNT=01ABCD-234E56-F7890G1
 ```
 
-If you want to generate BigQuery schemas yourself, then you need to install
-[Go](https://golang.org/doc/install) as well. But check the `bqschemas` folder
-first, which may already contain the BigQuery schemas you need.
-
-You need to clone the open source toolkit from
-[GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare).
+Finally, you need to clone (the `datathon` directory of) the open source toolkit
+from [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare).
 
 ```shell
 git clone https://github.com/GoogleCloudPlatform/healthcare.git
-cd healthcare/datathon/organizer
+cd healthcare/datathon/deploy
 ```
 
-The scripts in the `datathon/organizer` will generate `*.sh.state` files as
-checkpoints, which allow you to retry the scripts. A caveat is that the
-checkpoints are not necessarily fine-grain enough to let you resume from all the
-single commands. But they narrow down to the chunks you need to modify upon
-retries. To start over, simply delete the corresponding `sh.state` files. The
-scripts will delete the state files after they successfully finish.
-
-## Choosing Domain Name and Project Prefix
+## Choosing Domain Name, Project Prefix and Project Zones
 
 If you own a GSuite domain or have opted your domain into
 [Google Cloud Identity](https://cloud.google.com/identity/) (see
@@ -93,8 +85,28 @@ that we will be creating, you can choose a common prefix and the individual
 projects will be named with the prefix you set. For example,
 
 ```shell
-DOMAIN=googlegroups.com
-PROJECT_PREFIX=my-project
+export DOMAIN=googlegroups.com
+export PROJECT_PREFIX=my-datathon
+```
+
+We also need to choose a few locations where the project components are hosted.
+
+```shell
+# Replace this location with the closest region for BigQuery data storage.
+# See https://cloud.google.com/bigquery/docs/dataset-locations for all options.
+# Currently, only the following regions are supported:
+#   - asia-northeast1 (Tokyo, regional)
+#   - US (United States, multi-regional)
+#   - EU (European Union, multi-regional)
+export BIGQUERY_LOCATION=US
+
+# Replace this location with the closest region for Google Cloud Storage.
+# See https://cloud.google.com/storage/docs/bucket-locations for all options.
+export GCS_LOCATION=US
+
+# Replace this location with the closest zone with Google Compute Engine.
+# See https://cloud.google.com/compute/docs/regions-zones/ for all options.
+export GCE_ZONE=europe-west1-b  # St. Ghislain, Belgium
 ```
 
 ## Permission Control Group Setup
@@ -108,28 +120,39 @@ the following groups, and add more as necessary. Please remember to set the
 "Join the Group" config to allow only invited users and restrict the "View
 Topics" permission to members of the group.
 
+First, a list of organizer groups, meant for datathon organizers (for datathons)
+and course administrators and lectures (for courses) to join.
+
 ```shell
 # Project owners group, has full permission to the projects, only used for
 # initial project setup and infrequent management.
-OWNERS_GROUP=${PROJECT_PREFIX}-owners@${DOMAIN}
+export OWNERS_GROUP=${PROJECT_PREFIX}-owners@${DOMAIN}
 
 # Project auditors who has the permission to view audit logs.
-AUDITORS_GROUP=${PROJECT_PREFIX}-auditors@${DOMAIN}
+export AUDITORS_GROUP=${PROJECT_PREFIX}-auditors@${DOMAIN}
 
 # Members who have read-write access to the data hosted in the projects.
-EDITORS_GROUP=${PROJECT_PREFIX}-readwrite@${DOMAIN}
+export EDITORS_GROUP=${PROJECT_PREFIX}-readwrite@${DOMAIN}
+```
 
-# Data users who have read-only access to the data hosted in the projects.
-DATA_READERS_GROUP=${PROJECT_PREFIX}-data-readers@${DOMAIN}
+Then, two user groups, meant for datathon participants (for datathons) and
+students (for courses) to join. Note that if the dataset in the data-hosting
+project is only meant to be used during the event, and it is the same group of
+people as the participants list that has access the data, then you can assign
+the same group to both environment variables.
+
+```shell
+# Data users who have read-only access to the data hosted in the data-hosting
+# project.
+export DATA_READERS_GROUP=${PROJECT_PREFIX}-data-readers@${DOMAIN}
 
 # Work project users who have granted access to the work project environments.
-PROJECT_USERS_GROUP=${PROJECT_PREFIX}-users@${DOMAIN}
+export PROJECT_USERS_GROUP=${PROJECT_PREFIX}-participants@${DOMAIN}
 ```
 
 ### G Suite or Cloud Identity
-If you own a GSuite domain or a
-Cloud Identity-enabled domain, you may set up the groups and membership
-programmatically using [this domain management guide](domain_management.md),
+If you own a GSuite domain or a Cloud Identity-enabled domain, you may set up
+the groups and membership programmatically using [this domain management guide](domain_management.md),
 and then the following steps. Alternatively, you may create the groups using
 [G Suite Admin Console](https://admin.google.com/AdminHome#GroupList:), and then
 set the permissions as listed below in the public groups section.
@@ -176,56 +199,75 @@ To remedy this, we grant all members in OWNERS_GROUP the permission to change
 the project's IAM setting, including add themselves as individual owners of the
 project, if necessary.
 
-## Group Owners
+### Group Owners
 
-Add the user you are currently using as a member of the $PROJECT-owners@ group
-that was created above. If you created groups within a domain, log in to the
+Add the user you are currently using as a member of the `OWNERS_GROUP` that was
+created above. If you created groups within a domain, log in to the
 [G Suite Admin Console](https://admin.google.com/AdminHome#GroupList:), or if
 you used public Google Groups, use the [Google Groups UI](https://groups.google.com).
 
-## Audit Project Setup
+## Project Skeleton Setup
 
-Create an audit project by running the following command, which will
+Once the groups are created, check out the deployment configuration file
+`datathon_projects.yaml`, confirm all the environment variables mentioned in the
+YAML file have been set, and make necessary updates to the config. In particular
 
-*   Create a project named `${PROJECT_PREFIX}-auditing`, whose owner is set to
-    `${OWNERS_GROUP}` if your domain has an organization configured; otherwise
-    the owner will be the active Google account in the Google Cloud SDK config.
-*   Create a BigQuery dataset for audit logs analysis, with read (and job
-    running) permission granted to `${AUDITORS_GROUP}`.
+*   uncomment and update the organization ID if applicable, and
+*   update other necessary configurations, e.g. compute engine machine type,
+    add or delete team user roles, etc.
+
+Once the YAML config is updated and verified, please run the following command
+to create the Google Cloud projects, including
+
+* An audit project
+    *   named `${PROJECT_PREFIX}-auditing`, whose owner is set to
+    `${OWNERS_GROUP}` if your domain has an organization configured;
+    otherwise the owner will be the active Google account in the Google
+    Cloud SDK config,
+    *   with a BigQuery dataset for audit logs analysis, with read and job
+        running permission granted to `${AUDITORS_GROUP}`.
+* A data-hosting project
+    *   named `${PROJECT_PREFIX}-data`,
+    *   whose project-level owner is set to `${OWNERS_GROUP}` if your domain has
+        an organization configured; otherwise the owner will be the active
+        Google account in the Google Cloud SDK config.
+    *   Set the read-write editors of the project to `${EDITORS_GROUP}`.
+    *   Direct audit logs to the auditing project `${PROJECT_PREFIX}-auditing`.
+* A team project
+    *   named `${PROJECT_PREFIX}-team,
+    *   whose permission group and auditing are set up in the same way as the
+        data-hosting project.
+    *   Pre-create a ${PROJECT_PREFIX}-shared-files GCS bucket for users to
+        store shared files.
+    *   Grant limited preset roles (project viewer, and BigQuery and Storage
+        user, etc) to `${PROJECT_USERS_GROUP}`.
+    *   Set up a Compute Engine VM with the free version of RStudio server,
+        (in turned-off state) and opens up port 8787 for incoming connections.
 
 ```shell
-scripts/create_audit_project.sh --owners_group ${OWNERS_GROUP} \
-  --audit_project_id ${PROJECT_PREFIX}-auditing \
-  --billing_account ${BILLING_ACCOUNT} \
-  --auditors_group ${AUDITORS_GROUP}
+../../deploy/create_project.py \
+  --project_yaml datathon_projects.yaml \
+  --dry_run
 ```
 
-The command will print out the flags that you need to pass in for the data
-hosting project and the team projects. Set them in environment variables:
+Note that the `--dry_run` flag enables dry run mode, which only prints the
+commands to be run for you to review. If everything looks good, you can rerun
+the command with `--nodry_run` instead to actually create the projects. You can
+also optionally add an `--output_yaml_path` flag, in order to store the exact
+configuration used for creating the projects after environment variable
+substitution.
 
 ```shell
-AUDIT_DATASET_ID=<DATASET_ID_OUTPUT_FROM_THE_ABOVE_SCRIPT>
+../../deploy/create_project.py \
+  --project_yaml datathon_projects.yaml \
+  --output_yaml_path created_projects.yaml \
+  --nodry_run
 ```
 
-## Data-Hosting Project Setup
-
-Create a data-hosting project by running the following command, which will
-
-*   Create a project named `${PROJECT_PREFIX}-datasets`
-*   Set the owner of the project to `${OWNERS_GROUP}` if your domain has an
-    organization configured; otherwise the owner will be the active Google
-    account in the Google Cloud SDK config.
-*   Set the read-write editors of the project to `${EDITORS_GROUP}`.
-*   Direct audit logs to the auditing project `${PROJECT_PREFIX}-auditing`.
-
-```shell
-scripts/create_data_hosting_project.sh --owners_group ${OWNERS_GROUP} \
-  --editors_group ${EDITORS_GROUP} \
-  --data_hosting_project_id ${PROJECT_PREFIX}-datasets \
-  --billing_account ${BILLING_ACCOUNT} \
-  --audit_project_id ${PROJECT_PREFIX}-auditing \
-  --audit_dataset_id ${AUDIT_DATASET_ID}
-```
+In case the deployment fails, please examine the error messages, and append the
+`--resume_from_project` and `--resume_from_step` flags to the
+`create_project.py` script when rerun after fix, as directed at the end of the
+error message.
 
 ### Data Importing
 
@@ -245,13 +287,17 @@ Nevertheless, the schema detection is time consuming, if you have the BigQuery
 schemas, you can pass the folder path by the `--schema_dir` flag. You should
 always check if the `bqschemas` folder contains the desired schemas already.
 
+If you do need to generate BigQuery schemas yourself, then you need to install
+[Go](https://golang.org/doc/install) before running the script below.
+
 ```shell
 # Set environment variables for parameter.
 DATASET_NAME=<NAME_OF_YOUR_DATASET>
 INPUT_DIR=<DIRECTORY_PATH_FOR_YOUR_GCS_GZ_FILES>
 SCHEMA_DIR=[OPTIONAL_DIRECTORY_PATH_FOR_YOUR_SCHEMA_FILES]
 
-scripts/upload_data.sh --owners_group ${OWNERS_GROUP} \
+scripts/upload_data.sh \
+  --owners_group ${OWNERS_GROUP} \
   --editors_group ${EDITORS_GROUP} \
   --readers_group ${DATA_READERS_GROUP} \
   --project_id ${PROJECT_PREFIX}-datasets \
@@ -260,71 +306,12 @@ scripts/upload_data.sh --owners_group ${OWNERS_GROUP} \
   --schema_dir ${SCHEMA_DIR}
 ```
 
-## Team Environment Projects
-
-You can create one or more team environment project for granted users to run
-jobs in. This range from running a BigQuery query against the data-hosting
-project, to materialize intermediate in its read-write BigQuery datasets and GCS
-buckets, to running arbitrary software in a VM. As an illustration, you may run
-the following script to create such a project
-
-```shell
-TEAM_PROJECT_ID=${PROJECT_PREFIX}-team-00
-scripts/create_team_project.sh --owners_group ${OWNERS_GROUP} \
-  --users_group ${PROJECT_USERS_GROUP} \
-  --team_project_id ${TEAM_PROJECT_ID} \
-  --billing_account ${BILLING_ACCOUNT} \
-  --audit_project_id ${AUDIT_PROJECT_ID} \
-  --audit_dataset_id ${AUDIT_DATASET_ID}
-```
-
-This will
-
-*   Create a project named `${PROJECT_PREFIX}-team-00`
-*   Set the owner of the project to `${OWNERS_GROUP}` if your domain has an
-    organization configured; otherwise the owner will be the active Google
-    account in the Google Cloud SDK config.
-*   Set the users with aforementioned access to `${PROJECT_USERS_GROUP}`.
-*   Direct audit logs to the auditing project `${PROJECT_PREFIX}-auditing`.
-*   Create a team file sharing Google Cloud Storage bucket.
-*   Create a Google Compute Engine virtual machine instance with RStudio server
-    configured to run on port 8787. The VM is created in turned-off state by
-    default, but can be started by passing `--start_vm true` when running the
-    script above.
-
-To connect to the RStudio server, find the `External IP` in the
-["Compute Engine" => "VM Instances"](https://console.cloud.google.com/compute/instances)
-page, and direct web browser to `http://<external_ip>:8787`. The script creates
-five default RStudio users `analyst1` through `analyst5`, whose password is the
-same as the user name. If more user accounts for RStudio are needed, it can be
-done by SSHing to the VM (clicking on `SSH` button to the right of the External
-IP), and running the following script (update `user:password` pairs as
-necessary).
-
-```shell
-IFS=' '
-GROUP='datathon-participants'
-sudo addgroup ${GROUP}
-for tuple in user1:password1 user2:password2
-do
-  IFS=':'
-  v=($tuple)
-  IFS=' '
-  UNAME=${v[0]}
-  echo "adding user ${UNAME}..."
-  sudo useradd -g ${GROUP} "${UNAME}" -m -d "/home/${UNAME}" \
-    -s /bin/bash ${UNAME}
-  sudo chmod 740 "/home/${UNAME}"
-  sudo wget -P /home/${UNAME} https://github.com/GoogleCloudPlatform/healthcare/blob/master/datathon/mimic_eicu/tutorials/bigquery_tutorial.Rmd
-  echo $tuple | sudo chpasswd
-done
-```
 
 ## Summary
 
 Now you are all good to go. You have a data-hosting project
-`${PROJECT_PREFIX}-datasets` with data imported to both GCS and BigQuery, and
-can run custom analysis from project `${PROJECT_PREFIX}-team-00`. All access is
+`${PROJECT_PREFIX}-data` with data imported to both GCS and BigQuery, and
+can run custom analysis from project `${PROJECT_PREFIX}-team`. All access is
 properly audited, and data available for analysis and reporting in the audit
 project `${PROJECT_PREFIX}-auditing`. If you are a member of
 `${AUDITORS_GROUP}`, the following is an example query that you may adapt and
@@ -339,7 +326,7 @@ SELECT
   resource.labels.project_id AS project,
   resource.type AS resource,
   COUNT(*) AS num_access
-FROM `${PROJECT_PREFIX}-auditing.audit_logs.cloudaudit_googleapis_com_data_access_${YYYYMMDD}`
+FROM `${PROJECT_PREFIX}-auditing.data_audit_logs.cloudaudit_googleapis_com_data_access_${YYYYMMDD}`
 GROUP BY 1, 2, 3, 4
 ORDER BY 1, 2, 3, 4
 ```
