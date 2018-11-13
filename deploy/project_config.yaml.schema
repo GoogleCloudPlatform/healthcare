@@ -297,7 +297,7 @@ definitions:
               - image_name
               - gcs_path
               properties:
-                name:
+                image_name:
                   type: string
                   description: Name of the new disk image to create.
                   pattern: ^[a-z]([-a-x0-9]{0,61}[a-z0-9])?$
