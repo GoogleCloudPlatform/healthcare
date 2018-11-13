@@ -89,6 +89,7 @@ def generate_config(context):
 
   # Create a logs GCS bucket and BigQuery dataset, or get the names of the
   # remote bucket and dataset.
+  previous_gcs_bucket = None
   logs_bucket_id = None
   if use_local_logs:
     logs_gcs_bucket = context.properties['local_audit_logs'].get(
@@ -141,6 +142,7 @@ def generate_config(context):
               },
           },
       })
+      previous_gcs_bucket = logs_bucket_id
 
     # Get name of local BigQuery dataset to hold audit logs.
     # This dataset will need to be created after running this deployment
@@ -171,10 +173,12 @@ def generate_config(context):
       },
   })
 
-  # BigQuery dataset(s) to hold actual data.
+  # BigQuery dataset(s) to hold actual data. Create serially to avoid exceeding
+  # API quota.
+  previous_bq_update = None
   for bq_dataset in context.properties.get('bigquery_datasets', []):
     ds_name = bq_dataset['name']
-    resources.append({
+    bq_create_resource = {
         'name': 'create-big-query-dataset-' + ds_name,
         'type': 'bigquery.v2.dataset',
         'properties': {
@@ -183,7 +187,11 @@ def generate_config(context):
             },
             'location': bq_dataset['location'],
         },
-    })
+    }
+    if previous_bq_update:
+      bq_create_resource['metadata'] = {'dependsOn': [previous_bq_update]}
+    resources.append(bq_create_resource)
+
     access_list = [{
         'role': 'OWNER',
         'groupByEmail': context.properties['owners_group']
@@ -200,8 +208,9 @@ def generate_config(context):
       })
     # Update permissions for the dataset. This also removes the deployment
     # manager service account's access.
+    previous_bq_update = 'update-big-query-dataset-' + ds_name
     resources.append({
-        'name': 'update-big-query-dataset-' + ds_name,
+        'name': previous_bq_update,
         'action': 'gcp-types/bigquery-v2:bigquery.datasets.patch',
         'properties': {
             'projectId': project_id,
@@ -213,7 +222,8 @@ def generate_config(context):
         },
     })
 
-  # GCS bucket(s) to hold actual data.
+  # GCS bucket(s) to hold actual data. Create serially to avoid exceeding API
+  # quota.
   for data_bucket in context.properties.get('data_buckets', []):
     if not logs_bucket_id:
       raise ValueError('Logs GCS bucket must be provided for data buckets.')
@@ -262,11 +272,12 @@ def generate_config(context):
             },
         },
     }
-    if use_local_logs:
+    if previous_gcs_bucket:
       data_bucket_resource['metadata'] = {
-          'dependsOn': [logs_bucket_id],
+          'dependsOn': [previous_gcs_bucket],
       }
     resources.append(data_bucket_resource)
+    previous_gcs_bucket = data_bucket_id
 
     # Create a logs-based metric for unexpected users, if a list of expected
     # users is provided.

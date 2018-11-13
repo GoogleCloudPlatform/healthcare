@@ -220,6 +220,7 @@ class TestDataProject(unittest.TestCase):
                 'datasetReference': {'datasetId': 'euro_data'},
                 'location': 'EU',
             },
+            'metadata': {'dependsOn': ['update-big-query-dataset-us_data']},
         }, {
             'name': 'update-big-query-dataset-euro_data',
             'action': 'gcp-types/bigquery-v2:bigquery.datasets.patch',
@@ -309,7 +310,7 @@ class TestDataProject(unittest.TestCase):
         }, {
             'name': 'my-project-other-bucket',
             'type': 'storage.v1.bucket',
-            'metadata': {'dependsOn': ['my-project-logs']},
+            'metadata': {'dependsOn': ['my-project-nlp-bucket']},
             'accessControl': {
                 'gcpIamPolicy': {
                     'bindings': [{
@@ -341,7 +342,7 @@ class TestDataProject(unittest.TestCase):
         }, {
             'name': 'my-project-euro-bucket',
             'type': 'storage.v1.bucket',
-            'metadata': {'dependsOn': ['my-project-logs']},
+            'metadata': {'dependsOn': ['my-project-other-bucket']},
             'accessControl': {
                 'gcpIamPolicy': {
                     'bindings': [{
