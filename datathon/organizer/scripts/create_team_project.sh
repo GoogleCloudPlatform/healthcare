@@ -173,8 +173,8 @@ if [[ `cat ${STATE_FILE}` == ${STATE_ENABLE_LOGGING} ]]; then
   if `gcloud logging sinks list | grep -q ${SINK_NAME}`; then
     gcloud --quiet logging sinks delete ${SINK_NAME}
   fi
-  LOG_SERVICE_ACCT=$((gcloud --quiet logging sinks create "${SINK_NAME}" \
-    "${AUDIT_DATASET_URL}" --project ${TEAM_PROJECT_ID}) 2>&1 \
+  LOG_SERVICE_ACCT=$(gcloud --quiet logging sinks create "${SINK_NAME}" \
+    "${AUDIT_DATASET_URL}" --project ${TEAM_PROJECT_ID} 2>&1 \
     | grep 'Please remember to grant' | \
     sed -e 's/^[^`]*`serviceAccount://' -e 's/`.*$//')
   # Add the log service account as WRITER to the audit BigQuery dataset.
