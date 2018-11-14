@@ -46,7 +46,7 @@ The application is developed using the [Angular CLI](https://cli.angular.io/).
 
   ```sh
   $ git clone https://github.com/GoogleCloudPlatform/healthcare
-  $ cd healthcare/fhir/immunizations_demo
+  $ cd healthcare/fhir/immunizations_demo/frontend
   ```
 
 1.  Install the dependencies with `npm`
