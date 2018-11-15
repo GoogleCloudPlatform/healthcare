@@ -61,6 +61,14 @@ class TestDataProject(unittest.TestCase):
               {
                   'name': 'us_data',
                   'location': 'US',
+                  'additional_dataset_permissions':
+                  {
+                      'owners': ['user:some-bq-owner1@google.com'],
+                      'readonly': ['allAuthenticatedUsers',
+                                   'domain:some-bq-domain.com'],
+                      'readwrite': ['group:some-bq-readwrite1@google.com',
+                                    'serviceAccount:some-bq-service@g.com']
+                  }
               },
               {
                   'name': 'euro_data',
@@ -72,6 +80,20 @@ class TestDataProject(unittest.TestCase):
                   'name_suffix': '-nlp-bucket',
                   'location': 'US-CENTRAL1',
                   'storage_class': 'REGIONAL',
+                  'additional_bucket_permissions':
+                  {
+                      'owners': ['group:bucket-owner-group@google.com'],
+                      'readwrite': [
+                          'group:bucket-readwrite-group@google.com',
+                          'serviceAccount:255555559@anservice.anaccount.com',
+                          'allAuthenticatedUsers'
+                      ],
+                      'writeonly': ['group:bucket-writeonly-group@google.com'],
+                      'readonly': ['group:bucket-readonly-group1@google.com',
+                                   'group:bucket-readonly-group2@google.com',
+                                   'domain:google.com',
+                                   'allUsers']
+                  },
                   'expected_users': [
                       'auth_user_1@mydomain.com',
                       'auth_user_2@mydomain.com',
@@ -210,6 +232,21 @@ class TestDataProject(unittest.TestCase):
                 }, {
                     'role': 'WRITER',
                     'groupByEmail': 'another-readwrite-group@googlegroups.com',
+                }, {
+                    'role': 'OWNER',
+                    'userByEmail': 'some-bq-owner1@google.com',
+                }, {
+                    'role': 'WRITER',
+                    'groupByEmail': 'some-bq-readwrite1@google.com',
+                }, {
+                    'role': 'WRITER',
+                    'userByEmail': 'some-bq-service@g.com',
+                }, {
+                    'role': 'READER',
+                    'specialGroup': 'allAuthenticatedUsers',
+                }, {
+                    'role': 'READER',
+                    'domain': 'some-bq-domain.com',
                 }],
             },
             'metadata': {'dependsOn': ['create-big-query-dataset-us_data']},
@@ -253,19 +290,32 @@ class TestDataProject(unittest.TestCase):
                 'gcpIamPolicy': {
                     'bindings': [{
                         'role': 'roles/storage.admin',
-                        'members': ['group:some-admin-group@googlegroups.com']
+                        'members': [
+                            'group:some-admin-group@googlegroups.com',
+                            'group:bucket-owner-group@google.com'
+                        ]
                     }, {
                         'role': 'roles/storage.objectAdmin',
                         'members': [
                             'group:some-readwrite-group@googlegroups.com',
                             'group:another-readwrite-group@googlegroups.com',
+                            'group:bucket-readwrite-group@google.com',
+                            'serviceAccount:255555559@anservice.anaccount.com',
+                            'allAuthenticatedUsers'
                         ]
                     }, {
                         'role': 'roles/storage.objectViewer',
                         'members': [
                             'group:some-readonly-group@googlegroups.com',
                             'group:another-readonly-group@googlegroups.com',
+                            'group:bucket-readonly-group1@google.com',
+                            'group:bucket-readonly-group2@google.com',
+                            'domain:google.com',
+                            'allUsers'
                         ]
+                    }, {
+                        'role': 'roles/storage.objectCreator',
+                        'members': ['group:bucket-writeonly-group@google.com']
                     }]
                 }
             },
@@ -437,7 +487,7 @@ class TestDataProject(unittest.TestCase):
                             ('group:another-readwrite-group@googlegroups.'
                              'com'),
                         ],
-                    },],
+                    }, ],
                 },
             },
             'metadata': {
@@ -576,7 +626,7 @@ class TestDataProject(unittest.TestCase):
           'auditors_group': 'some-auditors-group@googlegroups.com',
           'additional_project_permissions': [
               {
-                  'roles': ['roles/editor',],
+                  'roles': ['roles/editor', ],
                   'members': ['serviceAccount:s1234@service.accounts',
                               'serviceAccount:s5678@service.accounts']
               }, {

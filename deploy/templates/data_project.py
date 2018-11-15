@@ -17,6 +17,34 @@
 For details and usage, see deploy/README.md.
 """
 
+# Map from prefixes used by IAM to those used in BigQuery.
+_IAM_TO_BIGQUERY_MEMBER = {
+    'user': 'userByEmail',
+    'group': 'groupByEmail',
+    'domain': 'domain',
+    # BigQuery treats serviceAccounts as users.
+    'serviceAccount': 'userByEmail',
+}
+
+
+def _get_bigquery_access_for_role(role_name, members):
+  """Converts role and IAM style members to BigQuery style ACL."""
+
+  access_for_role = []
+  for member in members:
+    if(member == 'allAuthenticatedUsers'):
+      access_for_role.append({
+          'role': role_name,
+          'specialGroup': member
+      })
+    else:
+      member_type, member_name = member.split(':')
+      access_for_role.append({
+          'role': role_name,
+          _IAM_TO_BIGQUERY_MEMBER[member_type]: member_name
+      })
+  return access_for_role
+
 
 def generate_config(context):
   """Generate Deployment Manager configuration."""
@@ -24,7 +52,7 @@ def generate_config(context):
   project_id = context.env['project']
 
   if ('local_audit_logs' in context.properties) == (
-      'remote_audit_logs' in context.properties):
+          'remote_audit_logs' in context.properties):
     raise ValueError('Must specify local_audit_logs or remote_audit_logs but '
                      'not both.')
   use_local_logs = 'local_audit_logs' in context.properties
@@ -51,7 +79,7 @@ def generate_config(context):
 
   # Merge in additional permissions, which may include the above roles.
   for additional in context.properties.get(
-      'additional_project_permissions', []):
+          'additional_project_permissions', []):
     for role in additional['roles']:
       project_bindings[role] = (
           project_bindings.get(role, []) + additional['members'])
@@ -192,20 +220,32 @@ def generate_config(context):
       bq_create_resource['metadata'] = {'dependsOn': [previous_bq_update]}
     resources.append(bq_create_resource)
 
+    add_permissions = bq_dataset.get('additional_dataset_permissions', {})
     access_list = [{
         'role': 'OWNER',
         'groupByEmail': context.properties['owners_group']
     }]
+
     for reader in context.properties.get('data_readonly_groups', []):
       access_list.append({
           'role': 'READER',
           'groupByEmail': reader
       })
+
     for writer in context.properties.get('data_readwrite_groups', []):
       access_list.append({
           'role': 'WRITER',
           'groupByEmail': writer
       })
+
+    access_list += (
+        _get_bigquery_access_for_role(
+            'OWNER', add_permissions.get('owners', [])) +
+        _get_bigquery_access_for_role(
+            'WRITER', add_permissions.get('readwrite', [])) +
+        _get_bigquery_access_for_role(
+            'READER', add_permissions.get('readonly', [])))
+
     # Update permissions for the dataset. This also removes the deployment
     # manager service account's access.
     previous_bq_update = 'update-big-query-dataset-' + ds_name
@@ -224,35 +264,42 @@ def generate_config(context):
 
   # GCS bucket(s) to hold actual data. Create serially to avoid exceeding API
   # quota.
+
+  default_bucket_owners = ['group:' + context.properties['owners_group']]
+  default_bucket_readwrite = [
+      'group:' + readwrite
+      for readwrite in context.properties.get('data_readwrite_groups', [])]
+  default_bucket_readonly = [
+      'group:' + readonly
+      for readonly in context.properties.get('data_readonly_groups', [])]
+
   for data_bucket in context.properties.get('data_buckets', []):
     if not logs_bucket_id:
       raise ValueError('Logs GCS bucket must be provided for data buckets.')
 
+    bucket_roles = []
+    add_permissions = data_bucket.get('additional_bucket_permissions', {})
+    bucket_roles.append({
+        'role': 'roles/storage.admin',
+        'members': default_bucket_owners + add_permissions.get('owners', [])
+    })
+    bucket_roles.append({
+        'role': 'roles/storage.objectAdmin',
+        'members': default_bucket_readwrite + add_permissions.get(
+            'readwrite', [])
+    })
+    bucket_roles.append({
+        'role': 'roles/storage.objectViewer',
+        'members': default_bucket_readonly + add_permissions.get('readonly', [])
+    })
+    bucket_roles.append({
+        'role': 'roles/storage.objectCreator',
+        'members': add_permissions.get('writeonly', [])
+    })
+
+    bindings = [role for role in bucket_roles if role['members']]
+
     data_bucket_id = project_id + data_bucket['name_suffix']
-    bindings = [
-        {
-            'role': 'roles/storage.admin',
-            'members': [
-                'group:' + context.properties['owners_group']
-            ],
-        }
-    ]
-    if 'data_readwrite_groups' in context.properties:
-      bindings.append({
-          'role': 'roles/storage.objectAdmin',
-          'members': [
-              'group:' + writer
-              for writer in context.properties['data_readwrite_groups']
-          ],
-      })
-    if 'data_readonly_groups' in context.properties:
-      bindings.append({
-          'role': 'roles/storage.objectViewer',
-          'members': [
-              'group:' + reader
-              for reader in context.properties['data_readonly_groups']
-          ],
-      })
     data_bucket_resource = {
         'name': data_bucket_id,
         'type': 'storage.v1.bucket',
@@ -291,7 +338,7 @@ def generate_config(context):
               'project_id': project_id,
               'bucket_id': data_bucket_id,
               'exp_users': (' AND '.join(data_bucket['expected_users']))
-          }
+      }
       resources.append({
           'name': 'unexpected-access-' + data_bucket_id,
           'type': 'logging.v2.metric',
@@ -487,3 +534,4 @@ def generate_config(context):
     })
 
   return {'resources': resources}
+

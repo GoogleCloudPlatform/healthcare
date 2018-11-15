@@ -19,6 +19,12 @@ definitions:
   email_address:
     type: string
     pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+$
+  additional_permission_members:
+    type: string
+    pattern: ^(allAuthenticatedUsers|allUsers(user|group|domain|serviceAccount):.+)$
+  add_members_without_alluser:
+    type: string
+    pattern: ^(allAuthenticatedUsers|(user|group|domain|serviceAccount):.+)$
 
   gcp_project:
     type: object
@@ -35,7 +41,9 @@ definitions:
         pattern: ^[a-z][-a-z0-9]{4,28}[a-z0-9]$
 
       owners_group:
-        $ref: '#/definitions/email_address'
+        #$ref: '#/definitions/email_address'
+        type: string
+        pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+$
         description: Owners group for this project.
 
       editors_group:
@@ -193,6 +201,31 @@ definitions:
                 Location of the dataset. See BigQuery documenation for
                 available locations.
               minLength: 2
+            additional_dataset_permissions:
+              owners:
+                type: array
+                description: |
+                  A list of members to be granted owners' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers).
+                items:
+                  #$ref: '#/definitions/add_members_without_alluser'
+              readwrite:
+                type: array
+                description: |
+                  A list of members to be granted writers' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers).
+                items:
+                  #$ref: '#/definitions/add_members_without_alluser'
+              readonly:
+                type: array
+                description: |
+                  A list of members to be granted readers' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers).
+                items:
+                  #$ref: '#/definitions/add_members_without_alluser'
 
       data_buckets:
         type: array
@@ -226,6 +259,39 @@ definitions:
                 be tied to an email alert.
               items:
                 $ref: '#/definitions/email_address'
+            additional_bucket_permissions:
+              owners:
+                type: array
+                description: |
+                  A list of members to be granted storage admin' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers, or allUsers).
+                items:
+                  #$ref: '#/definitions/additional_permission_members'
+              readwrite:
+                type: array
+                description: |
+                  A list of members to be granted storage object admin' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers, or allUsers).
+                items:
+                  #$ref: '#/definitions/additional_permission_members'
+              writeonly:
+                type: array
+                description: |
+                  A list of members to be granted storage object creator' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers, or allUsers).
+                items:
+                  #$ref: '#/definitions/additional_permission_members'
+              readonly:
+                type: array
+                description: |
+                  A list of members to be granted storage object viewer' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers, or allUsers).
+                items:
+                  #$ref: '#/definitions/additional_permission_members'
 
       pubsub:
         type: object
