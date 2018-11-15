@@ -21,7 +21,7 @@ definitions:
     pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+$
   additional_permission_members:
     type: string
-    pattern: ^(allAuthenticatedUsers|allUsers(user|group|domain|serviceAccount):.+)$
+    pattern: ^(allAuthenticatedUsers|allUsers|(user|group|domain|serviceAccount):.+)$
   add_members_without_alluser:
     type: string
     pattern: ^(allAuthenticatedUsers|(user|group|domain|serviceAccount):.+)$
