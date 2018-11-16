@@ -4,23 +4,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import collections
 import logging
 import os
 import string
-import subprocess
 import sys
 import tempfile
 
 import jsonschema
+from utils import runner
 import yaml
 
-# Options for running GCloud and shell commands in this module.
-GcloudOptions = collections.namedtuple('GcloudOptions', [
-    'dry_run',     # If True, no gcloud commands will be executed.
-    'gcloud_bin',  # Location of the gcloud binary.
-    ])
-GCLOUD_OPTIONS = GcloudOptions(dry_run=True, gcloud_bin='gcloud')
+DRY_RUN = True
+
 
 # Schema file for project configuration YAML files.
 _PROJECT_CONFIG_SCHEMA = os.path.join(
@@ -29,7 +24,7 @@ _PROJECT_CONFIG_SCHEMA = os.path.join(
 
 def wait_for_yes_no(text):
   """Prompt user for Yes/No and return true if Yes/Y. Default to No."""
-  if GCLOUD_OPTIONS.dry_run:
+  if DRY_RUN:
     return True
 
   while True:
@@ -58,7 +53,7 @@ def read_yaml_file(path):
     could not be read or parsed.
   """
   try:
-    with open(path, 'r') as stream:
+    with open(os.path.expanduser(path), 'r') as stream:
       return yaml.load(stream)
   except (yaml.YAMLError, IOError) as e:
     logging.error('Error reading YAML file: %s', e)
@@ -72,7 +67,7 @@ def write_yaml_file(contents, path):
     contents (dict): The contents to write to the YAML file.
     path (string): The path to the YAML file.
   """
-  if GCLOUD_OPTIONS.dry_run:
+  if DRY_RUN:
     # If using dry_run mode, don't create the file, just print the contents.
     print('Contents of {}:'.format(path))
     print('===================================================================')
@@ -98,44 +93,6 @@ def validate_config_yaml(config):
   jsonschema.validate(config, schema)
 
 
-class GcloudRuntimeError(Exception):
-  """Runtime exception raised when gcloud return code is non-zero."""
-
-
-def run_gcloud_command(cmd, project_id):
-  """Execute a gcloud command and return the output.
-
-  Args:
-    cmd (list): a list of strings representing the gcloud command to run
-    project_id (string): append `--project {project_id}` to the command. Most
-      commands should specify the project ID, for those that don't, explicitly
-      set this to None.
-  Returns:
-    A string, the output from the command execution.
-  Raises:
-    GcloudRuntimeError: when command execution returns a non-zero return code.
-  """
-  cmd = [GCLOUD_OPTIONS.gcloud_bin] + cmd
-  if project_id is not None:
-    cmd.extend(['--project', project_id])
-  logging.info('Executing command: %s', ' '.join(cmd))
-  if GCLOUD_OPTIONS.dry_run:
-    # Don't run the command, just return a place-holder value
-    print('>>>> {}'.format(' '.join(cmd)))
-    return '__DRY_RUN_MODE__:__DRY_RUN_MODE__'
-  p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, shell=False, bufsize=-1,
-                       close_fds=True)
-  out, err = p.communicate()
-  logging.info('Command returned stdout: %s', out)
-  if err:
-    logging.info('Command returned stderr: %s', err)
-  if p.returncode != 0:
-    raise GcloudRuntimeError(
-        'Command %s returned non-zero exit code: %s' % (cmd, p.returncode))
-  return out.decode()
-
-
 def create_new_deployment(deployment_template, deployment_name, project_id):
   """Creates a new Deployment Manager deployment from a template.
 
@@ -153,15 +110,17 @@ def create_new_deployment(deployment_template, deployment_name, project_id):
   write_yaml_file(deployment_template, dm_template_file.name)
 
   # Create the deployment.
-  run_gcloud_command(['deployment-manager', 'deployments', 'create',
-                      deployment_name,
-                      '--config', dm_template_file.name,
-                      '--automatic-rollback-on-error'],
-                     project_id)
+  runner.run_gcloud_command(
+      ['deployment-manager', 'deployments', 'create', deployment_name,
+       '--config', dm_template_file.name,
+       '--automatic-rollback-on-error'],
+      project_id=project_id,
+  )
 
   # Check deployment exists (and wasn't automcatically rolled back
-  run_gcloud_command(['deployment-manager', 'deployments', 'describe',
-                      deployment_name], project_id)
+  runner.run_gcloud_command(
+      ['deployment-manager', 'deployments', 'describe', deployment_name],
+      project_id=project_id)
 
 
 def create_notification_channel(alert_email, project_id):
@@ -187,10 +146,11 @@ def create_notification_channel(alert_email, project_id):
   write_yaml_file(channel_config, config_file.name)
 
   # Create the new channel and get its name.
-  channel_name = run_gcloud_command(
+  channel_name = runner.run_gcloud_command(
       ['alpha', 'monitoring', 'channels', 'create',
        '--channel-content-from-file', config_file.name,
-       '--format', 'value(name)'], project_id).strip()
+       '--format', 'value(name)'],
+      project_id=project_id).strip()
   return channel_name
 
 
@@ -235,21 +195,24 @@ def create_alert_policy(
   write_yaml_file(alert_config, config_file.name)
 
   # Create the new alert policy.
-  run_gcloud_command(['alpha', 'monitoring', 'policies', 'create',
-                      '--policy-from-file', config_file.name], project_id)
+  runner.run_gcloud_command(
+      ['alpha', 'monitoring', 'policies', 'create',
+       '--policy-from-file', config_file.name],
+      project_id=project_id)
 
 
 def get_gcloud_user():
   """Returns the active authenticated gcloud account."""
-  return run_gcloud_command(
+  return runner.run_gcloud_command(
       ['config', 'list', 'account', '--format', 'value(core.account)'],
       project_id=None).strip()
 
 
 def get_project_number(project_id):
   """Returns the project number the given project."""
-  return run_gcloud_command(
-      ['projects', 'describe', project_id, '--format', 'value(projectNumber)'],
+  return runner.run_gcloud_command(
+      ['projects', 'describe', project_id,
+       '--format', 'value(projectNumber)'],
       project_id=None).strip()
 
 
@@ -261,7 +224,7 @@ def get_deployment_manager_service_account(project_id):
 
 def get_log_sink_service_account(log_sink_name, project_id):
   """Gets the service account name for the given log sink."""
-  sink_service_account = run_gcloud_command([
+  sink_service_account = runner.run_gcloud_command([
       'logging', 'sinks', 'describe', log_sink_name,
       '--format', 'value(writerIdentity)'], project_id).strip()
   # The name returned has a 'serviceAccount:' prefix, so remove this.

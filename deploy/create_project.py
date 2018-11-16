@@ -34,6 +34,7 @@ import argparse
 import collections
 import copy
 import logging
+import subprocess
 
 import jsonschema
 
@@ -71,7 +72,7 @@ def create_new_project(config):
   else:
     logging.info('Deploying without a parent organization or folder.')
   # Create the new project.
-  utils.run_gcloud_command(create_project_command, project_id=None)
+  runner.run_gcloud_command(create_project_command, project_id=None)
 
 
 def setup_billing(config):
@@ -80,9 +81,9 @@ def setup_billing(config):
   billing_acct = config.overall['billing_account']
   project_id = config.project['project_id']
   # Set the appropriate billing account for this project:
-  utils.run_gcloud_command(['beta', 'billing', 'projects', 'link', project_id,
-                            '--billing-account', billing_acct],
-                           project_id=None)
+  runner.run_gcloud_command(['beta', 'billing', 'projects', 'link', project_id,
+                             '--billing-account', billing_acct],
+                            project_id=None)
 
 
 def enable_deployment_manager(config):
@@ -91,16 +92,16 @@ def enable_deployment_manager(config):
   project_id = config.project['project_id']
 
   # Enabled Deployment Manger and Cloud Resource Manager for this project.
-  utils.run_gcloud_command(['services', 'enable', 'deploymentmanager',
-                            'cloudresourcemanager.googleapis.com'],
-                           project_id)
+  runner.run_gcloud_command(['services', 'enable', 'deploymentmanager',
+                             'cloudresourcemanager.googleapis.com'],
+                            project_id=project_id)
 
   # Grant deployment manager service account (temporary) owners access.
   dm_service_account = utils.get_deployment_manager_service_account(project_id)
-  utils.run_gcloud_command(['projects', 'add-iam-policy-binding', project_id,
-                            '--member', dm_service_account,
-                            '--role', 'roles/owner'],
-                           project_id=None)
+  runner.run_gcloud_command(['projects', 'add-iam-policy-binding', project_id,
+                             '--member', dm_service_account,
+                             '--role', 'roles/owner'],
+                            project_id=None)
 
 
 def deploy_gcs_audit_logs(config):
@@ -183,17 +184,18 @@ def deploy_project_resources(config):
 
   # Create project liens if requested.
   if config.project.get('create_deletion_lien'):
-    utils.run_gcloud_command([
+    runner.run_gcloud_command([
         'alpha', 'resource-manager', 'liens', 'create',
         '--restrictions', 'resourcemanager.projects.delete',
         '--reason', 'Automated project deletion lien deployment.'
-    ], project_id)
+    ], project_id=project_id)
 
   # Remove Owners role from the DM service account.
-  utils.run_gcloud_command(['projects', 'remove-iam-policy-binding', project_id,
-                            '--member', dm_service_account,
-                            '--role', 'roles/owner'],
-                           project_id=None)
+  runner.run_gcloud_command(['projects', 'remove-iam-policy-binding',
+                             project_id,
+                             '--member', dm_service_account,
+                             '--role', 'roles/owner'],
+                            project_id=None)
 
 
 def deploy_bigquery_audit_logs(config):
@@ -248,7 +250,7 @@ def create_compute_images(config):
                    instance['existing_boot_image'])
       continue
     # Check if custom image already exists.
-    if utils.run_gcloud_command(
+    if runner.run_gcloud_command(
         ['compute', 'images', 'list', '--no-standard-images',
          '--filter', 'name={}'.format(custom_image['image_name']),
          '--format', 'value(name)'],
@@ -262,7 +264,7 @@ def create_compute_images(config):
     # deployment manager service account doesn't need to be granted access to
     # the image GCS bucket.
     image_uri = 'gs://' + custom_image['gcs_path']
-    utils.run_gcloud_command(
+    runner.run_gcloud_command(
         ['compute', 'images', 'create', custom_image['image_name'],
          '--source-uri', image_uri],
         project_id=project_id)
@@ -277,9 +279,9 @@ def create_compute_vms(config):
   logging.info('Creating GCS VMs.')
 
   # Enable OS Login for VM SSH access.
-  utils.run_gcloud_command(['compute', 'project-info', 'add-metadata',
-                            '--metadata', 'enable-oslogin=TRUE'],
-                           project_id=project_id)
+  runner.run_gcloud_command(['compute', 'project-info', 'add-metadata',
+                             '--metadata', 'enable-oslogin=TRUE'],
+                            project_id=project_id)
 
   gce_instances = []
   for instance in config.project['gce_instances']:
@@ -359,10 +361,10 @@ def create_stackdriver_account(config):
 
     # Verify account was created.
     try:
-      utils.run_gcloud_command(['alpha', 'monitoring', 'policies', 'list'],
-                               project_id)
+      runner.run_gcloud_command(['alpha', 'monitoring', 'policies', 'list'],
+                                project_id=project_id)
       return
-    except utils.GcloudRuntimeError as e:
+    except subprocess.CalledProcessError as e:
       logging.error('Error reading Stackdriver account %s', e)
       print('Could not find Stackdriver account.')
 
@@ -407,8 +409,7 @@ def create_alerts(config):
           channel, project_id)
 
 # The steps to set up a project, so the script can be resumed part way through
-# on error. Each is a function that takes a config dictionary and
-# raises a GcloudRuntimeError on errors.
+# on error. Each is a function that takes a config dictionary.
 _SETUP_STEPS = [
     create_new_project,
     setup_billing,
@@ -439,7 +440,7 @@ def setup_new_project(config, starting_step):
     logging.info('Step %s/%s', step_num, total_steps)
     try:
       _SETUP_STEPS[step_num - 1](config)
-    except utils.GcloudRuntimeError as e:
+    except subprocess.CalledProcessError as e:
       logging.error('Setup failed on step %s: %s', step_num, e)
       logging.error(
           'To continue the script, run with flags: --resume_from_project=%s '
@@ -466,9 +467,9 @@ def add_generated_fields(project):
 
 def main(args):
   logging.basicConfig(level=getattr(logging, args.log))
-  utils.GCLOUD_OPTIONS = utils.GcloudOptions(
-      dry_run=args.dry_run, gcloud_bin=args.gcloud_bin)
+  utils.DRY_RUN = args.dry_run
   runner.DRY_RUN = args.dry_run
+  runner.GCLOUD_BINARY = args.gcloud_bin
 
   # Output YAML will rearrange fields and remove comments, so do a basic check
   # against accidental overwriting.
