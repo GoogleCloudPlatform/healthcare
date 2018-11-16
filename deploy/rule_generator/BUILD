@@ -1,4 +1,4 @@
-# Internal utilities for use with the CHC Forseti instance.
+# Rule generator for the Forseti instance.
 
 package(default_visibility = ["//visibility:public"])
 
@@ -13,13 +13,19 @@ py_test(
     name = "project_config_test",
     size = "small",
     srcs = ["project_config_test.py"],
-    deps = [":project_config"],
+    deps = [
+        requirement("absl-py"),
+        requirement("pyyaml"),
+        ":project_config",
+    ],
 )
 
 py_binary(
     name = "rule_generator",
     srcs = ["rule_generator.py"],
     deps = [
+        requirement("absl-py"),
+        requirement("pyyaml"),
         ":project_config",
         "//deploy/rule_generator/scanners:audit_logging_scanner_rules",
         "//deploy/rule_generator/scanners:bigquery_scanner_rules",
