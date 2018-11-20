@@ -3,6 +3,8 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
+load("@deploy_deps//:requirements.bzl", "requirement")
+
 py_library(
     name = "base_scanner_rules",
     srcs = ["base_scanner_rules.py"],

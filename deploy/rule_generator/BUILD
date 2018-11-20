@@ -4,6 +4,8 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
+load("@deploy_deps//:requirements.bzl", "requirement")
+
 py_library(
     name = "project_config",
     srcs = ["project_config.py"],
