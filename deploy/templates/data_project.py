@@ -416,10 +416,8 @@ def generate_config(context):
     })
 
   # Create Logs-based metrics for IAM policy changes.
-  policy_change_filter = """
-      resource.type=project AND
-      protoPayload.serviceName=cloudresourcemanager.googleapis.com AND
-      protoPayload.methodName=SetIamPolicy"""
+  policy_change_filter = ('protoPayload.methodName="SetIamPolicy" OR\n'
+                          'protoPayload.methodName:".setIamPolicy"')
   resources.append({
       'name': 'iam-policy-change-count',
       'type': 'logging.v2.metric',
@@ -456,6 +454,32 @@ def generate_config(context):
           'metric': 'bucket-permission-change-count',
           'description': 'Count of GCS permissions changes.',
           'filter': bucket_change_filter,
+          'metricDescriptor': {
+              'metricKind': 'DELTA',
+              'valueType': 'INT64',
+              'unit': '1',
+              'labels': [{
+                  'key': 'user',
+                  'valueType': 'STRING',
+                  'description': 'Unexpected user',
+              }],
+          },
+          'labelExtractors': {
+              'user': 'EXTRACT(protoPayload.authenticationInfo.principalEmail)'
+          },
+      },
+  })
+
+  # Create Logs-based metrics for Bigquery permission changes.
+  bigquery_change_filter = ('resource.type="bigquery_resource" AND\n'
+                            'protoPayload.methodName="datasetservice.update"')
+  resources.append({
+      'name': 'bigquery-settings-change-count',
+      'type': 'logging.v2.metric',
+      'properties': {
+          'metric': 'bigquery-settings-change-count',
+          'description': 'Count of bigquery permission changes.',
+          'filter': bigquery_change_filter,
           'metricDescriptor': {
               'metricKind': 'DELTA',
               'valueType': 'INT64',

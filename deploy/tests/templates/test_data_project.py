@@ -487,7 +487,7 @@ class TestDataProject(unittest.TestCase):
                             ('group:another-readwrite-group@googlegroups.'
                              'com'),
                         ],
-                    }, ],
+                    }],
                 },
             },
             'metadata': {
@@ -497,11 +497,8 @@ class TestDataProject(unittest.TestCase):
             'name': 'iam-policy-change-count',
             'type': 'logging.v2.metric',
             'properties': {
-                'filter': ('\n'
-                           '      resource.type=project AND\n'
-                           '      protoPayload.serviceName='
-                           'cloudresourcemanager.googleapis.com AND\n'
-                           '      protoPayload.methodName=SetIamPolicy'),
+                'filter': ('protoPayload.methodName="SetIamPolicy" OR\n'
+                           'protoPayload.methodName:".setIamPolicy"'),
                 'description': 'Count of IAM policy changes.',
                 'labelExtractors': {
                     'user': ('EXTRACT('
@@ -552,6 +549,34 @@ class TestDataProject(unittest.TestCase):
                 },
                 'metric':
                     'bucket-permission-change-count'
+            }
+        }, {
+            'name': 'bigquery-settings-change-count',
+            'type': 'logging.v2.metric',
+            'properties': {
+                'filter': ('resource.type="bigquery_resource" AND\n'
+                           'protoPayload.methodName="datasetservice.update"'),
+                'description':
+                    'Count of bigquery permission changes.',
+                'labelExtractors': {
+                    'user': ('EXTRACT('
+                             'protoPayload.authenticationInfo.principalEmail)'),
+                },
+                'metricDescriptor': {
+                    'labels': [{
+                        'description': 'Unexpected user',
+                        'key': 'user',
+                        'valueType': 'STRING'
+                    }],
+                    'unit':
+                        '1',
+                    'metricKind':
+                        'DELTA',
+                    'valueType':
+                        'INT64'
+                },
+                'metric':
+                    'bigquery-settings-change-count'
             }
         }, {
             'name': 'audit-configs-get-iam-etag',
@@ -777,11 +802,8 @@ class TestDataProject(unittest.TestCase):
             'name': 'iam-policy-change-count',
             'type': 'logging.v2.metric',
             'properties': {
-                'filter': ('\n'
-                           '      resource.type=project AND\n'
-                           '      protoPayload.serviceName='
-                           'cloudresourcemanager.googleapis.com AND\n'
-                           '      protoPayload.methodName=SetIamPolicy'),
+                'filter': ('protoPayload.methodName="SetIamPolicy" OR\n'
+                           'protoPayload.methodName:".setIamPolicy"'),
                 'description': 'Count of IAM policy changes.',
                 'labelExtractors': {
                     'user': ('EXTRACT('
@@ -834,6 +856,34 @@ class TestDataProject(unittest.TestCase):
                     'bucket-permission-change-count'
             }
         }, {
+            'name': 'bigquery-settings-change-count',
+            'type': 'logging.v2.metric',
+            'properties': {
+                'filter': ('resource.type="bigquery_resource" AND\n'
+                           'protoPayload.methodName="datasetservice.update"'),
+                'description':
+                    'Count of bigquery permission changes.',
+                'labelExtractors': {
+                    'user': ('EXTRACT('
+                             'protoPayload.authenticationInfo.principalEmail)'),
+                },
+                'metricDescriptor': {
+                    'labels': [{
+                        'description': 'Unexpected user',
+                        'key': 'user',
+                        'valueType': 'STRING'
+                    }],
+                    'unit':
+                        '1',
+                    'metricKind':
+                        'DELTA',
+                    'valueType':
+                        'INT64'
+                },
+                'metric':
+                    'bigquery-settings-change-count'
+            }
+        }, {
             'name': 'audit-configs-get-iam-etag',
             'action': ('gcp-types/cloudresourcemanager-v1:'
                        'cloudresourcemanager.projects.getIamPolicy'),
@@ -874,3 +924,4 @@ class TestDataProject(unittest.TestCase):
 
 if __name__ == '__main__':
   unittest.main()
+

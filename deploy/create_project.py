@@ -386,15 +386,22 @@ def create_alerts(config):
 
   logging.info('Creating Stackdriver alerts.')
   utils.create_alert_policy(
-      'global', 'iam-policy-change-count', 'IAM Policy Change Alert',
+      ['global', 'pubsub_topic', 'pubsub_subscription', 'gce_instance'],
+      'iam-policy-change-count', 'IAM Policy Change Alert',
       ('This policy ensures the designated user/group is notified when IAM '
        'policies are altered.'), channel, project_id)
 
   utils.create_alert_policy(
-      'gcs_bucket', 'bucket-permission-change-count',
+      ['gcs_bucket'], 'bucket-permission-change-count',
       'Bucket Permission Change Alert',
       ('This policy ensures the designated user/group is notified when '
        'bucket/object permissions are altered.'), channel, project_id)
+
+  utils.create_alert_policy(
+      ['global'], 'bigquery-settings-change-count',
+      'Bigquery update Alert',
+      ('This policy ensures the designated user/group is notified when '
+       'Bigquery dataset settings are altered.'), channel, project_id)
 
   for data_bucket in config.project.get('data_buckets', []):
     # Every bucket with 'expected_users' has an expected-access alert.
@@ -580,6 +587,7 @@ def get_parser():
                       choices=set(
                           ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']))
   return parser
+
 
 if __name__ == '__main__':
   main(get_parser().parse_args())

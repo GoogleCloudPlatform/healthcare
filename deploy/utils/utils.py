@@ -155,11 +155,11 @@ def create_notification_channel(alert_email, project_id):
 
 
 def create_alert_policy(
-    resource_type, metric_name, policy_name, description, channel, project_id):
+    resource_types, metric_name, policy_name, description, channel, project_id):
   """Creates a new Stackdriver alert policy for a logs-based metric.
 
   Args:
-    resource_type (string): The resource type for the metric.
+    resource_types (list[str]): A list of resource types for the metric.
     metric_name (string): The name of the logs-based metric.
     policy_name (string): The name for the newly created alert policy.
     description (string): A description of the alert policy.
@@ -170,6 +170,33 @@ def create_alert_policy(
   """
   # Create a config file for the new alert policy.
   config_file = tempfile.NamedTemporaryFile(suffix='.yaml')
+
+  resource_type_str = ""
+  if len(resource_types) > 1:
+    index = 0
+    resource_type_str = 'one_of(\"'+resource_types[index]+'\"'
+    while index < len(resource_types) - 1:
+      index += 1
+      resource_type_str += ',\"'+resource_types[index]+'\"'
+    resource_type_str = resource_type_str + ')'
+  else:
+    resource_type_str = '\"' + resource_types[0] + '\"'
+
+  filter = ('resource.type={} AND '
+            'metric.type="logging.googleapis.com/user/{}"').format(
+      resource_type_str, metric_name)
+
+  conditionThreshold = {
+      'comparison': 'COMPARISON_GT',
+      'thresholdValue': 0,
+      'filter': filter,
+      'duration': '0s'
+  }
+
+  conditions = [{'conditionThreshold': conditionThreshold,
+                'displayName': 'No tolerance on {}!'.format(
+                    metric_name), }]
+
   # Send an alert if the metric goes above zero.
   alert_config = {
       'displayName': policy_name,
@@ -177,17 +204,7 @@ def create_alert_policy(
           'content': description,
           'mimeType': 'text/markdown',
       },
-      'conditions': [{
-          'conditionThreshold': {
-              'comparison': 'COMPARISON_GT',
-              'thresholdValue': 0,
-              'filter': ('resource.type="{}" AND '
-                         'metric.type="logging.googleapis.com/user/{}"'.format(
-                             resource_type, metric_name)),
-              'duration': '0s'
-          },
-          'displayName': 'No tolerance on {}!'.format(metric_name),
-      }],
+      'conditions': conditions,
       'combiner': 'AND',
       'enabled': True,
       'notificationChannels': [channel],
