@@ -31,6 +31,7 @@ from __future__ import print_function
 
 import collections
 import copy
+import os
 import subprocess
 
 from absl import app
@@ -188,10 +189,11 @@ def deploy_project_resources(config):
           audit_logs['logs_gcs_bucket']['name'])
   else:
     properties['local_audit_logs'] = audit_logs
+  path = os.path.join(os.path.dirname(__file__), 'templates/data_project.py')
   dm_template_dict = {
-      'imports': [{'path': 'data_project.py'}],
+      'imports': [{'path': path}],
       'resources': [{
-          'type': 'data_project.py',
+          'type': path,
           'name': 'data_project_deployment',
           'properties': properties,
       }]
@@ -238,10 +240,12 @@ def deploy_bigquery_audit_logs(config):
 
   deployment_name = 'audit-logs-{}-bq'.format(
       data_project_id.replace('_', '-'))
+  path = os.path.join(os.path.dirname(__file__),
+                      'templates/remote_audit_logs.py')
   dm_template_dict = {
-      'imports': [{'path': 'remote_audit_logs.py'}],
+      'imports': [{'path': path}],
       'resources': [{
-          'type': 'remote_audit_logs.py',
+          'type': path,
           'name': deployment_name,
           'properties': {
               'owners_group': owners_group,
@@ -328,10 +332,12 @@ def create_compute_vms(config):
     gce_instances.append(gce_template_dict)
 
   deployment_name = 'gce-vms'
+  path = os.path.join(os.path.dirname(__file__),
+                      'templates/gce_vms.py')
   dm_template_dict = {
-      'imports': [{'path': 'gce_vms.py'}],
+      'imports': [{'path': path}],
       'resources': [{
-          'type': 'gce_vms.py',
+          'type': path,
           'name': deployment_name,
           'properties': {
               'gce_instances': gce_instances,

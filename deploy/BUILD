@@ -11,6 +11,7 @@ exports_files(["project_config.yaml.schema"])
 py_binary(
     name = "create_project",
     srcs = ["create_project.py"],
+    data = ["//deploy/templates"],
     deps = [
         requirement("absl-py"),
         requirement("jsonschema"),
@@ -23,6 +24,7 @@ py_binary(
 py_test(
     name = "create_project_test",
     srcs = ["create_project_test.py"],
+    data = ["samples/project_with_remote_audit_logs.yaml"],
     deps = [
         requirement("absl-py"),
         ":create_project",

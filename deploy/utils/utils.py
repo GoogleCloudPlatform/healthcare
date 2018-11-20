@@ -4,7 +4,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import logging
 import os
 import string
 import sys
@@ -54,12 +53,8 @@ def read_yaml_file(path):
     A dict holding the parsed contents of the YAML file, or None if the file
     could not be read or parsed.
   """
-  try:
-    with open(os.path.expanduser(path), 'r') as stream:
-      return yaml.load(stream)
-  except (yaml.YAMLError, IOError) as e:
-    logging.error('Error reading YAML file: %s', e)
-    return None
+  with open(os.path.expanduser(path), 'r') as stream:
+    return yaml.load(stream)
 
 
 def write_yaml_file(contents, path):
@@ -106,9 +101,7 @@ def create_new_deployment(deployment_template, deployment_name, project_id):
   """
   # Save the deployment manager template to a temporary file in the same
   # directory as the deployment manager templates.
-  dm_template_dir = os.path.join(os.path.dirname(__file__), '../templates')
-  dm_template_file = tempfile.NamedTemporaryFile(suffix='.yaml',
-                                                 dir=dm_template_dir)
+  dm_template_file = tempfile.NamedTemporaryFile(suffix='.yaml')
   write_yaml_file(deployment_template, dm_template_file.name)
 
   # Create the deployment.

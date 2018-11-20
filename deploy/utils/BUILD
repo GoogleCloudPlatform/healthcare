@@ -33,7 +33,6 @@ py_library(
     srcs = ["utils.py"],
     data = [
         "//deploy:project_config.yaml.schema",
-        "//deploy/templates",
     ],
     deps = [
         requirement("absl-py"),

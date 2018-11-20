@@ -21,8 +21,9 @@ class TestCreateProject(absltest.TestCase):
 
   def test_create_project(self):
     FLAGS.project_yaml = os.path.join(
-        os.path.dirname(__file__),
-        '../samples/project_with_remote_audit_logs.yaml')
+        FLAGS.test_srcdir,
+        'deploy/samples/'
+        'project_with_remote_audit_logs.yaml')
     create_project.main([])
 
 if __name__ == '__main__':
