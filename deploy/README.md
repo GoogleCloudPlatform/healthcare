@@ -16,36 +16,32 @@ A collection of templates for configuration of GCP resources to hold datasets.
 ## Setup Instructions
 
 To use the templates and script in this folder, first decide if you want your
-audit logs saved in the same project as the hosted data (local audit logs),
-or in a separate project (remote audit logs). Remote audit logs can be
-especially beneficial if you have several data projects.
+audit logs saved in the same project as the hosted data (local audit logs), or
+in a separate project (remote audit logs). Remote audit logs can be especially
+beneficial if you have several data projects.
 
 1.  [Complete Script Prerequisites](#script-prerequisites) the first time using
     these scripts.
 1.  [Create Groups](#create-groups) for the dataset and audit logs (if using
     remote audit logs) project(s).
-1.  [Create a YAML config](#create-a-yaml-config) for the project(s) you want
-    to deploy.
+1.  [Create a YAML config](#create-a-yaml-config) for the project(s) you want to
+    deploy.
 1.  [Create New Projects](#create-new-projects) using the `create_project.py`
     script. This will create the audit logs project (if required) and all data
     hosting projects.
 
 ### Script Prerequisites
 
-To use these scripts, you will need to install `gcloud`, and the following
-dependencies:
+NOTE: If running through Cloud Shell, all of the following dependencies are
+already available.
 
-```shell
-sudo apt install python-yaml python-jsonschema
-```
+-   [Bazel](https://docs.bazel.build/versions/master/install.html)
 
-If you are using Python 3, instead run:
+-   [Gcloud SDK](https://cloud.google.com/sdk/install)
 
-```shell
-sudo apt install python3-yaml python3-jsonschema
-```
+-   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
-NOTE: If running through Cloud Shell, gcloud will already be installed
+-   [Pip](https://pip.pypa.io/en/stable/installing/)
 
 ### Create Groups
 
@@ -72,8 +68,8 @@ also need its own Owners Group and an Auditors group, but no data groups.
 ### Create a YAML Config
 
 Edit a copy of the file `samples/project_with_remote_audit_logs.yaml` or
-`samples/project_with_local_audit_logs.yaml`, depending on whether you are
-using remote or local audit logs. The schema for these YAML files is in
+`samples/project_with_local_audit_logs.yaml`, depending on whether you are using
+remote or local audit logs. The schema for these YAML files is in
 `project_config.yaml.schema`.
 
 *   The `overall` section contains organization and billing details applied to
@@ -94,12 +90,18 @@ remote audit logs) and one or more data hosting projects.
 1.  If not already logged in, run `gcloud init` to log in as a user with
     permission to create projects under the specified organization and billing
     account
-1.  Run `./create_project.py --project_yaml=${PROJECT_CONFIG?} --nodry_run`,
-    where `PROJECT_CONFIG` is the YAML file containing your project
-    description(s).
 1.  If you provided a `stackdriver_alert_email` in any project, then when
     prompted during the script, follow the instructions to create new
     Stackdriver Accounts for these projects.
+1.  If you provided a `forseti` config and the project hasn't been deployed you
+    may be prompted for additional steps during the Forseti instance
+    installation.
+
+```shell
+$ git clone https://github.com/GoogleCloudPlatform/healthcare
+$ cd healthcare
+$ bazel run deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --nodry_run
+```
 
 If the script fails at any point, try to correct the error and use the flags
 `--resume_from_project=` and `--resume_from_step=` to continue from the project
@@ -132,9 +134,9 @@ There are the following templates in this folder:
 *   `gce_vms.py` will create Google Compute Engine VM instances and firewall
     rules.
 
-There is also a helper script, `create_project.py` which will handle the
-full creation of multiple dataset and optional audit logs project using a single
-YAML config file. This is the recommended way to use the templates.
+There is also a helper script, `create_project.py` which will handle the full
+creation of multiple dataset and optional audit logs project using a single YAML
+config file. This is the recommended way to use the templates.
 
 ### Template data_project.py
 

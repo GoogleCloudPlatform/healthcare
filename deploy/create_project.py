@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright 2018 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,17 +29,37 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
 import collections
 import copy
-import logging
 import subprocess
+
+from absl import app
+from absl import flags
+from absl import logging
 
 import jsonschema
 
-from utils import forseti
-from utils import runner
-from utils import utils
+from deploy.utils import forseti
+from deploy.utils import runner
+from deploy.utils import utils
+
+FLAGS = flags.FLAGS
+
+flags.DEFINE_string('project_yaml', None,
+                    'Location of the project config YAML.')
+flags.DEFINE_string('resume_from_project', '',
+                    ('If the script terminates early, set this to the '
+                     'project id that failed to resume from this '
+                     'project. Set resume_from_step as well.'))
+flags.DEFINE_integer('resume_from_step', 1,
+                     ('If the script terminates early, set this to the '
+                      'step that failed to resume from this step.'))
+flags.DEFINE_string('output_yaml_path', '',
+                    ('If provided, save a new YAML file with any '
+                     'environment variables substituted and generated '
+                     'fields populated. This must be different to '
+                     'project_yaml.'))
+
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
@@ -472,20 +491,18 @@ def add_generated_fields(project):
     }
 
 
-def main(args):
-  logging.basicConfig(level=getattr(logging, args.log))
-  utils.DRY_RUN = args.dry_run
-  runner.DRY_RUN = args.dry_run
-  runner.GCLOUD_BINARY = args.gcloud_bin
+def main(argv):
+  del argv  # Unused.
 
   # Output YAML will rearrange fields and remove comments, so do a basic check
   # against accidental overwriting.
-  if args.project_yaml == args.output_yaml_path:
+  if FLAGS.project_yaml == FLAGS.output_yaml_path:
     logging.error('output_yaml_path cannot overwrite project_yaml.')
     return
 
   # Read and parse the project configuration YAML file.
-  all_projects = utils.resolve_env_vars(utils.read_yaml_file(args.project_yaml))
+  all_projects = utils.resolve_env_vars(utils.read_yaml_file(
+      FLAGS.project_yaml))
   if not all_projects:
     logging.error('Error loading project YAML.')
     return
@@ -522,16 +539,16 @@ def main(args):
                                   audit_logs_project=audit_logs_project))
 
   # If resuming setup from a particular project, skip to that project.
-  if args.resume_from_project:
+  if FLAGS.resume_from_project:
     while (projects and
-           projects[0].project['project_id'] != args.resume_from_project):
+           projects[0].project['project_id'] != FLAGS.resume_from_project):
       skipped = projects.pop(0)
       logging.info('Skipping project %s', skipped.project['project_id'])
     if not projects:
-      logging.error('Project not found: %s', args.resume_from_project)
+      logging.error('Project not found: %s', FLAGS.resume_from_project)
 
   if projects:
-    starting_step = max(1, args.resume_from_step)
+    starting_step = max(1, FLAGS.resume_from_step)
     for config in projects:
       logging.info('Setting up project %s', config.project['project_id'])
       if not setup_new_project(config, starting_step):
@@ -543,13 +560,13 @@ def main(args):
 
   # After all projects are deployed, fill in unset generated fields for all
   # projects and save the final YAML file.
-  if args.output_yaml_path:
+  if FLAGS.output_yaml_path:
     if audit_logs_project:
       add_generated_fields(audit_logs_project)
     for project in all_projects.get('projects', []):
       add_generated_fields(project)
 
-    utils.write_yaml_file(all_projects, args.output_yaml_path)
+    utils.write_yaml_file(all_projects, FLAGS.output_yaml_path)
 
   # TODO: allow for forseti installation to be retried.
   if forseti_config:
@@ -557,37 +574,6 @@ def main(args):
     forseti.install(forseti_config)
 
 
-def get_parser():
-  """Returns an argument parser."""
-  parser = argparse.ArgumentParser(description='Deploy Projects to GCP.')
-  parser.add_argument('--project_yaml', type=str, required=True,
-                      help='Location of the project config YAML.')
-  parser.add_argument('--resume_from_project', type=str, default='',
-                      help=('If the script terminates early, set this to the '
-                            'project id that failed to resume from this '
-                            'project. Set resume_from_step as well.'))
-  parser.add_argument('--resume_from_step', type=int, default=1,
-                      help=('If the script terminates early, set this to the '
-                            'step that failed to resume from this step.'))
-  parser.add_argument('--nodry_run', action='store_false', dest='dry_run',
-                      help=argparse.SUPPRESS)
-  parser.add_argument('--dry_run', action='store_true',
-                      help=('By default, no gcloud commands will be executed. '
-                            'Use --nodry_run to execute commands.'))
-  parser.set_defaults(dry_run=True)
-  parser.add_argument('--output_yaml_path', type=str, default='',
-                      help=('If provided, save a new YAML file with any '
-                            'environment variables substituted and generated '
-                            'fields populated. This must be different to '
-                            'project_yaml.'))
-  parser.add_argument('--gcloud_bin', type=str, default='gcloud',
-                      help='Location of the gcloud binary. (default: gcloud)')
-  parser.add_argument('--log', type=str, default='INFO',
-                      help='The logging level to use. (default: INFO)',
-                      choices=set(
-                          ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']))
-  return parser
-
-
 if __name__ == '__main__':
-  main(get_parser().parse_args())
+  flags.mark_flag_as_required('project_yaml')
+  app.run(main)

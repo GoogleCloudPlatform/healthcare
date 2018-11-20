@@ -21,12 +21,12 @@ To run tests, run `python -m unittest tests.gce_vms` from the templates
 directory.
 """
 
-import unittest
+from absl.testing import absltest
 
-from templates import gce_vms
+from deploy.templates import gce_vms
 
 
-class TestGceVmsTemplate(unittest.TestCase):
+class TestGceVmsTemplate(absltest.TestCase):
 
   def test_template_expansion(self):
     class FakeContext(object):
@@ -152,4 +152,4 @@ class TestGceVmsTemplate(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

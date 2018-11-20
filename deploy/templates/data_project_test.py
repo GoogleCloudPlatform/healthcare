@@ -21,12 +21,12 @@ To run tests, run `python -m unittest tests.data_project_test` from the
 templates directory.
 """
 
-import unittest
+from absl.testing import absltest
 
-from templates import data_project
+from deploy.templates import data_project
 
 
-class TestDataProject(unittest.TestCase):
+class TestDataProject(absltest.TestCase):
 
   def test_expansion_local_logging(self):
     class FakeContext(object):
@@ -923,5 +923,4 @@ class TestDataProject(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
-
+  absltest.main()

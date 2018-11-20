@@ -10,7 +10,7 @@ import shlex
 import shutil
 import tempfile
 
-from utils import runner
+from deploy.utils import runner
 
 _FORSETI_REPO = 'https://github.com/GoogleCloudPlatform/forseti-security.git'
 _DEFAULT_BRANCH = 'dev'

@@ -10,12 +10,14 @@ import string
 import sys
 import tempfile
 
+from absl import flags
+
 import jsonschema
-from utils import runner
 import yaml
 
-DRY_RUN = True
+from deploy.utils import runner
 
+FLAGS = flags.FLAGS
 
 # Schema file for project configuration YAML files.
 _PROJECT_CONFIG_SCHEMA = os.path.join(
@@ -24,7 +26,7 @@ _PROJECT_CONFIG_SCHEMA = os.path.join(
 
 def wait_for_yes_no(text):
   """Prompt user for Yes/No and return true if Yes/Y. Default to No."""
-  if DRY_RUN:
+  if FLAGS.dry_run:
     return True
 
   while True:
@@ -67,7 +69,7 @@ def write_yaml_file(contents, path):
     contents (dict): The contents to write to the YAML file.
     path (string): The path to the YAML file.
   """
-  if DRY_RUN:
+  if FLAGS.dry_run:
     # If using dry_run mode, don't create the file, just print the contents.
     print('Contents of {}:'.format(path))
     print('===================================================================')

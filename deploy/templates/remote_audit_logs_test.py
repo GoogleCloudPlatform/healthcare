@@ -21,12 +21,12 @@ To run tests, run `python -m unittest tests.remote_audit_logs_test` from the
 templates directory.
 """
 
-import unittest
+from absl.testing import absltest
 
-from templates import remote_audit_logs
+from deploy.templates import remote_audit_logs
 
 
-class TestRemoteAuditLogsTemplate(unittest.TestCase):
+class TestRemoteAuditLogsTemplate(absltest.TestCase):
 
   def test_template_expansion(self):
     class FakeContext(object):
@@ -120,4 +120,4 @@ class TestRemoteAuditLogsTemplate(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()

@@ -5,19 +5,22 @@ from __future__ import division
 from __future__ import print_function
 
 import subprocess
-import unittest
 
-from unittest import mock
+from absl import flags
+from absl.testing import absltest
 
-from utils import forseti
-from utils import runner
+import mock
+
+from deploy.utils import forseti
+
+FLAGS = flags.FLAGS
 
 
-class ForsetiAccessTest(unittest.TestCase):
+class ForsetiAccessTest(absltest.TestCase):
 
   @mock.patch.object(subprocess, 'check_output', return_value=b'foo')
   def test_grant_access(self, mock_check_output):
-    runner.DRY_RUN = False
+    FLAGS.dry_run = False
     forseti.grant_access(
         'project1', 'forseti-sa@@forseti-project.iam.gserviceaccount.com')
 
@@ -70,4 +73,4 @@ def build_add_binding_call(role):
   ])
 
 if __name__ == '__main__':
-  unittest.main()
+  absltest.main()
