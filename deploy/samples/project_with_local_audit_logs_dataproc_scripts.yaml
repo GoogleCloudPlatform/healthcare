@@ -84,21 +84,6 @@ projects:
     - name: script1.sh
     - name: script2.sh
     imageVersion: '1.3'
-    firewall_rules:
-    - name: allow-datalab
-      allowed:
-      - IPProtocol: tcp
-        ports: ['8080']
-      - IPProtocol: tcp
-        ports: ['8088']
-      - IPProtocol: tcp
-        ports: ['9870']
-      - IPProtocol: tcp
-        ports: ['8188']
-      - IPProtocol: tcp
-        ports: ['4040']
-      sourceRanges: [0.0.0.0/0]
-      targetTags: [<tag1>,<tag2>]
   enabled_apis:
   - bigquery-json.googleapis.com  # BigQuery
   - compute.googleapis.com        # Google Compute Engine
