@@ -173,7 +173,7 @@ def create_alert_policy(
   # Create a config file for the new alert policy.
   config_file = tempfile.NamedTemporaryFile(suffix='.yaml')
 
-  resource_type_str = ""
+  resource_type_str = ''
   if len(resource_types) > 1:
     index = 0
     resource_type_str = 'one_of(\"'+resource_types[index]+'\"'
@@ -184,20 +184,20 @@ def create_alert_policy(
   else:
     resource_type_str = '\"' + resource_types[0] + '\"'
 
-  filter = ('resource.type={} AND '
-            'metric.type="logging.googleapis.com/user/{}"').format(
-      resource_type_str, metric_name)
+  alert_filter = ('resource.type={} AND '
+                  'metric.type="logging.googleapis.com/user/{}"').format(
+                      resource_type_str, metric_name)
 
-  conditionThreshold = {
+  condition_threshold = {
       'comparison': 'COMPARISON_GT',
       'thresholdValue': 0,
-      'filter': filter,
+      'filter': alert_filter,
       'duration': '0s'
   }
 
-  conditions = [{'conditionThreshold': conditionThreshold,
-                'displayName': 'No tolerance on {}!'.format(
-                    metric_name), }]
+  conditions = [{'conditionThreshold': condition_threshold,
+                 'displayName': 'No tolerance on {}!'.format(
+                     metric_name)}]
 
   # Send an alert if the metric goes above zero.
   alert_config = {
