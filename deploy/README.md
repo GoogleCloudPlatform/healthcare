@@ -107,6 +107,8 @@ If the script fails at any point, try to correct the error and use the flags
 `--resume_from_project=` and `--resume_from_step=` to continue from the project
 and step that failed.
 
+TIP: Use absolute paths or relative paths from $PWD.
+
 ### Disabled Unneeded APIs
 
 NOTE: This will be moved to `create_project.py`.
