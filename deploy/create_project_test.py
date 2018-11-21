@@ -8,6 +8,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import tempfile
 
 from absl import flags
 from absl.testing import absltest
@@ -24,7 +25,9 @@ class TestCreateProject(absltest.TestCase):
         FLAGS.test_srcdir,
         'deploy/samples/'
         'project_with_remote_audit_logs.yaml')
-    create_project.main([])
+    with tempfile.NamedTemporaryFile() as f:
+      FLAGS.output_yaml_path = f.name
+      create_project.main([])
 
 if __name__ == '__main__':
   absltest.main()

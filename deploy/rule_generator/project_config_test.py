@@ -16,7 +16,8 @@ TEST_PROJECT_YAML = """
 overall:
   organization_id: '246801357924'
   billing_account: 012345-6789AB-CDEF01
-  forseti_gcp_reader: forseti@sample-forseti.iam.gserviceaccount.com
+  generated_fields:
+    forseti_gcp_reader: forseti@sample-forseti.iam.gserviceaccount.com
 
 projects:
 - project_id: sample-data

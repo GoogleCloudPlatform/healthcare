@@ -461,6 +461,17 @@ properties:
           this is omitted, projects will not be created under an organization.
         pattern: ^[0-9]{8,25}$
 
+      generated_fields:
+        type: object
+        description: |
+          Output only. Fields whose values are produced during deployment and
+          are used for monitoring of all projects.
+        properties:
+          forseti_service_account:
+            type: string
+            description: The forseti server service account that needs to view
+              the GCP resources of all projects.
+
   audit_logs_project:
     $ref: '#/definitions/gcp_project'
     description: |

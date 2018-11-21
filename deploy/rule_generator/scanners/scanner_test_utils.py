@@ -12,8 +12,10 @@ _OVERALL_DICT = {
     'domain': 'domain.com',
     'organization_id': '246801357924',
     'billing_account': '012345-6789AB-CDEF01',
-    'forseti_gcp_reader': 'forseti@sample-forseti.iam.gserviceaccount.com',
     'allowed_apis': ['compute.googleapis.com', 'storage.googleapis.com'],
+    'generated_fields': {
+        'forseti_gcp_reader': 'forseti@sample-forseti.iam.gserviceaccount.com',
+    },
 }
 
 _PROJECT_YAML = """

@@ -52,6 +52,11 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('project_yaml', None,
                     'Location of the project config YAML.')
+flags.DEFINE_string('output_yaml_path', None,
+                    ('Path to save a new YAML file with any '
+                     'environment variables substituted and generated '
+                     'fields populated. This must be different to '
+                     'project_yaml.'))
 flags.DEFINE_string('resume_from_project', '',
                     ('If the script terminates early, set this to the '
                      'project id that failed to resume from this '
@@ -59,11 +64,6 @@ flags.DEFINE_string('resume_from_project', '',
 flags.DEFINE_integer('resume_from_step', 1,
                      ('If the script terminates early, set this to the '
                       'step that failed to resume from this step.'))
-flags.DEFINE_string('output_yaml_path', '',
-                    ('If provided, save a new YAML file with any '
-                     'environment variables substituted and generated '
-                     'fields populated. This must be different to '
-                     'project_yaml.'))
 
 
 # Name of the Log Sink created in the data_project deployment manager template.
@@ -511,21 +511,21 @@ def main(argv):
     return
 
   # Read and parse the project configuration YAML file.
-  all_projects = utils.resolve_env_vars(utils.read_yaml_file(
+  root_config = utils.resolve_env_vars(utils.read_yaml_file(
       FLAGS.project_yaml))
-  if not all_projects:
+  if not root_config:
     logging.error('Error loading project YAML.')
     return
 
   logging.info('Validating project YAML against schema.')
   try:
-    utils.validate_config_yaml(all_projects)
+    utils.validate_config_yaml(root_config)
   except jsonschema.exceptions.ValidationError as e:
     logging.error('Error in YAML config: %s', e)
     return
 
-  overall = all_projects['overall']
-  audit_logs_project = all_projects.get('audit_logs_project')
+  overall = root_config['overall']
+  audit_logs_project = root_config.get('audit_logs_project')
 
   projects = []
   # Always deploy the remote audit logs project first (if present).
@@ -534,7 +534,7 @@ def main(argv):
                                   project=audit_logs_project,
                                   audit_logs_project=None))
 
-  forseti_config = all_projects.get('forseti', {})
+  forseti_config = root_config.get('forseti', {})
 
   if forseti_config:
     forseti_project_config = ProjectConfig(
@@ -543,7 +543,7 @@ def main(argv):
         audit_logs_project=audit_logs_project)
     projects.append(forseti_project_config)
 
-  for project_config in all_projects.get('projects', []):
+  for project_config in root_config.get('projects', []):
     projects.append(ProjectConfig(overall=overall,
                                   project=project_config,
                                   audit_logs_project=audit_logs_project))
@@ -564,26 +564,42 @@ def main(argv):
       if not setup_new_project(config, starting_step):
         # Don't attempt to deploy additional projects if one project failed.
         return
+
+      # Fill in unset generated fields for the project and save it.
+      add_generated_fields(config.project)
+      utils.write_yaml_file(root_config, FLAGS.output_yaml_path)
       starting_step = 1
   else:
     logging.error('No projects to deploy.')
 
-  # After all projects are deployed, fill in unset generated fields for all
-  # projects and save the final YAML file.
-  if FLAGS.output_yaml_path:
-    if audit_logs_project:
-      add_generated_fields(audit_logs_project)
-    for project in all_projects.get('projects', []):
-      add_generated_fields(project)
-
-    utils.write_yaml_file(all_projects, FLAGS.output_yaml_path)
-
   # TODO: allow for forseti installation to be retried.
   if forseti_config:
-    # Install Forseti instance in Forseti project.
-    forseti.install(forseti_config)
+    forseti_service_account = overall.get('generated_fields', {}).get(
+        'forseti_service_account')
+
+    # If the forseti server service account is not in the generated fields
+    # from a previous deployment, consider Forseti to be undeployed.
+    # TODO: add more checks of a previous deployment.
+    if not forseti_service_account:
+      forseti.install(forseti_config)
+
+      forseti_service_account = forseti.get_server_service_account(
+          forseti_config['project']['project_id'])
+
+      if 'generated_fields' not in overall:
+        overall['generated_fields'] = {}
+
+      overall['generated_fields']['forseti_service_account'] = (
+          forseti_service_account)
+      utils.write_yaml_file(root_config, FLAGS.output_yaml_path)
+
+    for project in projects:
+      project_id = project.project['project_id']
+      forseti.grant_access(project_id,
+                           forseti_service_account)
 
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
+  flags.mark_flag_as_required('output_yaml_path')
   app.run(main)

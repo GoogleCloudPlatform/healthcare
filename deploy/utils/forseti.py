@@ -14,6 +14,7 @@ from deploy.utils import runner
 
 _FORSETI_REPO = 'https://github.com/GoogleCloudPlatform/forseti-security.git'
 _DEFAULT_BRANCH = 'dev'
+_FORSETI_SERVER_SERVICE_ACCOUNT_FILTER = 'email:forseti-server-gcp-*'
 
 
 def install(config):
@@ -49,6 +50,35 @@ def install(config):
     runner.run_command(install_cmd)
   finally:
     shutil.rmtree(tmp_dir)
+
+
+def get_server_service_account(forseti_project_id):
+  """Get the service account for the Forseti server instance.
+
+  Assumes there is only one Forseti instance installed in the project.
+
+  Args:
+    forseti_project_id (str): id of the Forseti project.
+
+  Returns:
+    str: the forseti server service account.
+
+  Raises:
+    ValueError: if gcloud returns an unexpected number of service accounts.
+  """
+  output = runner.run_gcloud_command([
+      'iam', 'service-accounts', 'list',
+      '--format', 'value(email)',
+      '--filter', _FORSETI_SERVER_SERVICE_ACCOUNT_FILTER,
+  ], project_id=forseti_project_id)
+
+  service_accounts = output.strip().split('\n')
+  if len(service_accounts) != 1:
+    raise ValueError(
+        ('Unexpected number of Forseti server service accounts: '
+         'got {}, want 1, {}'.format(len(service_accounts), output)))
+  return service_accounts[0]
+
 
 # Standard (built in) roles required by the Forseti service account on
 # projects to be monitored.
