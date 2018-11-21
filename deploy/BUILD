@@ -40,3 +40,12 @@ py_binary(
         "//deploy/utils:runner",
     ],
 )
+
+py_binary(
+    name = "generate_rules",
+    srcs = ["generate_rules.py"],
+    deps = [
+        requirement("absl-py"),
+        "//deploy/rule_generator",
+    ],
+)

@@ -1,33 +1,10 @@
-# Copyright 2018 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-r"""Utility to generate Forseti scanner rules given project configurations.
-
-Usage:
-  bazel run :rule_generator -- \
-      --project_configs="${PROJECT_CONFIGS}" \
-      --forseti_rules_dir="${FORSETI_RULES_DIR}" \
-      --alsologtostderr
-"""
+"""Utility to generate Forseti scanner rules given project configurations."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import os
-from absl import app
-from absl import flags
 from absl import logging
 
 import yaml
@@ -43,11 +20,6 @@ from deploy.rule_generator.scanners.lien_scanner_rules import LienScannerRules
 from deploy.rule_generator.scanners.location_scanner_rules import LocationScannerRules
 from deploy.rule_generator.scanners.log_sink_scanner_rules import LogSinkScannerRules
 
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string(
-    'project_config', None, 'YAML file containing all project configurations.')
-flags.DEFINE_string('forseti_rules_dir', None, 'Path of output rules files.')
 
 # All Scanner Rule Generators to use.
 SCANNER_RULE_GENERATORS = [
@@ -61,6 +33,23 @@ SCANNER_RULE_GENERATORS = [
     LocationScannerRules(),
     LogSinkScannerRules(),
 ]
+
+
+def run(config_path, output_dir):
+  """Run the rule generator.
+
+  Generate rules for all supported scanners based on the given deployment config
+  and write them in the given output directory.
+
+  Args:
+    config_path (str): Path to the deployment config yaml file.
+    output_dir (str): Path to the output directory.
+  """
+  project_configs, global_config = load_all_project_configs(config_path)
+
+  for generator in SCANNER_RULE_GENERATORS:
+    rules = generator.generate_rules(project_configs, global_config)
+    write_yaml_config(rules, output_dir, generator.config_file_name())
 
 
 def read_yaml_config(path):
@@ -108,21 +97,3 @@ def load_all_project_configs(config_file):
             audit_logs_project=audit_logs_project))
   return project_configs, overall
 
-
-def main(argv):
-  if len(argv) > 1:
-    raise app.UsageError('Too many command-line arguments.')
-  # Load all projects
-  project_configs, global_config = load_all_project_configs(
-      FLAGS.project_config)
-
-  # Generate rules for each scanner.
-  for generator in SCANNER_RULE_GENERATORS:
-    rules = generator.generate_rules(project_configs, global_config)
-    write_yaml_config(rules, FLAGS.forseti_rules_dir,
-                      generator.config_file_name())
-
-if __name__ == '__main__':
-  flags.mark_flag_as_required('project_config')
-  flags.mark_flag_as_required('forseti_rules_dir')
-  app.run(main)
