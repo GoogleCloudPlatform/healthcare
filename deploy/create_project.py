@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A script to create a new dataset project.
+r"""A script to deploy monitored projects.
 
 Create a project config YAML file (see README.md for details) then run the
 script with:
-  ./create_project.py --project_yaml=my_project_config.yaml --nodry_run
+  bazel run :create_project -- \
+    --project_yaml=my_project_config.yaml \
+    --output_yaml_path=/tmp/output.yaml \
+    --nodry_run \
+    --alsologtostderr
 
 To preview the commands that will run, use `--dry_run`.
 
