@@ -504,15 +504,16 @@ def add_generated_fields(project):
 def main(argv):
   del argv  # Unused.
 
+  input_yaml_path = utils.normalize_path(FLAGS.project_yaml)
+  output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
   # Output YAML will rearrange fields and remove comments, so do a basic check
   # against accidental overwriting.
-  if FLAGS.project_yaml == FLAGS.output_yaml_path:
+  if input_yaml_path == output_yaml_path:
     logging.error('output_yaml_path cannot overwrite project_yaml.')
     return
 
   # Read and parse the project configuration YAML file.
-  root_config = utils.resolve_env_vars(utils.read_yaml_file(
-      FLAGS.project_yaml))
+  root_config = utils.resolve_env_vars(utils.read_yaml_file(input_yaml_path))
   if not root_config:
     logging.error('Error loading project YAML.')
     return
@@ -567,7 +568,7 @@ def main(argv):
 
       # Fill in unset generated fields for the project and save it.
       add_generated_fields(config.project)
-      utils.write_yaml_file(root_config, FLAGS.output_yaml_path)
+      utils.write_yaml_file(root_config, output_yaml_path)
       starting_step = 1
   else:
     logging.error('No projects to deploy.')
@@ -591,7 +592,7 @@ def main(argv):
 
       overall['generated_fields']['forseti_service_account'] = (
           forseti_service_account)
-      utils.write_yaml_file(root_config, FLAGS.output_yaml_path)
+      utils.write_yaml_file(root_config, output_yaml_path)
 
     for project in projects:
       project_id = project.project['project_id']

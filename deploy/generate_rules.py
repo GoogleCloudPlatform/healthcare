@@ -30,6 +30,7 @@ from absl import app
 from absl import flags
 
 from deploy.rule_generator import rule_generator
+from deploy.utils import utils
 
 FLAGS = flags.FLAGS
 
@@ -40,7 +41,8 @@ flags.DEFINE_string('forseti_rules_dir', None, 'Path of output rules files.')
 
 def main(argv):
   del argv  # Unused.
-  rule_generator.run(FLAGS.project_config, FLAGS.forseti_rules_dir)
+  rule_generator.run(utils.normalize_path(FLAGS.project_config),
+                     utils.normalize_path(FLAGS.forseti_rules_dir))
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('project_config')

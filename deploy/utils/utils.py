@@ -23,6 +23,16 @@ _PROJECT_CONFIG_SCHEMA = os.path.join(
     os.path.dirname(__file__), '../project_config.yaml.schema')
 
 
+def normalize_path(path):
+  """Normalizes paths specified through a local run or Bazel invocation."""
+  if os.path.isabs(path):
+    return path
+  # When using `bazel run`, the environment variable BUILD_WORKING_DIRECTORY
+  # will be set to the path where the command was run from.
+  cwd = os.environ.get('BUILD_WORKING_DIRECTORY', os.getcwd())
+  return os.path.abspath(os.path.join(cwd, path))
+
+
 def wait_for_yes_no(text):
   """Prompt user for Yes/No and return true if Yes/Y. Default to No."""
   if FLAGS.dry_run:

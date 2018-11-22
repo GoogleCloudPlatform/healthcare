@@ -51,5 +51,6 @@ py_binary(
     deps = [
         requirement("absl-py"),
         "//deploy/rule_generator",
+        "//deploy/utils",
     ],
 )
