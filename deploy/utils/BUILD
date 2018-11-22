@@ -15,6 +15,7 @@ py_library(
 py_test(
     name = "forseti_test",
     srcs = ["forseti_test.py"],
+    default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("mock"),

@@ -15,6 +15,7 @@ py_test(
     name = "project_config_test",
     size = "small",
     srcs = ["project_config_test.py"],
+    default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),

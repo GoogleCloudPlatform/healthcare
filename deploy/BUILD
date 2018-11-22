@@ -12,6 +12,7 @@ py_binary(
     name = "create_project",
     srcs = ["create_project.py"],
     data = ["//deploy/templates"],
+    default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("jsonschema"),
@@ -25,6 +26,7 @@ py_test(
     name = "create_project_test",
     srcs = ["create_project_test.py"],
     data = ["samples/project_with_remote_audit_logs.yaml"],
+    default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
         ":create_project",
@@ -34,6 +36,7 @@ py_test(
 py_binary(
     name = "grant_forseti_access",
     srcs = ["grant_forseti_access.py"],
+    default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
         "//deploy/utils:forseti",
@@ -44,6 +47,7 @@ py_binary(
 py_binary(
     name = "generate_rules",
     srcs = ["generate_rules.py"],
+    default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
         "//deploy/rule_generator",
