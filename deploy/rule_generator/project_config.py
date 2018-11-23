@@ -88,7 +88,8 @@ class ProjectConfig(object):
     self.project_id = self._project_config['project_id']
     self.enabled_apis = self._project_config.get('enabled_apis')
 
-    self._forseti_gcp_reader = overall['generated_fields']['forseti_gcp_reader']
+    self._forseti_gcp_reader = overall['generated_fields'][
+        'forseti_service_account']
 
     # List of default access groups, with 'group:' prefix.
     self._owners = [_group_name(self._project_config['owners_group'])]

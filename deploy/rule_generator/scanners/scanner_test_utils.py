@@ -14,7 +14,8 @@ _OVERALL_DICT = {
     'billing_account': '012345-6789AB-CDEF01',
     'allowed_apis': ['compute.googleapis.com', 'storage.googleapis.com'],
     'generated_fields': {
-        'forseti_gcp_reader': 'forseti@sample-forseti.iam.gserviceaccount.com',
+        'forseti_service_account': (
+            'forseti@sample-forseti.iam.gserviceaccount.com'),
     },
 }
 

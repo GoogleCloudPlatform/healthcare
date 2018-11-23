@@ -58,7 +58,7 @@ def read_yaml_config(path):
     data = input_file.read()
   try:
     return yaml.load(data)
-  except yaml.YAMLError, e:
+  except yaml.YAMLError as e:
     raise ValueError('Error parsing YAML file %s: %s' % (path, e))
 
 
@@ -78,18 +78,27 @@ def load_all_project_configs(config_file):
   """Returns a list of ProjectConfigs and an overall config dictionary."""
   config_dict = read_yaml_config(config_file)
 
+  project_configs = []
   overall = config_dict['overall']
+
   # audit_logs_project is omitted if projects use local audit logs.
   audit_logs_project = config_dict.get('audit_logs_project')
-
-  project_configs = []
   if audit_logs_project:
     project_configs.append(
         ProjectConfig(
             overall=overall,
             project=audit_logs_project,
             audit_logs_project=None))
-  for project in config_dict.get('projects', []):
+
+  project_dicts = config_dict.get('projects', [])
+
+  forseti_project = config_dict.get('forseti', {}).get('project')
+  if forseti_project:
+    # insert forseti project before regular projects so that the forseti rules
+    # show up first
+    project_dicts.insert(0, forseti_project)
+
+  for project in project_dicts:
     project_configs.append(
         ProjectConfig(
             overall=overall,
