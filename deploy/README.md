@@ -35,6 +35,8 @@ beneficial if you have several data projects.
 NOTE: If running through Cloud Shell, all of the following dependencies are
 already available.
 
+-   [Python 3.5+](https://www.python.org/downloads/)
+
 -   [Bazel](https://docs.bazel.build/versions/master/install.html)
 
 -   [Gcloud SDK](https://cloud.google.com/sdk/install)
