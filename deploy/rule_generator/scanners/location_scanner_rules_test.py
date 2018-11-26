@@ -13,6 +13,18 @@ from deploy.rule_generator.scanners import scanner_test_utils
 
 _EXPECTED_RULES_YAML = """
 rules:
+  - name: Project project-1 resource whitelist for location US.
+    mode: whitelist
+    resource:
+      - type: project
+        resource_ids:
+          - project-1
+    applies_to:
+      - type: dataset
+        resource_ids:
+          - project-1:dataset
+    locations:
+      - US
   - name: Project project-1 resource whitelist for location US-CENTRAL1.
     mode: whitelist
     resource:
@@ -25,7 +37,7 @@ rules:
           - project-1-bucket
     locations:
       - US-CENTRAL1
-  - name: Project project-1 audit logs location whitelist.
+  - name: Project project-1 audit logs bucket location whitelist.
     mode: whitelist
     resource:
       - type: project
@@ -37,6 +49,18 @@ rules:
           - {audit_logs_bucket_id}
     locations:
       - US
+  - name: Project project-1 audit logs dataset location whitelist.
+    mode: whitelist
+    resource:
+      - type: project
+        resource_ids:
+          - {audit_logs_project_id}
+    applies_to:
+      - type: dataset
+        resource_ids:
+          - {audit_logs_dataset_id}
+    locations:
+      - US
 """
 
 
@@ -46,13 +70,20 @@ class LocationScannerRulesTest(absltest.TestCase):
     projects = [
         scanner_test_utils.create_test_project(
             project_id='project-1', project_num=123456,
+            extra_fields={
+                'bigquery_datasets': [{
+                    'name': 'dataset',
+                    'location': 'US',
+                }],
+            },
         ),
     ]
     got_rules = location_scanner_rules.LocationScannerRules().generate_rules(
         projects, scanner_test_utils.create_test_global_config())
     want_rules = yaml.load(_EXPECTED_RULES_YAML.format(
         audit_logs_project_id='project-1',
-        audit_logs_bucket_id='project-1-logs'
+        audit_logs_bucket_id='project-1-logs',
+        audit_logs_dataset_id='project-1:audit_logs',
     ))
     self.assertEqual(got_rules, want_rules)
 
@@ -61,22 +92,27 @@ class LocationScannerRulesTest(absltest.TestCase):
         scanner_test_utils.create_test_project(
             project_id='project-1', project_num=123456,
             extra_fields={
+                'bigquery_datasets': [{
+                    'name': 'dataset',
+                    'location': 'US',
+                }],
+                'gce_instances': [{
+                    'name': 'instance',
+                }],
                 'audit_logs': {
                     'logs_gcs_bucket': {
                         'name': 'project-1-remote-logs',
                         'location': 'US',
                     },
-                    # TODO: update test to check for dataset
-                    # locations once support has been added in Forseti.
                     'logs_bigquery_dataset': {
                         'name': 'project-1-remote-dataset',
-                        'location': 'EU',
+                        'location': 'US',
                     },
                 },
             },
             audit_logs_project={
                 'project_id': 'project-1-audit',
-                'owners_group': 'project-1-owners@domain.com',
+                'owners_group': 'project-1-owners@google.com',
             }
         ),
     ]
@@ -85,7 +121,8 @@ class LocationScannerRulesTest(absltest.TestCase):
         projects, scanner_test_utils.create_test_global_config())
     want_rules = yaml.load(_EXPECTED_RULES_YAML.format(
         audit_logs_project_id='project-1-audit',
-        audit_logs_bucket_id='project-1-remote-logs'
+        audit_logs_bucket_id='project-1-remote-logs',
+        audit_logs_dataset_id='project-1-audit:project-1-remote-dataset',
     ))
     self.assertEqual(got_rules, want_rules)
 

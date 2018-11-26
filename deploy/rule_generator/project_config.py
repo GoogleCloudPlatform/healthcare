@@ -105,6 +105,7 @@ class ProjectConfig(object):
 
     # TODO: split audit logs into its own class to avoid duplication
     # of functions and vars
+    self.bigquery_datasets = self._project_config.get('bigquery_datasets', [])
     self.audit_logs_bigquery_dataset = (
         self._project_config['audit_logs']['logs_bigquery_dataset'])
     if audit_logs_project:
