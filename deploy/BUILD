@@ -16,6 +16,7 @@ py_binary(
     deps = [
         requirement("absl-py"),
         requirement("jsonschema"),
+        "//deploy/rule_generator",
         "//deploy/utils",
         "//deploy/utils:forseti",
         "//deploy/utils:runner",
@@ -30,6 +31,7 @@ py_test(
     deps = [
         requirement("absl-py"),
         ":create_project",
+        "//deploy/utils:runner",
     ],
 )
 

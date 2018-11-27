@@ -5,9 +5,10 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from absl import logging
+import posixpath
+import tempfile
 
-import yaml
+from absl import logging
 
 from deploy.rule_generator.project_config import ProjectConfig
 from deploy.rule_generator.scanners.audit_logging_scanner_rules import AuditLoggingScannerRules
@@ -19,6 +20,8 @@ from deploy.rule_generator.scanners.iam_scanner_rules import IamScannerRules
 from deploy.rule_generator.scanners.lien_scanner_rules import LienScannerRules
 from deploy.rule_generator.scanners.location_scanner_rules import LocationScannerRules
 from deploy.rule_generator.scanners.log_sink_scanner_rules import LogSinkScannerRules
+from deploy.utils import runner
+from deploy.utils import utils
 
 
 # All Scanner Rule Generators to use.
@@ -35,48 +38,57 @@ SCANNER_RULE_GENERATORS = [
 ]
 
 
-def run(config_path, output_dir):
+def run(deployment_config, output_path=None):
   """Run the rule generator.
 
   Generate rules for all supported scanners based on the given deployment config
   and write them in the given output directory.
 
   Args:
-    config_path (str): Path to the deployment config yaml file.
-    output_dir (str): Path to the output directory.
+    deployment_config(dict): The loaded yaml deployment config.
+    output_path (str): Path to a local directory or a GCS bucket
+      path starting with gs://.
+
+  Raises:
+    ValueError: If no output_path given AND no forseti config in the
+      deployment_config.
   """
-  project_configs, global_config = load_all_project_configs(config_path)
+  if not output_path:
+    output_path = deployment_config.get(
+        'overall').get('generated_fields').get('forseti_server_bucket')
+    if not output_path:
+      raise ValueError(
+          ('Must provide an output path or set the "forseti_server_bucket" '
+           'field in the overall generated_fields'))
 
+  if output_path.startswith('gs://'):
+    # output path is a GCS bucket
+    with tempfile.TemporaryDirectory() as tmp_dir:
+      _write_rules(deployment_config, tmp_dir)
+      logging.info('Copying rules files to %s', output_path)
+      runner.run_command([
+          'gsutil', 'cp',
+          os.path.join(tmp_dir, '*.yaml'),
+          posixpath.join(output_path, 'rules'),
+      ])
+  else:
+    # output path is a local directory
+    _write_rules(deployment_config, output_path)
+
+
+def _write_rules(deployment_config, directory):
+  """Write a rules yaml file for each generator to the given directory."""
+  project_configs, global_config = get_all_project_configs(deployment_config)
   for generator in SCANNER_RULE_GENERATORS:
+    config_file_name = generator.config_file_name()
+    logging.info('Generating rules for %s', config_file_name)
     rules = generator.generate_rules(project_configs, global_config)
-    write_yaml_config(rules, output_dir, generator.config_file_name())
+    path = os.path.join(directory, config_file_name)
+    utils.write_yaml_file(rules, path)
 
 
-def read_yaml_config(path):
-  """Reads a YAML file and return a dictionary of its contents."""
-  with open(path) as input_file:
-    data = input_file.read()
-  try:
-    return yaml.load(data)
-  except yaml.YAMLError as e:
-    raise ValueError('Error parsing YAML file %s: %s' % (path, e))
-
-
-def write_yaml_config(config, config_dir, filename):
-  """Writes a config dict as yaml to config_dir/filename."""
-  if not os.path.isdir(config_dir):
-    os.makedirs(config_dir)
-  config_filename = os.path.join(config_dir, filename)
-  # Don't use aliases in the YAML output.
-  yaml.Dumper.ignore_aliases = lambda self, data: True
-  with open(config_filename, 'w') as f:
-    f.write(yaml.dump(config, default_flow_style=False))
-  logging.info('Wrote config to %s', config_filename)
-
-
-def load_all_project_configs(config_file):
+def get_all_project_configs(config_dict):
   """Returns a list of ProjectConfigs and an overall config dictionary."""
-  config_dict = read_yaml_config(config_file)
 
   project_configs = []
   overall = config_dict['overall']

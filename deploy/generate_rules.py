@@ -34,17 +34,22 @@ from deploy.utils import utils
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('project_config', None,
+flags.DEFINE_string('deployment_config_path', None,
                     'YAML file containing all project configurations.')
-flags.DEFINE_string('forseti_rules_dir', None, 'Path of output rules files.')
+flags.DEFINE_string('output_path', None,
+                    ('Path to local directory or GCS bucket to output rules '
+                     ' files. If unset, directly writes to the Forseti server '
+                     'bucket.'))
 
 
 def main(argv):
   del argv  # Unused.
-  rule_generator.run(utils.normalize_path(FLAGS.project_config),
-                     utils.normalize_path(FLAGS.forseti_rules_dir))
+  deployment_config = utils.read_yaml_file(
+      utils.normalize_path(FLAGS.deployment_config_path))
+  output_path = (utils.normalize_path(FLAGS.output_path)
+                 if FLAGS.output_path else None)
+  rule_generator.run(deployment_config, output_path=output_path)
 
 if __name__ == '__main__':
-  flags.mark_flag_as_required('project_config')
-  flags.mark_flag_as_required('forseti_rules_dir')
+  flags.mark_flag_as_required('deployment_config_path')
   app.run(main)

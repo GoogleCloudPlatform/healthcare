@@ -25,8 +25,11 @@ _PROJECT_CONFIG_SCHEMA = os.path.join(
 
 def normalize_path(path):
   """Normalizes paths specified through a local run or Bazel invocation."""
-  if os.path.isabs(path):
+  path = os.path.expandvars(os.path.expanduser(path))
+  if path.startswith('gs://') or os.path.isabs(path):
     return path
+
+  # Path is relative from where the script was launched from.
   # When using `bazel run`, the environment variable BUILD_WORKING_DIRECTORY
   # will be set to the path where the command was run from.
   cwd = os.environ.get('BUILD_WORKING_DIRECTORY', os.getcwd())
@@ -63,7 +66,7 @@ def read_yaml_file(path):
     A dict holding the parsed contents of the YAML file, or None if the file
     could not be read or parsed.
   """
-  with open(os.path.expanduser(path), 'r') as stream:
+  with open(path, 'r') as stream:
     return yaml.load(stream)
 
 
@@ -74,6 +77,9 @@ def write_yaml_file(contents, path):
     contents (dict): The contents to write to the YAML file.
     path (string): The path to the YAML file.
   """
+  # Don't use aliases in the YAML output.
+  yaml.SafeDumper.ignore_aliases = lambda self, data: True
+
   if FLAGS.dry_run:
     # If using dry_run mode, don't create the file, just print the contents.
     print('Contents of {}:'.format(path))
@@ -81,6 +87,7 @@ def write_yaml_file(contents, path):
     print(yaml.safe_dump(contents, default_flow_style=False))
     print('===================================================================')
     return
+
   with open(path, 'w') as outfile:
     yaml.safe_dump(contents, outfile, default_flow_style=False)
 

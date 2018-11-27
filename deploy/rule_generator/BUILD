@@ -28,7 +28,6 @@ py_binary(
     srcs = ["rule_generator.py"],
     deps = [
         requirement("absl-py"),
-        requirement("pyyaml"),
         ":project_config",
         "//deploy/rule_generator/scanners:audit_logging_scanner_rules",
         "//deploy/rule_generator/scanners:bigquery_scanner_rules",
@@ -39,5 +38,7 @@ py_binary(
         "//deploy/rule_generator/scanners:lien_scanner_rules",
         "//deploy/rule_generator/scanners:location_scanner_rules",
         "//deploy/rule_generator/scanners:log_sink_scanner_rules",
+        "//deploy/utils",
+        "//deploy/utils:runner",
     ],
 )

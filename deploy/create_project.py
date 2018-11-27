@@ -44,6 +44,7 @@ from absl import logging
 
 import jsonschema
 
+from deploy.rule_generator import rule_generator
 from deploy.utils import forseti
 from deploy.utils import runner
 from deploy.utils import utils
@@ -57,6 +58,10 @@ flags.DEFINE_string('output_yaml_path', None,
                      'environment variables substituted and generated '
                      'fields populated. This must be different to '
                      'project_yaml.'))
+flags.DEFINE_string('output_rules_path', None,
+                    ('Path to local directory or GCS bucket to output rules '
+                     'files. If unset, directly writes to the Forseti server '
+                     'bucket.'))
 flags.DEFINE_string('resume_from_project', '',
                     ('If the script terminates early, set this to the '
                      'project id that failed to resume from this '
@@ -506,6 +511,9 @@ def main(argv):
 
   input_yaml_path = utils.normalize_path(FLAGS.project_yaml)
   output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
+  output_rules_path = (utils.normalize_path(FLAGS.output_rules_path)
+                       if FLAGS.output_rules_path else None)
+
   # Output YAML will rearrange fields and remove comments, so do a basic check
   # against accidental overwriting.
   if input_yaml_path == output_yaml_path:
@@ -575,6 +583,7 @@ def main(argv):
 
   # TODO: allow for forseti installation to be retried.
   if forseti_config:
+    forseti_project_id = forseti_config['project']['project_id']
     forseti_service_account = overall.get('generated_fields', {}).get(
         'forseti_service_account')
 
@@ -585,19 +594,22 @@ def main(argv):
       forseti.install(forseti_config)
 
       forseti_service_account = forseti.get_server_service_account(
-          forseti_config['project']['project_id'])
+          forseti_project_id)
 
       if 'generated_fields' not in overall:
         overall['generated_fields'] = {}
 
       overall['generated_fields']['forseti_service_account'] = (
           forseti_service_account)
+      overall['generated_fields']['forseti_server_bucket'] = (
+          forseti.get_server_bucket(forseti_project_id))
       utils.write_yaml_file(root_config, output_yaml_path)
 
     for project in projects:
       project_id = project.project['project_id']
       forseti.grant_access(project_id,
                            forseti_service_account)
+    rule_generator.run(root_config, output_path=output_rules_path)
 
 
 if __name__ == '__main__':

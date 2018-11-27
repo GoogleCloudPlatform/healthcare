@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import collections
 import os
+import re
 import shlex
 import shutil
 import tempfile
@@ -15,6 +16,7 @@ from deploy.utils import runner
 _FORSETI_REPO = 'https://github.com/GoogleCloudPlatform/forseti-security.git'
 _DEFAULT_BRANCH = 'dev'
 _FORSETI_SERVER_SERVICE_ACCOUNT_FILTER = 'email:forseti-server-gcp-*'
+_FORSETI_SERVER_BUCKET_RE = re.compile(r'gs://forseti-server-.*')
 
 
 def install(config):
@@ -78,6 +80,28 @@ def get_server_service_account(forseti_project_id):
         ('Unexpected number of Forseti server service accounts: '
          'got {}, want 1, {}'.format(len(service_accounts), output)))
   return service_accounts[0]
+
+
+def get_server_bucket(forseti_project_id):
+  """Get the bucket holding the Forseti server instance's configuration.
+
+  Args:
+    forseti_project_id (str): id of the Forseti project.
+
+  Returns:
+    str: the forseti server bucket name.
+
+  Raises:
+    ValueError: if failure in finding the bucket in the gsutil command output.
+  """
+  # TODO: allow users to override gsutil binary, similar to gcloud
+  output = runner.run_command(['gsutil', 'ls', '-p', forseti_project_id],
+                              get_output=True)
+
+  match = _FORSETI_SERVER_BUCKET_RE.search(output)
+  if not match:
+    raise ValueError('Failed to find Forseti server bucket: {}'.format(output))
+  return match.group(0)
 
 
 # Standard (built in) roles required by the Forseti service account on
