@@ -191,7 +191,7 @@ def main(_):
       tensors=tensors_to_log, every_n_iter=50)
 
   # Train the model.
-  train_input_fn = tf.estimator.inputs.numpy_input_fn(
+  train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
       x={"image": train_data},
       y=train_labels,
       batch_size=FLAGS.batch_size,
@@ -201,7 +201,7 @@ def main(_):
       input_fn=train_input_fn, steps=FLAGS.training_steps, hooks=[logging_hook])
 
   # Evaluate the model and print results.
-  eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+  eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
       x={"image": eval_data}, y=eval_labels, num_epochs=1, shuffle=False)
   eval_results = classifier.evaluate(
       input_fn=eval_input_fn, steps=FLAGS.eval_steps)
