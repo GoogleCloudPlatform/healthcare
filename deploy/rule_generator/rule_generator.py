@@ -6,9 +6,9 @@ from __future__ import print_function
 
 import os
 import posixpath
-import tempfile
 
 from absl import logging
+from backports import tempfile
 
 from deploy.rule_generator.project_config import ProjectConfig
 from deploy.rule_generator.scanners.audit_logging_scanner_rules import AuditLoggingScannerRules

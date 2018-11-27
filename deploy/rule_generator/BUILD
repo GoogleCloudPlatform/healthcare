@@ -28,6 +28,7 @@ py_binary(
     srcs = ["rule_generator.py"],
     deps = [
         requirement("absl-py"),
+        requirement("backports.tempfile"),
         ":project_config",
         "//deploy/rule_generator/scanners:audit_logging_scanner_rules",
         "//deploy/rule_generator/scanners:bigquery_scanner_rules",
