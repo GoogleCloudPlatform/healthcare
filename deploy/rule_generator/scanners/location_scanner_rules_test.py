@@ -13,6 +13,20 @@ from deploy.rule_generator.scanners import scanner_test_utils
 
 _EXPECTED_RULES_YAML = """
 rules:
+  - name: Global location whitelist.
+    mode: whitelist
+    resource:
+      - type: organization
+        resource_ids:
+          - '246801357924'
+    applies_to:
+      - type: '*'
+        resource_ids:
+          - '*'
+    locations:
+      - 'US'
+      - 'US-CENTRAL1'
+      - 'US-CENTRAL1-F'
   - name: Project project-1 resource whitelist for location US.
     mode: whitelist
     resource:
