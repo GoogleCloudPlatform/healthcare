@@ -37,6 +37,18 @@ rules:
           - project-1-bucket
     locations:
       - US-CENTRAL1
+  - name: Project project-1 resource whitelist for location US-CENTRAL1-F.
+    mode: whitelist
+    resource:
+      - type: project
+        resource_ids:
+          - project-1
+    applies_to:
+      - type: instance
+        resource_ids:
+          - '123'
+    locations:
+      - US-CENTRAL1-F
   - name: Project project-1 audit logs bucket location whitelist.
     mode: whitelist
     resource:
@@ -95,9 +107,6 @@ class LocationScannerRulesTest(absltest.TestCase):
                 'bigquery_datasets': [{
                     'name': 'dataset',
                     'location': 'US',
-                }],
-                'gce_instances': [{
-                    'name': 'instance',
                 }],
                 'audit_logs': {
                     'logs_gcs_bucket': {

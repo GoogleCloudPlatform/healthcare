@@ -32,10 +32,19 @@ projects:
   generated_fields:
     project_number: %(project_num)s
     log_sink_service_account: audit-logs-bq@logging-%(project_num)s.iam.gserviceaccount.com
+    gce_instance_info:
+    - name: 'instance'
+      id: '123'
   data_buckets:
-    - name_suffix: '-bucket'
-      location: US-CENTRAL1
-      storage_class: REGIONAL
+  - name_suffix: '-bucket'
+    location: US-CENTRAL1
+    storage_class: REGIONAL
+  gce_instances:
+  - name: 'instance'
+    zone: 'us-central1-f'
+    machine_type: 'n1-standard-1'
+    existing_boot_image: 'projects/debian-cloud/global/images/family/debian-9'
+    start_vm: true
   audit_logs:
     logs_gcs_bucket:
       location: US

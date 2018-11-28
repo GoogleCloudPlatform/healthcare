@@ -6,6 +6,8 @@ from __future__ import print_function
 
 import collections
 
+from absl import logging
+
 # Name of the local audit logs dataset from the deployment template.
 _LOCAL_AUDIT_LOGS_DATASET = 'audit_logs'
 # Default Service Accounts with Editors role.
@@ -66,6 +68,7 @@ def _create_bigquery_bindings(owners, writers, readers):
 
 
 Bucket = collections.namedtuple('Bucket', ['id', 'location'])
+GCEInstance = collections.namedtuple('GCEInstance', ['id', 'location'])
 
 
 class ProjectConfig(object):
@@ -260,3 +263,22 @@ class ProjectConfig(object):
     return 'bigquery.googleapis.com/projects/{}/datasets/{}'.format(
         self.audit_logs_project_id, self.audit_logs_bigquery_dataset['name'])
 
+  def get_gce_instances(self):
+    """Returns a list of GCE instances."""
+    instance_name_to_id = {
+        info['name']: info['id']
+        for info in self._project_config['generated_fields'].get(
+            'gce_instance_info', [])
+    }
+
+    gce_instances = []
+    for gce_instance in self._project_config.get('gce_instances', []):
+      name = gce_instance['name']
+      if name not in instance_name_to_id:
+        logging.fatal('Instance %s not found in generated field instances: %s',
+                      name, instance_name_to_id)
+      gce_instances.append(
+          GCEInstance(
+              id=instance_name_to_id[gce_instance['name']],
+              location=gce_instance['zone']))
+    return gce_instances

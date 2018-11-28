@@ -9,6 +9,7 @@ load("@deploy_deps//:requirements.bzl", "requirement")
 py_library(
     name = "project_config",
     srcs = ["project_config.py"],
+    deps = [requirement("absl-py")],
 )
 
 py_test(

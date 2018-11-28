@@ -42,11 +42,17 @@ class LocationScannerRules(base_scanner_rules.BaseScannerRules):
     )
 
     for bucket in project_config.get_buckets():
-      loc_to_resource_map[bucket.location]['bucket'].append(bucket.id)
+      loc = bucket.location.upper()
+      loc_to_resource_map[loc]['bucket'].append(bucket.id)
 
     for dataset in project_config.bigquery_datasets:
+      loc = dataset['location'].upper()
       dataset_id = '{}:{}'.format(project_config.project_id, dataset['name'])
-      loc_to_resource_map[dataset['location']]['dataset'].append(dataset_id)
+      loc_to_resource_map[loc]['dataset'].append(dataset_id)
+
+    for gce_instance in project_config.get_gce_instances():
+      loc = gce_instance.location.upper()
+      loc_to_resource_map[loc]['instance'].append(gce_instance.id)
 
     locs = sorted(loc_to_resource_map.keys())
 
