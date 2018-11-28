@@ -260,6 +260,19 @@ def get_log_sink_service_account(log_sink_name, project_id):
   return sink_service_account.split(':')[1]
 
 
+def get_gce_instance_info(project_id):
+  """Gets a list of GCE instance info for each instance."""
+  output = runner.run_gcloud_command(
+      ['compute', 'instances', 'list', '--format', 'value(name,id)'],
+      project_id=project_id)
+
+  instance_info = []
+  for line in output.split('\n'):
+    name, instance_id = line.split()
+    instance_info.append({'name': name, 'id': instance_id})
+  return instance_info
+
+
 def resolve_env_vars(config):
   """Recursively resolves environment variables in config values."""
   if isinstance(config, str):

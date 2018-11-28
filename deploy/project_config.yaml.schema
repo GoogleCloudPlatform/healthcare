@@ -423,6 +423,22 @@ definitions:
           project_number:
             type: string
             description: The projects unique number.
+          gce_instance_info:
+            type: array
+            description: List of GCE instance info.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - id
+              properties:
+                name:
+                  type: string
+                  description: Name of the GCE instance.
+                id:
+                  type: string
+                  description: ID of the GCE instance.
           log_sink_service_account:
             type: string
             description: |

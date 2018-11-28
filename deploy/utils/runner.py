@@ -65,4 +65,4 @@ def run_gcloud_command(cmd, project_id):
   gcloud_cmd = [FLAGS.gcloud_bin] + cmd
   if project_id:
     gcloud_cmd.extend(['--project', project_id])
-  return run_command(gcloud_cmd, get_output=True)
+  return run_command(gcloud_cmd, get_output=True).strip()

@@ -53,7 +53,7 @@ def generate_config(context):
 
     metadata = vm.get('metadata')
     if metadata:
-        vm_resource['properties']['metadata'] = metadata
+      vm_resource['properties']['metadata'] = metadata
 
     resources.append(vm_resource)
 

@@ -26,7 +26,7 @@ py_binary(
 py_test(
     name = "create_project_test",
     srcs = ["create_project_test.py"],
-    data = ["samples/project_with_remote_audit_logs.yaml"],
+    data = ["//deploy/samples:configs"],
     default_python_version = "PY3",
     deps = [
         requirement("absl-py"),

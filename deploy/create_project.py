@@ -499,11 +499,16 @@ def add_generated_fields(project):
     project (dict): Config dictionary of a single project.
   """
   if 'generated_fields' not in project:
+    project_id = project['project_id']
     project['generated_fields'] = {
-        'project_number': utils.get_project_number(project['project_id']),
-        'log_sink_service_account': utils.get_log_sink_service_account(
-            _LOG_SINK_NAME, project['project_id'])
+        'project_number':
+            utils.get_project_number(project_id),
+        'log_sink_service_account':
+            utils.get_log_sink_service_account(_LOG_SINK_NAME, project_id),
     }
+    gce_instance_info = utils.get_gce_instance_info(project_id)
+    if gce_instance_info:
+      project['generated_fields']['gce_instance_info'] = gce_instance_info
 
 
 def main(argv):
