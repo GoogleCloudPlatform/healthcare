@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utility to generate Forseti scanner rules given project configurations.
+r"""Utility to generate Forseti scanner rules given project configurations.
 
 Usage:
-  rule_generator
-      --project_configs="${PROJECT_CONFIGS}"
-      --forseti_rules_dir="${FORSETI_RULES_DIR}"
-      --forseti_gcp_reader="${FORSETI_GCP_READER}"
-      --alsologtostderr
+  bazel run :rule_generator -- \
+      --deployment_config_path="${DEPLOYMENT_CONFIG_PATH}" \
+      --output_path="${OUTPUT_PATH}"
 """
 
 from __future__ import absolute_import
