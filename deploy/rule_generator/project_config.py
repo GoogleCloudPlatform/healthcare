@@ -74,16 +74,15 @@ GCEInstance = collections.namedtuple('GCEInstance', ['id', 'location'])
 class ProjectConfig(object):
   """Configuration for a single GCP project."""
 
-  def __init__(self, overall, project, audit_logs_project):
+  def __init__(self, project, audit_logs_project, forseti):
     """Initialize.
 
     Args:
-        overall (dict): The parsed dictionary of the overall/global
-            configuration.
         project (dict): The parsed dictionary of a single project from the
             project config YAML file.
-        audit_logs_project (dict): the audit logs project, or None if project is
+        audit_logs_project (dict): The audit logs project, or None if project is
             using local audit logs.
+        forseti (dict): The Forseti config dictionary, or None.
     """
     self._project_config = project
     self._uses_local_audit_logs = audit_logs_project is None
@@ -91,8 +90,7 @@ class ProjectConfig(object):
     self.project_id = self._project_config['project_id']
     self.enabled_apis = self._project_config.get('enabled_apis')
 
-    self._forseti_gcp_reader = overall['generated_fields'][
-        'forseti_service_account']
+    self._forseti_gcp_reader = forseti['generated_fields']['service_account']
 
     # List of default access groups, with 'group:' prefix.
     self._owners = [_group_name(self._project_config['owners_group'])]

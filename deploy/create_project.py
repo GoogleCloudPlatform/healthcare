@@ -589,25 +589,22 @@ def main(argv):
   # TODO: allow for forseti installation to be retried.
   if forseti_config:
     forseti_project_id = forseti_config['project']['project_id']
-    forseti_service_account = overall.get('generated_fields', {}).get(
-        'forseti_service_account')
+    forseti_service_account = forseti_config.get('generated_fields',
+                                                 {}).get('service_account')
 
-    # If the forseti server service account is not in the generated fields
-    # from a previous deployment, consider Forseti to be undeployed.
+    # If the forseti block does not have generated fields from a previous
+    # deployment, consider Forseti to be undeployed.
     # TODO: add more checks of a previous deployment.
-    if not forseti_service_account:
+    if 'generated_fields' not in forseti_config:
       forseti.install(forseti_config)
 
       forseti_service_account = forseti.get_server_service_account(
           forseti_project_id)
 
-      if 'generated_fields' not in overall:
-        overall['generated_fields'] = {}
-
-      overall['generated_fields']['forseti_service_account'] = (
-          forseti_service_account)
-      overall['generated_fields']['forseti_server_bucket'] = (
-          forseti.get_server_bucket(forseti_project_id))
+      forseti_config['generated_fields'] = {
+          'service_account': forseti_service_account,
+          'server_bucket': forseti.get_server_bucket(forseti_project_id),
+      }
       utils.write_yaml_file(root_config, output_yaml_path)
 
     for project in projects:

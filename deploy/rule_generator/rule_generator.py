@@ -54,8 +54,8 @@ def run(deployment_config, output_path=None):
       deployment_config.
   """
   if not output_path:
-    output_path = deployment_config.get(
-        'overall').get('generated_fields').get('forseti_server_bucket')
+    output_path = deployment_config.get('forseti', {}).get(
+        'generated_fields', {}).get('server_bucket')
     if not output_path:
       raise ValueError(
           ('Must provide an output path or set the "forseti_server_bucket" '
@@ -90,17 +90,20 @@ def _write_rules(deployment_config, directory):
 def get_all_project_configs(config_dict):
   """Returns a list of ProjectConfigs and an overall config dictionary."""
 
-  project_configs = []
-  overall = config_dict['overall']
+  # forseti is omitted if there is no forseti config
+  forseti = config_dict.get('forseti')
 
   # audit_logs_project is omitted if projects use local audit logs.
   audit_logs_project = config_dict.get('audit_logs_project')
+
+  project_configs = []
+
   if audit_logs_project:
     project_configs.append(
         ProjectConfig(
-            overall=overall,
             project=audit_logs_project,
-            audit_logs_project=None))
+            audit_logs_project=None,
+            forseti=forseti))
 
   project_dicts = config_dict.get('projects', [])
 
@@ -113,8 +116,7 @@ def get_all_project_configs(config_dict):
   for project in project_dicts:
     project_configs.append(
         ProjectConfig(
-            overall=overall,
             project=project,
-            audit_logs_project=audit_logs_project))
-  return project_configs, overall
-
+            audit_logs_project=audit_logs_project,
+            forseti=forseti))
+  return project_configs, config_dict['overall']

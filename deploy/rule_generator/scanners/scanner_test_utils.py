@@ -13,10 +13,26 @@ _OVERALL_DICT = {
     'organization_id': '246801357924',
     'billing_account': '012345-6789AB-CDEF01',
     'allowed_apis': ['compute.googleapis.com', 'storage.googleapis.com'],
-    'generated_fields': {
-        'forseti_service_account': (
-            'forseti@sample-forseti.iam.gserviceaccount.com'),
+}
+
+_FORSETI_DICT = {
+    'project': {
+        'project_id': 'forseti-project',
+        'owners_group': 'forseti-project-owners@domain.com',
+        'auditors_group': 'forseti-project-auditors@domain.com',
+        'data_readwrite_groups': ['forseti-project-readwrite@domain.com'],
+        'data_readonly_groups': ['forseti-project-readonly@domain.com'],
+        'generated_fields': {
+            'project_number':
+                9999,
+            'log_sink_service_account': (
+                'forseti-logs@logging-9999.iam.gserviceaccount.com'),
+        },
     },
+    'generated_fields': {
+        'service_account': 'forseti@sample-forseti.iam.gserviceaccount.com',
+        'server_bucket': 'gs://forseti-project-server/',
+    }
 }
 
 _PROJECT_YAML = """
@@ -68,8 +84,10 @@ def create_test_project(project_id, project_num, extra_fields=None,
   project = config_dict['projects'][0]
   if extra_fields:
     project.update(extra_fields)
-  return project_config.ProjectConfig(overall=_OVERALL_DICT, project=project,
-                                      audit_logs_project=audit_logs_project)
+  return project_config.ProjectConfig(
+      project=project,
+      audit_logs_project=audit_logs_project,
+      forseti=_FORSETI_DICT)
 
 
 def create_test_projects(num_projects):

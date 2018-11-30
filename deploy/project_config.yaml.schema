@@ -477,17 +477,6 @@ properties:
           this is omitted, projects will not be created under an organization.
         pattern: ^[0-9]{8,25}$
 
-      generated_fields:
-        type: object
-        description: |
-          Output only. Fields whose values are produced during deployment and
-          are used for monitoring of all projects.
-        properties:
-          forseti_service_account:
-            type: string
-            description: The forseti server service account that needs to view
-              the GCP resources of all projects.
-
   audit_logs_project:
     $ref: '#/definitions/gcp_project'
     description: |
@@ -508,6 +497,19 @@ properties:
       installer_flags:
         type: string
         description: "Flags to pass to the Forseti installer."
+      generated_fields:
+        type: object
+        description: |
+          Output only. Fields whose values are known after Forseti deployment.
+        properties:
+          service_account:
+            type: string
+            description: The forseti server service account that needs to view
+              the GCP resources of all projects.
+          server_bucket:
+            type: string
+            description: The forseti server bucket that holds the configuration.
+
   projects:
     type: array
     description: List of data hosting projects to deploy.

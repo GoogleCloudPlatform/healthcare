@@ -16,8 +16,22 @@ TEST_PROJECT_YAML = """
 overall:
   organization_id: '246801357924'
   billing_account: 012345-6789AB-CDEF01
+
+forseti:
+  project:
+    project_id: forseti-project
+    owners_group: forseti-project-owners@domain.com
+    auditors_group: forseti-project-auditors@domain.com
+    data_readwrite_groups:
+      - forseti-project-readwrite@domain.com
+    data_readonly_groups:
+      - forseti-project-readonly@domain.com
+    generated_fields:
+      project_number: 9999,
+      log_sink_service_account: forseti-logs@logging-9999.iam.gserviceaccount.com
   generated_fields:
-    forseti_service_account: forseti@sample-forseti.iam.gserviceaccount.com
+    service_account: forseti@sample-forseti.iam.gserviceaccount.com
+    server_bucket: gs://forseti-project-server/
 
 projects:
 - project_id: sample-data
@@ -77,9 +91,10 @@ class ProjectConfigTest(absltest.TestCase):
 
   def test_load_valid_config(self):
     yaml_dict = yaml.load(TEST_PROJECT_YAML)
-    project = ProjectConfig(overall=yaml_dict['overall'],
-                            project=yaml_dict['projects'][0],
-                            audit_logs_project=None)
+    project = ProjectConfig(
+        project=yaml_dict['projects'][0],
+        audit_logs_project=None,
+        forseti=yaml_dict['forseti'])
     self.assertIsNotNone(project)
 
     self.assertEqual('sample-data', project.project_id)
@@ -146,9 +161,10 @@ class ProjectConfigTest(absltest.TestCase):
 
   def test_get_project_bigquery_bindings(self):
     yaml_dict = yaml.load(TEST_PROJECT_YAML)
-    project = ProjectConfig(overall=yaml_dict['overall'],
-                            project=yaml_dict['projects'][0],
-                            audit_logs_project=None)
+    project = ProjectConfig(
+        project=yaml_dict['projects'][0],
+        audit_logs_project=None,
+        forseti=yaml_dict['forseti'])
 
     got_bindings = project.get_project_bigquery_bindings()
     default_bindings = [
@@ -181,9 +197,10 @@ class ProjectConfigTest(absltest.TestCase):
 
   def test_get_audit_logs_bigquery_bindings_local(self):
     yaml_dict = yaml.load(TEST_PROJECT_YAML)
-    project = ProjectConfig(overall=yaml_dict['overall'],
-                            project=yaml_dict['projects'][0],
-                            audit_logs_project=None)
+    project = ProjectConfig(
+        project=yaml_dict['projects'][0],
+        audit_logs_project=None,
+        forseti=yaml_dict['forseti'])
 
     got_bindings = project.get_audit_logs_bigquery_bindings()
     want_bindings = [
@@ -208,7 +225,6 @@ class ProjectConfigTest(absltest.TestCase):
 
   def test_get_audit_logs_bigquery_bindings_remote(self):
     yaml_dict = yaml.load(TEST_PROJECT_YAML)
-    overall = yaml_dict['overall']
     project_dict = yaml_dict['projects'][0]
     # Set remote audit logs instead of local audit logs.
     project_dict['audit_logs'] = {
@@ -220,8 +236,11 @@ class ProjectConfigTest(absltest.TestCase):
         'project_id': 'audit-logs',
         'owners_group': 'auditors-owners@domain.com',
     }
-    project = ProjectConfig(overall=overall, project=project_dict,
-                            audit_logs_project=audit_logs_project)
+    forseti = yaml_dict['forseti']
+    project = ProjectConfig(
+        project=project_dict,
+        audit_logs_project=audit_logs_project,
+        forseti=forseti)
 
     got_bindings = project.get_audit_logs_bigquery_bindings()
     want_bindings = [
@@ -247,10 +266,10 @@ class ProjectConfigTest(absltest.TestCase):
   def test_get_audit_log_sink_destination(self):
     # Local audit logs.
     yaml_dict = yaml.load(TEST_PROJECT_YAML)
-    overall = yaml_dict['overall']
     project_dict = yaml_dict['projects'][0]
-    project = ProjectConfig(overall=overall, project=project_dict,
-                            audit_logs_project=None)
+    forseti = yaml_dict['forseti']
+    project = ProjectConfig(
+        project=project_dict, audit_logs_project=None, forseti=forseti)
     self.assertEqual(
         'bigquery.googleapis.com/projects/sample-data/datasets/audit_logs',
         project.get_audit_log_sink_destination())
@@ -265,8 +284,10 @@ class ProjectConfigTest(absltest.TestCase):
         'project_id': 'audit-logs',
         'owners_group': 'auditors-owners@domain.com',
     }
-    project = ProjectConfig(overall=overall, project=project_dict,
-                            audit_logs_project=audit_logs_project)
+    project = ProjectConfig(
+        project=project_dict,
+        audit_logs_project=audit_logs_project,
+        forseti=forseti)
     self.assertEqual(
         'bigquery.googleapis.com/projects/audit-logs/datasets/some_data_logs',
         project.get_audit_log_sink_destination())
