@@ -15,7 +15,6 @@ from absl import logging
 
 FLAGS = flags.FLAGS
 
-DRY_RUN = True
 flags.DEFINE_bool('dry_run', True,
                   ('By default, no gcloud commands will be executed. '
                    'Use --nodry_run to execute commands.'))

@@ -30,7 +30,6 @@ from absl import app
 from absl import flags
 
 from deploy.utils import forseti
-from deploy.utils import runner
 
 FLAGS = flags.FLAGS
 
@@ -38,17 +37,10 @@ flags.DEFINE_string('project_id', None,
                     'GCP Project ID of the project to add access to.')
 flags.DEFINE_string('forseti_service_account', None,
                     'Forseti Service account to grant access to.')
-flags.DEFINE_bool('dry_run', True,
-                  ('By default, no gcloud commands will be executed. '
-                   'Use --nodry_run to execute commands.'))
-flags.DEFINE_string('gcloud_bin', 'gcloud',
-                    'Location of the gcloud binary. (default: gcloud)')
 
 
 def main(argv):
   del argv  # Unused.
-  runner.DRY_RUN = FLAGS.dry_run
-  runner.GCLOUD_BINARY = FLAGS.gcloud_bin
   forseti.grant_access(FLAGS.project_id, FLAGS.forseti_service_account)
 
 if __name__ == '__main__':

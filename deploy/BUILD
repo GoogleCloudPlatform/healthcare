@@ -42,7 +42,6 @@ py_binary(
     deps = [
         requirement("absl-py"),
         "//deploy/utils:forseti",
-        "//deploy/utils:runner",
     ],
 )
 
