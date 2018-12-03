@@ -31,7 +31,6 @@ py_test(
     deps = [
         requirement("absl-py"),
         ":create_project",
-        "//deploy/utils:runner",
     ],
 )
 

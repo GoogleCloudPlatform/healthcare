@@ -11,7 +11,11 @@ import shlex
 import shutil
 import tempfile
 
+from absl import flags
+
 from deploy.utils import runner
+
+FLAGS = flags.FLAGS
 
 _FORSETI_REPO = 'https://github.com/GoogleCloudPlatform/forseti-security.git'
 _DEFAULT_BRANCH = 'dev'
@@ -97,6 +101,9 @@ def get_server_bucket(forseti_project_id):
   # TODO: allow users to override gsutil binary, similar to gcloud
   output = runner.run_command(['gsutil', 'ls', '-p', forseti_project_id],
                               get_output=True)
+
+  if FLAGS.dry_run:
+    return '__DRY_RUN_FORSETI_BUCKET__'
 
   match = _FORSETI_SERVER_BUCKET_RE.search(output)
   if not match:

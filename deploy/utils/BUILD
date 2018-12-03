@@ -9,7 +9,10 @@ load("@deploy_deps//:requirements.bzl", "requirement")
 py_library(
     name = "forseti",
     srcs = ["forseti.py"],
-    deps = [":runner"],
+    deps = [
+        requirement("absl-py"),
+        ":runner",
+    ],
 )
 
 py_test(

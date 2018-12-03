@@ -14,30 +14,11 @@ from absl import flags
 from absl.testing import absltest
 
 from deploy import create_project
-from deploy.utils import runner
 
 FLAGS = flags.FLAGS
 
-orig_run_command = runner.run_command
-
-
-def fake_run_command(cmd, get_output=True):
-  """Return a custom output for the given cmd if the default is not suitable."""
-  if cmd[:2] == ['gsutil', 'ls']:
-    return 'gs://forseti-server-foo/'
-  elif cmd[:6] == [
-      'gcloud', 'compute', 'instances', 'list', '--format', 'value(name,id)'
-  ]:
-    return 'foo-instance 123'
-
-  return orig_run_command(cmd, get_output)
-
 
 class CreateProjectTest(absltest.TestCase):
-
-  def setUp(self):
-    super(CreateProjectTest, self).setUp()
-    runner.run_command = fake_run_command
 
   def test_create_project_datathon(self):
     _deploy('datathon_team_project.yaml')
