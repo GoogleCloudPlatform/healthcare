@@ -186,7 +186,7 @@ definitions:
         description: List of BigQuery (non-logs) datasets to create.
         items:
           type: object
-          additionalProperties: true
+          additionalProperties: false
           required:
           - name
           - location
@@ -232,7 +232,7 @@ definitions:
         description: List of GCS (non-logs) buckets to create.
         items:
           type: object
-          additionalProperties: true
+          additionalProperties: false
           required:
           - name_suffix
           - location
@@ -452,7 +452,7 @@ properties:
   overall:
     type: object
     description: Set of properties that apply to all projects.
-    additionalProperties: true
+    additionalProperties: false
     required:
     - billing_account
     properties:
@@ -477,6 +477,22 @@ properties:
           this is omitted, projects will not be created under an organization.
         pattern: ^[0-9]{8,25}$
 
+      domain:
+        type: string
+        description: |
+          Optional domain that users and groups should belong to. This is used
+          for monitoring.
+        minLength: 2
+
+      allowed_apis:
+        type: array
+        description: |
+          Optional list of APIs that are allowed to be enabled in any project.
+          This is used for monitoring.
+        items:
+          type: string
+          minLength: 2
+
   audit_logs_project:
     $ref: '#/definitions/gcp_project'
     description: |
@@ -487,7 +503,7 @@ properties:
   forseti:
     type: object
     description: The Forseti instance configuration.
-    additionalProperties: true
+    additionalProperties: false
     required:
     - project
     properties:
