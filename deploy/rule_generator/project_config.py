@@ -126,7 +126,7 @@ class ProjectConfig(object):
           that role at the project level.
     """
     bindings = collections.defaultdict(list)
-    bindings['roles/owner'] = self._owners
+    bindings['roles/owner'] = self._owners.copy()
     # Editors will be default service accounts and explicitly provided editors
     # groups (if any).
     editors = [
