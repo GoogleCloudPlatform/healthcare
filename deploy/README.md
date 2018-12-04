@@ -213,3 +213,9 @@ provided, and then creates a data hosting project for each project listed under
 *   Prompts the user to create a Stackdriver account (currently this must be
     done using the Stackdriver UI).
 *   Creates Stackdriver Alerts for IAM changes and unexpected GCS bucket access.
+*   If a `forseti` block is defined:
+    *   Runs the Forseti installer to deploy a Forseti instance (user may be
+        prompted during installation)
+    *   Grants permissions for each project to the Forseti service account so
+        they may be monitored.
+    *   Generates Forseti rules and writes them to the Forseti server bucket.
