@@ -170,53 +170,69 @@ rules:
         - group:project_2-bucket@custom.com
 """
 
+_PROJECTS = [
+    scanner_test_utils.create_test_project(
+        project_id='project_1',
+        project_num=123456,
+        extra_fields={
+            'additional_project_permissions': [{
+                'roles': ['roles/bigquery.dataViewer'],
+                'members': ['group:project_1_queriers@custom.com'],
+            }],
+            'data_buckets': [
+                {
+                    'name_suffix': '-data'
+                },
+                {
+                    'name_suffix': '-more-data'
+                },
+                {
+                    'name_suffix': '-euro-data'
+                },
+            ]
+        }),
+    scanner_test_utils.create_test_project(
+        project_id='project_2',
+        project_num=789012,
+        extra_fields={
+            'editors_groups': ['project_2_editors@domain.com'],
+            'data_readwrite_groups': ['project_2-readwrite@domain.com'],
+            'data_readonly_groups': [
+                'project_2-readonly@domain.com',
+                'project_2-bucket@custom.com',
+            ],
+            'data_buckets': [{
+                'name_suffix': '-data'
+            }],
+            'audit_logs': {
+                'logs_bigquery_dataset': {
+                    'name': 'project_2_logs',
+                    'location': 'US',
+                },
+            },
+        },
+        audit_logs_project={
+            'project_id': 'audit-logs',
+            'owners_group': 'audit-logs_owners@domain.com',
+        }),
+]
+
 
 class IamScannerRulesTest(absltest.TestCase):
 
   def test_generate_rules(self):
-    projects = [
-        scanner_test_utils.create_test_project(
-            project_id='project_1', project_num=123456,
-            extra_fields={
-                'additional_project_permissions': [{
-                    'roles': ['roles/bigquery.dataViewer'],
-                    'members': ['group:project_1_queriers@custom.com'],
-                }],
-                'data_buckets': [
-                    {'name_suffix': '-data'},
-                    {'name_suffix': '-more-data'},
-                    {'name_suffix': '-euro-data'},
-                ]
-            }
-        ),
-        scanner_test_utils.create_test_project(
-            project_id='project_2', project_num=789012,
-            extra_fields={
-                'editors_groups': ['project_2_editors@domain.com'],
-                'data_readwrite_groups': ['project_2-readwrite@domain.com'],
-                'data_readonly_groups': [
-                    'project_2-readonly@domain.com',
-                    'project_2-bucket@custom.com',
-                ],
-                'data_buckets': [{'name_suffix': '-data'}],
-                'audit_logs': {
-                    'logs_bigquery_dataset': {
-                        'name': 'project_2_logs',
-                        'location': 'US',
-                    },
-                },
-            },
-            audit_logs_project={
-                'project_id': 'audit-logs',
-                'owners_group': 'audit-logs_owners@domain.com',
-            }
-        ),
-    ]
-
-    got_rules = isr.IamScannerRules.generate_rules(
-        projects, scanner_test_utils.create_test_global_config())
+    got_rules = isr.IamScannerRules().generate_rules(
+        _PROJECTS, scanner_test_utils.create_test_global_config())
     want_rules = yaml.load(_EXPECTED_RULES_YAML)
     self.assertDictEqual(got_rules, want_rules)
+
+  def test_generate_rules_no_domain(self):
+    global_config = scanner_test_utils.create_test_global_config()
+    global_config.pop('domain')
+    got_rules = isr.IamScannerRules().generate_rules(_PROJECTS, global_config)
+    want_rules = yaml.load(_EXPECTED_RULES_YAML)
+    want_rules['rules'] = want_rules['rules'][3:]  # trim global rules
+    self.assertEqual(got_rules, want_rules)
 
 
 if __name__ == '__main__':

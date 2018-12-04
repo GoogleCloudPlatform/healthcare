@@ -16,10 +16,9 @@ rules:
   - name: 'Require a BigQuery Log sink in all projects.'
     mode: required
     resource:
-      - type: organization
-        applies_to: children
-        resource_ids:
-          - '246801357924'
+      - type: {global_resource_type}
+        applies_to: {global_resource_applies_to}
+        resource_ids: {global_resource_ids}
     sink:
       destination: 'bigquery.googleapis.com/*'
       filter: '*'
@@ -27,10 +26,9 @@ rules:
   - name: 'Only allow BigQuery Log sinks in all projects.'
     mode: whitelist
     resource:
-      - type: organization
-        applies_to: children
-        resource_ids:
-          - '246801357924'
+      - type: {global_resource_type}
+        applies_to: {global_resource_applies_to}
+        resource_ids: {global_resource_ids}
     sink:
       destination: 'bigquery.googleapis.com/*'
       filter: '*'
@@ -85,33 +83,64 @@ rules:
       include_children: '*'
 """
 
+_PROJECTS = [
+    scanner_test_utils.create_test_project(
+        project_id='project-1', project_num=123456),
+    scanner_test_utils.create_test_project(
+        project_id='project-2',
+        project_num=789012,
+        extra_fields={
+            'audit_logs': {
+                'logs_bigquery_dataset': {
+                    'name': 'project_2_logs',
+                    'location': 'US',
+                },
+            },
+        },
+        audit_logs_project={
+            'project_id': 'audit-logs',
+            'owners_group': 'audit-logs_owners@domain.com',
+        })
+]
+
 
 class LogSinkScannerRulesTest(absltest.TestCase):
 
   def test_generate_rules(self):
-    projects = [
-        scanner_test_utils.create_test_project(
-            project_id='project-1', project_num=123456),
-        scanner_test_utils.create_test_project(
-            project_id='project-2', project_num=789012,
-            extra_fields={
-                'audit_logs': {
-                    'logs_bigquery_dataset': {
-                        'name': 'project_2_logs',
-                        'location': 'US',
-                    },
-                },
-            },
-            audit_logs_project={
-                'project_id': 'audit-logs',
-                'owners_group': 'audit-logs_owners@domain.com',
-            }
-        )
-    ]
-
     got_rules = lssr.LogSinkScannerRules().generate_rules(
-        projects, scanner_test_utils.create_test_global_config())
-    want_rules = yaml.load(_EXPECTED_RULES_YAML)
+        _PROJECTS, scanner_test_utils.create_test_global_config())
+    want_rules = yaml.load(
+        _EXPECTED_RULES_YAML.format(
+            global_resource_type='organization',
+            global_resource_applies_to='children',
+            global_resource_ids=['246801357924']))
+    self.assertEqual(got_rules, want_rules)
+
+  def test_generate_rules_no_org_id(self):
+    global_config = scanner_test_utils.create_test_global_config()
+    global_config.pop('organization_id')
+    got_rules = lssr.LogSinkScannerRules().generate_rules(
+        _PROJECTS, global_config)
+    want_rules = yaml.load(
+        _EXPECTED_RULES_YAML.format(
+            global_resource_type='folder',
+            global_resource_applies_to='children',
+            global_resource_ids=['357801357924'],
+        ))
+    self.assertEqual(got_rules, want_rules)
+
+  def test_generate_rules_no_org_and_folder_id(self):
+    global_config = scanner_test_utils.create_test_global_config()
+    global_config.pop('organization_id')
+    global_config.pop('folder_id')
+    got_rules = lssr.LogSinkScannerRules().generate_rules(
+        _PROJECTS, global_config)
+    want_rules = yaml.load(
+        _EXPECTED_RULES_YAML.format(
+            global_resource_type='project',
+            global_resource_applies_to='self',
+            global_resource_ids=['project-1', 'project-2'],
+        ))
     self.assertEqual(got_rules, want_rules)
 
 

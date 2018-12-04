@@ -11,6 +11,7 @@ from deploy.rule_generator import project_config
 _OVERALL_DICT = {
     'domain': 'domain.com',
     'organization_id': '246801357924',
+    'folder_id': '357801357924',
     'billing_account': '012345-6789AB-CDEF01',
     'allowed_apis': ['compute.googleapis.com', 'storage.googleapis.com'],
 }
@@ -73,7 +74,7 @@ projects:
 
 def create_test_global_config():
   """Creates a global config dictionary for tests."""
-  return _OVERALL_DICT
+  return _OVERALL_DICT.copy()
 
 
 def create_test_project(project_id, project_num, extra_fields=None,

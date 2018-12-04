@@ -33,11 +33,10 @@ class IamScannerRules(base_scanner_rules.BaseScannerRules):
   def config_file_name(self):
     return 'iam_rules.yaml'
 
-  @classmethod
-  def generate_rules(cls, project_configs, global_config):
+  def generate_rules(self, project_configs, global_config):
     """Generates rule dictionaries from the given configs.
 
-    Overrides BaseScannerRules.GenerateRulesFromProjects.
+    Overrides BaseScannerRules.generate_rules.
 
     Args:
       project_configs (List[ProjectConfig]): project configs to build rules
@@ -46,34 +45,9 @@ class IamScannerRules(base_scanner_rules.BaseScannerRules):
 
     Returns:
       List[dict]: Rule dictionaries. Each item in the list is one rule. There
-        will be global rules applicable to all projects (including those not)
-        specified in the project configs as well as one rule for each project
-        in the project configs.
-
-    Raises:
-      ValueError: If the configs are malformed.
+        will be global rules applicable to all projects if there is a domain set
+        as well as one rule for each project in the project configs.
     """
-    domain = global_config.get('domain')
-    if not domain:
-      raise ValueError('domain not set in global config')
-
-    rules = [
-        {
-            'name': 'All projects must have an owner group from the domain',
-            'mode': 'required',
-            'resource': [{
-                'type': 'project',
-                'applies_to': 'self',
-                'resource_ids': ['*'],
-            }],
-            'inherit_from_parents': True,
-            'bindings': [{
-                'role': 'roles/owner',
-                'members': ['group:*@' + domain],
-            }],
-        },
-    ]
-
     project_rules = []
 
     project_bindings = []
@@ -81,23 +55,46 @@ class IamScannerRules(base_scanner_rules.BaseScannerRules):
 
     for project in project_configs:
       # Append project-specific rules.
-      project_rules.extend(cls._get_project_rules(project, global_config))
+      project_rules.extend(self._get_project_iam_rules(project))
 
       project_bindings.append(project.get_project_bindings())
       bucket_bindings.extend(
           bindings for _, bindings in project.get_bucket_bindings())
 
-    rules.append(_get_global_whitelist_rule(
-        'project', _ALLOWED_PROJECT_MEMBER_FMTS, project_bindings, domain))
-    rules.append(_get_global_whitelist_rule(
-        'bucket', _ALLOWED_BUCKET_MEMBER_FMTS, bucket_bindings, domain))
+    domain = global_config.get('domain')
+    if not domain:
+      return {'rules': project_rules}  # No global rules if domain is not set.
 
-    rules.extend(project_rules)
-    return {'rules': rules}
+    global_rules = [
+        {
+            'name':
+                'All projects must have an owner group from the domain',
+            'mode':
+                'required',
+            'resource': [{
+                'type': 'project',
+                'applies_to': 'self',
+                'resource_ids': ['*'],
+            }],
+            'inherit_from_parents':
+                True,
+            'bindings': [{
+                'role': 'roles/owner',
+                'members': ['group:*@' + domain],
+            }],
+        },
+    ]
 
-  @classmethod
-  def _get_project_rules(cls, project, global_config):
-    del global_config  # Unusued.
+    global_rules.append(
+        _get_global_whitelist_rule('project', _ALLOWED_PROJECT_MEMBER_FMTS,
+                                   project_bindings, domain))
+    global_rules.append(
+        _get_global_whitelist_rule('bucket', _ALLOWED_BUCKET_MEMBER_FMTS,
+                                   bucket_bindings, domain))
+
+    return {'rules': global_rules + project_rules}
+
+  def _get_project_iam_rules(self, project):
     # Generate a narrower whitelist for each project and bucket. These rules
     # could also be duplicated as an additional 'required' rule to enforce an
     # exact match.

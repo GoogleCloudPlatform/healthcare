@@ -30,7 +30,8 @@ class EnabledApisScannerRules(base_scanner_rules.BaseScannerRules):
   def config_file_name(self):
     return 'enabled_apis_rules.yaml'
 
-  def _get_global_rules(self, global_config):
+  def _get_global_rules(self, global_config, project_configs):
+    del project_configs  # Unused.
     apis = global_config.get('allowed_apis', [])
     if not apis:
       return []
@@ -44,4 +45,3 @@ class EnabledApisScannerRules(base_scanner_rules.BaseScannerRules):
     return [_create_whitelist_rule(
         'API whitelist for {}'.format(project.project_id), project.project_id,
         project.enabled_apis)]
-

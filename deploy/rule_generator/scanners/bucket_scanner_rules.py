@@ -16,9 +16,9 @@ class BucketScannerRules(base_scanner_rules.BaseScannerRules):
   def config_file_name(self):
     return 'bucket_rules.yaml'
 
-  def _get_global_rules(self, global_config):
+  def _get_global_rules(self, global_config, project_configs):
+    del global_config, project_configs  # Unused.
     # The bucket scanner only requires a single, global rule.
-    org_id = global_config['organization_id']
     return [{
         'name': 'Disallow all acl rules, only allow IAM.',
         'bucket': '*',
@@ -27,6 +27,6 @@ class BucketScannerRules(base_scanner_rules.BaseScannerRules):
         'domain': '*',
         'role': '*',
         'resource': [{
-            'resource_ids': [org_id],
+            'resource_ids': ['*'],
         }]
     }]

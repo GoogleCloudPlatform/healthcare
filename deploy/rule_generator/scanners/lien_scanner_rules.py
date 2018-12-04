@@ -16,13 +16,10 @@ class LienScannerRules(base_scanner_rules.BaseScannerRules):
   def config_file_name(self):
     return 'lien_rules.yaml'
 
-  def _get_global_rules(self, global_config):
+  def _get_global_rules(self, global_config, project_configs):
     return [{
         'name': 'Require project deletion liens for all projects.',
         'mode': 'required',
-        'resource': [{
-            'type': 'organization',
-            'resource_ids': [global_config['organization_id']],
-        }],
+        'resource': self._get_resources(global_config, project_configs),
         'restrictions': ['resourcemanager.projects.delete'],
     }]

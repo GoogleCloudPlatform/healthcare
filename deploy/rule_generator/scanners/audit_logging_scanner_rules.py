@@ -31,7 +31,7 @@ class AuditLoggingScannerRules(base_scanner_rules.BaseScannerRules):
   def config_file_name(self):
     return 'audit_logging_rules.yaml'
 
-  def _get_global_rules(self, global_config):
-    del global_config  # Unused.
+  def _get_global_rules(self, global_config, project_configs):
+    del global_config, project_configs  # Unused.
     # The Audit Logging scanner only requires a single, global rule.
     return [_GLOBAL_AUDIT_LOGS_RULE]

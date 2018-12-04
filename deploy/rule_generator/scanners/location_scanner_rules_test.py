@@ -16,9 +16,8 @@ rules:
   - name: Global location whitelist.
     mode: whitelist
     resource:
-      - type: organization
-        resource_ids:
-          - '246801357924'
+      - type: {global_resource_type}
+        resource_ids: {global_resource_ids}
     applies_to:
       - type: '*'
         resource_ids:
@@ -106,11 +105,14 @@ class LocationScannerRulesTest(absltest.TestCase):
     ]
     got_rules = location_scanner_rules.LocationScannerRules().generate_rules(
         projects, scanner_test_utils.create_test_global_config())
-    want_rules = yaml.load(_EXPECTED_RULES_YAML.format(
-        audit_logs_project_id='project-1',
-        audit_logs_bucket_id='project-1-logs',
-        audit_logs_dataset_id='project-1:audit_logs',
-    ))
+    want_rules = yaml.load(
+        _EXPECTED_RULES_YAML.format(
+            global_resource_type='organization',
+            global_resource_ids=['246801357924'],
+            audit_logs_project_id='project-1',
+            audit_logs_bucket_id='project-1-logs',
+            audit_logs_dataset_id='project-1:audit_logs',
+        ))
     self.assertEqual(got_rules, want_rules)
 
   def test_generate_rules_local_remote_logs(self):
@@ -142,11 +144,69 @@ class LocationScannerRulesTest(absltest.TestCase):
 
     got_rules = location_scanner_rules.LocationScannerRules().generate_rules(
         projects, scanner_test_utils.create_test_global_config())
-    want_rules = yaml.load(_EXPECTED_RULES_YAML.format(
-        audit_logs_project_id='project-1-audit',
-        audit_logs_bucket_id='project-1-remote-logs',
-        audit_logs_dataset_id='project-1-audit:project-1-remote-dataset',
-    ))
+    want_rules = yaml.load(
+        _EXPECTED_RULES_YAML.format(
+            global_resource_type='organization',
+            global_resource_ids=['246801357924'],
+            audit_logs_project_id='project-1-audit',
+            audit_logs_bucket_id='project-1-remote-logs',
+            audit_logs_dataset_id='project-1-audit:project-1-remote-dataset',
+        ))
+    self.assertEqual(got_rules, want_rules)
+
+  def test_generate_rules_no_org_id(self):
+    projects = [
+        scanner_test_utils.create_test_project(
+            project_id='project-1',
+            project_num=123456,
+            extra_fields={
+                'bigquery_datasets': [{
+                    'name': 'dataset',
+                    'location': 'US',
+                }],
+            },
+        ),
+    ]
+    global_config = scanner_test_utils.create_test_global_config()
+    global_config.pop('organization_id')
+    got_rules = location_scanner_rules.LocationScannerRules().generate_rules(
+        projects, global_config)
+    want_rules = yaml.load(
+        _EXPECTED_RULES_YAML.format(
+            global_resource_type='folder',
+            global_resource_ids=['357801357924'],
+            audit_logs_project_id='project-1',
+            audit_logs_bucket_id='project-1-logs',
+            audit_logs_dataset_id='project-1:audit_logs',
+        ))
+    self.assertEqual(got_rules, want_rules)
+
+  def test_generate_rules_no_org_and_folder_id(self):
+    projects = [
+        scanner_test_utils.create_test_project(
+            project_id='project-1',
+            project_num=123456,
+            extra_fields={
+                'bigquery_datasets': [{
+                    'name': 'dataset',
+                    'location': 'US',
+                }],
+            },
+        ),
+    ]
+    global_config = scanner_test_utils.create_test_global_config()
+    global_config.pop('organization_id')
+    global_config.pop('folder_id')
+    got_rules = location_scanner_rules.LocationScannerRules().generate_rules(
+        projects, global_config)
+    want_rules = yaml.load(
+        _EXPECTED_RULES_YAML.format(
+            global_resource_type='project',
+            global_resource_ids=['project-1'],
+            audit_logs_project_id='project-1',
+            audit_logs_bucket_id='project-1-logs',
+            audit_logs_dataset_id='project-1:audit_logs',
+        ))
     self.assertEqual(got_rules, want_rules)
 
 

@@ -18,17 +18,15 @@ from deploy.rule_generator.scanners import base_scanner_rules
 _SINK_RULE_FILTER = '*'
 
 
-def _make_rule(name, mode, resource_type, applies_to, resource_ids,
-               destination):
+def _make_rule(name, mode, resources, destination):
   """Helper function to build a rule dictionary."""
+  for resource in resources:
+    resource['applies_to'] = ('self'
+                              if resource['type'] == 'project' else 'children')
   return {
       'name': name,
       'mode': mode,
-      'resource': [{
-          'type': resource_type,
-          'applies_to': applies_to,
-          'resource_ids': resource_ids,
-      }],
+      'resource': resources,
       'sink': {
           'destination': destination,
           'filter': _SINK_RULE_FILTER,
@@ -43,21 +41,21 @@ class LogSinkScannerRules(base_scanner_rules.BaseScannerRules):
   def config_file_name(self):
     return 'log_sink_rules.yaml'
 
-  def _get_global_rules(self, global_config):
-    resource_ids = [global_config['organization_id']]
-    resource_type = 'organization'
-    applies_to = 'children'
+  def _get_global_rules(self, global_config, project_configs):
+    resources = self._get_resources(global_config, project_configs)
     destination = 'bigquery.googleapis.com/*'
     # The two rules differ only in name and mode.
     return [
-        _make_rule(name='Require a BigQuery Log sink in all projects.',
-                   mode='required', resource_type=resource_type,
-                   applies_to=applies_to, resource_ids=resource_ids,
-                   destination=destination),
-        _make_rule(name='Only allow BigQuery Log sinks in all projects.',
-                   mode='whitelist', resource_type=resource_type,
-                   applies_to=applies_to, resource_ids=resource_ids,
-                   destination=destination),
+        _make_rule(
+            name='Require a BigQuery Log sink in all projects.',
+            mode='required',
+            resources=resources,
+            destination=destination),
+        _make_rule(
+            name='Only allow BigQuery Log sinks in all projects.',
+            mode='whitelist',
+            resources=resources,
+            destination=destination),
     ]
 
   def _get_project_rules(self, project, global_config):
@@ -66,16 +64,17 @@ class LogSinkScannerRules(base_scanner_rules.BaseScannerRules):
     # log sink destination.
     project_id = project.project_id
     destination = project.get_audit_log_sink_destination()
-    resource_ids = [project_id]
-    resource_type = 'project'
-    applies_to = 'self'
+    resources = [{'type': 'project', 'resource_ids': [project_id]}]
+
     return [
-        _make_rule(name='Require Log sink for project {}.'.format(project_id),
-                   mode='required', resource_type=resource_type,
-                   applies_to=applies_to, resource_ids=resource_ids,
-                   destination=destination),
-        _make_rule(name='Whitelist Log sink for project {}.'.format(project_id),
-                   mode='whitelist', resource_type=resource_type,
-                   applies_to=applies_to, resource_ids=resource_ids,
-                   destination=destination),
+        _make_rule(
+            name='Require Log sink for project {}.'.format(project_id),
+            mode='required',
+            resources=resources,
+            destination=destination),
+        _make_rule(
+            name='Whitelist Log sink for project {}.'.format(project_id),
+            mode='whitelist',
+            resources=resources,
+            destination=destination),
     ]

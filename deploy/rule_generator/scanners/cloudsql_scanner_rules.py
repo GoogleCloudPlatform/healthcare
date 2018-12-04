@@ -16,18 +16,14 @@ class CloudSqlScannerRules(base_scanner_rules.BaseScannerRules):
   def config_file_name(self):
     return 'cloudsql_rules.yaml'
 
-  def _get_global_rules(self, global_config):
-    org_id = global_config['organization_id']
+  def _get_global_rules(self, global_config, project_configs):
     rules = []
     for ssl_enabled in [False, True]:
       name = 'Disallow publicly exposed cloudsql instances (SSL {}).'.format(
           'enabled' if ssl_enabled else 'disabled')
       rules.append({
           'name': name,
-          'resource': [{
-              'type': 'organization',
-              'resource_ids': [org_id],
-          }],
+          'resource': self._get_resources(global_config, project_configs),
           'instance_name': '*',
           'authorized_networks': '0.0.0.0/0',
           'ssl_enabled': str(ssl_enabled),

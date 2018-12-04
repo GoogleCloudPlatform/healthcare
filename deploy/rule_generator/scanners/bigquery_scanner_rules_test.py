@@ -15,9 +15,8 @@ EXPECTED_GLOBAL_RULES_YAML = """
   - name: No public, domain or special group dataset access.
     mode: blacklist
     resource:
-      - type: organization
-        resource_ids:
-          - '246801357924'
+      - type: {global_resource_type}
+        resource_ids: {global_resource_ids}
     dataset_ids:
       - '*'
     bindings:
@@ -91,7 +90,10 @@ class BigQueryScannerRulesTest(absltest.TestCase):
     projects = []
     got_rules = bq_rules.BigQueryScannerRules().generate_rules(
         projects, scanner_test_utils.create_test_global_config())
-    want_rules = yaml.load('rules:\n{}'.format(EXPECTED_GLOBAL_RULES_YAML))
+    want_rules = yaml.load('rules:\n{}'.format(
+        EXPECTED_GLOBAL_RULES_YAML.format(
+            global_resource_type='organization',
+            global_resource_ids=['246801357924'])))
     self.assertEqual(got_rules, want_rules)
 
   def test_generate_rules_project_with_local_audit_logs(self):
@@ -101,8 +103,9 @@ class BigQueryScannerRulesTest(absltest.TestCase):
         projects, scanner_test_utils.create_test_global_config())
 
     want_rules = yaml.load('rules:\n{}\n{}\n{}'.format(
-        EXPECTED_GLOBAL_RULES_YAML,
-        EXPECTED_PROJECT_RULES_YAML,
+        EXPECTED_GLOBAL_RULES_YAML.format(
+            global_resource_type='organization',
+            global_resource_ids=['246801357924']), EXPECTED_PROJECT_RULES_YAML,
         EXPECTED_LOCAL_AUDIT_PROJECT_YAML))
 
     self.assertEqual(got_rules, want_rules)
@@ -153,8 +156,9 @@ class BigQueryScannerRulesTest(absltest.TestCase):
         projects, scanner_test_utils.create_test_global_config())
 
     want_rules = yaml.load('rules:\n{}\n{}\n{}'.format(
-        EXPECTED_GLOBAL_RULES_YAML,
-        EXPECTED_PROJECT_RULES_YAML,
+        EXPECTED_GLOBAL_RULES_YAML.format(
+            global_resource_type='organization',
+            global_resource_ids=['246801357924']), EXPECTED_PROJECT_RULES_YAML,
         expected_audit_project_yaml))
 
     self.assertEqual(got_rules, want_rules)
@@ -214,12 +218,51 @@ class BigQueryScannerRulesTest(absltest.TestCase):
         projects, scanner_test_utils.create_test_global_config())
 
     want_rules = yaml.load('rules:\n{}\n{}\n{}\n{}'.format(
-        EXPECTED_GLOBAL_RULES_YAML,
-        EXPECTED_PROJECT_RULES_YAML,
-        extra_permissions_rule_yaml,
+        EXPECTED_GLOBAL_RULES_YAML.format(
+            global_resource_type='organization',
+            global_resource_ids=['246801357924']), EXPECTED_PROJECT_RULES_YAML,
+        extra_permissions_rule_yaml, EXPECTED_LOCAL_AUDIT_PROJECT_YAML))
+
+    self.assertEqual(got_rules, want_rules)
+
+  def test_generate_rules_no_org_id(self):
+    global_config = scanner_test_utils.create_test_global_config()
+    global_config.pop('organization_id')
+    projects = [
+        scanner_test_utils.create_test_project(
+            project_id='project_1',
+            project_num=123456,
+            extra_fields=TEST_DATASETS)
+    ]
+    got_rules = bq_rules.BigQueryScannerRules().generate_rules(
+        projects, global_config)
+    want_rules = yaml.load('rules:\n{}\n{}\n{}'.format(
+        EXPECTED_GLOBAL_RULES_YAML.format(
+            global_resource_type='folder',
+            global_resource_ids=['357801357924']), EXPECTED_PROJECT_RULES_YAML,
         EXPECTED_LOCAL_AUDIT_PROJECT_YAML))
 
     self.assertEqual(got_rules, want_rules)
+
+  def test_generate_rules_no_org_and_folder_id(self):
+    global_config = scanner_test_utils.create_test_global_config()
+    global_config.pop('organization_id')
+    global_config.pop('folder_id')
+    projects = [
+        scanner_test_utils.create_test_project(
+            project_id='project_1',
+            project_num=123456,
+            extra_fields=TEST_DATASETS)
+    ]
+    got_rules = bq_rules.BigQueryScannerRules().generate_rules(
+        projects, global_config)
+    want_rules = yaml.load('rules:\n{}\n{}\n{}'.format(
+        EXPECTED_GLOBAL_RULES_YAML.format(
+            global_resource_type='project', global_resource_ids=['project_1']),
+        EXPECTED_PROJECT_RULES_YAML, EXPECTED_LOCAL_AUDIT_PROJECT_YAML))
+
+    self.assertEqual(got_rules, want_rules)
+
 
 if __name__ == '__main__':
   absltest.main()

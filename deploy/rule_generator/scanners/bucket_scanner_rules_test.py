@@ -21,7 +21,7 @@ rules:
     role: '*'
     resource:
         - resource_ids:
-          - '246801357924'
+          - '*'
 """
 
 

@@ -124,19 +124,13 @@ class LocationScannerRules(base_scanner_rules.BaseScannerRules):
         })
 
     global_rule = {
-        'name':
-            'Global location whitelist.',
-        'mode':
-            'whitelist',
-        'resource': [{
-            'type': 'organization',
-            'resource_ids': [global_config['organization_id']],
-        }],
+        'name': 'Global location whitelist.',
+        'mode': 'whitelist',
+        'resource': self._get_resources(global_config, project_configs),
         'applies_to': [{
             'type': '*',
             'resource_ids': ['*'],
         }],
-        'locations':
-            sorted(list(all_locs)),
+        'locations': sorted(list(all_locs)),
     }
     return {'rules': [global_rule] + project_rules}

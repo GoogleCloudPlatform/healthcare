@@ -16,21 +16,25 @@ class BigQueryScannerRules(base_scanner_rules.BaseScannerRules):
   def config_file_name(self):
     return 'bigquery_rules.yaml'
 
-  def _get_global_rules(self, global_config):
+  def _get_global_rules(self, global_config, project_configs):
     """Overrides base_scanner_rules.BaseScannerRules._get_global_rules."""
     return [{
-        'name': 'No public, domain or special group dataset access.',
-        'mode': 'blacklist',
-        'resource': [{
-            'type': 'organization',
-            'resource_ids': [global_config['organization_id']],
-        }],
+        'name':
+            'No public, domain or special group dataset access.',
+        'mode':
+            'blacklist',
+        'resource':
+            self._get_resources(global_config, project_configs),
         'dataset_ids': ['*'],
         'bindings': [{
             'role': '*',
             'members': [
-                {'domain': '*'},
-                {'special_group': '*'},
+                {
+                    'domain': '*'
+                },
+                {
+                    'special_group': '*'
+                },
             ],
         }],
     }]
