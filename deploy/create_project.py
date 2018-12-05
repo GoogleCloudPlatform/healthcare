@@ -151,10 +151,14 @@ def deploy_gcs_audit_logs(config):
 
   deployment_name = 'audit-logs-{}-gcs'.format(
       data_project_id.replace('_', '-'))
+  path = os.path.join(
+      os.path.dirname(__file__), 'templates/remote_audit_logs.py')
   dm_template_dict = {
-      'imports': [{'path': 'remote_audit_logs.py'}],
+      'imports': [{
+          'path': path
+      }],
       'resources': [{
-          'type': 'remote_audit_logs.py',
+          'type': path,
           'name': deployment_name,
           'properties': {
               'owners_group': logs_project['owners_group'],
