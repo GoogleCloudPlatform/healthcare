@@ -133,6 +133,24 @@ def enable_deployment_manager(config):
                             project_id=None)
 
 
+def enable_services_apis(config):
+  """Enables services for this project.
+
+  Use this function instead of enabling private APIs in deployment manager
+  because deployment-management does not have all the APIs' access, which might
+  triger PERMISSION_DENIED errors.
+
+  Args:
+    config (ProjectConfig): The config of a single project to setup.
+  """
+  logging.info('Enabling APIs...')
+  project_id = config.project['project_id']
+  apis = config.project.get('enabled_apis', [])
+  for i in range(0, len(apis), 10):
+    runner.run_gcloud_command(
+        ['services', 'enable'] + apis[i:i + 10], project_id=project_id)
+
+
 def deploy_gcs_audit_logs(config):
   """Deploys the GCS logs bucket to the remote audit logs project, if used."""
   # The GCS logs bucket must be created before the data buckets.
@@ -464,6 +482,7 @@ _SETUP_STEPS = [
     deploy_bigquery_audit_logs,
     create_compute_images,
     create_compute_vms,
+    enable_services_apis,
     create_stackdriver_account,
     create_alerts,
 ]
@@ -513,6 +532,28 @@ def add_generated_fields(project):
     gce_instance_info = utils.get_gce_instance_info(project_id)
     if gce_instance_info:
       project['generated_fields']['gce_instance_info'] = gce_instance_info
+
+
+def validate_project_configs(overall, projects):
+  """Check if the configurations of projects are valid.
+
+  Args:
+    overall (dict): The overall configuration of all projects.
+    projects (list): A list of dictionaries of projects.
+  """
+  if 'allowed_apis' not in overall:
+    return
+
+  allowed_apis = set(overall['allowed_apis'])
+  missing_allowed_apis = collections.defaultdict(list)
+  for project in projects:
+    for api in project.project.get('enabled_apis', []):
+      if api not in allowed_apis:
+        missing_allowed_apis[api].append(project.project['project_id'])
+  if missing_allowed_apis:
+    raise utils.InvalidConfigError(
+        ('Projects try to enable the following APIs '
+         'that are not in the allowed_apis list:\n%s' % missing_allowed_apis))
 
 
 def main(argv):
@@ -565,6 +606,8 @@ def main(argv):
     projects.append(ProjectConfig(overall=overall,
                                   project=project_config,
                                   audit_logs_project=audit_logs_project))
+
+  validate_project_configs(overall, projects)
 
   # If resuming setup from a particular project, skip to that project.
   if FLAGS.resume_from_project:

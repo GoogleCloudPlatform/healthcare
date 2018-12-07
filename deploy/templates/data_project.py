@@ -533,29 +533,4 @@ def generate_config(context):
       },
   }])
 
-  # Enable additional APIs. Enabling APIs can create service accounts, so make
-  # sure these are done after the previous IAM changes.
-  for api in context.properties.get('enabled_apis', []):
-    if api in ['deploymentmanager.googleapis.com',
-               'cloudresourcemanager.googleapis.com',
-               'servicemanagement.googleapis.com']:
-      # Skip enabling deployment manager and dependent services. They will be
-      # enabled already when running deployment manager, and putting them
-      # into a deployment will cause issues when removing or rolling back the
-      # deployment.
-      continue
-    resources.append({
-        'name': 'enable-' + api.split('.')[0],
-        'action': ('gcp-types/servicemanagement-v1:'
-                   'servicemanagement.services.enable'),
-        'properties': {
-            'consumerId': 'project:' + project_id,
-            'serviceName': api,
-        },
-        'metadata': {
-            'dependsOn': ['audit-configs-patch-iam-policy'],
-        },
-    })
-
   return {'resources': resources}
-

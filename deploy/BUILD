@@ -30,7 +30,9 @@ py_test(
     default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
+        requirement("pyyaml"),
         ":create_project",
+        "//deploy/utils",
     ],
 )
 

@@ -611,28 +611,6 @@ class TestDataProject(absltest.TestCase):
             'metadata': {
                 'dependsOn': ['audit-configs-get-iam-etag'],
             },
-        }, {
-            'name': 'enable-cloudbuild',
-            'action': ('gcp-types/servicemanagement-v1:'
-                       'servicemanagement.services.enable'),
-            'properties': {
-                'consumerId': 'project:my-project',
-                'serviceName': 'cloudbuild.googleapis.com'
-            },
-            'metadata': {
-                'dependsOn': ['audit-configs-patch-iam-policy'],
-            },
-        }, {
-            'name': 'enable-containerregistry',
-            'action': ('gcp-types/servicemanagement-v1:'
-                       'servicemanagement.services.enable'),
-            'properties': {
-                'consumerId': 'project:my-project',
-                'serviceName': 'containerregistry.googleapis.com'
-            },
-            'metadata': {
-                'dependsOn': ['audit-configs-patch-iam-policy'],
-            },
         }]
     }
 

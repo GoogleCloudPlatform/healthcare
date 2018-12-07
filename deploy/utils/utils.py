@@ -288,3 +288,8 @@ def resolve_env_vars(config):
     return [resolve_env_vars(i) for i in config]
   else:
     return config
+
+
+class InvalidConfigError(Exception):
+  """The exception when the config file is invalid."""
+  pass

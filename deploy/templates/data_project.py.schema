@@ -204,8 +204,3 @@ properties:
       ack_deadline_sec:
         type: integer
         description: Ack deadline for the pubsub subscription.
-  enabled_apis:
-    type: array
-    description: List of APIs to enable in the new project.
-    items:
-      type: string
