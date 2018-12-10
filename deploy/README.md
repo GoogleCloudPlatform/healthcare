@@ -45,6 +45,14 @@ already available.
 
 -   [Pip](https://pip.pypa.io/en/stable/installing/)
 
+### Python Dependencies
+
+Install Python dependencies with the following command:
+
+```shell
+$ pip install -r requirements.txt
+```
+
 ### Create Groups
 
 Before using the setup scripts, you will need to create the following groups for
