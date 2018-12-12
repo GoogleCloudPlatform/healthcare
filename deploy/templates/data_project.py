@@ -27,6 +27,9 @@ _IAM_TO_BIGQUERY_MEMBER = {
 }
 
 
+DEFAULT_CUSTOM_ROLE_STAGE = 'GA'
+
+
 def _get_bigquery_access_for_role(role_name, members):
   """Converts role and IAM style members to BigQuery style ACL."""
 
@@ -59,6 +62,28 @@ def generate_config(context):
   has_organization = context.properties['has_organization']
 
   resources = []
+
+  # Custom roles
+  custom_roles = context.properties.get('custom_roles', [])
+  for role in custom_roles:
+    name = role['name']
+    permissions = role['permissions']
+    description = role.get('description', name)
+    title = role.get('title', name)
+    resources.append({
+        'name': name,
+        'type': 'gcp-types/iam-v1:projects.roles',
+        'properties': {
+            'parent': 'projects/' + project_id,
+            'roleId': name,
+            'role': {
+                'title': title,
+                'description': description,
+                'stage': DEFAULT_CUSTOM_ROLE_STAGE,
+                'includedPermissions': permissions,
+            }
+        }
+    })
 
   # Set project-level IAM roles. Adding owners and auditors roles, and removing
   # the single-owner. Non-organization projects cannot have a owner group, so

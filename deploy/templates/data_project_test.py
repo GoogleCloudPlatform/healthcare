@@ -51,6 +51,21 @@ class TestDataProject(absltest.TestCase):
               'some-r-group@googlegroups.com',
               'another-r-group@googlegroups.com',
           ],
+          'custom_roles': [
+              {
+                  'name': 'bucketLister',
+                  'permissions': ['storage.buckets.list'],
+                  'title': 'The title of bucketLister',
+                  'description': 'The description of bucketLister'
+              },
+              {
+                  'name':
+                      'dataflow_runner',
+                  'permissions': [
+                      'bigquery.datasets.create', 'bigquery.jobs.create'
+                  ],
+              },
+          ],
           'local_audit_logs': {
               'logs_gcs_bucket': {
                   'location': 'US',
@@ -139,6 +154,39 @@ class TestDataProject(absltest.TestCase):
 
     expected = {
         'resources': [
+            {
+                'name': 'bucketLister',
+                'type': 'gcp-types/iam-v1:projects.roles',
+                'properties': {
+                    'parent': 'projects/my-project',
+                    'roleId': 'bucketLister',
+                    'role': {
+                        'title': 'The title of bucketLister',
+                        'description': 'The description of bucketLister',
+                        'stage': 'GA',
+                        'includedPermissions': ['storage.buckets.list'],
+                    },
+                },
+            },
+            {
+                'name': 'dataflow_runner',
+                'type': 'gcp-types/iam-v1:projects.roles',
+                'properties': {
+                    'parent': 'projects/my-project',
+                    'roleId': 'dataflow_runner',
+                    'role': {
+                        'title':
+                            'dataflow_runner',
+                        'description':
+                            'dataflow_runner',
+                        'stage':
+                            'GA',
+                        'includedPermissions': [
+                            'bigquery.datasets.create', 'bigquery.jobs.create'
+                        ],
+                    },
+                }
+            },
             {
                 'name': 'set-project-bindings-get-iam-policy',
                 'action': ('gcp-types/cloudresourcemanager-v1:'
@@ -449,30 +497,31 @@ class TestDataProject(absltest.TestCase):
                 },
                 'accessControl': {
                     'gcpIamPolicy': {
-                        'bindings':
-                            [{
+                        'bindings': [
+                            {
                                 'role':
                                     'roles/storage.admin',
                                 'members': [
                                     'group:some-admin-group@googlegroups.com'
                                 ]
                             },
-                             {
-                                 'role':
-                                     'roles/storage.objectAdmin',
-                                 'members': [
-                                     'group:some-rw-group@googlegroups.com',
-                                     'group:another-rw-group@googlegroups.com',
-                                 ]
-                             },
-                             {
-                                 'role':
-                                     'roles/storage.objectViewer',
-                                 'members': [
-                                     'group:some-r-group@googlegroups.com',
-                                     'group:another-r-group@googlegroups.com',
-                                 ]
-                             }]
+                            {
+                                'role':
+                                    'roles/storage.objectAdmin',
+                                'members': [
+                                    'group:some-rw-group@googlegroups.com',
+                                    'group:another-rw-group@googlegroups.com',
+                                ]
+                            },
+                            {
+                                'role':
+                                    'roles/storage.objectViewer',
+                                'members': [
+                                    'group:some-r-group@googlegroups.com',
+                                    'group:another-r-group@googlegroups.com',
+                                ]
+                            }
+                        ]
                     }
                 },
                 'properties': {

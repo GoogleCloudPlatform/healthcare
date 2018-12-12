@@ -74,6 +74,36 @@ definitions:
         items:
           $ref: '#/definitions/email_address'
 
+      custom_roles:
+        type: array
+        description: |
+          Optional list of custom roles to be created in this project.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - name
+            - permissions
+            properties:
+              name:
+                type: string
+                description: Name of the custom role.
+              permissions:
+                type: array
+                description: A list of permissions granted to the role.
+                items:
+                  type: string
+                  description: A service name.
+              title:
+                type: string
+                description: |
+                  Optional title of the role. If unset, defaults to the name.
+              description:
+                type: string
+                description: |
+                  Optional description of the role. If unset, defaults to
+                  the name.
+
       create_deletion_lien:
         type: boolean
         description: |

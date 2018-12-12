@@ -189,6 +189,14 @@ def deploy_gcs_audit_logs(config):
                               audit_project_id)
 
 
+def _is_service_enabled(service_name, project_id):
+  """Check if the service_name is already enabled."""
+  enabled_services = runner.run_gcloud_command(
+      ['services', 'list', '--format', 'value(NAME)'], project_id=project_id)
+  services_list = enabled_services.strip().split('\n')
+  return service_name in services_list
+
+
 def deploy_project_resources(config):
   """Deploys resources into the new data project."""
   logging.info('Deploying Project resources...')
@@ -230,24 +238,38 @@ def deploy_project_resources(config):
       }]
   }
 
-  # Create the deployment.
-  utils.create_new_deployment(dm_template_dict, 'data-project-deployment',
-                              project_id)
+  # API iam.googleapis.com is necessary when using custom roles
+  iam_api_disable = False
+  if not _is_service_enabled('iam.googleapis.com', project_id):
+    runner.run_gcloud_command(['services', 'enable', 'iam.googleapis.com'],
+                              project_id=project_id)
+    iam_api_disable = True
+  try:
+    # Create the deployment.
+    utils.create_new_deployment(dm_template_dict, 'data-project-deployment',
+                                project_id)
 
-  # Create project liens if requested.
-  if config.project.get('create_deletion_lien'):
+    # Create project liens if requested.
+    if config.project.get('create_deletion_lien'):
+      runner.run_gcloud_command([
+          'alpha', 'resource-manager', 'liens', 'create', '--restrictions',
+          'resourcemanager.projects.delete', '--reason',
+          'Automated project deletion lien deployment.'
+      ],
+                                project_id=project_id)
+
+    # Remove Owners role from the DM service account.
     runner.run_gcloud_command([
-        'alpha', 'resource-manager', 'liens', 'create',
-        '--restrictions', 'resourcemanager.projects.delete',
-        '--reason', 'Automated project deletion lien deployment.'
-    ], project_id=project_id)
+        'projects', 'remove-iam-policy-binding', project_id, '--member',
+        dm_service_account, '--role', 'roles/owner'
+    ],
+                              project_id=None)
 
-  # Remove Owners role from the DM service account.
-  runner.run_gcloud_command(['projects', 'remove-iam-policy-binding',
-                             project_id,
-                             '--member', dm_service_account,
-                             '--role', 'roles/owner'],
-                            project_id=None)
+  finally:
+    # Disable iam.googleapis.com if it is enabled in this function
+    if iam_api_disable:
+      runner.run_gcloud_command(['services', 'disable', 'iam.googleapis.com'],
+                                project_id=project_id)
 
 
 def deploy_bigquery_audit_logs(config):
