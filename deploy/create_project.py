@@ -593,7 +593,7 @@ def main(argv):
     return
 
   # Read and parse the project configuration YAML file.
-  root_config = utils.resolve_env_vars(utils.read_yaml_file(input_yaml_path))
+  root_config = utils.load_config(input_yaml_path)
   if not root_config:
     logging.error('Error loading project YAML.')
     return

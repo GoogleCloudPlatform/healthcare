@@ -561,3 +561,9 @@ properties:
     description: List of data hosting projects to deploy.
     items:
       $ref: '#/definitions/gcp_project'
+  import_files:
+    type: array
+    description: A list of YAML files that are imported to current file.
+    items:
+      type: string
+      description: The relative path of a imported file to current file.

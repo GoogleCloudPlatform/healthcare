@@ -45,3 +45,16 @@ py_library(
         ":runner",
     ],
 )
+
+py_test(
+    name = "utils_test",
+    srcs = ["utils_test.py"],
+    data = [
+        "//deploy/samples:configs",
+    ],
+    default_python_version = "PY3",
+    deps = [
+        requirement("absl-py"),
+        ":utils",
+    ],
+)

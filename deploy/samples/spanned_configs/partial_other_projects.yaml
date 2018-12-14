@@ -1,0 +1,49 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sample template to create three projects: a project for hosting audit-logs
+# and two projects for hosting data. The data hosting projects have GCS buckets,
+# BigQuery datasets, logging to GCS and BigQuery, and logs-based metrics for
+# unexpected access.
+
+# Actually, span project_with_remote_audit_logs.yaml into 4 files
+
+# Multiple dataset projects can be deployed at once with the one YAML file.
+projects:
+- project_id: my-other-project
+  owners_group: my-other-project-owners@my-domain.com
+  auditors_group: some-auditors-group@my-domain.com
+  create_deletion_lien: true
+  data_readwrite_groups:
+  - some-readwrite-group@my-domain.com
+  data_readonly_groups:
+  - some-readonly-group@my-domain.com
+  - another-readonly-group@googlegroups.com
+  bigquery_datasets:
+  - name: us_data
+    location: US
+  data_buckets:
+  - name_suffix: -data
+    location: EUROPE-WEST1
+    storage_class: REGIONAL
+  stackdriver_alert_email: some-alerts-group@my-domain.com
+  audit_logs:
+    logs_gcs_bucket:
+      name: my-audit-logs-my-other-project
+      location: US
+      storage_class: MULTI_REGIONAL
+      ttl_days: 365
+    logs_bigquery_dataset:
+      name: my_other_project
+      location: US

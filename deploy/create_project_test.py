@@ -69,6 +69,15 @@ class CreateProjectTest(absltest.TestCase):
         FLAGS.output_yaml_path = fout.name
         create_project.main([])
 
+  def test_create_project_with_spanned_configs(self):
+    FLAGS.project_yaml = os.path.join(
+        FLAGS.test_srcdir,
+        'deploy/samples/spanned_configs',
+        'root.yaml')
+    with tempfile.NamedTemporaryFile() as f:
+      FLAGS.output_yaml_path = f.name
+      create_project.main([])
+
 
 def _deploy(config_filename):
   FLAGS.project_yaml = os.path.join(

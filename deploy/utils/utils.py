@@ -290,6 +290,60 @@ def resolve_env_vars(config):
     return config
 
 
+def merge_dicts(*dicts):
+  """Merge dicts (list of dicts) into a new dictionary.
+
+  Args:
+    *dicts (tuple): A tuple contains dictionaries to be merged.
+
+  Returns:
+    dict: The merged dictionary.
+
+  Raises:
+    TypeError: If two dictionaries have the same key, the type of the key's
+      value must be the same.
+    ValueError: The type of two items whose keys are the same must be a list or
+      a dictionary.
+  """
+  res = {}
+  for d in dicts:
+    for key, val in d.items():
+      if key not in res:
+        res[key] = val
+      elif not isinstance(res[key], type(val)):
+        raise TypeError('Dictionary item value conflict.')
+      elif isinstance(res[key], list):
+        res[key].extend(val)
+      elif isinstance(res[key], dict):
+        res[key] = merge_dicts(res, val)
+      else:
+        raise ValueError('Type should be a dictionary or a list')
+  return res
+
+
+def load_config(path):
+  """Reads and parses a YAML file.
+
+  Args:
+    path (string): The path to the YAML file.
+
+  Returns:
+    A dict holding the parsed contents of the YAML file, or None if the file
+    could not be read or parsed.
+  """
+  overall = resolve_env_vars(read_yaml_file(path))
+  if not overall:
+    return overall
+
+  follow_yamls = overall.pop('import_files', [])
+  all_contents = [overall]
+  for following in follow_yamls:
+    follow_path = os.path.join(os.path.dirname(path), following)
+    all_contents.append(load_config(follow_path))
+  overall = merge_dicts(*all_contents)
+  return overall
+
+
 class InvalidConfigError(Exception):
   """The exception when the config file is invalid."""
   pass
