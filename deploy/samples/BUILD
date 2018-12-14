@@ -6,5 +6,5 @@ licenses(["notice"])  # Apache 2.0
 
 filegroup(
     name = "configs",
-    srcs = glob(["*.yaml"]),
+    srcs = glob(["**/*.yaml"]),
 )
