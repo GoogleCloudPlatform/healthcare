@@ -35,7 +35,7 @@ class CreateProjectTest(absltest.TestCase):
   def test_project_config_validate_check_raise(self):
     datathon_path = os.path.join(
         FLAGS.test_srcdir,
-        'deploy/samples/',
+        'google3/deploy/samples/',
         'datathon_team_project.yaml')
     root_config = utils.resolve_env_vars(utils.read_yaml_file(datathon_path))
     root_config['overall']['allowed_apis'] = []
@@ -52,7 +52,7 @@ class CreateProjectTest(absltest.TestCase):
   def test_project_config_validate_check_correct(self):
     datathon_path = os.path.join(
         FLAGS.test_srcdir,
-        'deploy/samples/',
+        'google3/deploy/samples/',
         'datathon_team_project.yaml')
     root_config = utils.resolve_env_vars(utils.read_yaml_file(datathon_path))
     root_config['overall']['allowed_apis'] = [
@@ -72,7 +72,7 @@ class CreateProjectTest(absltest.TestCase):
   def test_create_project_with_spanned_configs(self):
     FLAGS.project_yaml = os.path.join(
         FLAGS.test_srcdir,
-        'deploy/samples/spanned_configs',
+        'google3/deploy/samples/spanned_configs',
         'root.yaml')
     with tempfile.NamedTemporaryFile() as f:
       FLAGS.output_yaml_path = f.name
@@ -81,7 +81,7 @@ class CreateProjectTest(absltest.TestCase):
 
 def _deploy(config_filename):
   FLAGS.project_yaml = os.path.join(
-      FLAGS.test_srcdir, 'deploy/samples/',
+      FLAGS.test_srcdir, 'google3/deploy/samples/',
       config_filename)
   with tempfile.NamedTemporaryFile() as f:
     FLAGS.output_yaml_path = f.name

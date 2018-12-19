@@ -22,14 +22,14 @@ class UtilsTest(absltest.TestCase):
   def test_load_config_spanned_configs(self):
     project_yaml = os.path.join(
         FLAGS.test_srcdir,
-        'deploy/samples/',
+        'google3/deploy/samples/',
         'project_with_remote_audit_logs.yaml')
     input_yaml_path = utils.normalize_path(project_yaml)
     dict1 = utils.load_config(input_yaml_path)
 
     project_yaml = os.path.join(
         FLAGS.test_srcdir,
-        'deploy/samples/spanned_configs',
+        'google3/deploy/samples/spanned_configs',
         'root.yaml')
     input_yaml_path = utils.normalize_path(project_yaml)
     dict2 = utils.load_config(input_yaml_path)
