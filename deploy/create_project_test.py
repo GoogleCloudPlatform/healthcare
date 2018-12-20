@@ -32,23 +32,6 @@ class CreateProjectTest(absltest.TestCase):
   def test_create_project_remote_audit_logs(self):
     _deploy('project_with_remote_audit_logs.yaml')
 
-  def test_project_config_validate_check_raise(self):
-    datathon_path = os.path.join(
-        FLAGS.test_srcdir,
-        'google3/deploy/samples/',
-        'datathon_team_project.yaml')
-    root_config = utils.resolve_env_vars(utils.read_yaml_file(datathon_path))
-    root_config['overall']['allowed_apis'] = []
-    root_config_str = yaml.dump(root_config)
-    with tempfile.NamedTemporaryFile(suffix='.yaml', mode='w') as f:
-      f.write(root_config_str)
-      f.flush()
-      FLAGS.project_yaml = f.name
-      with tempfile.NamedTemporaryFile() as fout:
-        FLAGS.output_yaml_path = fout.name
-        with self.assertRaises(utils.InvalidConfigError):
-          create_project.main([])
-
   def test_project_config_validate_check_correct(self):
     datathon_path = os.path.join(
         FLAGS.test_srcdir,
