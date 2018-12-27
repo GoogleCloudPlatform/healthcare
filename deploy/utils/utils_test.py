@@ -7,8 +7,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-
 from absl import flags
 from absl.testing import absltest
 
@@ -20,17 +18,13 @@ FLAGS = flags.FLAGS
 class UtilsTest(absltest.TestCase):
 
   def test_load_config_spanned_configs(self):
-    project_yaml = os.path.join(
-        FLAGS.test_srcdir,
-        'google3/deploy/samples/',
-        'project_with_remote_audit_logs.yaml')
+    project_yaml = ('deploy/samples/'
+                    'project_with_remote_audit_logs.yaml')
     input_yaml_path = utils.normalize_path(project_yaml)
     dict1 = utils.load_config(input_yaml_path)
 
-    project_yaml = os.path.join(
-        FLAGS.test_srcdir,
-        'google3/deploy/samples/spanned_configs',
-        'root.yaml')
+    project_yaml = (
+        'deploy/samples/spanned_configs/root.yaml')
     input_yaml_path = utils.normalize_path(project_yaml)
     dict2 = utils.load_config(input_yaml_path)
 

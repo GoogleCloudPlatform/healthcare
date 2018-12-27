@@ -33,10 +33,9 @@ class CreateProjectTest(absltest.TestCase):
     _deploy('project_with_remote_audit_logs.yaml')
 
   def test_project_config_validate_check_correct(self):
-    datathon_path = os.path.join(
-        FLAGS.test_srcdir,
-        'google3/deploy/samples/',
-        'datathon_team_project.yaml')
+    datathon_path = (
+        'deploy/samples/datathon_team_project.yaml'
+    )
     root_config = utils.resolve_env_vars(utils.read_yaml_file(datathon_path))
     root_config['overall']['allowed_apis'] = [
         'bigquery-json.googleapis.com',
@@ -53,10 +52,8 @@ class CreateProjectTest(absltest.TestCase):
         create_project.main([])
 
   def test_create_project_with_spanned_configs(self):
-    FLAGS.project_yaml = os.path.join(
-        FLAGS.test_srcdir,
-        'google3/deploy/samples/spanned_configs',
-        'root.yaml')
+    FLAGS.project_yaml = (
+        'deploy/samples/spanned_configs/root.yaml')
     with tempfile.NamedTemporaryFile() as f:
       FLAGS.output_yaml_path = f.name
       create_project.main([])
@@ -64,8 +61,7 @@ class CreateProjectTest(absltest.TestCase):
 
 def _deploy(config_filename):
   FLAGS.project_yaml = os.path.join(
-      FLAGS.test_srcdir, 'google3/deploy/samples/',
-      config_filename)
+      'deploy/samples/', config_filename)
   with tempfile.NamedTemporaryFile() as f:
     FLAGS.output_yaml_path = f.name
     create_project.main([])
