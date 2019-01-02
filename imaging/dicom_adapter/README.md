@@ -65,8 +65,8 @@ spec:
             - "/import/bin/import"
             - "--dimse_aet=IMPORTADAPTER"
             - "--dimse_port=2575"
-            - "--dicomweb_addr=http://localhost:80"
-            - "--dicomweb_stow_path=/studies"
+            - "--dicomweb_addr=https://healthcare.googleapis.com/v1alpha"
+            - "--dicomweb_stow_path=/projects/myproject/locations/us-central1/datasets/mydataset/dicomStores/mydicomstore/dicomWeb/studies"
 ```
 
 If needed, to additionally include an Export Adapter, you can add the to the
@@ -76,12 +76,13 @@ containers in `dicom_adapter.yaml`. Modify the flags for your use case.
         - name: dicom-export-adapter
           image: gcr.io/cloud-healthcare-containers/dicom-export-adapter:latest
           command:
+            - "/export/bin/export"
             - "--peer_dimse_aet=PEERAET"
             - "--peer_dimse_ip=localhost"
             - "--peer_dimse_port=104"
             - "--project_id=myproject"
             - "--subscription_id=mysub"
-            - "--dicomweb_addr=https://localhost:80"
+            - "--dicomweb_addr=https://healthcare.googleapis.com/v1alpha"
             - "--oauth_scopes=https://www.googleapis.com/auth/pubsub"
 ```
 
