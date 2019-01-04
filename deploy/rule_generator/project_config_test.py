@@ -103,7 +103,7 @@ class ProjectConfigTest(absltest.TestCase):
 
     expected_proj_bindings = {
         'roles/owner': ['group:sample-data-owners@domain.com'],
-        'roles/editors': [
+        'roles/editor': [
             'serviceAccount:123546879123-compute@developer.gserviceaccount.com',
             'serviceAccount:123546879123@cloudservices.gserviceaccount.com',
             ('serviceAccount:service-123546879123@'

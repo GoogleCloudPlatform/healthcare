@@ -15,7 +15,7 @@
 r"""Utility to generate Forseti scanner rules given project configurations.
 
 Usage:
-  bazel run :rule_generator -- \
+  bazel run :generate_rules -- \
       --deployment_config_path="${DEPLOYMENT_CONFIG_PATH}" \
       --output_path="${OUTPUT_PATH}"
 """

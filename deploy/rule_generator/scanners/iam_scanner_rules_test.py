@@ -67,7 +67,7 @@ rules:
       - role: 'roles/bigquery.dataViewer'
         members:
           - group:project_1_queriers@custom.com
-      - role: 'roles/editors'
+      - role: 'roles/editor'
         members:
           - serviceAccount:123456-compute@developer.gserviceaccount.com
           - serviceAccount:123456@cloudservices.gserviceaccount.com
@@ -133,7 +133,7 @@ rules:
           - 'project_2'
     inherit_from_parents: true
     bindings:
-      - role: 'roles/editors'
+      - role: 'roles/editor'
         members:
           - group:project_2_editors@domain.com
           - serviceAccount:789012-compute@developer.gserviceaccount.com

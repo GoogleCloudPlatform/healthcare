@@ -135,7 +135,7 @@ class ProjectConfig(object):
     for service_account in _EDITOR_SERVICE_ACCOUNTS:
       editors.append(_service_account_name(service_account.format(
           project_num=project_num)))
-    bindings['roles/editors'] = editors
+    bindings['roles/editor'] = editors
     bindings['roles/iam.securityReviewer'] = (
         self._auditors + [_service_account_name(self._forseti_gcp_reader)])
     for additional in self._project_config.get('additional_project_permissions',
