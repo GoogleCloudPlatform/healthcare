@@ -448,7 +448,9 @@ definitions:
         type: object
         description: |
           Output only. Fields whose values are produced during deployment and
-          are used for monitoring of the project.
+          are used for monitoring of the project. Presence of this field implies
+          a project has been deployed. Conversely, absence implies the project
+          is undeployed.
         properties:
           project_number:
             type: string

@@ -74,15 +74,20 @@ flags.DEFINE_integer('resume_from_step', 1,
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
 
+# Name of field where generated fields will be added.
+_GENERATED_FIELDS_NAME = 'generated_fields'
+
 # Configuration for deploying a single project.
-ProjectConfig = collections.namedtuple('ProjectConfig', [
-    # Dictionary of configuration values for all projects.
-    'overall',
-    # Dictionary of configuration values for this project.
-    'project',
-    # Dictionary of configuration values of the remote audit logs project, or
-    # None if the project uses local logs.
-    'audit_logs_project',
+ProjectConfig = collections.namedtuple(
+    'ProjectConfig',
+    [
+        # Dictionary of configuration values for all projects.
+        'overall',
+        # Dictionary of configuration values for this project.
+        'project',
+        # Dictionary of configuration values of the remote audit logs project,
+        # or None if the project uses local logs.
+        'audit_logs_project',
     ])
 
 
@@ -543,9 +548,9 @@ def add_generated_fields(project):
   Args:
     project (dict): Config dictionary of a single project.
   """
-  if 'generated_fields' not in project:
+  if _GENERATED_FIELDS_NAME not in project:
     project_id = project['project_id']
-    project['generated_fields'] = {
+    project[_GENERATED_FIELDS_NAME] = {
         'project_number':
             utils.get_project_number(project_id),
         'log_sink_service_account':
@@ -553,7 +558,7 @@ def add_generated_fields(project):
     }
     gce_instance_info = utils.get_gce_instance_info(project_id)
     if gce_instance_info:
-      project['generated_fields']['gce_instance_info'] = gce_instance_info
+      project[_GENERATED_FIELDS_NAME]['gce_instance_info'] = gce_instance_info
 
 
 def validate_project_configs(overall, projects):
@@ -583,8 +588,9 @@ def main(argv):
 
   input_yaml_path = utils.normalize_path(FLAGS.project_yaml)
   output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
-  output_rules_path = (utils.normalize_path(FLAGS.output_rules_path)
-                       if FLAGS.output_rules_path else None)
+  output_rules_path = None
+  if FLAGS.output_rules_path:
+    output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
 
   # Output YAML will rearrange fields and remove comments, so do a basic check
   # against accidental overwriting.
@@ -610,67 +616,67 @@ def main(argv):
 
   projects = []
   # Always deploy the remote audit logs project first (if present).
-  if audit_logs_project:
-    projects.append(ProjectConfig(overall=overall,
-                                  project=audit_logs_project,
-                                  audit_logs_project=None))
+  if audit_logs_project and _GENERATED_FIELDS_NAME not in audit_logs_project:
+    projects.append(
+        ProjectConfig(
+            overall=overall,
+            project=audit_logs_project,
+            audit_logs_project=None))
 
-  forseti_config = root_config.get('forseti', {})
+  forseti_config = root_config.get('forseti')
 
-  if forseti_config:
+  if forseti_config and _GENERATED_FIELDS_NAME not in forseti_config['project']:
     forseti_project_config = ProjectConfig(
         overall=overall,
-        project=forseti_config.get('project'),
+        project=forseti_config['project'],
         audit_logs_project=audit_logs_project)
     projects.append(forseti_project_config)
 
   for project_config in root_config.get('projects', []):
-    projects.append(ProjectConfig(overall=overall,
-                                  project=project_config,
-                                  audit_logs_project=audit_logs_project))
+    if _GENERATED_FIELDS_NAME in project_config:
+      logging.info('Skipping deployed project %s', project_config['project_id'])
+      continue
+
+    projects.append(
+        ProjectConfig(
+            overall=overall,
+            project=project_config,
+            audit_logs_project=audit_logs_project))
 
   validate_project_configs(overall, projects)
 
-  # If resuming setup from a particular project, skip to that project.
-  if FLAGS.resume_from_project:
-    while (projects and
-           projects[0].project['project_id'] != FLAGS.resume_from_project):
-      skipped = projects.pop(0)
-      logging.info('Skipping project %s', skipped.project['project_id'])
-    if not projects:
-      logging.error('Project not found: %s', FLAGS.resume_from_project)
+  logging.info('Found %d projects to deploy', len(projects))
 
-  if projects:
-    starting_step = max(1, FLAGS.resume_from_step)
-    for config in projects:
-      logging.info('Setting up project %s', config.project['project_id'])
-      if not setup_new_project(config, starting_step):
-        # Don't attempt to deploy additional projects if one project failed.
-        return
+  for config in projects:
+    logging.info('Setting up project %s', config.project['project_id'])
+    starting_step = 1
+    if config.project['project_id'] == FLAGS.resume_from_project:
+      starting_step = max(1, FLAGS.resume_from_step)
 
-      # Fill in unset generated fields for the project and save it.
-      add_generated_fields(config.project)
-      utils.write_yaml_file(root_config, output_yaml_path)
-      starting_step = 1
-  else:
-    logging.error('No projects to deploy.')
+    if not setup_new_project(config, starting_step):
+      # Don't attempt to deploy additional projects if one project failed.
+      return
+
+    # Fill in unset generated fields for the project and save it.
+    add_generated_fields(config.project)
+    utils.write_yaml_file(root_config, output_yaml_path)
 
   # TODO: allow for forseti installation to be retried.
   if forseti_config:
     forseti_project_id = forseti_config['project']['project_id']
-    forseti_service_account = forseti_config.get('generated_fields',
+    forseti_service_account = forseti_config.get(_GENERATED_FIELDS_NAME,
                                                  {}).get('service_account')
 
     # If the forseti block does not have generated fields from a previous
     # deployment, consider Forseti to be undeployed.
     # TODO: add more checks of a previous deployment.
-    if 'generated_fields' not in forseti_config:
+    if _GENERATED_FIELDS_NAME not in forseti_config:
       forseti.install(forseti_config)
 
       forseti_service_account = forseti.get_server_service_account(
           forseti_project_id)
 
-      forseti_config['generated_fields'] = {
+      forseti_config[_GENERATED_FIELDS_NAME] = {
           'service_account': forseti_service_account,
           'server_bucket': forseti.get_server_bucket(forseti_project_id),
       }
