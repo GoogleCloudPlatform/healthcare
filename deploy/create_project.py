@@ -81,13 +81,15 @@ _GENERATED_FIELDS_NAME = 'generated_fields'
 ProjectConfig = collections.namedtuple(
     'ProjectConfig',
     [
-        # Dictionary of configuration values for all projects.
-        'overall',
+        # Dictionary of configuration values of the entire config.
+        'root',
         # Dictionary of configuration values for this project.
         'project',
         # Dictionary of configuration values of the remote audit logs project,
         # or None if the project uses local logs.
         'audit_logs_project',
+        # Extra steps to perform for this project.
+        'extra_steps',
     ])
 
 
@@ -95,8 +97,10 @@ def create_new_project(config):
   """Creates the new GCP project."""
   logging.info('Creating a new GCP project...')
   project_id = config.project['project_id']
-  org_id = config.overall.get('organization_id')
-  folder_id = config.overall.get('folder_id')
+
+  overall_config = config.root['overall']
+  org_id = overall_config.get('organization_id')
+  folder_id = overall_config.get('folder_id')
 
   create_project_command = ['projects', 'create', project_id]
   if folder_id:
@@ -112,7 +116,7 @@ def create_new_project(config):
 def setup_billing(config):
   """Sets the billing account for this project."""
   logging.info('Setting up billing...')
-  billing_acct = config.overall['billing_account']
+  billing_acct = config.root['overall']['billing_account']
   project_id = config.project['project_id']
   # Set the appropriate billing account for this project:
   runner.run_gcloud_command(['beta', 'billing', 'projects', 'link', project_id,
@@ -206,7 +210,7 @@ def deploy_project_resources(config):
   """Deploys resources into the new data project."""
   logging.info('Deploying Project resources...')
   setup_account = utils.get_gcloud_user()
-  has_organization = bool(config.overall.get('organization_id'))
+  has_organization = bool(config.root['overall'].get('organization_id'))
   project_id = config.project['project_id']
   dm_service_account = utils.get_deployment_manager_service_account(project_id)
 
@@ -498,6 +502,26 @@ def create_alerts(config):
            'bucket {} is accessed by an unexpected user.'.format(bucket_name)),
           channel, project_id)
 
+
+def add_project_generated_fields(config):
+  """Adds a generated_fields block to a project definition."""
+  project_id = config.project['project_id']
+  logging.info('Adding project post deployment fields for %s', project_id)
+
+  if _GENERATED_FIELDS_NAME in config.project:
+    return
+
+  config.project[_GENERATED_FIELDS_NAME] = {
+      'project_number':
+          utils.get_project_number(project_id),
+      'log_sink_service_account':
+          utils.get_log_sink_service_account(_LOG_SINK_NAME, project_id),
+  }
+  gce_instance_info = utils.get_gce_instance_info(project_id)
+  if gce_instance_info:
+    config.project[_GENERATED_FIELDS_NAME][
+        'gce_instance_info'] = gce_instance_info
+
 # The steps to set up a project, so the script can be resumed part way through
 # on error. Each is a function that takes a config dictionary.
 _SETUP_STEPS = [
@@ -512,53 +536,65 @@ _SETUP_STEPS = [
     enable_services_apis,
     create_stackdriver_account,
     create_alerts,
+    add_project_generated_fields,
 ]
 
 
-def setup_new_project(config, starting_step):
+def setup_new_project(config, starting_step, output_yaml_path):
   """Run the full process for initalizing a single new project.
 
   Args:
     config (ProjectConfig): The config of a single project to setup.
     starting_step (int): The step number (indexed from 1) in _SETUP_STEPS to
-       begin from.
+      begin from.
+    output_yaml_path (str): Path to output resulting root config in JSON.
 
   Returns:
     A boolean, true if the project was deployed successfully, false otherwise.
   """
-  total_steps = len(_SETUP_STEPS)
+  steps = _SETUP_STEPS + config.extra_steps
+
+  total_steps = len(steps)
   for step_num in range(starting_step, total_steps + 1):
     logging.info('Step %s/%s', step_num, total_steps)
     try:
-      _SETUP_STEPS[step_num - 1](config)
+      steps[step_num - 1](config)
     except subprocess.CalledProcessError as e:
       logging.error('Setup failed on step %s: %s', step_num, e)
       logging.error(
-          'To continue the script, run with flags: --resume_from_project=%s '
-          '--resume_from_step=%s', config.project['project_id'], step_num)
+          'To continue the script, sync the input file with the output file at '
+          '--output_yaml_path and re run the script with additional flags: '
+          '--resume_from_project=%s --resume_from_step=%s',
+          config.project['project_id'], step_num)
       return False
+    utils.write_yaml_file(config.root, output_yaml_path)
 
   logging.info('Setup completed successfully.')
   return True
 
 
-def add_generated_fields(project):
-  """Adds a generated_fields block to a project definition, if not already set.
+def install_forseti(config):
+  """Install forseti based on the given config."""
+  forseti_config = config.root['forseti']
+  forseti.install(forseti_config)
+  forseti_project_id = forseti_config['project']['project_id']
+  forseti_config[_GENERATED_FIELDS_NAME] = {
+      'service_account': forseti.get_server_service_account(forseti_project_id),
+      'server_bucket': forseti.get_server_bucket(forseti_project_id),
+  }
 
-  Args:
-    project (dict): Config dictionary of a single project.
-  """
-  if _GENERATED_FIELDS_NAME not in project:
-    project_id = project['project_id']
-    project[_GENERATED_FIELDS_NAME] = {
-        'project_number':
-            utils.get_project_number(project_id),
-        'log_sink_service_account':
-            utils.get_log_sink_service_account(_LOG_SINK_NAME, project_id),
-    }
-    gce_instance_info = utils.get_gce_instance_info(project_id)
-    if gce_instance_info:
-      project[_GENERATED_FIELDS_NAME]['gce_instance_info'] = gce_instance_info
+
+def get_forseti_access_granter(project_id):
+  """Get function to grant access to the forseti instance for the project."""
+
+  def grant_access(config):
+    logging.info('Granting forseti service account access to project %s',
+                 project_id)
+    forseti.grant_access(
+        project_id,
+        config.root['forseti'][_GENERATED_FIELDS_NAME]['service_account'])
+
+  return grant_access
 
 
 def validate_project_configs(overall, projects):
@@ -581,6 +617,15 @@ def validate_project_configs(overall, projects):
     logging.warning(('Projects try to enable the following APIs '
                      'that are not in the allowed_apis list:\n',
                      missing_allowed_apis))
+
+
+def is_deployed(project_dict):
+  """Determine whether the project has been deployed."""
+  if not project_dict:
+    return True
+  is_resume_project = FLAGS.resume_from_project == project_dict['project_id']
+  has_generated_fields = _GENERATED_FIELDS_NAME in project_dict
+  return not is_resume_project and has_generated_fields
 
 
 def main(argv):
@@ -611,39 +656,54 @@ def main(argv):
     logging.error('Error in YAML config: %s', e)
     return
 
-  overall = root_config['overall']
   audit_logs_project = root_config.get('audit_logs_project')
 
   projects = []
   # Always deploy the remote audit logs project first (if present).
-  if audit_logs_project and _GENERATED_FIELDS_NAME not in audit_logs_project:
+  if not is_deployed(audit_logs_project):
     projects.append(
         ProjectConfig(
-            overall=overall,
+            root=root_config,
             project=audit_logs_project,
-            audit_logs_project=None))
+            audit_logs_project=None,
+            extra_steps=[]))
 
-  forseti_config = root_config.get('forseti')
+  forseti_config = root_config.get('forseti', {})
 
-  if forseti_config and _GENERATED_FIELDS_NAME not in forseti_config['project']:
+  if not is_deployed(forseti_config.get('project')):
+    extra_steps = [
+        install_forseti,
+        get_forseti_access_granter(forseti_config['project']['project_id']),
+    ]
+
+    if audit_logs_project:
+      extra_steps.append(
+          get_forseti_access_granter(audit_logs_project['project_id']))
+
     forseti_project_config = ProjectConfig(
-        overall=overall,
+        root=root_config,
         project=forseti_config['project'],
-        audit_logs_project=audit_logs_project)
+        audit_logs_project=audit_logs_project,
+        extra_steps=extra_steps)
     projects.append(forseti_project_config)
 
   for project_config in root_config.get('projects', []):
-    if _GENERATED_FIELDS_NAME in project_config:
-      logging.info('Skipping deployed project %s', project_config['project_id'])
+    if is_deployed(project_config):
       continue
+
+    extra_steps = []
+    if forseti_config:
+      extra_steps.append(
+          get_forseti_access_granter(project_config['project_id']))
 
     projects.append(
         ProjectConfig(
-            overall=overall,
+            root=root_config,
             project=project_config,
-            audit_logs_project=audit_logs_project))
+            audit_logs_project=audit_logs_project,
+            extra_steps=extra_steps))
 
-  validate_project_configs(overall, projects)
+  validate_project_configs(root_config['overall'], projects)
 
   logging.info('Found %d projects to deploy', len(projects))
 
@@ -653,39 +713,11 @@ def main(argv):
     if config.project['project_id'] == FLAGS.resume_from_project:
       starting_step = max(1, FLAGS.resume_from_step)
 
-    if not setup_new_project(config, starting_step):
+    if not setup_new_project(config, starting_step, output_yaml_path):
       # Don't attempt to deploy additional projects if one project failed.
       return
 
-    # Fill in unset generated fields for the project and save it.
-    add_generated_fields(config.project)
-    utils.write_yaml_file(root_config, output_yaml_path)
-
-  # TODO: allow for forseti installation to be retried.
   if forseti_config:
-    forseti_project_id = forseti_config['project']['project_id']
-    forseti_service_account = forseti_config.get(_GENERATED_FIELDS_NAME,
-                                                 {}).get('service_account')
-
-    # If the forseti block does not have generated fields from a previous
-    # deployment, consider Forseti to be undeployed.
-    # TODO: add more checks of a previous deployment.
-    if _GENERATED_FIELDS_NAME not in forseti_config:
-      forseti.install(forseti_config)
-
-      forseti_service_account = forseti.get_server_service_account(
-          forseti_project_id)
-
-      forseti_config[_GENERATED_FIELDS_NAME] = {
-          'service_account': forseti_service_account,
-          'server_bucket': forseti.get_server_bucket(forseti_project_id),
-      }
-      utils.write_yaml_file(root_config, output_yaml_path)
-
-    for project in projects:
-      project_id = project.project['project_id']
-      forseti.grant_access(project_id,
-                           forseti_service_account)
     rule_generator.run(root_config, output_path=output_rules_path)
 
 
