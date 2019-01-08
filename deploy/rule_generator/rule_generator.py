@@ -20,6 +20,7 @@ from deploy.rule_generator.scanners.iam_scanner_rules import IamScannerRules
 from deploy.rule_generator.scanners.lien_scanner_rules import LienScannerRules
 from deploy.rule_generator.scanners.location_scanner_rules import LocationScannerRules
 from deploy.rule_generator.scanners.log_sink_scanner_rules import LogSinkScannerRules
+from deploy.rule_generator.scanners.resource_scanner_rules import ResourceScannerRules
 from deploy.utils import runner
 from deploy.utils import utils
 
@@ -35,6 +36,7 @@ SCANNER_RULE_GENERATORS = [
     LienScannerRules(),
     LocationScannerRules(),
     LogSinkScannerRules(),
+    ResourceScannerRules(),
 ]
 
 

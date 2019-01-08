@@ -181,3 +181,20 @@ py_library(
         "//deploy/rule_generator:project_config",
     ],
 )
+
+py_library(
+    name = "resource_scanner_rules",
+    srcs = ["resource_scanner_rules.py"],
+    deps = [":base_scanner_rules"],
+)
+
+py_test(
+    name = "resource_scanner_rules_test",
+    srcs = ["resource_scanner_rules_test.py"],
+    deps = [
+        requirement("absl-py"),
+        requirement("pyyaml"),
+        ":resource_scanner_rules",
+        ":scanner_test_utils",
+    ],
+)

@@ -40,6 +40,7 @@ py_binary(
         "//deploy/rule_generator/scanners:lien_scanner_rules",
         "//deploy/rule_generator/scanners:location_scanner_rules",
         "//deploy/rule_generator/scanners:log_sink_scanner_rules",
+        "//deploy/rule_generator/scanners:resource_scanner_rules",
         "//deploy/utils",
         "//deploy/utils:runner",
     ],
