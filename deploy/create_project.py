@@ -614,9 +614,9 @@ def validate_project_configs(overall, projects):
       if api not in allowed_apis:
         missing_allowed_apis[api].append(project.project['project_id'])
   if missing_allowed_apis:
-    logging.warning(('Projects try to enable the following APIs '
-                     'that are not in the allowed_apis list:\n',
-                     missing_allowed_apis))
+    raise utils.InvalidConfigError(
+        ('Projects try to enable the following APIs '
+         'that are not in the allowed_apis list:\n%s' % missing_allowed_apis))
 
 
 def is_deployed(project_dict):
