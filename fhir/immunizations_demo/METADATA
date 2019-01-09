@@ -1,0 +1,40 @@
+name: "fhir_immunizations_demo"
+description: "FHIR Immunizations Demo"
+
+third_party {
+  url {
+    type: PIPER
+    value: "http://google3/third_party/cloud/healthcare/fhir/immunizations_demo"
+  }
+}
+
+presubmit {
+  review_notify: "chc-wat+reviews"
+
+  path_expression: "//depot/google3/third_party/cloud/healthcare/fhir/immunizations_demo/..."
+
+  # Ensure that changes contain public notes to be added to the corresponding
+  # git commit messages.
+  check_description: {
+    failure_message:
+      "\n"
+      "CL descriptions for changes to\n"
+      "third_party/java_src/cloud/healthcare/fhir/immunizations_demo\n"
+      "must contain one or more sections delimited as follows:\n"
+      "\n"
+      "BEGIN_PUBLIC\n"
+      "...text exposed to open source public git repo...\n"
+      "END_PUBLIC\n"
+      "\n"
+      "If your change affects only files that you know are not "
+      "opensourced, you may write something like 'Internal "
+      "change'. You may not leave the section empty. \n"
+
+    required_regexp:
+      "(^|\\n)\\s*BEGIN_PUBLIC\\s*?\\n"
+      "(.*\\n)*"
+      "\\s*\\S+.*(\\n.*)*\\n"
+      "\\s*END_PUBLIC\\s*?\\n"
+    required_for_cleanup: true
+  }
+}
