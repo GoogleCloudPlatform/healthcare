@@ -11,8 +11,14 @@ exports_files(["project_config.yaml.schema"])
 py_binary(
     name = "create_project",
     srcs = ["create_project.py"],
-    data = ["//deploy/templates"],
     default_python_version = "PY3",
+    deps = [":create_project_lib"],
+)
+
+py_library(
+    name = "create_project_lib",
+    srcs = ["create_project.py"],
+    data = ["//deploy/templates"],
     deps = [
         requirement("absl-py"),
         requirement("jsonschema"),
@@ -33,7 +39,7 @@ py_test(
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
-        ":create_project",
+        ":create_project_lib",
         "//deploy/utils",
     ],
 )
@@ -54,7 +60,7 @@ py_binary(
     default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
-        "//deploy/rule_generator",
+        "//deploy/rule_generator:rule_generator_lib",
         "//deploy/utils",
     ],
 )

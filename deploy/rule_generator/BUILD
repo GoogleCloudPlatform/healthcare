@@ -27,6 +27,12 @@ py_test(
 py_binary(
     name = "rule_generator",
     srcs = ["rule_generator.py"],
+    deps = [":rule_generator_lib"],
+)
+
+py_library(
+    name = "rule_generator_lib",
+    srcs = ["rule_generator.py"],
     deps = [
         requirement("absl-py"),
         requirement("backports.tempfile"),
