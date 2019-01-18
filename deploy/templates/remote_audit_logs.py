@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Creates new GCS buckets and BigQuery datasets in an Audit Logs project."""
 
 
@@ -34,7 +33,9 @@ def generate_config(context):
             'storageClass': logs_bucket['storage_class'],
             'lifecycle': {
                 'rule': [{
-                    'action': {'type': 'Delete'},
+                    'action': {
+                        'type': 'Delete'
+                    },
                     'condition': {
                         'age': logs_bucket['ttl_days'],
                         'isLive': True,
@@ -47,9 +48,7 @@ def generate_config(context):
                 'bindings': [
                     {
                         'role': 'roles/storage.admin',
-                        'members': [
-                            'group:' + owners_group,
-                        ],
+                        'members': ['group:' + owners_group,],
                     },
                     {
                         'role': 'roles/storage.objectCreator',
@@ -57,9 +56,7 @@ def generate_config(context):
                     },
                     {
                         'role': 'roles/storage.objectViewer',
-                        'members': [
-                            'group:' + auditors_group,
-                        ],
+                        'members': ['group:' + auditors_group,],
                     },
                 ],
             },
@@ -87,8 +84,10 @@ def generate_config(context):
         'name': 'update-' + dataset_id,
         'action': 'gcp-types/bigquery-v2:bigquery.datasets.patch',
         'properties': {
-            'projectId': project_id,
-            'datasetId': dataset_id,
+            'projectId':
+                project_id,
+            'datasetId':
+                dataset_id,
             'access': [
                 {
                     'role': 'OWNER',

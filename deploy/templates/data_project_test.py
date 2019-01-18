@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for healthcare.deploy.templates.data_project.
 
 These tests check that the template is free from syntax errors and generates
@@ -29,6 +28,7 @@ from deploy.templates import data_project
 class TestDataProject(absltest.TestCase):
 
   def test_expansion_local_logging(self):
+
     class FakeContext(object):
       env = {
           'deployment': 'my-deployment',
@@ -788,6 +788,7 @@ class TestDataProject(absltest.TestCase):
       index += 1
 
   def testExpansionRemoteLoggingNoOrg(self):
+
     class FakeContext(object):
       env = {
           'deployment': 'my-deployment',

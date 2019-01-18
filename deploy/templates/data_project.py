@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Configures a data project with storage and logging.
 
 For details and usage, see deploy/README.md.
@@ -26,7 +25,6 @@ _IAM_TO_BIGQUERY_MEMBER = {
     'serviceAccount': 'userByEmail',
 }
 
-
 DEFAULT_CUSTOM_ROLE_STAGE = 'GA'
 
 
@@ -35,11 +33,8 @@ def _get_bigquery_access_for_role(role_name, members):
 
   access_for_role = []
   for member in members:
-    if(member == 'allAuthenticatedUsers'):
-      access_for_role.append({
-          'role': role_name,
-          'specialGroup': member
-      })
+    if member == 'allAuthenticatedUsers':
+      access_for_role.append({'role': role_name, 'specialGroup': member})
     else:
       member_type, member_name = member.split(':')
       access_for_role.append({
@@ -55,7 +50,7 @@ def generate_config(context):
   project_id = context.env['project']
 
   if ('local_audit_logs' in context.properties) == (
-          'remote_audit_logs' in context.properties):
+      'remote_audit_logs' in context.properties):
     raise ValueError('Must specify local_audit_logs or remote_audit_logs but '
                      'not both.')
   use_local_logs = 'local_audit_logs' in context.properties
@@ -96,22 +91,26 @@ def generate_config(context):
   project_bindings = {
       owners_group_role: ['group:' + context.properties['owners_group']],
       'roles/iam.securityReviewer': [
-          'group:' + context.properties['auditors_group']],
+          'group:' + context.properties['auditors_group']
+      ],
   }
   if 'editors_group' in context.properties:
     project_bindings['roles/editor'] = [
-        'group:' + context.properties['editors_group']]
+        'group:' + context.properties['editors_group']
+    ]
 
   # Merge in additional permissions, which may include the above roles.
-  for additional in context.properties.get(
-          'additional_project_permissions', []):
+  for additional in context.properties.get('additional_project_permissions',
+                                           []):
     for role in additional['roles']:
       project_bindings[role] = (
           project_bindings.get(role, []) + additional['members'])
 
   policy_patch = {
-      'add': [{'role': role, 'members': members}
-              for role, members in sorted(project_bindings.items())]
+      'add': [{
+          'role': role,
+          'members': members
+      } for role, members in sorted(project_bindings.items())]
   }
   if has_organization and 'remove_owner_user' in context.properties:
     policy_patch['remove'] = [{
@@ -129,16 +128,18 @@ def generate_config(context):
       'metadata': {
           'runtimePolicy': ['UPDATE_ALWAYS'],
       },
-  }, {
-      'name': 'set-project-bindings-patch-iam-policy',
-      'action': ('gcp-types/cloudresourcemanager-v1:'
-                 'cloudresourcemanager.projects.setIamPolicy'),
-      'properties': {
-          'resource': project_id,
-          'policy': '$(ref.' + get_iam_policy_name + ')',
-          'gcpIamPolicyPatch': policy_patch,
-      },
-  }])
+  },
+                    {
+                        'name': 'set-project-bindings-patch-iam-policy',
+                        'action': (
+                            'gcp-types/cloudresourcemanager-v1:'
+                            'cloudresourcemanager.projects.setIamPolicy'),
+                        'properties': {
+                            'resource': project_id,
+                            'policy': '$(ref.' + get_iam_policy_name + ')',
+                            'gcpIamPolicyPatch': policy_patch,
+                        },
+                    }])
 
   # Create a logs GCS bucket and BigQuery dataset, or get the names of the
   # remote bucket and dataset.
@@ -187,9 +188,11 @@ def generate_config(context):
                           ],
                       },
                       {
-                          'role': 'roles/storage.objectCreator',
+                          'role':
+                              'roles/storage.objectCreator',
                           'members': [
-                              'group:cloud-storage-analytics@google.com'],
+                              'group:cloud-storage-analytics@google.com'
+                          ],
                       },
                   ],
               },
@@ -200,8 +203,8 @@ def generate_config(context):
     # Get name of local BigQuery dataset to hold audit logs.
     # This dataset will need to be created after running this deployment
     dataset_id = 'audit_logs'
-    log_sink_destination = ('bigquery.googleapis.com/projects/' +
-                            project_id + '/datasets/' + dataset_id)
+    log_sink_destination = ('bigquery.googleapis.com/projects/' + project_id +
+                            '/datasets/' + dataset_id)
   else:
     logs_bucket_id = context.properties['remote_audit_logs'].get(
         'logs_gcs_bucket_name')
@@ -252,24 +255,17 @@ def generate_config(context):
     }]
 
     for reader in context.properties.get('data_readonly_groups', []):
-      access_list.append({
-          'role': 'READER',
-          'groupByEmail': reader
-      })
+      access_list.append({'role': 'READER', 'groupByEmail': reader})
 
     for writer in context.properties.get('data_readwrite_groups', []):
-      access_list.append({
-          'role': 'WRITER',
-          'groupByEmail': writer
-      })
+      access_list.append({'role': 'WRITER', 'groupByEmail': writer})
 
     access_list += (
-        _get_bigquery_access_for_role(
-            'OWNER', add_permissions.get('owners', [])) +
-        _get_bigquery_access_for_role(
-            'WRITER', add_permissions.get('readwrite', [])) +
-        _get_bigquery_access_for_role(
-            'READER', add_permissions.get('readonly', [])))
+        _get_bigquery_access_for_role('OWNER', add_permissions.get(
+            'owners', [])) + _get_bigquery_access_for_role(
+                'WRITER', add_permissions.get('readwrite', [])) +
+        _get_bigquery_access_for_role('READER',
+                                      add_permissions.get('readonly', [])))
 
     # Update permissions for the dataset. This also removes the deployment
     # manager service account's access.
@@ -293,10 +289,12 @@ def generate_config(context):
   default_bucket_owners = ['group:' + context.properties['owners_group']]
   default_bucket_readwrite = [
       'group:' + readwrite
-      for readwrite in context.properties.get('data_readwrite_groups', [])]
+      for readwrite in context.properties.get('data_readwrite_groups', [])
+  ]
   default_bucket_readonly = [
       'group:' + readonly
-      for readonly in context.properties.get('data_readonly_groups', [])]
+      for readonly in context.properties.get('data_readonly_groups', [])
+  ]
 
   for data_bucket in context.properties.get('data_buckets', []):
     if not logs_bucket_id:
@@ -309,13 +307,15 @@ def generate_config(context):
         'members': default_bucket_owners + add_permissions.get('owners', [])
     })
     bucket_roles.append({
-        'role': 'roles/storage.objectAdmin',
-        'members': default_bucket_readwrite + add_permissions.get(
-            'readwrite', [])
+        'role':
+            'roles/storage.objectAdmin',
+        'members':
+            default_bucket_readwrite + add_permissions.get('readwrite', [])
     })
     bucket_roles.append({
         'role': 'roles/storage.objectViewer',
-        'members': default_bucket_readonly + add_permissions.get('readonly', [])
+        'members': default_bucket_readonly + add_permissions.get(
+            'readonly', [])
     })
     bucket_roles.append({
         'role': 'roles/storage.objectCreator',
@@ -363,19 +363,24 @@ def generate_config(context):
               'project_id': project_id,
               'bucket_id': data_bucket_id,
               'exp_users': (' AND '.join(data_bucket['expected_users']))
-      }
+          }
       resources.append({
           'name': 'unexpected-access-' + data_bucket_id,
           'type': 'logging.v2.metric',
           'properties': {
-              'metric': 'unexpected-access-' + data_bucket_id,
+              'metric':
+                  'unexpected-access-' + data_bucket_id,
               'description':
                   'Count of unexpected data access to ' + data_bucket_id + '.',
-              'filter': unexpected_access_filter,
+              'filter':
+                  unexpected_access_filter,
               'metricDescriptor': {
-                  'metricKind': 'DELTA',
-                  'valueType': 'INT64',
-                  'unit': '1',
+                  'metricKind':
+                      'DELTA',
+                  'valueType':
+                      'INT64',
+                  'unit':
+                      '1',
                   'labels': [{
                       'key': 'user',
                       'valueType': 'STRING',
@@ -403,14 +408,10 @@ def generate_config(context):
         },
         'accessControl': {
             'gcpIamPolicy': {
-                'bindings': [
-                    {
-                        'role': 'roles/pubsub.publisher',
-                        'members': [
-                            'serviceAccount:' + publisher_account
-                        ],
-                    },
-                ],
+                'bindings': [{
+                    'role': 'roles/pubsub.publisher',
+                    'members': ['serviceAccount:' + publisher_account],
+                },],
             },
         },
     })
@@ -424,15 +425,14 @@ def generate_config(context):
         },
         'accessControl': {
             'gcpIamPolicy': {
-                'bindings': [
-                    {
-                        'role': 'roles/pubsub.editor',
-                        'members': [
-                            'group:' + writer for writer in context.properties[
-                                'data_readwrite_groups']
-                        ],
-                    },
-                ],
+                'bindings': [{
+                    'role':
+                        'roles/pubsub.editor',
+                    'members': [
+                        'group:' + writer for writer in
+                        context.properties['data_readwrite_groups']
+                    ],
+                },],
             },
         },
         'metadata': {
@@ -451,9 +451,12 @@ def generate_config(context):
           'description': 'Count of IAM policy changes.',
           'filter': policy_change_filter,
           'metricDescriptor': {
-              'metricKind': 'DELTA',
-              'valueType': 'INT64',
-              'unit': '1',
+              'metricKind':
+                  'DELTA',
+              'valueType':
+                  'INT64',
+              'unit':
+                  '1',
               'labels': [{
                   'key': 'user',
                   'valueType': 'STRING',
@@ -480,9 +483,12 @@ def generate_config(context):
           'description': 'Count of GCS permissions changes.',
           'filter': bucket_change_filter,
           'metricDescriptor': {
-              'metricKind': 'DELTA',
-              'valueType': 'INT64',
-              'unit': '1',
+              'metricKind':
+                  'DELTA',
+              'valueType':
+                  'INT64',
+              'unit':
+                  '1',
               'labels': [{
                   'key': 'user',
                   'valueType': 'STRING',
@@ -506,9 +512,12 @@ def generate_config(context):
           'description': 'Count of bigquery permission changes.',
           'filter': bigquery_change_filter,
           'metricDescriptor': {
-              'metricKind': 'DELTA',
-              'valueType': 'INT64',
-              'unit': '1',
+              'metricKind':
+                  'DELTA',
+              'valueType':
+                  'INT64',
+              'unit':
+                  '1',
               'labels': [{
                   'key': 'user',
                   'valueType': 'STRING',
@@ -534,28 +543,37 @@ def generate_config(context):
           'dependsOn': ['set-project-bindings-patch-iam-policy'],
           'runtimePolicy': ['UPDATE_ALWAYS'],
       },
-  }, {
-      'name': 'audit-configs-patch-iam-policy',
-      'action': ('gcp-types/cloudresourcemanager-v1:'
-                 'cloudresourcemanager.projects.setIamPolicy'),
-      'properties': {
-          'resource': project_id,
-          'policy': {
-              'etag': '$(ref.audit-configs-get-iam-etag.etag)',
-              'auditConfigs': [{
-                  'auditLogConfigs': [
-                      {'logType': 'ADMIN_READ'},
-                      {'logType': 'DATA_WRITE'},
-                      {'logType': 'DATA_READ'},
-                  ],
-                  'service': 'allServices',
-              }],
-          },
-          'updateMask': 'auditConfigs,etag',
-      },
-      'metadata': {
-          'dependsOn': ['audit-configs-get-iam-etag'],
-      },
-  }])
+  },
+                    {
+                        'name': 'audit-configs-patch-iam-policy',
+                        'action': (
+                            'gcp-types/cloudresourcemanager-v1:'
+                            'cloudresourcemanager.projects.setIamPolicy'),
+                        'properties': {
+                            'resource': project_id,
+                            'policy': {
+                                'etag':
+                                    '$(ref.audit-configs-get-iam-etag.etag)',
+                                'auditConfigs': [{
+                                    'auditLogConfigs': [
+                                        {
+                                            'logType': 'ADMIN_READ'
+                                        },
+                                        {
+                                            'logType': 'DATA_WRITE'
+                                        },
+                                        {
+                                            'logType': 'DATA_READ'
+                                        },
+                                    ],
+                                    'service': 'allServices',
+                                }],
+                            },
+                            'updateMask': 'auditConfigs,etag',
+                        },
+                        'metadata': {
+                            'dependsOn': ['audit-configs-get-iam-etag'],
+                        },
+                    }])
 
   return {'resources': resources}

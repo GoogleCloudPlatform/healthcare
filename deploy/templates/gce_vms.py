@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Creates new GCE VMs with specified zone, machine type and boot image."""
 
 
@@ -30,8 +29,10 @@ def generate_config(context):
         'name': vm_name,
         'type': 'compute.v1.instance',
         'properties': {
-            'zone': zone,
-            'machineType': machine_type,
+            'zone':
+                zone,
+            'machineType':
+                machine_type,
             'disks': [{
                 'deviceName': 'boot',
                 'type': 'PERSISTENT',
@@ -42,7 +43,8 @@ def generate_config(context):
                 },
             }],
             'networkInterfaces': [{
-                'network': 'global/networks/default',
+                'network':
+                    'global/networks/default',
                 'accessConfigs': [{
                     'name': 'External NAT',
                     'type': 'ONE_TO_ONE_NAT',
