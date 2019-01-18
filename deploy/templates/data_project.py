@@ -118,28 +118,29 @@ def generate_config(context):
         'members': ['user:' + context.properties['remove_owner_user']],
     }]
   get_iam_policy_name = 'set-project-bindings-get-iam-policy'
-  resources.extend([{
-      'name': get_iam_policy_name,
-      'action': ('gcp-types/cloudresourcemanager-v1:'
-                 'cloudresourcemanager.projects.getIamPolicy'),
-      'properties': {
-          'resource': project_id,
+  resources.extend([
+      {
+          'name': get_iam_policy_name,
+          'action': ('gcp-types/cloudresourcemanager-v1:'
+                     'cloudresourcemanager.projects.getIamPolicy'),
+          'properties': {
+              'resource': project_id,
+          },
+          'metadata': {
+              'runtimePolicy': ['UPDATE_ALWAYS'],
+          },
       },
-      'metadata': {
-          'runtimePolicy': ['UPDATE_ALWAYS'],
+      {
+          'name': 'set-project-bindings-patch-iam-policy',
+          'action': ('gcp-types/cloudresourcemanager-v1:'
+                     'cloudresourcemanager.projects.setIamPolicy'),
+          'properties': {
+              'resource': project_id,
+              'policy': '$(ref.' + get_iam_policy_name + ')',
+              'gcpIamPolicyPatch': policy_patch,
+          },
       },
-  },
-                    {
-                        'name': 'set-project-bindings-patch-iam-policy',
-                        'action': (
-                            'gcp-types/cloudresourcemanager-v1:'
-                            'cloudresourcemanager.projects.setIamPolicy'),
-                        'properties': {
-                            'resource': project_id,
-                            'policy': '$(ref.' + get_iam_policy_name + ')',
-                            'gcpIamPolicyPatch': policy_patch,
-                        },
-                    }])
+  ])
 
   # Create a logs GCS bucket and BigQuery dataset, or get the names of the
   # remote bucket and dataset.
@@ -411,7 +412,7 @@ def generate_config(context):
                 'bindings': [{
                     'role': 'roles/pubsub.publisher',
                     'members': ['serviceAccount:' + publisher_account],
-                },],
+                }],
             },
         },
     })
