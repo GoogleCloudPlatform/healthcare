@@ -107,7 +107,7 @@ def validate_config_yaml(config):
   jsonschema.validate(config, schema)
 
 
-def create_new_deployment(deployment_template, deployment_name, project_id):
+def run_deployment(deployment_template, deployment_name, project_id, is_update):
   """Creates a new Deployment Manager deployment from a template.
 
   Args:
@@ -115,21 +115,39 @@ def create_new_deployment(deployment_template, deployment_name, project_id):
       manager YAML template.
     deployment_name (string): The name for the deployment.
     project_id (string): The project under which to create the deployment.
+    is_update (bool): Whether this deployment is an update.
   """
   # Save the deployment manager template to a temporary file in the same
   # directory as the deployment manager templates.
   dm_template_file = tempfile.NamedTemporaryFile(suffix='.yaml')
   write_yaml_file(deployment_template, dm_template_file.name)
 
-  # Create the deployment.
-  runner.run_gcloud_command(
-      ['deployment-manager', 'deployments', 'create', deployment_name,
-       '--config', dm_template_file.name,
-       '--automatic-rollback-on-error'],
-      project_id=project_id,
-  )
+  if is_update:
+    gcloud_cmd = [
+        'deployment-manager',
+        'deployments',
+        'update',
+        deployment_name,
+        '--config',
+        dm_template_file.name,
+        '--delete-policy',
+        'ABANDON',
+    ]
+  else:
+    gcloud_cmd = [
+        'deployment-manager',
+        'deployments',
+        'create',
+        deployment_name,
+        '--config',
+        dm_template_file.name,
+        '--automatic-rollback-on-error',
+    ]
 
-  # Check deployment exists (and wasn't automcatically rolled back
+  # Create the deployment.
+  runner.run_gcloud_command(gcloud_cmd, project_id=project_id)
+
+  # Check deployment exists (and wasn't automcatically rolled back)
   runner.run_gcloud_command(
       ['deployment-manager', 'deployments', 'describe', deployment_name],
       project_id=project_id)

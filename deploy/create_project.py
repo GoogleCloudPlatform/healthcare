@@ -53,6 +53,9 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('project_yaml', None,
                     'Location of the project config YAML.')
+flags.DEFINE_list('projects', None,
+                  ('Project IDs within --project_yaml to deploy, '
+                   'or "*" to deploy all projects.'))
 flags.DEFINE_string('output_yaml_path', None,
                     ('Path to save a new YAML file with any '
                      'environment variables substituted and generated '
@@ -69,7 +72,10 @@ flags.DEFINE_string('resume_from_project', '',
 flags.DEFINE_integer('resume_from_step', 1,
                      ('If the script terminates early, set this to the '
                       'step that failed to resume from this step.'))
-
+# TODO: remove flag once updates are stable
+flags.DEFINE_bool(
+    'allow_updates', False,
+    'Whether to allow updates. NOTE: this functionality is not ready for prod.')
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
@@ -90,6 +96,15 @@ ProjectConfig = collections.namedtuple(
         'audit_logs_project',
         # Extra steps to perform for this project.
         'extra_steps',
+    ])
+
+Step = collections.namedtuple(
+    'Step',
+    [
+        # Function that implements this step.
+        'func',
+        # Whether this step should be run when updating a project.
+        'updatable',
     ])
 
 
@@ -194,8 +209,8 @@ def deploy_gcs_audit_logs(config):
           },
       }]
   }
-  utils.create_new_deployment(dm_template_dict, deployment_name,
-                              audit_project_id)
+  utils.run_deployment(dm_template_dict, deployment_name, audit_project_id,
+                       is_deployed(config.project))
 
 
 def _is_service_enabled(service_name, project_id):
@@ -255,8 +270,8 @@ def deploy_project_resources(config):
     iam_api_disable = True
   try:
     # Create the deployment.
-    utils.create_new_deployment(dm_template_dict, 'data-project-deployment',
-                                project_id)
+    utils.run_deployment(dm_template_dict, 'data-project-deployment',
+                         project_id, is_deployed(config.project))
 
     # Create project liens if requested.
     if config.project.get('create_deletion_lien'):
@@ -316,8 +331,8 @@ def deploy_bigquery_audit_logs(config):
           },
       }]
   }
-  utils.create_new_deployment(dm_template_dict, deployment_name,
-                              audit_project_id)
+  utils.run_deployment(dm_template_dict, deployment_name, audit_project_id,
+                       is_deployed(config.project))
 
 
 def create_compute_images(config):
@@ -407,7 +422,8 @@ def create_compute_vms(config):
           }
       }]
   }
-  utils.create_new_deployment(dm_template_dict, deployment_name, project_id)
+  utils.run_deployment(dm_template_dict, deployment_name, project_id,
+                       is_deployed(config.project))
 
 
 def create_stackdriver_account(config):
@@ -523,25 +539,28 @@ def add_project_generated_fields(config):
         'gce_instance_info'] = gce_instance_info
 
 # The steps to set up a project, so the script can be resumed part way through
-# on error. Each is a function that takes a config dictionary.
+# on error. Each func takes a config dictionary.
 _SETUP_STEPS = [
-    create_new_project,
-    setup_billing,
-    enable_deployment_manager,
-    deploy_gcs_audit_logs,
-    deploy_project_resources,
-    deploy_bigquery_audit_logs,
-    create_compute_images,
-    create_compute_vms,
-    enable_services_apis,
-    create_stackdriver_account,
-    create_alerts,
-    add_project_generated_fields,
+    Step(func=create_new_project, updatable=False),
+    Step(func=setup_billing, updatable=False),
+    Step(func=enable_deployment_manager, updatable=True),
+    Step(func=deploy_gcs_audit_logs, updatable=False),
+    Step(func=deploy_project_resources, updatable=True),
+    Step(func=deploy_bigquery_audit_logs, updatable=False),
+    Step(func=create_compute_images, updatable=False),
+    Step(func=create_compute_vms, updatable=False),
+    Step(func=enable_services_apis, updatable=False),
+    Step(func=create_stackdriver_account, updatable=False),
+    Step(func=create_alerts, updatable=False),
+    Step(func=add_project_generated_fields, updatable=False),
 ]
 
 
-def setup_new_project(config, starting_step, output_yaml_path):
+def setup_project(config, starting_step, output_yaml_path):
   """Run the full process for initalizing a single new project.
+
+  Note: for projects that have already been deployed, only the updatable steps
+  will be run.
 
   Args:
     config (ProjectConfig): The config of a single project to setup.
@@ -553,12 +572,22 @@ def setup_new_project(config, starting_step, output_yaml_path):
     A boolean, true if the project was deployed successfully, false otherwise.
   """
   steps = _SETUP_STEPS + config.extra_steps
+  deployed = is_deployed(config.project)
+
+  if deployed and not FLAGS.allow_updates:
+    logging.fatal('must pass --allow_updates to support updates.')
 
   total_steps = len(steps)
   for step_num in range(starting_step, total_steps + 1):
     logging.info('Step %s/%s', step_num, total_steps)
+    step = steps[step_num - 1]
+
+    if deployed and not step.updatable:
+      logging.info('Step %s/%s is not updatable, skipping', step_num,
+                   total_steps)
+      continue
     try:
-      steps[step_num - 1](config)
+      step.func(config)
     except subprocess.CalledProcessError as e:
       logging.error('Setup failed on step %s: %s', step_num, e)
       logging.error(
@@ -621,11 +650,7 @@ def validate_project_configs(overall, projects):
 
 def is_deployed(project_dict):
   """Determine whether the project has been deployed."""
-  if not project_dict:
-    return True
-  is_resume_project = FLAGS.resume_from_project == project_dict['project_id']
-  has_generated_fields = _GENERATED_FIELDS_NAME in project_dict
-  return not is_resume_project and has_generated_fields
+  return _GENERATED_FIELDS_NAME in project_dict
 
 
 def main(argv):
@@ -656,11 +681,25 @@ def main(argv):
     logging.error('Error in YAML config: %s', e)
     return
 
-  audit_logs_project = root_config.get('audit_logs_project')
+  want_projects = set(FLAGS.projects)
+
+  if FLAGS.resume_from_project and FLAGS.resume_from_step not in want_projects:
+    logging.error('--resume_from_project must be in the --projects list')
+    return
+
+  def want_project(project_config_dict):
+    if not project_config_dict:
+      return False
+
+    return want_projects == {
+        '*'
+    } or project_config_dict['project_id'] in want_projects
 
   projects = []
+  audit_logs_project = root_config.get('audit_logs_project')
+
   # Always deploy the remote audit logs project first (if present).
-  if not is_deployed(audit_logs_project):
+  if want_project(audit_logs_project):
     projects.append(
         ProjectConfig(
             root=root_config,
@@ -668,17 +707,22 @@ def main(argv):
             audit_logs_project=None,
             extra_steps=[]))
 
-  forseti_config = root_config.get('forseti', {})
+  forseti_config = root_config.get('forseti')
 
-  if not is_deployed(forseti_config.get('project')):
+  if forseti_config and want_project(forseti_config['project']):
     extra_steps = [
-        install_forseti,
-        get_forseti_access_granter(forseti_config['project']['project_id']),
+        Step(func=install_forseti, updatable=False),
+        Step(
+            func=get_forseti_access_granter(
+                forseti_config['project']['project_id']),
+            updatable=False),
     ]
 
     if audit_logs_project:
       extra_steps.append(
-          get_forseti_access_granter(audit_logs_project['project_id']))
+          Step(
+              func=get_forseti_access_granter(audit_logs_project['project_id']),
+              updatable=False))
 
     forseti_project_config = ProjectConfig(
         root=root_config,
@@ -688,13 +732,15 @@ def main(argv):
     projects.append(forseti_project_config)
 
   for project_config in root_config.get('projects', []):
-    if is_deployed(project_config):
+    if not want_project(project_config):
       continue
 
     extra_steps = []
     if forseti_config:
       extra_steps.append(
-          get_forseti_access_granter(project_config['project_id']))
+          Step(
+              func=get_forseti_access_granter(project_config['project_id']),
+              updatable=False))
 
     projects.append(
         ProjectConfig(
@@ -713,7 +759,7 @@ def main(argv):
     if config.project['project_id'] == FLAGS.resume_from_project:
       starting_step = max(1, FLAGS.resume_from_step)
 
-    if not setup_new_project(config, starting_step, output_yaml_path):
+    if not setup_project(config, starting_step, output_yaml_path):
       # Don't attempt to deploy additional projects if one project failed.
       return
 
@@ -723,5 +769,6 @@ def main(argv):
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
+  flags.mark_flag_as_required('projects')
   flags.mark_flag_as_required('output_yaml_path')
   app.run(main)

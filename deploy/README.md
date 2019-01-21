@@ -106,6 +106,8 @@ remote audit logs) and one or more data hosting projects.
 1.  If you provided a `forseti` config and the project hasn't been deployed you
     may be prompted for additional steps during the Forseti instance
     installation.
+1.  Pass a --projects flag listing the projects you wish to deploy, or * to
+    deploy all projects.
 1.  If the projects were deployed successfully, the script will write a YAML
     file at --output_yaml_path, containing a `generated_fields` block for each
     newly-created project. These fields are used to generate monitoring rules.
@@ -115,7 +117,7 @@ remote audit logs) and one or more data hosting projects.
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare
-$ bazel run deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --output_yaml_path=/tmp/output.yaml --nodry_run
+$ bazel run deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=/tmp/output.yaml --nodry_run
 ```
 
 If the script fails at any point, try to correct the error and use the flags

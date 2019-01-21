@@ -33,6 +33,7 @@ class CreateProjectTest(absltest.TestCase):
     _deploy('project_with_remote_audit_logs.yaml')
 
   def test_project_config_validate_check_raise(self):
+    FLAGS.projects = ['*']
     datathon_path = os.path.join(
         FLAGS.test_srcdir,
         'google3/deploy/samples/',
@@ -50,6 +51,7 @@ class CreateProjectTest(absltest.TestCase):
           create_project.main([])
 
   def test_project_config_validate_check_correct(self):
+    FLAGS.projects = ['*']
     datathon_path = (
         'deploy/samples/datathon_team_project.yaml'
     )
@@ -71,6 +73,7 @@ class CreateProjectTest(absltest.TestCase):
   def test_create_project_with_spanned_configs(self):
     FLAGS.project_yaml = (
         'deploy/samples/spanned_configs/root.yaml')
+    FLAGS.projects = ['*']
     with tempfile.NamedTemporaryFile() as f:
       FLAGS.output_yaml_path = f.name
       create_project.main([])
@@ -79,6 +82,7 @@ class CreateProjectTest(absltest.TestCase):
 def _deploy(config_filename):
   FLAGS.project_yaml = os.path.join(
       'deploy/samples/', config_filename)
+  FLAGS.projects = ['*']
   with tempfile.NamedTemporaryFile() as f:
     FLAGS.output_yaml_path = f.name
     create_project.main([])
