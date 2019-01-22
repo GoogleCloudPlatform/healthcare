@@ -683,7 +683,8 @@ def main(argv):
 
   want_projects = set(FLAGS.projects)
 
-  if FLAGS.resume_from_project and FLAGS.resume_from_step not in want_projects:
+  if FLAGS.resume_from_project and want_projects != {'*'} and (
+      FLAGS.resume_from_project not in want_projects):
     logging.error('--resume_from_project must be in the --projects list')
     return
 
