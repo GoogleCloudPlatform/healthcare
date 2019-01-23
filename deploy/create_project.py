@@ -54,7 +54,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('project_yaml', None,
                     'Location of the project config YAML.')
-flags.DEFINE_list('projects', None,
+flags.DEFINE_list('projects', ['*'],
                   ('Project IDs within --project_yaml to deploy, '
                    'or "*" to deploy all projects.'))
 flags.DEFINE_string('output_yaml_path', None,
@@ -784,6 +784,5 @@ def main(argv):
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
-  flags.mark_flag_as_required('projects')
   flags.mark_flag_as_required('output_yaml_path')
   app.run(main)

@@ -106,13 +106,21 @@ remote audit logs) and one or more data hosting projects.
 1.  If you provided a `forseti` config and the project hasn't been deployed you
     may be prompted for additional steps during the Forseti instance
     installation.
-1.  Pass a --projects flag listing the projects you wish to deploy, or * to
-    deploy all projects.
+1.  Optional: pass a --projects flag listing the projects you wish to deploy,
+    or * (default) to deploy all projects.
+
+    WARNING: deploying a project that was previously deployed will trigger an
+    update. Updates are currently in development and NOT supported. If you wish
+    to only deploy new projects, please manually list them in --projects.
+
 1.  If the projects were deployed successfully, the script will write a YAML
     file at --output_yaml_path, containing a `generated_fields` block for each
     newly-created project. These fields are used to generate monitoring rules.
     Update the original YAML config to include this block for the new
     project(s).
+
+    WARNING: if the script failed at any step, please sync --output_yaml_path
+    (if it exists) with the input file before trying again.
 
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
