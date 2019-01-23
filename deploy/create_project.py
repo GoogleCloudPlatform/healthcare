@@ -526,7 +526,7 @@ def create_alerts(config):
       bucket_name = project_id + data_bucket['name_suffix']
       metric_name = 'unexpected-access-' + bucket_name
       utils.create_alert_policy(
-          'gcs_bucket', metric_name,
+          ['gcs_bucket'], metric_name,
           'Unexpected Access to {} Alert'.format(bucket_name),
           ('This policy ensures the designated user/group is notified when '
            'bucket {} is accessed by an unexpected user.'.format(bucket_name)),
