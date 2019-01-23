@@ -37,6 +37,7 @@ import collections
 import copy
 import os
 import subprocess
+import time
 
 from absl import app
 from absl import flags
@@ -82,6 +83,13 @@ _LOG_SINK_NAME = 'audit-logs-to-bigquery'
 
 # Name of field where generated fields will be added.
 _GENERATED_FIELDS_NAME = 'generated_fields'
+
+# Roles to temporarily grant the deployment manager service account to function.
+_DEPLOYMENT_MANAGER_ROLES = ['roles/owner', 'roles/storage.admin']
+
+# IAM binding changes can take some time to propagate to child resources, so
+# wait to give it enough time.
+_IAM_PROPAGATAION_WAIT_TIME_SECS = 60
 
 # Configuration for deploying a single project.
 ProjectConfig = collections.namedtuple(
@@ -151,10 +159,16 @@ def enable_deployment_manager(config):
 
   # Grant deployment manager service account (temporary) owners access.
   dm_service_account = utils.get_deployment_manager_service_account(project_id)
-  runner.run_gcloud_command(['projects', 'add-iam-policy-binding', project_id,
-                             '--member', dm_service_account,
-                             '--role', 'roles/owner'],
-                            project_id=None)
+  for role in _DEPLOYMENT_MANAGER_ROLES:
+    runner.run_gcloud_command([
+        'projects', 'add-iam-policy-binding', project_id, '--member',
+        dm_service_account, '--role', role
+    ],
+                              project_id=None)
+
+  logging.info('Sleeping for %d seconds to let IAM updates propagate.',
+               _IAM_PROPAGATAION_WAIT_TIME_SECS)
+  time.sleep(_IAM_PROPAGATAION_WAIT_TIME_SECS)
 
 
 def enable_services_apis(config):
@@ -282,12 +296,12 @@ def deploy_project_resources(config):
       ],
                                 project_id=project_id)
 
-    # Remove Owners role from the DM service account.
-    runner.run_gcloud_command([
-        'projects', 'remove-iam-policy-binding', project_id, '--member',
-        dm_service_account, '--role', 'roles/owner'
-    ],
-                              project_id=None)
+    for role in _DEPLOYMENT_MANAGER_ROLES:
+      runner.run_gcloud_command([
+          'projects', 'remove-iam-policy-binding', project_id, '--member',
+          dm_service_account, '--role', role
+      ],
+                                project_id=None)
 
   finally:
     # Disable iam.googleapis.com if it is enabled in this function

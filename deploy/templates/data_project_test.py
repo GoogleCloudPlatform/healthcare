@@ -227,6 +227,9 @@ class TestDataProject(absltest.TestCase):
                         }],
                     },
                 },
+                'metadata': {
+                    'runtimePolicy': ['UPDATE_ON_CHANGE'],
+                },
             },
             {
                 'name': 'my-project-logs',
@@ -346,7 +349,8 @@ class TestDataProject(absltest.TestCase):
                     ],
                 },
                 'metadata': {
-                    'dependsOn': ['create-big-query-dataset-us_data']
+                    'dependsOn': ['create-big-query-dataset-us_data'],
+                    'runtimePolicy': ['UPDATE_ON_CHANGE'],
                 },
             },
             {
@@ -394,7 +398,8 @@ class TestDataProject(absltest.TestCase):
                     ],
                 },
                 'metadata': {
-                    'dependsOn': ['create-big-query-dataset-euro_data']
+                    'dependsOn': ['create-big-query-dataset-euro_data'],
+                    'runtimePolicy': ['UPDATE_ON_CHANGE'],
                 },
             },
             {
@@ -775,6 +780,7 @@ class TestDataProject(absltest.TestCase):
                 },
                 'metadata': {
                     'dependsOn': ['audit-configs-get-iam-etag'],
+                    'runtimePolicy': ['UPDATE_ON_CHANGE'],
                 },
             },
         ]
@@ -905,6 +911,9 @@ class TestDataProject(absltest.TestCase):
                         ],
                     },
                 },
+                'metadata': {
+                    'runtimePolicy': ['UPDATE_ON_CHANGE'],
+                },
             },
             {
                 'name': 'audit-logs-to-bigquery',
@@ -954,7 +963,8 @@ class TestDataProject(absltest.TestCase):
                                }],
                 },
                 'metadata': {
-                    'dependsOn': ['create-big-query-dataset-us_data']
+                    'dependsOn': ['create-big-query-dataset-us_data'],
+                    'runtimePolicy': ['UPDATE_ON_CHANGE'],
                 },
             },
             {
@@ -1117,6 +1127,7 @@ class TestDataProject(absltest.TestCase):
                 },
                 'metadata': {
                     'dependsOn': ['audit-configs-get-iam-etag'],
+                    'runtimePolicy': ['UPDATE_ON_CHANGE'],
                 },
             }
         ]

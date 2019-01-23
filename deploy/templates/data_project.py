@@ -139,6 +139,9 @@ def generate_config(context):
               'policy': '$(ref.' + get_iam_policy_name + ')',
               'gcpIamPolicyPatch': policy_patch,
           },
+          'metadata': {
+              'runtimePolicy': ['UPDATE_ON_CHANGE'],
+          },
       },
   ])
 
@@ -281,6 +284,7 @@ def generate_config(context):
         },
         'metadata': {
             'dependsOn': ['create-big-query-dataset-' + ds_name],
+            'runtimePolicy': ['UPDATE_ON_CHANGE'],
         },
     })
 
@@ -533,48 +537,50 @@ def generate_config(context):
 
   # Enable data-access logging. UPDATE_ALWAYS is added to metadata to get a new
   # etag each time.
-  resources.extend([{
-      'name': 'audit-configs-get-iam-etag',
-      'action': ('gcp-types/cloudresourcemanager-v1:'
-                 'cloudresourcemanager.projects.getIamPolicy'),
-      'properties': {
-          'resource': project_id,
+  resources.extend([
+      {
+          'name': 'audit-configs-get-iam-etag',
+          'action': ('gcp-types/cloudresourcemanager-v1:'
+                     'cloudresourcemanager.projects.getIamPolicy'),
+          'properties': {
+              'resource': project_id,
+          },
+          'metadata': {
+              'dependsOn': ['set-project-bindings-patch-iam-policy'],
+              'runtimePolicy': ['UPDATE_ALWAYS'],
+          },
       },
-      'metadata': {
-          'dependsOn': ['set-project-bindings-patch-iam-policy'],
-          'runtimePolicy': ['UPDATE_ALWAYS'],
+      {
+          'name': 'audit-configs-patch-iam-policy',
+          'action': ('gcp-types/cloudresourcemanager-v1:'
+                     'cloudresourcemanager.projects.setIamPolicy'),
+          'properties': {
+              'resource': project_id,
+              'policy': {
+                  'etag':
+                      '$(ref.audit-configs-get-iam-etag.etag)',
+                  'auditConfigs': [{
+                      'auditLogConfigs': [
+                          {
+                              'logType': 'ADMIN_READ'
+                          },
+                          {
+                              'logType': 'DATA_WRITE'
+                          },
+                          {
+                              'logType': 'DATA_READ'
+                          },
+                      ],
+                      'service': 'allServices',
+                  }],
+              },
+              'updateMask': 'auditConfigs,etag',
+          },
+          'metadata': {
+              'dependsOn': ['audit-configs-get-iam-etag'],
+              'runtimePolicy': ['UPDATE_ON_CHANGE'],
+          },
       },
-  },
-                    {
-                        'name': 'audit-configs-patch-iam-policy',
-                        'action': (
-                            'gcp-types/cloudresourcemanager-v1:'
-                            'cloudresourcemanager.projects.setIamPolicy'),
-                        'properties': {
-                            'resource': project_id,
-                            'policy': {
-                                'etag':
-                                    '$(ref.audit-configs-get-iam-etag.etag)',
-                                'auditConfigs': [{
-                                    'auditLogConfigs': [
-                                        {
-                                            'logType': 'ADMIN_READ'
-                                        },
-                                        {
-                                            'logType': 'DATA_WRITE'
-                                        },
-                                        {
-                                            'logType': 'DATA_READ'
-                                        },
-                                    ],
-                                    'service': 'allServices',
-                                }],
-                            },
-                            'updateMask': 'auditConfigs,etag',
-                        },
-                        'metadata': {
-                            'dependsOn': ['audit-configs-get-iam-etag'],
-                        },
-                    }])
+  ])
 
   return {'resources': resources}
