@@ -25,6 +25,18 @@ rules:
       - role: roles/owner
         members:
           - group:*@domain.com
+  - name: All billing account roles must be groups from the domain.
+    mode: whitelist
+    resource:
+      - type: billing_account
+        applies_to: self
+        resource_ids:
+          - '*'
+    inherit_from_parents: false
+    bindings:
+      - role: '*'
+        members:
+          - group:*@domain.com
   - name: Global whitelist of allowed members for project roles
     mode: whitelist
     resource:
@@ -231,7 +243,7 @@ class IamScannerRulesTest(absltest.TestCase):
     global_config.pop('domain')
     got_rules = isr.IamScannerRules().generate_rules(_PROJECTS, global_config)
     want_rules = yaml.load(_EXPECTED_RULES_YAML)
-    want_rules['rules'] = want_rules['rules'][3:]  # trim global rules
+    want_rules['rules'] = want_rules['rules'][4:]  # trim global rules
     self.assertEqual(got_rules, want_rules)
 
 

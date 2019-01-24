@@ -83,6 +83,20 @@ class IamScannerRules(base_scanner_rules.BaseScannerRules):
                 'members': ['group:*@' + domain],
             }],
         },
+        {
+            'name': 'All billing account roles must be groups from the domain.',
+            'mode': 'whitelist',
+            'resource': [{
+                'type': 'billing_account',
+                'applies_to': 'self',
+                'resource_ids': ['*'],
+            }],
+            'inherit_from_parents': False,
+            'bindings': [{
+                'role': '*',
+                'members': ['group:*@' + domain],
+            }],
+        },
     ]
 
     global_rules.append(
