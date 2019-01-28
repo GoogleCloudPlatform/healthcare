@@ -111,6 +111,8 @@ Step = collections.namedtuple(
     [
         # Function that implements this step.
         'func',
+        # Description of the step.
+        'description',
         # Whether this step should be run when updating a project.
         'updatable',
     ])
@@ -118,7 +120,6 @@ Step = collections.namedtuple(
 
 def create_new_project(config):
   """Creates the new GCP project."""
-  logging.info('Creating a new GCP project...')
   project_id = config.project['project_id']
 
   overall_config = config.root['overall']
@@ -138,7 +139,6 @@ def create_new_project(config):
 
 def setup_billing(config):
   """Sets the billing account for this project."""
-  logging.info('Setting up billing...')
   billing_acct = config.root['overall']['billing_account']
   project_id = config.project['project_id']
   # Set the appropriate billing account for this project:
@@ -149,7 +149,6 @@ def setup_billing(config):
 
 def enable_deployment_manager(config):
   """Enables Deployment manager, with role/owners for its service account."""
-  logging.info('Setting up Deployment Manager...')
   project_id = config.project['project_id']
 
   # Enabled Deployment Manger and Cloud Resource Manager for this project.
@@ -181,7 +180,6 @@ def enable_services_apis(config):
   Args:
     config (ProjectConfig): The config of a single project to setup.
   """
-  logging.info('Enabling APIs...')
   project_id = config.project['project_id']
   apis = config.project.get('enabled_apis', [])
   for i in range(0, len(apis), 10):
@@ -237,7 +235,6 @@ def _is_service_enabled(service_name, project_id):
 
 def deploy_project_resources(config):
   """Deploys resources into the new data project."""
-  logging.info('Deploying Project resources...')
   setup_account = utils.get_gcloud_user()
   has_organization = bool(config.root['overall'].get('organization_id'))
   project_id = config.project['project_id']
@@ -479,7 +476,6 @@ def create_stackdriver_account(config):
     logging.warning('No Stackdriver alert email specified, skipping creation '
                     'of Stackdriver account.')
     return
-  logging.info('Creating Stackdriver account.')
   project_id = config.project['project_id']
 
   message = """
@@ -567,7 +563,6 @@ def create_alerts(config):
 def add_project_generated_fields(config):
   """Adds a generated_fields block to a project definition."""
   project_id = config.project['project_id']
-  logging.info('Adding project post deployment fields for %s', project_id)
 
   if _GENERATED_FIELDS_NAME in config.project:
     return
@@ -586,18 +581,66 @@ def add_project_generated_fields(config):
 # The steps to set up a project, so the script can be resumed part way through
 # on error. Each func takes a config dictionary.
 _SETUP_STEPS = [
-    Step(func=create_new_project, updatable=False),
-    Step(func=setup_billing, updatable=False),
-    Step(func=enable_deployment_manager, updatable=True),
-    Step(func=deploy_gcs_audit_logs, updatable=False),
-    Step(func=deploy_project_resources, updatable=True),
-    Step(func=deploy_bigquery_audit_logs, updatable=False),
-    Step(func=create_compute_images, updatable=True),
-    Step(func=create_compute_vms, updatable=True),
-    Step(func=enable_services_apis, updatable=True),
-    Step(func=create_stackdriver_account, updatable=False),
-    Step(func=create_alerts, updatable=False),
-    Step(func=add_project_generated_fields, updatable=False),
+    Step(
+        func=create_new_project,
+        description='Create project',
+        updatable=False,
+    ),
+    Step(
+        func=setup_billing,
+        description='Set up billing',
+        updatable=False,
+    ),
+    Step(
+        func=enable_deployment_manager,
+        description='Enable deployment manager',
+        updatable=True,
+    ),
+    Step(
+        func=deploy_gcs_audit_logs,
+        description='Deploy GCS audit logs',
+        updatable=False,
+    ),
+    Step(
+        func=deploy_project_resources,
+        description='Deploy project resources',
+        updatable=True,
+    ),
+    Step(
+        func=deploy_bigquery_audit_logs,
+        description='Deploy BigQuery audit logs',
+        updatable=False,
+    ),
+    Step(
+        func=create_compute_images,
+        description='Deploy compute images',
+        updatable=True,
+    ),
+    Step(
+        func=create_compute_vms,
+        description='Deploy GCE VMs',
+        updatable=True,
+    ),
+    Step(
+        func=enable_services_apis,
+        description='Enable APIs',
+        updatable=True,
+    ),
+    Step(
+        func=create_stackdriver_account,
+        description='Create Stackdriver account',
+        updatable=False,
+    ),
+    Step(
+        func=create_alerts,
+        description='Create Stackdriver alerts',
+        updatable=False,
+    ),
+    Step(
+        func=add_project_generated_fields,
+        description='Generate project fields',
+        updatable=False,
+    ),
 ]
 
 
@@ -624,13 +667,14 @@ def setup_project(config, starting_step, output_yaml_path):
 
   total_steps = len(steps)
   for step_num in range(starting_step, total_steps + 1):
-    logging.info('Step %s/%s', step_num, total_steps)
     step = steps[step_num - 1]
+    logging.info('%s: step %d/%d (%s)', config.project['project_id'], step_num,
+                 total_steps, step.description)
 
     if deployed and not step.updatable:
-      logging.info('Step %s/%s is not updatable, skipping', step_num,
-                   total_steps)
+      logging.info('Step %d is not updatable, skipping', step_num)
       continue
+
     try:
       step.func(config)
     except subprocess.CalledProcessError as e:
@@ -658,17 +702,19 @@ def install_forseti(config):
   }
 
 
-def get_forseti_access_granter(project_id):
-  """Get function to grant access to the forseti instance for the project."""
+def get_forseti_access_granter_step(project_id):
+  """Get step to grant access to the forseti instance for the project."""
 
   def grant_access(config):
-    logging.info('Granting forseti service account access to project %s',
-                 project_id)
     forseti.grant_access(
         project_id,
         config.root['forseti'][_GENERATED_FIELDS_NAME]['service_account'])
 
-  return grant_access
+  return Step(
+      func=grant_access,
+      description='Grant Access to Forseti Service account',
+      updatable=False,
+  )
 
 
 def validate_project_configs(overall, projects):
@@ -757,18 +803,18 @@ def main(argv):
 
   if forseti_config and want_project(forseti_config['project']):
     extra_steps = [
-        Step(func=install_forseti, updatable=False),
         Step(
-            func=get_forseti_access_granter(
-                forseti_config['project']['project_id']),
-            updatable=False),
+            func=install_forseti,
+            description='Install Forseti',
+            updatable=False,
+        ),
+        get_forseti_access_granter_step(
+            forseti_config['project']['project_id']),
     ]
 
     if audit_logs_project:
       extra_steps.append(
-          Step(
-              func=get_forseti_access_granter(audit_logs_project['project_id']),
-              updatable=False))
+          get_forseti_access_granter_step(audit_logs_project['project_id']))
 
     forseti_project_config = ProjectConfig(
         root=root_config,
@@ -784,9 +830,7 @@ def main(argv):
     extra_steps = []
     if forseti_config:
       extra_steps.append(
-          Step(
-              func=get_forseti_access_granter(project_config['project_id']),
-              updatable=False))
+          get_forseti_access_granter_step(project_config['project_id']))
 
     projects.append(
         ProjectConfig(
