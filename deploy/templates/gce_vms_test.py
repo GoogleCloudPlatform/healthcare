@@ -72,8 +72,8 @@ class TestGceVmsTemplate(absltest.TestCase):
     generated = gce_vms.generate_config(FakeContext())
 
     expected = {
-        'resources':
-            [{
+        'resources': [
+            {
                 'name': 'work-machine-1',
                 'type': 'compute.v1.instance',
                 'properties': {
@@ -100,62 +100,153 @@ class TestGceVmsTemplate(absltest.TestCase):
                     }]
                 }
             },
-             {
-                 'name': 'stop-work-machine-1',
-                 'action': 'gcp-types/compute-v1:compute.instances.stop',
-                 'properties': {
-                     'instance': 'work-machine-1',
-                     'zone': 'asia-southeast1-a',
-                 },
-                 'metadata': {
-                     'dependsOn': ['work-machine-1'],
-                     'runtimePolicy': ['CREATE'],
-                 },
-             },
-             {
-                 'name': 'work-machine-2',
-                 'type': 'compute.v1.instance',
-                 'properties': {
-                     'zone': 'asia-southeast1-b',
-                     'machineType': (
-                         'zones/asia-southeast1-b/machineTypes/n1-standard-1'),
-                     'disks': [{
-                         'deviceName': 'boot',
-                         'type': 'PERSISTENT',
-                         'boot': True,
-                         'autoDelete': True,
-                         'initializeParams': {
-                             'sourceImage': ('projects/debian-cloud/global/'
-                                             'images/family/debian-9'),
-                         },
-                     }],
-                     'networkInterfaces': [{
-                         'network':
-                             'global/networks/default',
-                         'accessConfigs': [{
-                             'name': 'External NAT',
-                             'type': 'ONE_TO_ONE_NAT',
-                         }],
-                     }],
-                     'metadata': {
-                         'items': [{
-                             'value': 'echo "abc"\necho "def"\n',
-                             'key': 'startup-script'
-                         }]
-                     },
-                 }
-             },
-             {
-                 'name': 'firewall-allow-rstudio',
-                 'type': 'compute.v1.firewall',
-                 'properties': {
-                     'allowed': [{
-                         'IPProtocol': 'tcp',
-                         'ports': ['8787'],
-                     }],
-                     'sourceRanges': ['0.0.0.0/0'],
-                 },
-             }]
+            {
+                'name': 'final-stop-work-machine-1',
+                'action': 'gcp-types/compute-v1:compute.instances.stop',
+                'properties': {
+                    'instance': 'work-machine-1',
+                    'zone': 'asia-southeast1-a',
+                },
+                'metadata': {
+                    'dependsOn': ['work-machine-1'],
+                    'runtimePolicy': ['UPDATE_ALWAYS'],
+                },
+            },
+            {
+                'name': 'work-machine-2',
+                'type': 'compute.v1.instance',
+                'properties': {
+                    'zone': 'asia-southeast1-b',
+                    'machineType': (
+                        'zones/asia-southeast1-b/machineTypes/n1-standard-1'),
+                    'disks': [{
+                        'deviceName': 'boot',
+                        'type': 'PERSISTENT',
+                        'boot': True,
+                        'autoDelete': True,
+                        'initializeParams': {
+                            'sourceImage': ('projects/debian-cloud/global/'
+                                            'images/family/debian-9'),
+                        },
+                    }],
+                    'networkInterfaces': [{
+                        'network':
+                            'global/networks/default',
+                        'accessConfigs': [{
+                            'name': 'External NAT',
+                            'type': 'ONE_TO_ONE_NAT',
+                        }],
+                    }],
+                    'metadata': {
+                        'items': [{
+                            'value': 'echo "abc"\necho "def"\n',
+                            'key': 'startup-script'
+                        }]
+                    },
+                }
+            },
+            {
+                'name': 'final-start-work-machine-2',
+                'action': 'gcp-types/compute-v1:compute.instances.start',
+                'properties': {
+                    'instance': 'work-machine-2',
+                    'zone': 'asia-southeast1-b',
+                },
+                'metadata': {
+                    'dependsOn': ['work-machine-2'],
+                    'runtimePolicy': ['UPDATE_ALWAYS'],
+                },
+            },
+            {
+                'name': 'firewall-allow-rstudio',
+                'type': 'compute.v1.firewall',
+                'properties': {
+                    'allowed': [{
+                        'IPProtocol': 'tcp',
+                        'ports': ['8787'],
+                    }],
+                    'sourceRanges': ['0.0.0.0/0'],
+                },
+            },
+        ]
+    }
+
+    self.assertEqual(generated, expected)
+
+  def test_template_shutdown(self):
+
+    class FakeContext(object):
+      env = {
+          'deployment': 'my-deployment',
+          'project': 'my-project',
+      }
+      startup_script_str = 'echo "abc"\necho "def"\n'
+      properties = {
+          'gce_instances': [{
+              'name': 'work-machine-1',
+              'zone': 'asia-southeast1-a',
+              'machine_type': 'n1-standard-1',
+              'boot_image_name': 'global/images/my-boot-disk',
+              'start_vm': False,
+          },],
+          'vm_names_to_shutdown': ['work-machine-1'],
+      }
+
+    generated = gce_vms.generate_config(FakeContext())
+
+    expected = {
+        'resources': [
+            {
+                'name': 'initial-stop-work-machine-1',
+                'action': 'gcp-types/compute-v1:compute.instances.stop',
+                'properties': {
+                    'instance': 'work-machine-1',
+                    'zone': 'asia-southeast1-a',
+                },
+                'metadata': {
+                    'runtimePolicy': ['UPDATE_ALWAYS'],
+                },
+            },
+            {
+                'name': 'work-machine-1',
+                'type': 'compute.v1.instance',
+                'properties': {
+                    'zone':
+                        'asia-southeast1-a',
+                    'machineType': (
+                        'zones/asia-southeast1-a/machineTypes/n1-standard-1'),
+                    'disks': [{
+                        'deviceName': 'boot',
+                        'type': 'PERSISTENT',
+                        'boot': True,
+                        'autoDelete': True,
+                        'initializeParams': {
+                            'sourceImage': 'global/images/my-boot-disk',
+                        },
+                    }],
+                    'networkInterfaces': [{
+                        'network':
+                            'global/networks/default',
+                        'accessConfigs': [{
+                            'name': 'External NAT',
+                            'type': 'ONE_TO_ONE_NAT',
+                        }],
+                    }]
+                }
+            },
+            {
+                'name': 'final-stop-work-machine-1',
+                'action': 'gcp-types/compute-v1:compute.instances.stop',
+                'properties': {
+                    'instance': 'work-machine-1',
+                    'zone': 'asia-southeast1-a',
+                },
+                'metadata': {
+                    'dependsOn': ['work-machine-1'],
+                    'runtimePolicy': ['UPDATE_ALWAYS'],
+                },
+            },
+        ]
     }
 
     self.assertEqual(generated, expected)

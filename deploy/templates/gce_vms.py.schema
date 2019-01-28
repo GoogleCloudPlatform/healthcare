@@ -56,6 +56,13 @@ properties:
         startup_script:
           type: string
           description: Script to run when start the VM.
+  vm_names_to_shutdown:
+    type: array
+    description: |
+      Names of VMs to shut down prior to deployment. VMs must be shut down in
+      order to perform an update.
+    items:
+      type: string
   firewall_rules:
     type: array
     description: |

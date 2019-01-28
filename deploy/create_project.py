@@ -350,7 +350,14 @@ def deploy_bigquery_audit_logs(config):
 
 
 def create_compute_images(config):
-  """Creates new Compute Engine VM images if specified in config."""
+  """Creates new Compute Engine VM images if specified in config.
+
+  Note: for updates, only new images will be created. Existing images will not
+  be modified.
+
+  Args:
+    config (ProjectConfig): config of the project.
+  """
   gce_instances = config.project.get('gce_instances')
   if not gce_instances:
     logging.info('No GCS Images required.')
@@ -425,19 +432,43 @@ def create_compute_vms(config):
   deployment_name = 'gce-vms'
   path = os.path.join(os.path.dirname(__file__),
                       'templates/gce_vms.py')
-  dm_template_dict = {
-      'imports': [{'path': path}],
-      'resources': [{
-          'type': path,
-          'name': deployment_name,
-          'properties': {
-              'gce_instances': gce_instances,
-              'firewall_rules': config.project.get('gce_firewall_rules', []),
-          }
-      }]
+
+  resource = {
+      'type': path,
+      'name': deployment_name,
+      'properties': {
+          'gce_instances': gce_instances,
+          'firewall_rules': config.project.get('gce_firewall_rules', []),
+      }
   }
-  utils.run_deployment(dm_template_dict, deployment_name, project_id,
-                       is_deployed(config.project))
+  dm_template_dict = {
+      'imports': [{
+          'path': path
+      }],
+      'resources': [resource],
+  }
+
+  deployed = is_deployed(config.project)
+  try:
+    utils.run_deployment(dm_template_dict, deployment_name, project_id,
+                         deployed)
+  except subprocess.CalledProcessError:
+    # Only retry vm deployment for updates
+    if not deployed:
+      raise
+
+    # TODO: check error message for whether failure was specifically
+    # due to vm running
+    logging.info(('Potential failure due to updating a running vm. '
+                  'Retrying with vm shutdown.'))
+
+    vm_names_to_shutdown = [
+        info['name'] for info in config.project.get('generated_fields', {}).get(
+            'gce_instance_info', [])
+    ]
+    resource['properties']['vm_names_to_shutdown'] = vm_names_to_shutdown
+    utils.run_deployment(dm_template_dict, deployment_name, project_id,
+                         deployed)
 
 
 def create_stackdriver_account(config):
@@ -561,8 +592,8 @@ _SETUP_STEPS = [
     Step(func=deploy_gcs_audit_logs, updatable=False),
     Step(func=deploy_project_resources, updatable=True),
     Step(func=deploy_bigquery_audit_logs, updatable=False),
-    Step(func=create_compute_images, updatable=False),
-    Step(func=create_compute_vms, updatable=False),
+    Step(func=create_compute_images, updatable=True),
+    Step(func=create_compute_vms, updatable=True),
     Step(func=enable_services_apis, updatable=False),
     Step(func=create_stackdriver_account, updatable=False),
     Step(func=create_alerts, updatable=False),

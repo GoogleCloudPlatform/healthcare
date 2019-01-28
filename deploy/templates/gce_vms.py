@@ -18,6 +18,8 @@ def generate_config(context):
   """Generate Deployment Manager configuration."""
   resources = []
 
+  vm_names_to_shutdown = set(context.properties.get('vm_names_to_shutdown', []))
+
   for vm in context.properties['gce_instances']:
     vm_name = vm['name']
     zone = vm['zone']
@@ -53,29 +55,43 @@ def generate_config(context):
         },
     }
 
-    metadata = vm.get('metadata')
+    metadata = vm.get('metadata', {})
     if metadata:
       vm_resource['properties']['metadata'] = metadata
 
-    resources.append(vm_resource)
-
-    # After the VM is created, shut it down (if start_vm is False).
-    if not vm['start_vm']:
+    if vm_name in vm_names_to_shutdown:
+      resource_name = 'initial-stop-' + vm_name
       resources.append({
-          'name': 'stop-' + vm_name,
+          'name': resource_name,
           'action': 'gcp-types/compute-v1:compute.instances.stop',
           'properties': {
               'instance': vm_name,
               'zone': zone,
           },
           'metadata': {
-              'dependsOn': [vm_name],
-              'runtimePolicy': ['CREATE'],
+              'runtimePolicy': ['UPDATE_ALWAYS'],
           },
       })
+      metadata['dependsOn'] = [resource_name]
+
+    resources.append(vm_resource)
+
+    method = 'start' if vm['start_vm'] else 'stop'
+    resources.append({
+        'name': 'final-{}-{}'.format(method, vm_name),
+        'action': 'gcp-types/compute-v1:compute.instances.' + method,
+        'properties': {
+            'instance': vm_name,
+            'zone': zone,
+        },
+        'metadata': {
+            'dependsOn': [vm_name],
+            'runtimePolicy': ['UPDATE_ALWAYS'],
+        },
+    })
 
   # Create firewall rules (if any).
-  for rule in context.properties.get('firewall_rules'):
+  for rule in context.properties.get('firewall_rules', []):
     name = rule.pop('name')
     resources.append({
         'name': name,
