@@ -594,7 +594,7 @@ _SETUP_STEPS = [
     Step(func=deploy_bigquery_audit_logs, updatable=False),
     Step(func=create_compute_images, updatable=True),
     Step(func=create_compute_vms, updatable=True),
-    Step(func=enable_services_apis, updatable=False),
+    Step(func=enable_services_apis, updatable=True),
     Step(func=create_stackdriver_account, updatable=False),
     Step(func=create_alerts, updatable=False),
     Step(func=add_project_generated_fields, updatable=False),
