@@ -15,7 +15,6 @@ from setuptools import find_packages
 from setuptools import setup
 
 REQUIRED_PACKAGES = [
-    'pydicom',
     'requests-toolbelt',
     'google-api-python-client',
     'google-api-core',
@@ -25,7 +24,8 @@ REQUIRED_PACKAGES = [
     'google-cloud-pubsub',
     'httplib2',
     'oauth2client',
-    'google-cloud-automl'
+    'google-cloud-automl',
+    'attrs'
 ]
 
 setup(

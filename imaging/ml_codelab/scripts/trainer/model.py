@@ -106,7 +106,7 @@ def _get_image_label_info(bottleneck_dir):
   bottleneck_files = file_io.get_matching_files(
       os.path.join(bottleneck_dir, '*'))
   for bottleneck_file in bottleneck_files:
-    for it in tf.python_io.tf_record_iterator(bottleneck_file):
+    for it in tf.compat.v1.io.tf_record_iterator(bottleneck_file):
       example = tf.train.Example()
       example.ParseFromString(it)
       label = example.features.feature['label'].bytes_list.value[0]
@@ -269,7 +269,7 @@ def _export_model(label_list, export_model_path):
     builder.add_meta_graph_and_variables(
         sess, [tf.saved_model.tag_constants.SERVING],
         signature_def_map=signature_def_map,
-        legacy_init_op=tf.group(tf.tables_initializer(), name='legacy_init_op'))
+        main_op=tf.group(tf.tables_initializer(), name='main_op'))
     builder.save()
 
 
