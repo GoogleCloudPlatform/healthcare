@@ -564,15 +564,19 @@ def add_project_generated_fields(config):
   """Adds a generated_fields block to a project definition."""
   project_id = config.project['project_id']
 
-  if _GENERATED_FIELDS_NAME in config.project:
-    return
+  generated_fields = config.project.get(_GENERATED_FIELDS_NAME)
+  if not generated_fields:
+    generated_fields = {}
+    config.project[_GENERATED_FIELDS_NAME] = generated_fields
 
-  config.project[_GENERATED_FIELDS_NAME] = {
-      'project_number':
-          utils.get_project_number(project_id),
-      'log_sink_service_account':
-          utils.get_log_sink_service_account(_LOG_SINK_NAME, project_id),
-  }
+  if 'project_number' not in generated_fields:
+    generated_fields['project_number'] = utils.get_project_number(project_id)
+
+  if 'log_sink_service_account' not in generated_fields:
+    generated_fields[
+        'log_sink_service_account'] = utils.get_log_sink_service_account(
+            _LOG_SINK_NAME, project_id)
+
   gce_instance_info = utils.get_gce_instance_info(project_id)
   if gce_instance_info:
     config.project[_GENERATED_FIELDS_NAME][
@@ -639,7 +643,7 @@ _SETUP_STEPS = [
     Step(
         func=add_project_generated_fields,
         description='Generate project fields',
-        updatable=False,
+        updatable=True,
     ),
 ]
 
