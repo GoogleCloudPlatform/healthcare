@@ -478,6 +478,10 @@ def create_stackdriver_account(config):
     return
   project_id = config.project['project_id']
 
+  if _stackdriver_account_exists(project_id):
+    logging.info('Stackdriver account already exists')
+    return
+
   message = """
   ------------------------------------------------------------------------------
   To create email alerts, this project needs a Stackdriver account.
@@ -501,16 +505,22 @@ def create_stackdriver_account(config):
   while True:
     if not utils.wait_for_yes_no('Account created [y/N]?'):
       logging.warning('Skipping creation of Stackdriver Account.')
-      return
+      break
 
-    # Verify account was created.
-    try:
-      runner.run_gcloud_command(['alpha', 'monitoring', 'policies', 'list'],
-                                project_id=project_id)
-      return
-    except subprocess.CalledProcessError as e:
-      logging.error('Error reading Stackdriver account %s', e)
-      print('Could not find Stackdriver account.')
+    if _stackdriver_account_exists(project_id):
+      break
+
+
+def _stackdriver_account_exists(project_id):
+  """Determine whether the stackdriver account exists."""
+  try:
+    runner.run_gcloud_command(['alpha', 'monitoring', 'policies', 'list'],
+                              project_id=project_id)
+    return True
+  except subprocess.CalledProcessError as e:
+    logging.warning(
+        'Error reading Stackdriver account (likely does not exist): %s', e)
+    return False
 
 
 def create_alerts(config):
@@ -524,37 +534,73 @@ def create_alerts(config):
     return
   project_id = config.project['project_id']
 
-  # Create an email notification channel for alerts.
-  logging.info('Creating Stackdriver notification channel.')
-  channel = utils.create_notification_channel(alert_email, project_id)
+  existing_channels = runner.run_gcloud_command(
+      [
+          'alpha', 'monitoring', 'channels', 'list', '--format',
+          'value(name,labels.email_address)'
+      ],
+      project_id=project_id).split('\n')
+
+  if FLAGS.dry_run:
+    existing_channels = ['foo_channel foo@domain.com']
+
+  email_to_channel = {}
+  for existing_channel in existing_channels:
+    channel, email = existing_channel.split()
+
+    # assume only one channel exists per email
+    email_to_channel[email] = channel
+
+  if alert_email in email_to_channel:
+    logging.info('Stackdriver notification channel already exists for %s',
+                 alert_email)
+    channel = email_to_channel[alert_email]
+  else:
+    logging.info('Creating Stackdriver notification channel.')
+    channel = utils.create_notification_channel(alert_email, project_id)
+
+  existing_alerts = runner.run_gcloud_command([
+      'alpha', 'monitoring', 'policies', 'list', '--format',
+      'value(displayName)'
+  ],
+                                              project_id=project_id).split('\n')
+
+  existing_alerts = set(existing_alerts)
 
   logging.info('Creating Stackdriver alerts.')
-  utils.create_alert_policy(
-      ['global', 'pubsub_topic', 'pubsub_subscription', 'gce_instance'],
-      'iam-policy-change-count', 'IAM Policy Change Alert',
-      ('This policy ensures the designated user/group is notified when IAM '
-       'policies are altered.'), channel, project_id)
+  display_name = 'IAM Policy Change Alert'
+  if display_name not in existing_alerts:
+    utils.create_alert_policy(
+        ['global', 'pubsub_topic', 'pubsub_subscription', 'gce_instance'],
+        'iam-policy-change-count', display_name,
+        ('This policy ensures the designated user/group is notified when IAM '
+         'policies are altered.'), channel, project_id)
 
-  utils.create_alert_policy(
-      ['gcs_bucket'], 'bucket-permission-change-count',
-      'Bucket Permission Change Alert',
-      ('This policy ensures the designated user/group is notified when '
-       'bucket/object permissions are altered.'), channel, project_id)
+  display_name = 'Bucket Permission Change Alert'
+  if display_name not in existing_alerts:
+    utils.create_alert_policy(
+        ['gcs_bucket'], 'bucket-permission-change-count', display_name,
+        ('This policy ensures the designated user/group is notified when '
+         'bucket/object permissions are altered.'), channel, project_id)
 
-  utils.create_alert_policy(
-      ['global'], 'bigquery-settings-change-count',
-      'Bigquery update Alert',
-      ('This policy ensures the designated user/group is notified when '
-       'Bigquery dataset settings are altered.'), channel, project_id)
+  display_name = 'Bigquery Update Alert'
+  if display_name not in existing_alerts:
+    utils.create_alert_policy(
+        ['global'], 'bigquery-settings-change-count', display_name,
+        ('This policy ensures the designated user/group is notified when '
+         'Bigquery dataset settings are altered.'), channel, project_id)
 
   for data_bucket in config.project.get('data_buckets', []):
     # Every bucket with 'expected_users' has an expected-access alert.
-    if 'expected_users' in data_bucket:
-      bucket_name = project_id + data_bucket['name_suffix']
-      metric_name = 'unexpected-access-' + bucket_name
+    if 'expected_users' not in data_bucket:
+      continue
+
+    bucket_name = project_id + data_bucket['name_suffix']
+    metric_name = 'unexpected-access-' + bucket_name
+    display_name = 'Unexpected Access to {} Alert'.format(bucket_name)
+    if display_name not in existing_alerts:
       utils.create_alert_policy(
-          ['gcs_bucket'], metric_name,
-          'Unexpected Access to {} Alert'.format(bucket_name),
+          ['gcs_bucket'], metric_name, display_name,
           ('This policy ensures the designated user/group is notified when '
            'bucket {} is accessed by an unexpected user.'.format(bucket_name)),
           channel, project_id)
@@ -633,12 +679,12 @@ _SETUP_STEPS = [
     Step(
         func=create_stackdriver_account,
         description='Create Stackdriver account',
-        updatable=False,
+        updatable=True,
     ),
     Step(
         func=create_alerts,
         description='Create Stackdriver alerts',
-        updatable=False,
+        updatable=True,
     ),
     Step(
         func=add_project_generated_fields,
