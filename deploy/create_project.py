@@ -91,6 +91,9 @@ _DEPLOYMENT_MANAGER_ROLES = ['roles/owner', 'roles/storage.admin']
 # wait to give it enough time.
 _IAM_PROPAGATAION_WAIT_TIME_SECS = 60
 
+# Restriction for project lien.
+_LIEN_RESTRICTION = 'resourcemanager.projects.delete'
+
 # Configuration for deploying a single project.
 ProjectConfig = collections.namedtuple(
     'ProjectConfig',
@@ -286,12 +289,20 @@ def deploy_project_resources(config):
 
     # Create project liens if requested.
     if config.project.get('create_deletion_lien'):
-      runner.run_gcloud_command([
-          'alpha', 'resource-manager', 'liens', 'create', '--restrictions',
-          'resourcemanager.projects.delete', '--reason',
-          'Automated project deletion lien deployment.'
-      ],
-                                project_id=project_id)
+      existing_restrictions = runner.run_gcloud_command(
+          [
+              'alpha', 'resource-manager', 'liens', 'list', '--format',
+              'value(restrictions)'
+          ],
+          project_id=project_id).split('\n')
+
+      if _LIEN_RESTRICTION not in existing_restrictions:
+        runner.run_gcloud_command([
+            'alpha', 'resource-manager', 'liens', 'create', '--restrictions',
+            _LIEN_RESTRICTION, '--reason',
+            'Automated project deletion lien deployment.'
+        ],
+                                  project_id=project_id)
 
     for role in _DEPLOYMENT_MANAGER_ROLES:
       runner.run_gcloud_command([
