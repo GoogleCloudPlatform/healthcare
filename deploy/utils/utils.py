@@ -286,9 +286,6 @@ def get_gce_instance_info(project_id):
   if not output:
     return []
 
-  if FLAGS.dry_run:
-    return [{'name': '__DRY_RUN_NAME__', 'id': '__DRY_RUN_ID__'}]
-
   instance_info = []
   for line in output.split('\n'):
     name, instance_id = line.split()

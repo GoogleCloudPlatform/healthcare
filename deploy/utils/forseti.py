@@ -102,9 +102,6 @@ def get_server_bucket(forseti_project_id):
   output = runner.run_command(['gsutil', 'ls', '-p', forseti_project_id],
                               get_output=True)
 
-  if FLAGS.dry_run:
-    return '__DRY_RUN_FORSETI_BUCKET__'
-
   match = _FORSETI_SERVER_BUCKET_RE.search(output)
   if not match:
     raise ValueError('Failed to find Forseti server bucket: {}'.format(output))

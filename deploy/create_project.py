@@ -170,7 +170,7 @@ def enable_deployment_manager(config):
 
   logging.info('Sleeping for %d seconds to let IAM updates propagate.',
                _IAM_PROPAGATAION_WAIT_TIME_SECS)
-  time.sleep(_IAM_PROPAGATAION_WAIT_TIME_SECS)
+  runner.run(time.sleep, _IAM_PROPAGATAION_WAIT_TIME_SECS)
 
 
 def enable_services_apis(config):
@@ -551,9 +551,6 @@ def create_alerts(config):
           'value(name,labels.email_address)'
       ],
       project_id=project_id).split('\n')
-
-  if FLAGS.dry_run:
-    existing_channels = ['foo_channel foo@domain.com']
 
   email_to_channel = {}
   for existing_channel in existing_channels:
