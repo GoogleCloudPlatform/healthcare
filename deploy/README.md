@@ -8,6 +8,7 @@ A collection of templates for configuration of GCP resources to hold datasets.
     *   [Create a YAML config](#create-a-yaml-config)
     *   [Create New Projects](#create-new-projects)
     *   [Disabled Unneeded APIs](#disabled-unneeded-apis)
+*   [Updates](#updates)
 *   [Deployment Manager Templates](#deployment-manager-templates)
     *   [Template data_project.py](#template-data_projectpy)
     *   [Template remote_audit_logs.py](#template-remote_audit_logspy)
@@ -145,6 +146,22 @@ gcloud services list --project ${PROJECT_ID?}
 
 gcloud services --project ${PROJECT_ID?} disable ${SERVICE_NAME}
 ```
+
+## Updates
+
+You may wish to modify a project to add additional resources or change an
+existing setting. The `create_project.py` script can be used to also update a
+project. Listing a previously deployed project in the `--projects` flag (or
+setting the flag to be `"*"`), will trigger an update.
+
+WARNING: Due to the sensitive nature of resources in these projects, most
+deployment update functions will run in mode "ABANDON". Thus, if a resource is
+removed from a project, it will become unmonitored rather than deleted. It is
+the responsibility of the user to manually remove any references if they become
+abandoned.
+
+TIP: Looking through the deployment manager manifests can help in finding some
+of the abandoned resources and their references.
 
 ## Deployment Manager Templates
 

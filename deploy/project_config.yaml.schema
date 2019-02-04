@@ -37,7 +37,9 @@ definitions:
     properties:
       project_id:
         type: string
-        description: The ID of this project. Must be unique.
+        description: |
+          The ID of this project. Must be unique. This cannot be changed after
+          the project has been deployed.
         pattern: ^[a-z][-a-z0-9]{4,28}[a-z0-9]$
 
       owners_group:
@@ -108,6 +110,9 @@ definitions:
         type: boolean
         description: |
           Optional. Whether to create project deletion lien or not.
+          This can be set to true after the project has been deployed.
+          However, setting it to false if it was previously true will not remove
+          the lien.
 
       additional_project_permissions:
         type: array
@@ -147,6 +152,7 @@ definitions:
         type: object
         description: |
           Configuration of the (local or remote) audit logs for this project.
+          This cannot be changed after the project has been deployed.
         additionalProperties: false
         required:
         - logs_bigquery_dataset
@@ -209,7 +215,8 @@ definitions:
         description: |
           If set, the email address to send alerts for IAM changes and
           unexpected GCS bucket access. If not set, a Stackdriver account will
-          not be created for this project.
+          not be created for this project. While this field can be set after the
+          project has been deployed, it cannot be changed afterwards.
 
       bigquery_datasets:
         type: array
@@ -387,7 +394,7 @@ definitions:
               type: object
               description: |
                 A custom disk image to create from a GCS path to use as the boot
-                disk for this VM.
+                disk for this VM. Once deployed, this field cannot be changed.
               additionalProperties: false
               required:
               - image_name
@@ -549,7 +556,10 @@ properties:
         description: The project install the Forseti instance in.
       installer_flags:
         type: string
-        description: "Flags to pass to the Forseti installer."
+        description: |
+          Flags to pass to the Forseti installer. This field is only used on
+          initial Forseti deployment. Changing or removing it post-deployment is
+          a no-op.
       generated_fields:
         type: object
         description: |
