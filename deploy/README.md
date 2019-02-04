@@ -128,9 +128,8 @@ $ cd healthcare
 $ bazel run deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=/tmp/output.yaml --nodry_run
 ```
 
-If the script fails at any point, try to correct the error and use the flags
-`--resume_from_project=` and `--resume_from_step=` to continue from the project
-and step that failed.
+If the script fails at any point, try to correct the error, sync the output yaml
+file with the input and try again.
 
 ### Disabled Unneeded APIs
 

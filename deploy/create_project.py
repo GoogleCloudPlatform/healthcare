@@ -24,9 +24,8 @@ script with:
 
 To preview the commands that will run, use `--dry_run`.
 
-If the script fails part way through, you can retry from the same step of the
-failing project using: `--resume_from_project=project-id --resume_from_step=N`,
-where project-id is the project and N is the step number that failed.
+After the script has finished executing (success or failure), be sure to sync
+--output_yaml_path with --project_yaml.
 """
 
 from __future__ import absolute_import
@@ -66,13 +65,6 @@ flags.DEFINE_string('output_rules_path', None,
                     ('Path to local directory or GCS bucket to output rules '
                      'files. If unset, directly writes to the Forseti server '
                      'bucket.'))
-flags.DEFINE_string('resume_from_project', '',
-                    ('If the script terminates early, set this to the '
-                     'project id that failed to resume from this '
-                     'project. Set resume_from_step as well.'))
-flags.DEFINE_integer('resume_from_step', 1,
-                     ('If the script terminates early, set this to the '
-                      'step that failed to resume from this step.'))
 # TODO: remove flag once updates are stable
 flags.DEFINE_bool(
     'allow_updates', False,
@@ -633,8 +625,7 @@ def add_project_generated_fields(config):
 
   gce_instance_info = utils.get_gce_instance_info(project_id)
   if gce_instance_info:
-    config.project[_GENERATED_FIELDS_NAME][
-        'gce_instance_info'] = gce_instance_info
+    generated_fields['gce_instance_info'] = gce_instance_info
 
 # The steps to set up a project, so the script can be resumed part way through
 # on error. Each func takes a config dictionary.
@@ -702,7 +693,7 @@ _SETUP_STEPS = [
 ]
 
 
-def setup_project(config, starting_step, output_yaml_path):
+def setup_project(config, output_yaml_path):
   """Run the full process for initalizing a single new project.
 
   Note: for projects that have already been deployed, only the updatable steps
@@ -710,14 +701,16 @@ def setup_project(config, starting_step, output_yaml_path):
 
   Args:
     config (ProjectConfig): The config of a single project to setup.
-    starting_step (int): The step number (indexed from 1) in _SETUP_STEPS to
-      begin from.
     output_yaml_path (str): Path to output resulting root config in JSON.
 
   Returns:
     A boolean, true if the project was deployed successfully, false otherwise.
   """
   steps = _SETUP_STEPS + config.extra_steps
+
+  starting_step = config.project.get(_GENERATED_FIELDS_NAME, {}).get(
+      'failed_step', 1)
+
   deployed = is_deployed(config.project)
 
   if deployed and not FLAGS.allow_updates:
@@ -735,14 +728,28 @@ def setup_project(config, starting_step, output_yaml_path):
 
     try:
       step.func(config)
-    except subprocess.CalledProcessError as e:
-      logging.error('Setup failed on step %s: %s', step_num, e)
+    except Exception as e:  # pylint: disable=broad-except
+      logging.error('%s: setup failed on step %s: %s',
+                    config.project['project_id'], step_num, e)
       logging.error(
           'To continue the script, sync the input file with the output file at '
-          '--output_yaml_path and re run the script with additional flags: '
-          '--resume_from_project=%s --resume_from_step=%s',
-          config.project['project_id'], step_num)
+          '--output_yaml_path and re run the script')
+
+      # only record failed step if project was undeployed, an update can always
+      # start from the beginning
+      if not deployed:
+        generated_fields = config.project.get('generated_fields')
+        if not generated_fields:
+          generated_fields = {}
+          config.project['generated_fields'] = generated_fields
+        generated_fields['failed_step'] = step_num
+        utils.write_yaml_file(config.root, output_yaml_path)
+
       return False
+
+    # if this deployment was resuming from a previous failure, remove the
+    # failed step as it is done
+    config.project.get(_GENERATED_FIELDS_NAME, {}).pop('failed_step', None)
     utils.write_yaml_file(config.root, output_yaml_path)
 
   logging.info('Setup completed successfully.')
@@ -799,7 +806,8 @@ def validate_project_configs(overall, projects):
 
 def is_deployed(project_dict):
   """Determine whether the project has been deployed."""
-  return _GENERATED_FIELDS_NAME in project_dict
+  return _GENERATED_FIELDS_NAME in project_dict and (
+      'failed_step' not in project_dict[_GENERATED_FIELDS_NAME])
 
 
 def main(argv):
@@ -831,11 +839,6 @@ def main(argv):
     return
 
   want_projects = set(FLAGS.projects)
-
-  if FLAGS.resume_from_project and want_projects != {'*'} and (
-      FLAGS.resume_from_project not in want_projects):
-    logging.error('--resume_from_project must be in the --projects list')
-    return
 
   def want_project(project_config_dict):
     if not project_config_dict:
@@ -903,11 +906,8 @@ def main(argv):
 
   for config in projects:
     logging.info('Setting up project %s', config.project['project_id'])
-    starting_step = 1
-    if config.project['project_id'] == FLAGS.resume_from_project:
-      starting_step = max(1, FLAGS.resume_from_step)
 
-    if not setup_project(config, starting_step, output_yaml_path):
+    if not setup_project(config, output_yaml_path):
       # Don't attempt to deploy additional projects if one project failed.
       return
 

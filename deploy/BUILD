@@ -22,7 +22,7 @@ py_library(
     deps = [
         requirement("absl-py"),
         requirement("jsonschema"),
-        "//deploy/rule_generator",
+        "//deploy/rule_generator:rule_generator_lib",
         "//deploy/utils",
         "//deploy/utils:forseti",
         "//deploy/utils:runner",
