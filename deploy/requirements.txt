@@ -3,3 +3,4 @@ backports.tempfile
 jsonschema
 mock
 pyyaml
+ruamel.yaml

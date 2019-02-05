@@ -13,7 +13,7 @@ import tempfile
 from absl import flags
 from absl.testing import absltest
 
-import yaml
+import ruamel.yaml
 
 from deploy import create_project
 from deploy.utils import utils
@@ -38,11 +38,12 @@ class CreateProjectTest(absltest.TestCase):
         FLAGS.test_srcdir,
         'google3/deploy/samples/',
         'datathon_team_project.yaml')
-    root_config = utils.resolve_env_vars(utils.read_yaml_file(datathon_path))
+    root_config = utils.read_yaml_file(datathon_path)
+    utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = []
-    root_config_str = yaml.dump(root_config)
     with tempfile.NamedTemporaryFile(suffix='.yaml', mode='w') as f:
-      f.write(root_config_str)
+      yaml = ruamel.yaml.YAML()
+      yaml.dump(root_config, f)
       f.flush()
       FLAGS.project_yaml = f.name
       with tempfile.NamedTemporaryFile() as fout:
@@ -55,15 +56,16 @@ class CreateProjectTest(absltest.TestCase):
     datathon_path = (
         'deploy/samples/datathon_team_project.yaml'
     )
-    root_config = utils.resolve_env_vars(utils.read_yaml_file(datathon_path))
+    root_config = utils.read_yaml_file(datathon_path)
+    utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = [
         'bigquery-json.googleapis.com',
         'compute.googleapis.com',
         'ml.googleapis.com',
     ]
-    root_config_str = yaml.dump(root_config)
     with tempfile.NamedTemporaryFile(suffix='.yaml', mode='w') as f:
-      f.write(root_config_str)
+      yaml = ruamel.yaml.YAML()
+      yaml.dump(root_config, f)
       f.flush()
       FLAGS.project_yaml = f.name
       with tempfile.NamedTemporaryFile() as fout:

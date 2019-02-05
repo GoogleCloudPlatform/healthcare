@@ -38,7 +38,7 @@ py_test(
     default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
-        requirement("pyyaml"),
+        requirement("ruamel.yaml"),
         ":create_project_lib",
         "//deploy/utils",
     ],

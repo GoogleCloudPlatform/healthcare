@@ -59,8 +59,8 @@ flags.DEFINE_list('projects', ['*'],
 flags.DEFINE_string('output_yaml_path', None,
                     ('Path to save a new YAML file with any '
                      'environment variables substituted and generated '
-                     'fields populated. This must be different to '
-                     'project_yaml.'))
+                     'fields populated. This can be the same as project_yaml '
+                     'to overwrite the original.'))
 flags.DEFINE_string('output_rules_path', None,
                     ('Path to local directory or GCS bucket to output rules '
                      'files. If unset, directly writes to the Forseti server '
@@ -818,12 +818,6 @@ def main(argv):
   output_rules_path = None
   if FLAGS.output_rules_path:
     output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
-
-  # Output YAML will rearrange fields and remove comments, so do a basic check
-  # against accidental overwriting.
-  if input_yaml_path == output_yaml_path:
-    logging.error('output_yaml_path cannot overwrite project_yaml.')
-    return
 
   # Read and parse the project configuration YAML file.
   root_config = utils.load_config(input_yaml_path)

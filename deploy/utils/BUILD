@@ -41,7 +41,7 @@ py_library(
     deps = [
         requirement("absl-py"),
         requirement("jsonschema"),
-        requirement("pyyaml"),
+        requirement("ruamel.yaml"),
         ":runner",
     ],
 )

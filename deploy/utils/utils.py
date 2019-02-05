@@ -12,7 +12,7 @@ import tempfile
 from absl import flags
 
 import jsonschema
-import yaml
+import ruamel.yaml
 
 from deploy.utils import runner
 
@@ -66,6 +66,7 @@ def read_yaml_file(path):
     A dict holding the parsed contents of the YAML file, or None if the file
     could not be read or parsed.
   """
+  yaml = ruamel.yaml.YAML()
   with open(path, 'r') as stream:
     return yaml.load(stream)
 
@@ -77,19 +78,19 @@ def write_yaml_file(contents, path):
     contents (dict): The contents to write to the YAML file.
     path (string): The path to the YAML file.
   """
-  # Don't use aliases in the YAML output.
-  yaml.SafeDumper.ignore_aliases = lambda self, data: True
+  yaml = ruamel.yaml.YAML()
+  yaml.default_flow_style = False
 
   if FLAGS.dry_run:
     # If using dry_run mode, don't create the file, just print the contents.
     print('Contents of {}:'.format(path))
     print('===================================================================')
-    print(yaml.safe_dump(contents, default_flow_style=False))
+    yaml.dump(contents, sys.stdout)
     print('===================================================================')
     return
 
   with open(path, 'w') as outfile:
-    yaml.safe_dump(contents, outfile, default_flow_style=False)
+    yaml.dump(contents, outfile)
 
 
 def validate_config_yaml(config):
@@ -294,46 +295,51 @@ def get_gce_instance_info(project_id):
 
 
 def resolve_env_vars(config):
-  """Recursively resolves environment variables in config values."""
-  if isinstance(config, str):
-    return string.Template(config).substitute(os.environ)
-  elif isinstance(config, dict):
-    return {k: resolve_env_vars(v) for k, v in config.items()}
-  elif isinstance(config, list):
-    return [resolve_env_vars(i) for i in config]
-  else:
-    return config
-
-
-def merge_dicts(*dicts):
-  """Merge dicts (list of dicts) into a new dictionary.
+  """Recursively resolves (in place) environment variables in config strings.
 
   Args:
-    *dicts (tuple): A tuple contains dictionaries to be merged.
+    config: dictionary or list from a parsed YAML file.
+  """
+  keys = []
+  if isinstance(config, dict):
+    keys = config.keys()
+  elif isinstance(config, list):
+    keys = range(len(config))
+  else:
+    return
 
-  Returns:
-    dict: The merged dictionary.
+  for k in keys:
+    # Only do substitutions on strings.
+    v = config[k]
+    if isinstance(v, str):
+      config[k] = string.Template(v).substitute(os.environ)
+    else:
+      # Recursively handle lists and dictionaries.
+      resolve_env_vars(v)
+
+
+def merge_config_dicts(root_config, included_configs):
+  """Merge config dicts (list of dicts) into a root config dictionary.
+
+  Top-level lists with the same key (e.g. 'projects') are concatenated, other
+  duplicate top-level keys are an error.
+
+  Args:
+    root_config: A root config dictionary into which other dictionaries are
+      merged.
+    included_configs: A list of dictionaries to be merged.
 
   Raises:
-    TypeError: If two dictionaries have the same key, the type of the key's
-      value must be the same.
-    ValueError: The type of two items whose keys are the same must be a list or
-      a dictionary.
+    TypeError: If two dictionaries have the same key for non-list values.
   """
-  res = {}
-  for d in dicts:
-    for key, val in d.items():
-      if key not in res:
-        res[key] = val
-      elif not isinstance(res[key], type(val)):
-        raise TypeError('Dictionary item value conflict.')
-      elif isinstance(res[key], list):
-        res[key].extend(val)
-      elif isinstance(res[key], dict):
-        res[key] = merge_dicts(res, val)
+  for config in included_configs:
+    for key, val in config.items():
+      if key not in root_config:
+        root_config[key] = val
+      elif isinstance(val, list) and isinstance(root_config[key], list):
+        root_config[key].extend(val)
       else:
-        raise ValueError('Type should be a dictionary or a list')
-  return res
+        raise TypeError('Duplicate key %s in config files.' % key)
 
 
 def load_config(path):
@@ -346,16 +352,18 @@ def load_config(path):
     A dict holding the parsed contents of the YAML file, or None if the file
     could not be read or parsed.
   """
-  overall = resolve_env_vars(read_yaml_file(path))
+  overall = read_yaml_file(path)
   if not overall:
-    return overall
+    return None
+  resolve_env_vars(overall)
 
-  follow_yamls = overall.pop('import_files', [])
-  all_contents = [overall]
-  for following in follow_yamls:
-    follow_path = os.path.join(os.path.dirname(path), following)
-    all_contents.append(load_config(follow_path))
-  overall = merge_dicts(*all_contents)
+  inc_files = overall.pop('import_files', [])
+  if inc_files:
+    inc_contents = []
+    for inc_file in inc_files:
+      inc_path = os.path.join(os.path.dirname(path), inc_file)
+      inc_contents.append(load_config(inc_path))
+    merge_config_dicts(overall, inc_contents)
   return overall
 
 
