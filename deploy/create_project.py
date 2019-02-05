@@ -463,8 +463,8 @@ def create_compute_vms(config):
                   'Retrying with vm shutdown.'))
 
     vm_names_to_shutdown = [
-        info['name'] for info in config.project.get('generated_fields', {}).get(
-            'gce_instance_info', [])
+        instance['name']
+        for instance in config.project.get('gce_instances', [])
     ]
     resource['properties']['vm_names_to_shutdown'] = vm_names_to_shutdown
     utils.run_deployment(dm_template_dict, deployment_name, project_id,
