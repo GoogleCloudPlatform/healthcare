@@ -18,7 +18,9 @@ Create a project config YAML file (see README.md for details) then run the
 script with:
   bazel run :create_project -- \
     --project_yaml=my_project_config.yaml \
+    --projects='*' \
     --output_yaml_path=/tmp/output.yaml \
+    --output_cleanup_path=/tmp/cleanup.sh \
     --nodry_run \
     --alsologtostderr
 
@@ -65,6 +67,8 @@ flags.DEFINE_string('output_rules_path', None,
                     ('Path to local directory or GCS bucket to output rules '
                      'files. If unset, directly writes to the Forseti server '
                      'bucket.'))
+flags.DEFINE_string('output_cleanup_path', None, 'Path to save cleanup file.')
+
 # TODO: remove flag once updates are stable
 flags.DEFINE_bool(
     'allow_updates', False,
@@ -85,6 +89,16 @@ _IAM_PROPAGATAION_WAIT_TIME_SECS = 60
 
 # Restriction for project lien.
 _LIEN_RESTRICTION = 'resourcemanager.projects.delete'
+
+_CLEANUP_HEADER = """#!/bin/sh
+
+# This file contains commands to remove unexpected configuration.
+# If they are legitimate, consider adding them to the input YAML config so they
+# don't get flagged again.
+# WARNING: proceed with caution!
+
+set -e
+"""
 
 # Configuration for deploying a single project.
 ProjectConfig = collections.namedtuple(
@@ -111,6 +125,8 @@ Step = collections.namedtuple(
         # Whether this step should be run when updating a project.
         'updatable',
     ])
+
+Output = collections.namedtuple('Output', ['cleanup_commands'])
 
 
 def create_new_project(config):
@@ -174,12 +190,35 @@ def enable_services_apis(config):
 
   Args:
     config (ProjectConfig): The config of a single project to setup.
+
+  Returns:
+    List[string]: commands to remove APIs not found in the enabled set.
   """
   project_id = config.project['project_id']
-  apis = config.project.get('enabled_apis', [])
-  for i in range(0, len(apis), 10):
+  existing_services = runner.run_gcloud_command(
+      ['services', 'list', '--format', 'value(name)'],
+      project_id=project_id).split('\n')
+
+  # The gcloud call returns service name as a full path (including project id).
+  # We only need the base name which is the URL.
+  existing_apis = set([os.path.basename(svc) for svc in existing_services])
+
+  want_apis = set(config.project.get('enabled_apis', []))
+
+  unexpected_apis = existing_apis.difference(want_apis)
+  unenabled_apis = list(want_apis.difference(existing_apis))
+
+  # Send in batches to avoid hitting quota limits.
+  for i in range(0, len(unenabled_apis), 10):
     runner.run_gcloud_command(
-        ['services', 'enable'] + apis[i:i + 10], project_id=project_id)
+        ['services', 'enable'] + unenabled_apis[i:i + 10],
+        project_id=project_id)
+
+  cleanup_commands = [
+      'gcloud services disable {} --project={}'.format(api, project_id)
+      for api in unexpected_apis
+  ]
+  return Output(cleanup_commands=cleanup_commands)
 
 
 def deploy_gcs_audit_logs(config):
@@ -693,7 +732,7 @@ _SETUP_STEPS = [
 ]
 
 
-def setup_project(config, output_yaml_path):
+def setup_project(config, output_yaml_path, output_cleanup_path):
   """Run the full process for initalizing a single new project.
 
   Note: for projects that have already been deployed, only the updatable steps
@@ -702,6 +741,7 @@ def setup_project(config, output_yaml_path):
   Args:
     config (ProjectConfig): The config of a single project to setup.
     output_yaml_path (str): Path to output resulting root config in JSON.
+    output_cleanup_path (str): Path to output cleanup shell script.
 
   Returns:
     A boolean, true if the project was deployed successfully, false otherwise.
@@ -727,7 +767,11 @@ def setup_project(config, output_yaml_path):
       continue
 
     try:
-      step.func(config)
+      output = step.func(config)
+      if output and output.cleanup_commands:
+        with open(output_cleanup_path, 'a') as f:
+          for cmd in output.cleanup_commands:
+            f.write('# {}\n'.format(cmd))
     except Exception as e:  # pylint: disable=broad-except
       logging.error('%s: setup failed on step %s: %s',
                     config.project['project_id'], step_num, e)
@@ -815,6 +859,7 @@ def main(argv):
 
   input_yaml_path = utils.normalize_path(FLAGS.project_yaml)
   output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
+  output_cleanup_path = utils.normalize_path(FLAGS.output_cleanup_path)
   output_rules_path = None
   if FLAGS.output_rules_path:
     output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
@@ -831,6 +876,9 @@ def main(argv):
   except jsonschema.exceptions.ValidationError as e:
     logging.error('Error in YAML config: %s', e)
     return
+
+  with open(output_cleanup_path, 'w') as f:
+    f.write(_CLEANUP_HEADER)
 
   want_projects = set(FLAGS.projects)
 
@@ -901,7 +949,7 @@ def main(argv):
   for config in projects:
     logging.info('Setting up project %s', config.project['project_id'])
 
-    if not setup_project(config, output_yaml_path):
+    if not setup_project(config, output_yaml_path, output_cleanup_path):
       # Don't attempt to deploy additional projects if one project failed.
       return
 
@@ -912,4 +960,5 @@ def main(argv):
 if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
   flags.mark_flag_as_required('output_yaml_path')
+  flags.mark_flag_as_required('output_cleanup_path')
   app.run(main)

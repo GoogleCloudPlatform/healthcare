@@ -38,6 +38,7 @@ py_test(
     default_python_version = "PY3",
     deps = [
         requirement("absl-py"),
+        requirement("backports.tempfile"),
         requirement("ruamel.yaml"),
         ":create_project_lib",
         "//deploy/utils",

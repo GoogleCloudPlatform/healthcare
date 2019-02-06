@@ -128,8 +128,12 @@ remote audit logs) and one or more data hosting projects.
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare
-$ bazel run deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=${PROJECT_CONFIG?} --nodry_run
+$ bazel run deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=${PROJECT_CONFIG?} --output_cleanup_path=${CLEANUP_PATH?} --nodry_run
 ```
+
+1.  Review the cleanup script dumped to see extra configuration that was not set
+    by the deployment scripts. Update the YAML config with these configs or
+    uncomment the lines and run the shell script to remove them.
 
 If the script fails at any point, try to correct the error, sync the output yaml
 file with the input and try again.

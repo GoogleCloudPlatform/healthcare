@@ -12,6 +12,7 @@ import tempfile
 
 from absl import flags
 from absl.testing import absltest
+from backports import tempfile
 
 import ruamel.yaml
 
@@ -41,15 +42,16 @@ class CreateProjectTest(absltest.TestCase):
     root_config = utils.read_yaml_file(datathon_path)
     utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = []
-    with tempfile.NamedTemporaryFile(suffix='.yaml', mode='w') as f:
-      yaml = ruamel.yaml.YAML()
-      yaml.dump(root_config, f)
-      f.flush()
-      FLAGS.project_yaml = f.name
-      with tempfile.NamedTemporaryFile() as fout:
-        FLAGS.output_yaml_path = fout.name
-        with self.assertRaises(utils.InvalidConfigError):
-          create_project.main([])
+    with tempfile.TemporaryDirectory() as tmp_dir:
+      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'conf.yaml')
+      FLAGS.project_yaml = FLAGS.output_yaml_path
+      FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
+      with open(FLAGS.project_yaml, 'w') as f:
+        yaml = ruamel.yaml.YAML()
+        yaml.dump(root_config, f)
+        f.flush()
+      with self.assertRaises(utils.InvalidConfigError):
+        create_project.main([])
 
   def test_project_config_validate_check_correct(self):
     FLAGS.projects = ['*']
@@ -63,21 +65,24 @@ class CreateProjectTest(absltest.TestCase):
         'compute.googleapis.com',
         'ml.googleapis.com',
     ]
-    with tempfile.NamedTemporaryFile(suffix='.yaml', mode='w') as f:
-      yaml = ruamel.yaml.YAML()
-      yaml.dump(root_config, f)
-      f.flush()
-      FLAGS.project_yaml = f.name
-      with tempfile.NamedTemporaryFile() as fout:
-        FLAGS.output_yaml_path = fout.name
-        create_project.main([])
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'conf.yaml')
+      FLAGS.project_yaml = FLAGS.output_yaml_path
+      FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
+      with open(FLAGS.project_yaml, 'w') as f:
+        yaml = ruamel.yaml.YAML()
+        yaml.dump(root_config, f)
+        f.flush()
+      create_project.main([])
 
   def test_create_project_with_spanned_configs(self):
     FLAGS.project_yaml = (
         'deploy/samples/spanned_configs/root.yaml')
     FLAGS.projects = ['*']
-    with tempfile.NamedTemporaryFile() as f:
-      FLAGS.output_yaml_path = f.name
+    with tempfile.TemporaryDirectory() as tmp_dir:
+      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'out.yaml')
+      FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
       create_project.main([])
 
 
@@ -85,8 +90,9 @@ def _deploy(config_filename):
   FLAGS.project_yaml = os.path.join(
       'deploy/samples/', config_filename)
   FLAGS.projects = ['*']
-  with tempfile.NamedTemporaryFile() as f:
-    FLAGS.output_yaml_path = f.name
+  with tempfile.TemporaryDirectory() as tmp_dir:
+    FLAGS.output_yaml_path = os.path.join(tmp_dir, 'out.yaml')
+    FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
     create_project.main([])
 
 
