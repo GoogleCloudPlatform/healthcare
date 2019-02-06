@@ -1,24 +1,41 @@
 # BigQuery UI
 
-The aim of this tutorial is to get you familiarized with BigQuery web UI to query/filter/aggregate/export data.
+The aim of this tutorial is to get you familiarized with BigQuery web UI to
+query/filter/aggregate/export data.
 
 ## Prerequisites
 
-* You should already have had a valid Gmail account registered with the datathon organizers.
-  * If you do not have a Gmail account, you can create one at http://www.gmail.com. You need to notify datathon organizers to register your new account for data access.
-  * If you have not yet signed the data use agreement (DUA) sent by the organizers, please do so immediately to get access to the MIMIC-III dataset.
+*   You should already have had a valid Gmail account registered with the
+    datathon organizers.
+    *   If you do not have a Gmail account, you can create one at
+        http://www.gmail.com. You need to notify datathon organizers to register
+        your new account for data access.
+    *   If you have not yet signed the data use agreement (DUA) sent by the
+        organizers, please do so immediately to get access to the MIMIC-III
+        dataset.
 
 ## Executing Queries
 
-The data-hosting project `physionet-data` has read-only access, as a result, you need to set a default project that you have BigQuery access to. A shared project should be created by the organizers, visit **https://bigquery.cloud.google.com/welcome/** and search for the project to access the BigQuery web interface, all the queries in this tutorial will be run through this web interface.
+The data-hosting project `physionet-data` has read-only access, as a result, you
+need to set a default project that you have BigQuery access to. A shared project
+should be created by the organizers, visit
+**https://bigquery.cloud.google.com/welcome/** and search for the project to
+access the BigQuery web interface, all the queries in this tutorial will be run
+through this web interface.
 
-Note that during the datathon, all participants will be divided into teams and a Google Cloud project will be created for each team specifically. That project would be the preferred project to use. For now we'll stick with the shared project for the purpose of the tutorial.
+Note that during the datathon, all participants will be divided into teams and a
+Google Cloud project will be created for each team specifically. That project
+would be the preferred project to use. For now we'll stick with the shared
+project for the purpose of the tutorial.
 
 # TLDR
 
-In this section we are going to run a query to briefly showcase BigQuery's capability. The goal is to aggregate the mimic demo data to find out the correlation between age and the average length of stay in hours in ICU.
+In this section we are going to run a query to briefly showcase BigQuery's
+capability. The goal is to aggregate the mimic demo data to find out the
+correlation between age and the average length of stay in hours in ICU.
 
-Run the following query from BigQuery web interface (See "Executing Queries" section above for how to access BigQuery web interface).
+Run the following query from BigQuery web interface (See "Executing Queries"
+section above for how to access BigQuery web interface).
 
 ![Run a query](images/run_query.png)
 
@@ -40,7 +57,8 @@ GROUP BY age
 ORDER BY age
 ```
 
-You can download the returned result as a CSV file and genereate a chart with your preferred tools.
+You can download the returned result as a CSV file and genereate a chart with
+your preferred tools.
 
 ![Download result as a CSV file](images/save_csv.png)
 
@@ -56,7 +74,8 @@ Feel free to skip this section if you are already familiar with BigQuery.
 
 ### BigQuery Table Name
 
-A BigQuery table is uniquely identified by the three-layer hierarchy of project ID, dataset ID and table name. For example in the following query:
+A BigQuery table is uniquely identified by the three-layer hierarchy of project
+ID, dataset ID and table name. For example in the following query:
 
 ```SQL
 SELECT
@@ -66,37 +85,57 @@ FROM
 LIMIT 10
 ```
 
-`physionet-data.mimiciii_demo.icustays` specifies the table we are querying, where `physionet-data` is the project that hosts the datasets, `mimiciii_demo` is the name of the dataset, and `icustays` is the table name. Backticks (`) are used as there is a non-standard character (-) in the project name. If the dataset resides in the same project, you can safely omit the project name, e.g. `my-project.my_dataset.my_table` can be written as `my_dataset.my_table` instead.
+`physionet-data.mimiciii_demo.icustays` specifies the table we are querying,
+where `physionet-data` is the project that hosts the datasets, `mimiciii_demo`
+is the name of the dataset, and `icustays` is the table name. Backticks (`) are
+used as there is a non-standard character (-) in the project name. If the
+dataset resides in the same project, you can safely omit the project name,
+e.g.`my-project.my_dataset.my_table`can be written as`my_dataset.my_table`
+instead.
 
 ### SQL Dialect
 
-BigQuery supports 2 SQL dialects, legacy and standard. During this datathon we highly recommend using standard SQL dialect.
+BigQuery supports 2 SQL dialects, legacy and standard. During this datathon we
+highly recommend using standard SQL dialect.
 
 **Follow the steps below to make sure the StandardSQL dialect is used**:
 
-1. Click "COMPOSE QUERY" on top left corner;
-2. Click "Show Options" below the input area;
-3. Lastly, make sure "Use Legacy SQL" is **NOT** checked, and click "Hide Options".
+1.  Click "COMPOSE QUERY" on top left corner;
+2.  Click "Show Options" below the input area;
+3.  Lastly, make sure "Use Legacy SQL" is **NOT** checked, and click "Hide
+    Options".
 
 ![Uncheck "Use Legacy SQL"](images/dialect.png)
 
-Alternatively, ["#standardSQL" tag](https://cloud.google.com/bigquery/docs/reference/standard-sql/enabling-standard-sql) can be prepended to each query to tell BigQuery the dialect you are using, which is what we used in the TLDR section above.
+Alternatively,
+["#standardSQL" tag](https://cloud.google.com/bigquery/docs/reference/standard-sql/enabling-standard-sql)
+can be prepended to each query to tell BigQuery the dialect you are using, which
+is what we used in the TLDR section above.
 
 ## MIMIC-III Basics
 
 ### Dataset Exploration
 
-As mentioned previously, the datasets are hosted in a different project, which can be accessed [here](https://bigquery.cloud.google.com/dataset/physionet-data:mimiciii_demo). On the left panel, you will see the `mimiciii_demo` dataset, under which you will see the table names.
+As mentioned previously, the datasets are hosted in a different project, which
+can be accessed
+[here](https://bigquery.cloud.google.com/dataset/physionet-data:mimiciii_demo).
+On the left panel, you will see the `mimiciii_demo` dataset, under which you
+will see the table names.
 
-To view the details of a table, simply click on it (for example the `icustays` table). Then, on the right side of the window, you will have to option to see the schema, metadata and preview of rows tabs.
+To view the details of a table, simply click on it (for example the `icustays`
+table). Then, on the right side of the window, you will have to option to see
+the schema, metadata and preview of rows tabs.
 
 ### Queries
 
-Most of the following queries are adapted from the [MIMIC cohort selection tutorial](https://github.com/MIT-LCP/mimic-code/blob/master/tutorials/cohort-selection.ipynb).
+Most of the following queries are adapted from the
+[MIMIC cohort selection tutorial](https://github.com/MIT-LCP/mimic-code/blob/master/tutorials/cohort-selection.ipynb).
 
 ## Analysis
 
-Let's take a look at a few queries. To run the queries yourself, copy the SQL statement to the input area on top of the web interface and click the red "RUN QUERY" button.
+Let's take a look at a few queries. To run the queries yourself, copy the SQL
+statement to the input area on top of the web interface and click the red "RUN
+QUERY" button.
 
 ```SQL
 SELECT
@@ -109,18 +148,26 @@ SELECT
 FROM `physionet-data.mimiciii_demo.icustays`
 ```
 
-Let's save the result of previous query to an intermediate table for later analysis:
+Let's save the result of previous query to an intermediate table for later
+analysis:
 
-1. Create a dataset by clicking the caret below the search box on the left sidebar, and choose "Create new dataset";
-  * Set dataset ID to "temp" and data expiration to 2 days;
-  * Click "OK" to save the dataset.
-2. Click "Save to table" button on the right;
-  * Set destination dataset to "temp" and table to "icustays", use the default value for project;
-  * Click "OK" to save the table, it usually takes less than a few seconds for demo tables.
+1.  Create a dataset by clicking the caret below the search box on the left
+    sidebar, and choose "Create new dataset";
+    *   Set dataset ID to "temp" and data expiration to 2 days;
+    *   Click "OK" to save the dataset.
+2.  Click "Save to table" button on the right;
+    *   Set destination dataset to "temp" and table to "icustays", use the
+        default value for project;
+    *   Click "OK" to save the table, it usually takes less than a few seconds
+        for demo tables.
 
 ![Create a dataset](images/create_dataset.png)
 
-Now let's take a look at a query that requires table joining: include the patient's age at the time of ICU admittance. This is computed by the date difference in years between the ICU intime and the patient's date of birth. The former is available in the icustays table, and the latter resides in the dob column of the patients table.
+Now let's take a look at a query that requires table joining: include the
+patient's age at the time of ICU admittance. This is computed by the date
+difference in years between the ICU intime and the patient's date of birth. The
+former is available in the icustays table, and the latter resides in the dob
+column of the patients table.
 
 ```SQL
 SELECT
@@ -135,9 +182,13 @@ INNER JOIN `temp.icustays` AS icu
   ON icu.subject_id = pat.subject_id
 ```
 
-Again, let's save the table as "pat_icustays" in the "temp" dataset for use later. Briefly look at the age of patients when they are admitted with the following query.
+Again, let's save the table as "pat_icustays" in the "temp" dataset for use
+later. Briefly look at the age of patients when they are admitted with the
+following query.
 
-Now let's run the following query to produce data to generate a histrogram graph to show the distribution of patient ages in ten-year buckets (i.e. [0, 10), [10, 20), ..., [90, ∞).
+Now let's run the following query to produce data to generate a histrogram graph
+to show the distribution of patient ages in ten-year buckets (i.e. [0, 10), [10,
+20), ..., [90, ∞).
 
 ```SQL
 WITH bu AS (
@@ -152,15 +203,28 @@ GROUP BY bucket
 ORDER BY bucket ASC
 ```
 
-Now click "Save to Google Sheets" button and wait 1-2 seconds until a yellow notification shows up, click "Click to view" which leads you to Google Spreadsheet in a new browser window. As you can see, the data from our last query is dumped into a spreadsheet. By clicking "Insert -> Chart" from the menu bar on top, a nice histrogram graph is automatically created for us!
+Now click "Save to Google Sheets" button and wait 1-2 seconds until a yellow
+notification shows up, click "Click to view" which leads you to Google
+Spreadsheet in a new browser window. As you can see, the data from our last
+query is dumped into a spreadsheet. By clicking "Insert -> Chart" from the menu
+bar on top, a nice histrogram graph is automatically created for us!
 
 ![Save to Google Sheets](images/save_to_sheets.png)
 
-If you prefer using other tools to process the final result, a CSV file can be downloaded by clicking the "Downed as CSV" button. If downloading fails because the file is too large (we highly recommend aggregating the data to a small enough result before downloading though), you can save it to a temporary table, click the caret then "Export table" button from the dropdown menu and save it to Google Cloud Storage, then you can download the file from [GCS](https://console.cloud.google.com/storage).
+If you prefer using other tools to process the final result, a CSV file can be
+downloaded by clicking the "Downed as CSV" button. If downloading fails because
+the file is too large (we highly recommend aggregating the data to a small
+enough result before downloading though), you can save it to a temporary table,
+click the caret then "Export table" button from the dropdown menu and save it to
+Google Cloud Storage, then you can download the file from
+[GCS](https://console.cloud.google.com/storage).
 
 ![Save to Google Cloud Storage](images/save_to_gcs.png)
 
-Now let's see if there is correlation between age and average length of stay in hours. Since we are using the age of patients when they get admitted, so we don't need to worry about multiple admissions of patients. Note that we treat the redacted ages (> 90) as noises and filter them out.
+Now let's see if there is correlation between age and average length of stay in
+hours. Since we are using the age of patients when they get admitted, so we
+don't need to worry about multiple admissions of patients. Note that we treat
+the redacted ages (> 90) as noises and filter them out.
 
 ```SQL
 WITH re AS (
@@ -177,6 +241,65 @@ FROM re
 WHERE age < 100
 ```
 
-Follow the same steps to save the result to Google Spreadsheet, by default a linear chart is generate. We will need to change the chart type to scatter chart through the chart editor on the right.
+Follow the same steps to save the result to Google Spreadsheet, by default a
+linear chart is generate. We will need to change the chart type to scatter chart
+through the chart editor on the right.
 
-Congratulations! You've finished the BigQuery web UI tutorial. In this tutorial we demonstrate how to query, filter, aggregate data, and how to export the result to different locations through BigQuery web UI. If you would like to explore the real data, please use ` mimiciii_clinical` as the dataset name. For example, the table `mimiciii_demo.icustays` becomes `mimiciii_clinical.icustays` when you need the actual MIMIC data. Please take a look at more comprehensive examples [here](bigquery_colab.ipynb) such as creating charts and training machine learning models in an interactive and fully online way (or copy the queries over to web UI to execute if you prefer) if you are interested.
+## Useful Tips
+
+### Saving View
+
+Datathon organizers might not allow you to create new tables. However, you can
+save a view of a query's output to then use in later queries.
+
+1.  **Create a temporary dataset in the datathon project.** Next to the datathon
+    project in the left side of the BigQuery UI, click the arrow and then
+    `Create new dataset`. Give the dataset a temporary name that can be
+    identified to your team (like 'team6temp').
+1.  **Save the view.** After running your query, click the button next to `Run
+    Query` that says `Save view`. Select the temporary dataset you created and
+    then give the view a name.
+1.  **Query your view.** Now you can perform a query using the syntax
+    `project.dataset.view` like the following:
+
+    ```SQL
+    SELECT * FROM `datathon_project.team6temp.our_custom_view`;
+    ```
+
+### Working with DATETIME
+
+The times in the tables are stored as DATETIME objects. This means you cannot
+use operators like <, =, or > for comparing them.
+
+*   Use the
+    [DATETIME functions](https://cloud.google.com/bigquery/docs/reference/standard-sql/datetime_functions)in
+    BigQuery. An example would be if you were trying to find things within 1
+    hour of another event. In that case, you could use the native DATETIME_SUB()
+    function. In the example below, we are looking for stays of less than 1 hour
+    (where the admit time is less than 1 hour away from the discharge time).
+    `[...] WHERE ADMITTIME BETWEEN DATETIME_SUB(DISCHTIME, INTERVAL 1 HOUR) AND
+    DISCHTIME`
+
+*   If you are more comfortable working with timestamps, you can cast the
+    DATETIME object to a TIMESTAMP object and then use the
+    [TIMESTAMP functions](https://cloud.google.com/bigquery/docs/reference/standard-sql/timestamp_functions).
+
+### Input / Output Options
+
+There are a few cases where you may want to work with files outside of BigQuery.
+Examples include importing your own custom Python library or saving a dataframe.
+[This tutorial](https://colab.sandbox.google.com/notebooks/io.ipynb) covers
+importing and exporting from local filesystem, Google Drive, Google Sheets, and
+Google Cloud Storage.
+
+## Closing
+
+Congratulations! You've finished the BigQuery web UI tutorial. In this tutorial
+we demonstrated how to query, filter, aggregate data, and how to export the
+result to different locations through BigQuery web UI. If you would like to
+explore the real data, please use `mimiciii_clinical` as the dataset name. For
+example, the table `mimiciii_demo.icustays` becomes `mimiciii_clinical.icustays`
+when you need the actual MIMIC data. Please take a look at more comprehensive
+examples [here](bigquery_colab.ipynb) such as creating charts and training
+machine learning models in an interactive way (or copy the queries over to web
+UI to execute if you prefer) if you are interested.
