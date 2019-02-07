@@ -80,6 +80,7 @@ def write_yaml_file(contents, path):
   """
   yaml = ruamel.yaml.YAML()
   yaml.default_flow_style = False
+  yaml.Representer.ignore_aliases = lambda *args: True
 
   if FLAGS.dry_run:
     # If using dry_run mode, don't create the file, just print the contents.
