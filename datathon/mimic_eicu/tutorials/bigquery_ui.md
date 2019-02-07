@@ -288,7 +288,7 @@ use operators like <, =, or > for comparing them.
 
 There are a few cases where you may want to work with files outside of BigQuery.
 Examples include importing your own custom Python library or saving a dataframe.
-[This tutorial](https://colab.sandbox.google.com/notebooks/io.ipynb) covers
+[This tutorial](https://colab.research.google.com/notebooks/io.ipynb) covers
 importing and exporting from local filesystem, Google Drive, Google Sheets, and
 Google Cloud Storage.
 
