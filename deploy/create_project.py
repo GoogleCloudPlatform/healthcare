@@ -46,6 +46,8 @@ from absl import logging
 
 import jsonschema
 
+from ruamel import yaml
+
 from deploy.rule_generator import rule_generator
 from deploy.utils import forseti
 from deploy.utils import runner
@@ -349,6 +351,65 @@ def deploy_project_resources(config):
                                 project_id=project_id)
 
 
+def get_iam_policy_cleanup(config):
+  """Get cleanup commands for unexpected IAM bindings."""
+  project_id = config.project['project_id']
+  policy_str = runner.run_gcloud_command(
+      ['projects', 'get-iam-policy', project_id], project_id=project_id)
+  policy = yaml.YAML().load(policy_str)
+
+  existing_role_to_members = _get_role_to_members(policy['bindings'])
+
+  # TODO: avoid duplication with data_project.py and rule generator
+  # project config once we switch to CFT
+  owners_group_role = ('roles/owner'
+                       if 'organization_id' in config.root['overall'] else
+                       'roles/resourcemanager.projectIamAdmin')
+  initial_bindings = [
+      {
+          'role': owners_group_role,
+          'members': ['group:{}'.format(config.project['owners_group'])]
+      },
+      {
+          'role': 'roles/iam.securityReviewer',
+          'members': ['group:{}'.format(config.project['auditors_group'])]
+      },
+  ]
+  if 'editors_group' in config.project:
+    initial_bindings.append({
+        'role':
+            'roles/editor',
+        'members': [
+            'group:{}'.format(group)
+            for group in config.project['editors_group']
+        ]
+    })
+  want_role_to_members = _get_role_to_members(
+      initial_bindings, config.project.get('additional_project_permissions',
+                                           []))
+
+  for role, members in existing_role_to_members.items():
+    existing_role_to_members[role].difference_update(want_role_to_members[role])
+
+  cleanup_commands = []
+  for role, members in existing_role_to_members.items():
+    for member in members:
+      cleanup_commands.append(
+          'gcloud projects remove-iam-policy-binding {project_id} '
+          '--member={member} --role={role} --project={project_id}'.format(
+              project_id=project_id, member=member, role=role))
+
+  return Output(cleanup_commands=cleanup_commands)
+
+
+def _get_role_to_members(*bindings_list):
+  res = collections.defaultdict(set)
+  for bindings in bindings_list:
+    for binding in bindings:
+      res[binding['role']].update(set(binding['members']))
+  return res
+
+
 def deploy_bigquery_audit_logs(config):
   """Deploys the BigQuery audit logs dataset, if used."""
   data_project_id = config.project['project_id']
@@ -576,12 +637,14 @@ def create_alerts(config):
     return
   project_id = config.project['project_id']
 
-  existing_channels = runner.run_gcloud_command(
-      [
-          'alpha', 'monitoring', 'channels', 'list', '--format',
-          'value(name,labels.email_address)'
-      ],
-      project_id=project_id).split('\n')
+  existing_channels_str = runner.run_gcloud_command([
+      'alpha', 'monitoring', 'channels', 'list', '--format',
+      'value(name,labels.email_address)'
+  ],
+                                                    project_id=project_id)
+
+  existing_channels = existing_channels_str.split(
+      '\n') if existing_channels_str else []
 
   email_to_channel = {}
   for existing_channel in existing_channels:
@@ -695,6 +758,11 @@ _SETUP_STEPS = [
         updatable=True,
     ),
     Step(
+        func=get_iam_policy_cleanup,
+        description='Generate IAM policy cleanup',
+        updatable=True,
+    ),
+    Step(
         func=deploy_bigquery_audit_logs,
         description='Deploy BigQuery audit logs',
         updatable=False,
@@ -791,12 +859,14 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
 
       return False
 
-    # if this deployment was resuming from a previous failure, remove the
-    # failed step as it is done
-    config.project.get(_GENERATED_FIELDS_NAME, {}).pop('failed_step', None)
     utils.write_yaml_file(config.root, output_yaml_path)
 
+  # if this deployment was resuming from a previous failure, remove the
+  # failed step as it is done
+  config.project.get(_GENERATED_FIELDS_NAME, {}).pop('failed_step', None)
+  utils.write_yaml_file(config.root, output_yaml_path)
   logging.info('Setup completed successfully.')
+
   return True
 
 

@@ -22,6 +22,7 @@ py_library(
     deps = [
         requirement("absl-py"),
         requirement("jsonschema"),
+        requirement("ruamel.yaml"),
         "//deploy/rule_generator:rule_generator_lib",
         "//deploy/utils",
         "//deploy/utils:forseti",
