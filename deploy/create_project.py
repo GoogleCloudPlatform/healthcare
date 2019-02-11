@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 r"""A script to deploy monitored projects.
 
 Create a project config YAML file (see README.md for details) then run the
@@ -100,6 +99,7 @@ _CLEANUP_HEADER = """#!/bin/sh
 # WARNING: proceed with caution!
 
 set -e
+
 """
 
 # Configuration for deploying a single project.
@@ -155,8 +155,10 @@ def setup_billing(config):
   billing_acct = config.root['overall']['billing_account']
   project_id = config.project['project_id']
   # Set the appropriate billing account for this project:
-  runner.run_gcloud_command(['beta', 'billing', 'projects', 'link', project_id,
-                             '--billing-account', billing_acct],
+  runner.run_gcloud_command([
+      'beta', 'billing', 'projects', 'link', project_id, '--billing-account',
+      billing_acct
+  ],
                             project_id=None)
 
 
@@ -165,8 +167,10 @@ def enable_deployment_manager(config):
   project_id = config.project['project_id']
 
   # Enabled Deployment Manger and Cloud Resource Manager for this project.
-  runner.run_gcloud_command(['services', 'enable', 'deploymentmanager',
-                             'cloudresourcemanager.googleapis.com'],
+  runner.run_gcloud_command([
+      'services', 'enable', 'deploymentmanager',
+      'cloudresourcemanager.googleapis.com'
+  ],
                             project_id=project_id)
 
   # Grant deployment manager service account (temporary) owners access.
@@ -301,7 +305,9 @@ def deploy_project_resources(config):
     properties['local_audit_logs'] = audit_logs
   path = os.path.join(os.path.dirname(__file__), 'templates/data_project.py')
   dm_template_dict = {
-      'imports': [{'path': path}],
+      'imports': [{
+          'path': path
+      }],
       'resources': [{
           'type': path,
           'name': 'data_project_deployment',
@@ -429,12 +435,13 @@ def deploy_bigquery_audit_logs(config):
   logs_dataset['log_sink_service_account'] = utils.get_log_sink_service_account(
       _LOG_SINK_NAME, data_project_id)
 
-  deployment_name = 'audit-logs-{}-bq'.format(
-      data_project_id.replace('_', '-'))
-  path = os.path.join(os.path.dirname(__file__),
-                      'templates/remote_audit_logs.py')
+  deployment_name = 'audit-logs-{}-bq'.format(data_project_id.replace('_', '-'))
+  path = os.path.join(
+      os.path.dirname(__file__), 'templates/remote_audit_logs.py')
   dm_template_dict = {
-      'imports': [{'path': path}],
+      'imports': [{
+          'path': path
+      }],
       'resources': [{
           'type': path,
           'name': deployment_name,
@@ -471,11 +478,11 @@ def create_compute_images(config):
                    instance['existing_boot_image'])
       continue
     # Check if custom image already exists.
-    if runner.run_gcloud_command(
-        ['compute', 'images', 'list', '--no-standard-images',
-         '--filter', 'name={}'.format(custom_image['image_name']),
-         '--format', 'value(name)'],
-        project_id=project_id):
+    if runner.run_gcloud_command([
+        'compute', 'images', 'list', '--no-standard-images', '--filter',
+        'name={}'.format(custom_image['image_name']), '--format', 'value(name)'
+    ],
+                                 project_id=project_id):
       logging.info('Image %s already exists, skipping image creation.',
                    custom_image['image_name'])
       continue
@@ -485,10 +492,11 @@ def create_compute_images(config):
     # deployment manager service account doesn't need to be granted access to
     # the image GCS bucket.
     image_uri = 'gs://' + custom_image['gcs_path']
-    runner.run_gcloud_command(
-        ['compute', 'images', 'create', custom_image['image_name'],
-         '--source-uri', image_uri],
-        project_id=project_id)
+    runner.run_gcloud_command([
+        'compute', 'images', 'create', custom_image['image_name'],
+        '--source-uri', image_uri
+    ],
+                              project_id=project_id)
 
 
 def create_compute_vms(config):
@@ -500,8 +508,10 @@ def create_compute_vms(config):
   logging.info('Creating GCS VMs.')
 
   # Enable OS Login for VM SSH access.
-  runner.run_gcloud_command(['compute', 'project-info', 'add-metadata',
-                             '--metadata', 'enable-oslogin=TRUE'],
+  runner.run_gcloud_command([
+      'compute', 'project-info', 'add-metadata', '--metadata',
+      'enable-oslogin=TRUE'
+  ],
                             project_id=project_id)
 
   gce_instances = []
@@ -509,8 +519,8 @@ def create_compute_vms(config):
     if 'existing_boot_image' in instance:
       image_name = instance['existing_boot_image']
     else:
-      image_name = (
-          'global/images/' + instance['custom_boot_image']['image_name'])
+      image_name = ('global/images/' +
+                    instance['custom_boot_image']['image_name'])
 
     gce_template_dict = {
         'name': instance['name'],
@@ -530,8 +540,7 @@ def create_compute_vms(config):
     gce_instances.append(gce_template_dict)
 
   deployment_name = 'gce-vms'
-  path = os.path.join(os.path.dirname(__file__),
-                      'templates/gce_vms.py')
+  path = os.path.join(os.path.dirname(__file__), 'templates/gce_vms.py')
 
   resource = {
       'type': path,
@@ -729,6 +738,7 @@ def add_project_generated_fields(config):
   if gce_instance_info:
     generated_fields['gce_instance_info'] = gce_instance_info
 
+
 # The steps to set up a project, so the script can be resumed part way through
 # on error. Each func takes a config dictionary.
 _SETUP_STEPS = [
@@ -847,7 +857,7 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
           'Failure information has been written to --output_yaml_path. '
           'Please ensure the config at --project_yaml is updated with any '
           'changes from the config at --output_yaml_path and re-run the script'
-          '(Note: not needed if --output_yaml_path == --project_yaml)')
+          '(Note: only applicable if --output_yaml_path != --project_yaml)')
 
       # only record failed step if project was undeployed, an update can always
       # start from the beginning
@@ -1027,6 +1037,12 @@ def main(argv):
 
   if forseti_config:
     rule_generator.run(root_config, output_path=output_rules_path)
+
+  logging.info(
+      'All projects successfully deployed. Please remember to sync '
+      'any changes written to the config at --output_yaml_path with '
+      '--project_yaml before running the script again (Note: only applicable '
+      'if --output_yaml_path != --project_yaml)')
 
 
 if __name__ == '__main__':
