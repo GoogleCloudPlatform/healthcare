@@ -844,8 +844,10 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
       logging.error('%s: setup failed on step %s: %s',
                     config.project['project_id'], step_num, e)
       logging.error(
-          'To continue the script, sync the input file with the output file at '
-          '--output_yaml_path and re run the script')
+          'Failure information has been written to --output_yaml_path. '
+          'Please ensure the config at --project_yaml is updated with any '
+          'changes from the config at --output_yaml_path and re-run the script'
+          '(Note: not needed if --output_yaml_path == --project_yaml)')
 
       # only record failed step if project was undeployed, an update can always
       # start from the beginning
