@@ -35,10 +35,9 @@ class CreateProjectTest(absltest.TestCase):
 
   def test_project_config_validate_check_raise(self):
     FLAGS.projects = ['*']
-    datathon_path = os.path.join(
-        FLAGS.test_srcdir,
-        'google3/deploy/samples/',
-        'datathon_team_project.yaml')
+    datathon_path = (
+        'deploy/samples/datathon_team_project.yaml'
+    )
     root_config = utils.read_yaml_file(datathon_path)
     utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = []
