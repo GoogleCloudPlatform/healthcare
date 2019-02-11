@@ -81,12 +81,12 @@ class TestDataProject(absltest.TestCase):
                   'name': 'us_data',
                   'location': 'US',
                   'additional_dataset_permissions': {
-                      'owners': ['user:some-bq-owner1@google.com'],
+                      'owners': ['user:some-bq-owner1@domain.com,'],
                       'readonly': [
                           'allAuthenticatedUsers', 'domain:some-bq-domain.com'
                       ],
                       'readwrite': [
-                          'group:some-bq-readwrite1@google.com',
+                          'group:some-bq-readwrite1@domain.com,',
                           'serviceAccount:some-bq-service@g.com'
                       ]
                   }
@@ -105,17 +105,17 @@ class TestDataProject(absltest.TestCase):
                   'storage_class':
                       'REGIONAL',
                   'additional_bucket_permissions': {
-                      'owners': ['group:bucket-owner-group@google.com'],
+                      'owners': ['group:bucket-owner-group@domain.com,'],
                       'readwrite': [
-                          'group:bucket-readwrite-group@google.com',
+                          'group:bucket-readwrite-group@domain.com,',
                           'serviceAccount:2559@anser.anaccnt.com',
                           'allAuthenticatedUsers'
                       ],
-                      'writeonly': ['group:bucket-writeonly-group@google.com'],
+                      'writeonly': ['group:bucket-writeonly-group@domain.com,'],
                       'readonly': [
-                          'group:bucket-readonly-group1@google.com',
-                          'group:bucket-readonly-group2@google.com',
-                          'domain:google.com', 'allUsers'
+                          'group:bucket-readonly-group1@domain.com,',
+                          'group:bucket-readonly-group2@domain.com,',
+                          'domain:domain.com,', 'allUsers'
                       ]
                   },
                   'expected_users': [
@@ -329,11 +329,11 @@ class TestDataProject(absltest.TestCase):
                         },
                         {
                             'role': 'OWNER',
-                            'userByEmail': 'some-bq-owner1@google.com',
+                            'userByEmail': 'some-bq-owner1@domain.com,',
                         },
                         {
                             'role': 'WRITER',
-                            'groupByEmail': 'some-bq-readwrite1@google.com',
+                            'groupByEmail': 'some-bq-readwrite1@domain.com,',
                         },
                         {
                             'role': 'WRITER',
@@ -416,7 +416,7 @@ class TestDataProject(absltest.TestCase):
                                     'roles/storage.admin',
                                 'members': [
                                     'group:some-admin-group@googlegroups.com',
-                                    'group:bucket-owner-group@google.com'
+                                    'group:bucket-owner-group@domain.com,'
                                 ]
                             },
                              {
@@ -425,7 +425,7 @@ class TestDataProject(absltest.TestCase):
                                  'members': [
                                      'group:some-rw-group@googlegroups.com',
                                      'group:another-rw-group@googlegroups.com',
-                                     'group:bucket-readwrite-group@google.com',
+                                     'group:bucket-readwrite-group@domain.com,',
                                      'serviceAccount:2559@anser.anaccnt.com',
                                      'allAuthenticatedUsers'
                                  ]
@@ -436,16 +436,16 @@ class TestDataProject(absltest.TestCase):
                                  'members': [
                                      'group:some-r-group@googlegroups.com',
                                      'group:another-r-group@googlegroups.com',
-                                     'group:bucket-readonly-group1@google.com',
-                                     'group:bucket-readonly-group2@google.com',
-                                     'domain:google.com', 'allUsers'
+                                     'group:bucket-readonly-group1@domain.com,',
+                                     'group:bucket-readonly-group2@domain.com,',
+                                     'domain:domain.com,', 'allUsers'
                                  ]
                              },
                              {
                                  'role':
                                      'roles/storage.objectCreator',
                                  'members': [
-                                     'group:bucket-writeonly-group@google.com'
+                                     'group:bucket-writeonly-group@domain.com,'
                                  ]
                              }]
                     }
