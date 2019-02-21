@@ -70,11 +70,6 @@ flags.DEFINE_string('output_rules_path', None,
                      'bucket.'))
 flags.DEFINE_string('output_cleanup_path', None, 'Path to save cleanup file.')
 
-# TODO: remove flag once updates are stable
-flags.DEFINE_bool(
-    'allow_updates', False,
-    'Whether to allow updates. NOTE: this functionality is not ready for prod.')
-
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
 
@@ -830,9 +825,6 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
       'failed_step', 1)
 
   deployed = is_deployed(config.project)
-
-  if deployed and not FLAGS.allow_updates:
-    logging.fatal('must pass --allow_updates to support updates.')
 
   total_steps = len(steps)
   for step_num in range(starting_step, total_steps + 1):
