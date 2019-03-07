@@ -87,7 +87,7 @@ LIMIT 10
 
 `physionet-data.mimiciii_demo.icustays` specifies the table we are querying,
 where `physionet-data` is the project that hosts the datasets, `mimiciii_demo`
-is the name of the dataset, and `icustays` is the table name. Backticks (`) are
+is the name of the dataset, and `icustays` is the table name. Backticks (\`) are
 used as there is a non-standard character (-) in the project name. If the
 dataset resides in the same project, you can safely omit the project name,
 e.g.`my-project.my_dataset.my_table`can be written as`my_dataset.my_table`
@@ -193,7 +193,7 @@ to show the distribution of patient ages in ten-year buckets (i.e. [0, 10), [10,
 ```SQL
 WITH bu AS (
   SELECT
-    CAST(FLOOR(ps.age / 10) AS INT64) AS bucket
+    CAST(FLOOR(age / 10) AS INT64) AS bucket
   FROM `temp.pat_icustays`)
 SELECT
   IF(bucket >= 9, ">= 90", FORMAT("%d - %d", bucket * 10, (bucket + 1) * 10)) AS age,

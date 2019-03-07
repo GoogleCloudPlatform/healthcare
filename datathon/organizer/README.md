@@ -4,7 +4,7 @@ This guide is designed to help structured data users (e.g. healthcare datathon
 organizers and participants, structured data analysis course instructors and
 students) to set up a set of Google Cloud Projects, in order to host the
 structured datasets and data analysis environment in a compliant and audited
-way. More specifically, it explains how to created:
+way. More specifically, it explains how to create:
 
 1.  An auditing project to collect audit records from the data-hosting project
     and work project created below.
@@ -17,12 +17,12 @@ way. More specifically, it explains how to created:
 
 If you are the owner of a dataset (e.g. de-identified electronic health records
 data), setting up projects 1 and 2 enables data hosting. If you want to provide
-shared a cloud environment for a group of people to run analysis, projects 1 and
+and share a cloud environment for a group of people to run analysis, projects 1 and
 3 are needed. If you want to both host the data and provide an analysis
 environment, then all three projects are needed.
 
 The project setup is based on the Google Cloud Healthcare Deployment Manager
-Templates. Please see its [documentation](../../compliance/deploy/README.md) for
+Templates. Please see its [documentation](../../deploy/README.md) for
 more background information.
 
 ## Command-line Environment Setup
