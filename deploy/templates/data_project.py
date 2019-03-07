@@ -364,6 +364,8 @@ def generate_config(context):
           'logName=projects/%(project_id)s/logs/'
           'cloudaudit.googleapis.com%%2Fdata_access AND '
           'protoPayload.resourceName=projects/_/buckets/%(bucket_id)s AND '
+          # Permission Denied (status.code 7) has no principalEmail saved.
+          'protoPayload.status.code!=7 AND '
           'protoPayload.authenticationInfo.principalEmail!=(%(exp_users)s)') % {
               'project_id': project_id,
               'bucket_id': data_bucket_id,

@@ -471,6 +471,7 @@ class TestDataProject(absltest.TestCase):
                         'cloudaudit.googleapis.com%2Fdata_access AND '
                         'protoPayload.resourceName=projects/_/buckets/'
                         'my-project-nlp-bucket AND '
+                        'protoPayload.status.code!=7 AND '
                         'protoPayload.authenticationInfo.principalEmail!=('
                         'auth_user_1@mydomain.com AND '
                         'auth_user_2@mydomain.com)'),
@@ -596,6 +597,7 @@ class TestDataProject(absltest.TestCase):
                         'cloudaudit.googleapis.com%2Fdata_access AND '
                         'protoPayload.resourceName=projects/_/buckets/'
                         'my-project-euro-bucket AND '
+                        'protoPayload.status.code!=7 AND '
                         'protoPayload.authenticationInfo.principalEmail!=('
                         'auth_user_3@mydomain.com)'),
                     'description': ('Count of unexpected data access to '
