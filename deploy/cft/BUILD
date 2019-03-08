@@ -7,8 +7,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "bigquery_dataset.go",
         "cft.go",
-        "dataset.go",
         "deployment.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cft",
@@ -18,8 +18,8 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "bigquery_dataset_test.go",
         "cft_test.go",
-        "dataset_test.go",
         "deployment_test.go",
     ],
     embed = [":go_default_library"],
