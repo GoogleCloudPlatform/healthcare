@@ -8,6 +8,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "cft.go",
+        "dataset.go",
         "deployment.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cft",
@@ -18,6 +19,7 @@ go_test(
     name = "go_default_test",
     srcs = [
         "cft_test.go",
+        "dataset_test.go",
         "deployment_test.go",
     ],
     embed = [":go_default_library"],
