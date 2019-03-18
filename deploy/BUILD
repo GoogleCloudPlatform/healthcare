@@ -14,7 +14,7 @@ exports_files(["project_config.yaml.schema"])
 py_binary(
     name = "create_project",
     srcs = ["create_project.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [":create_project_lib"],
 )
 
@@ -39,7 +39,7 @@ py_test(
     data = [
         "//deploy/samples:configs",
     ],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("backports.tempfile"),
@@ -52,7 +52,7 @@ py_test(
 py_binary(
     name = "grant_forseti_access",
     srcs = ["grant_forseti_access.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         "//deploy/utils:forseti",
@@ -62,7 +62,7 @@ py_binary(
 py_binary(
     name = "generate_rules",
     srcs = ["generate_rules.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         "//deploy/rule_generator:rule_generator_lib",

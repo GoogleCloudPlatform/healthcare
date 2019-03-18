@@ -19,7 +19,7 @@ py_library(
 py_test(
     name = "audit_logging_scanner_rules_test",
     srcs = ["audit_logging_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
@@ -37,7 +37,7 @@ py_library(
 py_test(
     name = "bigquery_scanner_rules_test",
     srcs = ["bigquery_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
@@ -55,7 +55,7 @@ py_library(
 py_test(
     name = "bucket_scanner_rules_test",
     srcs = ["bucket_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
@@ -73,7 +73,7 @@ py_library(
 py_test(
     name = "cloudsql_scanner_rules_test",
     srcs = ["cloudsql_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
@@ -91,7 +91,7 @@ py_library(
 py_test(
     name = "enabled_apis_scanner_rules_test",
     srcs = ["enabled_apis_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
@@ -109,7 +109,7 @@ py_library(
 py_test(
     name = "iam_scanner_rules_test",
     srcs = ["iam_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
@@ -127,7 +127,7 @@ py_library(
 py_test(
     name = "lien_scanner_rules_test",
     srcs = ["lien_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
@@ -145,7 +145,7 @@ py_library(
 py_test(
     name = "location_scanner_rules_test",
     srcs = ["location_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
@@ -163,7 +163,7 @@ py_library(
 py_test(
     name = "log_sink_scanner_rules_test",
     srcs = ["log_sink_scanner_rules_test.py"],
-    default_python_version = "PY3",
+    python_version = "PY3",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),
