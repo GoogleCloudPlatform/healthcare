@@ -17,15 +17,21 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 gazelle_dependencies()
 
 go_repository(
-    name = "in_gopkg_yaml",
-    importpath = "gopkg.in/yaml.v2",
-    tag = "v2.2.2",
-)
-
-go_repository(
     name = "com_github_google_cmp",
     importpath = "github.com/google/go-cmp",
     tag = "v0.2.0",
+)
+
+go_repository(
+    name = "com_github_imdario_mergo",
+    importpath = "github.com/imdario/mergo",
+    tag = "v0.3.7",
+)
+
+go_repository(
+    name = "in_gopkg_yaml",
+    importpath = "gopkg.in/yaml.v2",
+    tag = "v2.2.2",
 )
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")

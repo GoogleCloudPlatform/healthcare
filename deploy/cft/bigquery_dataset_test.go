@@ -1,7 +1,6 @@
 package cft
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 
 func TestDataset(t *testing.T) {
 	datasetYAML := `
-cft:
+properties:
   name: foo-dataset
   access:
   - userByEmail: some-admin@domain.com
@@ -21,7 +20,7 @@ cft:
 `
 
 	wantdatasetYAML := `
-cft:
+properties:
   name: foo-dataset
   access:
   - userByEmail: some-admin@domain.com
@@ -39,15 +38,13 @@ cft:
   setDefaultOwner: false
 `
 
-	d, err := NewBigqueryDataset(project, func(d *BigqueryDataset) error {
-		if err := yaml.Unmarshal([]byte(datasetYAML), d); err != nil {
-			return fmt.Errorf("test yaml unmarshal: %v", err)
-		}
-		return nil
-	})
+	d := new(BigqueryDataset)
+	if err := yaml.Unmarshal([]byte(datasetYAML), d); err != nil {
+		t.Fatalf("yaml unmarshal: %v", err)
+	}
 
-	if err != nil {
-		t.Fatalf("NewDataset: %v", err)
+	if err := d.Init(project); err != nil {
+		t.Fatalf("d.Init: %v", err)
 	}
 
 	got := make(map[string]interface{})
@@ -67,7 +64,7 @@ cft:
 		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
 	}
 
-	if gotName, wantName := d.ResourceName(), "foo-dataset"; gotName != wantName {
+	if gotName, wantName := d.Name(), "foo-dataset"; gotName != wantName {
 		t.Errorf("d.ResourceName() = %v, want %v", gotName, wantName)
 	}
 }
@@ -80,28 +77,26 @@ func TestDatasetErrors(t *testing.T) {
 	}{
 		{
 			"missing_name",
-			`"cft": {}`,
+			`"properties": {}`,
 			"name must be set",
 		},
 		{
 			"set_default_owner",
-			`"cft": {"name": "foo-dataset", "setDefaultOwner": true}`,
+			`"properties": {"name": "foo-dataset", "setDefaultOwner": true}`,
 			"setDefaultOwner must not be true",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(*testing.T) {
-			setYaml := func(d *BigqueryDataset) error {
-				if err := yaml.Unmarshal([]byte(tc.yaml), d); err != nil {
-					return fmt.Errorf("test yaml unmarshal: %v", err)
-				}
-				return nil
+			d := new(BigqueryDataset)
+			if err := yaml.Unmarshal([]byte(tc.yaml), d); err != nil {
+				t.Fatalf("yaml unmarshal: %v", err)
 			}
-			if _, err := NewBigqueryDataset(project, setYaml); err == nil {
-				t.Fatalf("NewBigqueryDataset expected error: got nil, want %v", tc.err)
+			if err := d.Init(project); err == nil {
+				t.Fatalf("d.Init error: got nil, want %v", tc.err)
 			} else if !strings.Contains(err.Error(), tc.err) {
-				t.Fatalf("NewBigqueryDataset: got error %q, want error with substring %q", err, tc.err)
+				t.Fatalf("d.Init: got error %q, want error with substring %q", err, tc.err)
 			}
 		})
 	}

@@ -10,9 +10,14 @@ go_library(
         "bigquery_dataset.go",
         "cft.go",
         "deployment.go",
+        "resourcepair.go",
     ],
+    data = ["//deploy/cft/templates"],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cft",
-    deps = ["@in_gopkg_yaml//:go_default_library"],
+    deps = [
+        "@com_github_imdario_mergo//:go_default_library",
+        "@in_gopkg_yaml//:go_default_library",
+    ],
 )
 
 go_test(
@@ -21,6 +26,7 @@ go_test(
         "bigquery_dataset_test.go",
         "cft_test.go",
         "deployment_test.go",
+        "resourcepair_test.go",
     ],
     embed = [":go_default_library"],
     deps = [

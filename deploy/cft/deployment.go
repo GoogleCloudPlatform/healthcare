@@ -32,9 +32,9 @@ type Import struct {
 
 // Resource defines the deployment manager resources to deploy.
 type Resource struct {
-	Name       string                 `yaml:"name"`
-	Type       string                 `yaml:"type"`
-	Properties map[string]interface{} `yaml:"properties"`
+	Name       string                      `yaml:"name"`
+	Type       string                      `yaml:"type"`
+	Properties map[interface{}]interface{} `yaml:"properties"`
 }
 
 // createOrUpdateDeployment creates the deployment if it does not exist, else updates it.

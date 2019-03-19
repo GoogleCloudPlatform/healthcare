@@ -1,10 +1,13 @@
 package cft
 
 import (
+	"bytes"
 	"log"
 	"os"
 	"testing"
+	"text/template"
 
+	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 )
 
@@ -34,7 +37,7 @@ projects:
       location: US
   resources:
     bigquery_datasets:
-    - cft:
+    - properties:
         name: my-dataset
 `
 
@@ -44,7 +47,66 @@ var (
 )
 
 func TestDeploy(t *testing.T) {
-	// TODO: implement CFT integration test once rest of the code is checked in.
+	wantDeploymentYAML := `
+imports:
+- path: {{.ImportPath}}
+resources:
+- name: my-dataset
+  type: {{.ImportPath}}
+  properties:
+    access:
+    - groupByEmail: my-project-owners@my-domain.com
+      role: OWNER
+    - groupByEmail: some-readwrite-group@my-domain.com
+      role: WRITER
+    - groupByEmail: some-readonly-group@my-domain.com
+      role: READER
+    - groupByEmail: another-readonly-group@googlegroups.com
+      role: READER
+    name: my-dataset
+    setDefaultOwner: false
+`
+	tmpl, err := template.New("test").Parse(wantDeploymentYAML)
+	if err != nil {
+		t.Fatalf("template Parse: %v", err)
+	}
+
+	path, err := getCFTTemplatePath("bigquery_dataset.py")
+	if err != nil {
+		t.Fatalf("getCFTTemplatePath: %v", err)
+	}
+
+	buf := new(bytes.Buffer)
+	if err := tmpl.Execute(buf, map[string]interface{}{"ImportPath": path}); err != nil {
+		t.Fatalf("tmpl.Execute: %v", err)
+	}
+
+	commander := &fakeCommander{
+		listDeploymentName: "managed-cloud-foundation-toolkit",
+		wantDeploymentCommand: []string{
+			"gcloud", "deployment-manager", "deployments", "update", "managed-cloud-foundation-toolkit",
+			"--delete-policy", "ABANDON", "--project", project.ID},
+	}
+
+	cmdRun = commander.Run
+	cmdCombinedOutput = commander.CombinedOutput
+
+	if err := Deploy(project); err != nil {
+		t.Fatalf("Deploy: %v", err)
+	}
+
+	got := make(map[string]interface{})
+	want := make(map[string]interface{})
+	if err := yaml.Unmarshal(commander.gotConfigFileContents, got); err != nil {
+		t.Fatalf("yaml.Unmarshal got config: %v", err)
+	}
+	if err := yaml.Unmarshal(buf.Bytes(), want); err != nil {
+		t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
+	}
+
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
+	}
 }
 
 func TestMain(m *testing.M) {

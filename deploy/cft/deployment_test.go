@@ -18,7 +18,7 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 		Resources: []Resource{{
 			Name: "foo-resource",
 			Type: "path/to/foo-template",
-			Properties: map[string]interface{}{
+			Properties: map[interface{}]interface{}{
 				"name":    "foo-resource",
 				"foo-key": "foo-value",
 			},

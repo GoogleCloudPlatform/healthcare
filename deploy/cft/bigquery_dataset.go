@@ -6,14 +6,14 @@ import (
 
 // BigqueryDataset represents a bigquery dataset.
 type BigqueryDataset struct {
-	BigQueryDatasetCFT `yaml:"cft"`
+	BigqueryDatasetProperties `yaml:"properties"`
 }
 
-// BigQueryDatasetCFT represents a partial CFT dataset implementation.
-type BigQueryDatasetCFT struct {
-	Name            string   `yaml:"name"`
-	Accesses        []access `yaml:"access"`
-	SetDefaultOwner bool     `yaml:"setDefaultOwner"`
+// BigqueryDatasetProperties represents a partial CFT dataset implementation.
+type BigqueryDatasetProperties struct {
+	BigqueryDatasetName string   `yaml:"name"`
+	Accesses            []access `yaml:"access"`
+	SetDefaultOwner     bool     `yaml:"setDefaultOwner"`
 }
 
 type access struct {
@@ -26,21 +26,13 @@ type access struct {
 	View map[string]interface{} `yaml:"view,omitempty"`
 }
 
-// NewBigqueryDataset initializes a new dataset.
-func NewBigqueryDataset(project *Project, opts ...func(*BigqueryDataset) error) (*BigqueryDataset, error) {
-	d := &BigqueryDataset{}
-
-	for _, opt := range opts {
-		if err := opt(d); err != nil {
-			return nil, err
-		}
-	}
-
-	if d.Name == "" {
-		return nil, errors.New("name must be set")
+// Init initializes a new dataset.
+func (d *BigqueryDataset) Init(project *Project) error {
+	if d.Name() == "" {
+		return errors.New("name must be set")
 	}
 	if d.SetDefaultOwner {
-		return nil, errors.New("setDefaultOwner must not be true")
+		return errors.New("setDefaultOwner must not be true")
 	}
 
 	// Note: duplicate accesses are de-duplicated by deployment manager.
@@ -62,10 +54,10 @@ func NewBigqueryDataset(project *Project, opts ...func(*BigqueryDataset) error) 
 		}
 	}
 
-	return d, nil
+	return nil
 }
 
-// ResourceName returns the name of this dataset.
-func (d *BigqueryDataset) ResourceName() string {
-	return d.Name
+// Name returns the name of this dataset.
+func (d *BigqueryDataset) Name() string {
+	return d.BigqueryDatasetName
 }
