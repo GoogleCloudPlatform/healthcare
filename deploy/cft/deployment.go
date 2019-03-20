@@ -95,7 +95,7 @@ func checkDeploymentExists(projectID, name string) (bool, error) {
 
 	out, err := cmdCombinedOutput(cmd)
 	if err != nil {
-		return false, fmt.Errorf("failed to run command: %v", err)
+		return false, fmt.Errorf("failed to run command: %v\n%v", err, string(out))
 	}
 
 	deploymentInfos := make([]deploymentInfo, 0)
