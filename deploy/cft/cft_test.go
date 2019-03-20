@@ -36,8 +36,8 @@ projects:
     logs_bigquery_dataset:
       location: US
   resources:
-    bigquery_datasets:
-    - properties:
+  - bigquery_dataset:
+      properties:
         name: my-dataset
 `
 

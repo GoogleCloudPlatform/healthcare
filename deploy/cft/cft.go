@@ -22,8 +22,8 @@ type Project struct {
 	OwnersGroup         string   `yaml:"owners_group"`
 	DataReadWriteGroups []string `yaml:"data_readwrite_groups"`
 	DataReadOnlyGroups  []string `yaml:"data_readonly_groups"`
-	Resources           struct {
-		BigqueryDatasets []interface{} `yaml:"bigquery_datasets"`
+	Resources           []struct {
+		BigqueryDataset interface{} `yaml:"bigquery_dataset"`
 	} `yaml:"resources"`
 }
 
@@ -72,13 +72,15 @@ func Deploy(project *Project) error {
 func getTemplateToResourcePairs(p *Project) (map[string][]resourcePair, error) {
 	res := make(map[string][]resourcePair)
 
-	for _, rawd := range p.Resources.BigqueryDatasets {
-		d := new(BigqueryDataset)
-		if err := unmarshal(rawd, d); err != nil {
-			return nil, err
+	for _, r := range p.Resources {
+		if r.BigqueryDataset != nil {
+			d := new(BigqueryDataset)
+			if err := unmarshal(r.BigqueryDataset, d); err != nil {
+				return nil, err
+			}
+			t := "bigquery_dataset.py"
+			res[t] = append(res[t], resourcePair{parsed: d, raw: r.BigqueryDataset})
 		}
-		t := "bigquery_dataset.py"
-		res[t] = append(res[t], resourcePair{parsed: d, raw: rawd})
 	}
 
 	return res, nil
