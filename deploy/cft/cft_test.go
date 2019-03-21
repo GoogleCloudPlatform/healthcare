@@ -52,7 +52,7 @@ imports:
 - path: {{.ImportPath}}
 resources:
 - name: my-dataset
-  type: {{.ImportPath}}
+  type: {{.Type}}
   properties:
     access:
     - groupByEmail: my-project-owners@my-domain.com
@@ -71,13 +71,14 @@ resources:
 		t.Fatalf("template Parse: %v", err)
 	}
 
-	path, err := getCFTTemplatePath("bigquery_dataset.py")
+	typ := "bigquery_dataset.py"
+	path, err := getCFTTemplatePath(typ)
 	if err != nil {
 		t.Fatalf("getCFTTemplatePath: %v", err)
 	}
 
 	buf := new(bytes.Buffer)
-	if err := tmpl.Execute(buf, map[string]interface{}{"ImportPath": path}); err != nil {
+	if err := tmpl.Execute(buf, map[string]interface{}{"ImportPath": path, "Type": typ}); err != nil {
 		t.Fatalf("tmpl.Execute: %v", err)
 	}
 

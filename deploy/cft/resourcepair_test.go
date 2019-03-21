@@ -24,6 +24,10 @@ func (r testResource) Name() string {
 	return "foo-resource"
 }
 
+func (r testResource) TemplatePath() string {
+	return "does_not_exist.py"
+}
+
 func TestMergedMap(t *testing.T) {
 	tests := []struct {
 		name, parsed, raw, want string

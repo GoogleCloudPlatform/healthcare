@@ -26,7 +26,7 @@ type access struct {
 	View map[string]interface{} `yaml:"view,omitempty"`
 }
 
-// Init initializes a new dataset.
+// Init initializes a new dataset with the given project.
 func (d *BigqueryDataset) Init(project *Project) error {
 	if d.Name() == "" {
 		return errors.New("name must be set")
@@ -60,4 +60,9 @@ func (d *BigqueryDataset) Init(project *Project) error {
 // Name returns the name of this dataset.
 func (d *BigqueryDataset) Name() string {
 	return d.BigqueryDatasetName
+}
+
+// TemplatePath returns the name of the template to use for this dataset.
+func (d *BigqueryDataset) TemplatePath() string {
+	return "bigquery_dataset.py"
 }
