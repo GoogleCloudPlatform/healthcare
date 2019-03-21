@@ -18,8 +18,6 @@ FLAGS = flags.FLAGS
 flags.DEFINE_bool('dry_run', True,
                   ('By default, no gcloud commands will be executed. '
                    'Use --nodry_run to execute commands.'))
-flags.DEFINE_string('gcloud_bin', 'gcloud',
-                    'Location of the gcloud binary.')
 
 
 def run(f, *args, **kwargs):
@@ -55,7 +53,7 @@ def run_gcloud_command(cmd, project_id):
   Raises:
     CalledProcessError: when command execution returns a non-zero return code.
   """
-  gcloud_cmd = [FLAGS.gcloud_bin] + cmd
+  gcloud_cmd = ['gcloud'] + cmd
   if project_id:
     gcloud_cmd.extend(['--project', project_id])
   return run_command(gcloud_cmd, get_output=True).strip()

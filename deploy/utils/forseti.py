@@ -104,7 +104,6 @@ def get_server_bucket(forseti_project_id):
   Raises:
     ValueError: if failure in finding the bucket in the gsutil command output.
   """
-  # TODO: allow users to override gsutil binary, similar to gcloud
   output = runner.run_command(['gsutil', 'ls', '-p', forseti_project_id],
                               get_output=True)
 
