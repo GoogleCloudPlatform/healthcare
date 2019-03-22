@@ -9,6 +9,8 @@ import (
 )
 
 func TestDataset(t *testing.T) {
+	_, project := getTestConfigAndProject(t, nil)
+
 	datasetYAML := `
 properties:
   name: foo-dataset
@@ -70,6 +72,8 @@ properties:
 }
 
 func TestDatasetErrors(t *testing.T) {
+	_, project := getTestConfigAndProject(t, nil)
+
 	tests := []struct {
 		name string
 		yaml string

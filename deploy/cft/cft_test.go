@@ -2,8 +2,7 @@ package cft
 
 import (
 	"bytes"
-	"log"
-	"os"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -35,89 +34,139 @@ projects:
       ttl_days: 365
     logs_bigquery_dataset:
       location: US
-  resources:
-  - bigquery_dataset:
-      properties:
-        name: my-dataset
+{{lpad .ExtraProjectConfig 2}}
 `
 
-var (
-	config  *Config
-	project *Project
-)
+type ConfigOptions struct {
+	ExtraProjectConfig string
+}
+
+func lpad(s string, n int) string {
+	var b strings.Builder
+	for _, line := range strings.Split(s, "\n") {
+		b.WriteString(strings.Repeat(" ", n))
+		b.WriteString(line)
+		b.WriteString("\n")
+	}
+	return b.String()
+}
+
+func getTestConfigAndProject(t *testing.T, opts *ConfigOptions) (*Config, *Project) {
+	if opts == nil {
+		opts = &ConfigOptions{}
+	}
+
+	tmpl, err := template.New("test").Funcs(template.FuncMap{"lpad": lpad}).Parse(configYAML)
+	if err != nil {
+		t.Fatalf("template Parse: %v", err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, opts); err != nil {
+		t.Fatalf("template Execute: %v", err)
+	}
+
+	config := new(Config)
+	if err := yaml.Unmarshal(buf.Bytes(), config); err != nil {
+		t.Fatalf("unmarshal config: %v", err)
+	}
+	if len(config.Projects) != 1 {
+		t.Fatalf("len(config.Projects)=%v, want 1", len(config.Projects))
+	}
+	return config, config.Projects[0]
+}
 
 func TestDeploy(t *testing.T) {
-	wantDeploymentYAML := `
+	tests := []struct {
+		name                     string
+		templatePath             string
+		configOpts               *ConfigOptions
+		wantDeploymentProperties string
+	}{
+		{
+			name:         "bigquery_dataset",
+			templatePath: "bigquery_dataset.py",
+			configOpts: &ConfigOptions{`
+resources:
+- bigquery_dataset:
+    properties:
+      name: my-dataset`},
+			wantDeploymentProperties: `
+access:
+- groupByEmail: my-project-owners@my-domain.com
+  role: OWNER
+- groupByEmail: some-readwrite-group@my-domain.com
+  role: WRITER
+- groupByEmail: some-readonly-group@my-domain.com
+  role: READER
+- groupByEmail: another-readonly-group@googlegroups.com
+  role: READER
+name: my-dataset
+setDefaultOwner: false`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, project := getTestConfigAndProject(t, tc.configOpts)
+
+			wantDeploymentYAML := `
 imports:
 - path: {{.ImportPath}}
 resources:
 - name: my-dataset
   type: {{.Type}}
-  properties:
-    access:
-    - groupByEmail: my-project-owners@my-domain.com
-      role: OWNER
-    - groupByEmail: some-readwrite-group@my-domain.com
-      role: WRITER
-    - groupByEmail: some-readonly-group@my-domain.com
-      role: READER
-    - groupByEmail: another-readonly-group@googlegroups.com
-      role: READER
-    name: my-dataset
-    setDefaultOwner: false
-`
-	tmpl, err := template.New("test").Parse(wantDeploymentYAML)
-	if err != nil {
-		t.Fatalf("template Parse: %v", err)
-	}
+  properties:`
+			wantDeploymentYAML += lpad(tc.wantDeploymentProperties, 4)
 
-	typ := "bigquery_dataset.py"
-	path, err := getCFTTemplatePath(typ)
-	if err != nil {
-		t.Fatalf("getCFTTemplatePath: %v", err)
-	}
+			tmpl, err := template.New("test").Parse(wantDeploymentYAML)
+			if err != nil {
+				t.Fatalf("template Parse: %v", err)
+			}
 
-	buf := new(bytes.Buffer)
-	if err := tmpl.Execute(buf, map[string]interface{}{"ImportPath": path, "Type": typ}); err != nil {
-		t.Fatalf("tmpl.Execute: %v", err)
-	}
+			path, err := getCFTTemplatePath(tc.templatePath)
+			if err != nil {
+				t.Fatalf("getCFTTemplatePath: %v", err)
+			}
 
-	commander := &fakeCommander{
-		listDeploymentName: "managed-cloud-foundation-toolkit",
-		wantDeploymentCommand: []string{
-			"gcloud", "deployment-manager", "deployments", "update", "managed-cloud-foundation-toolkit",
-			"--delete-policy", "ABANDON", "--project", project.ID},
-	}
+			var buf bytes.Buffer
+			data := struct {
+				ImportPath, Type string
+			}{
+				path, tc.templatePath,
+			}
+			if err := tmpl.Execute(&buf, data); err != nil {
+				t.Fatalf("tmpl.Execute: %v", err)
+			}
 
-	cmdRun = commander.Run
-	cmdCombinedOutput = commander.CombinedOutput
+			commander := &fakeCommander{
+				listDeploymentName: "managed-cloud-foundation-toolkit",
+				wantDeploymentCommand: []string{
+					"gcloud", "deployment-manager", "deployments", "update", "managed-cloud-foundation-toolkit",
+					"--delete-policy", "ABANDON", "--project", project.ID},
+			}
 
-	if err := Deploy(project); err != nil {
-		t.Fatalf("Deploy: %v", err)
-	}
+			cmdRun = commander.Run
+			cmdCombinedOutput = commander.CombinedOutput
 
-	got := make(map[string]interface{})
-	want := make(map[string]interface{})
-	if err := yaml.Unmarshal(commander.gotConfigFileContents, got); err != nil {
-		t.Fatalf("yaml.Unmarshal got config: %v", err)
-	}
-	if err := yaml.Unmarshal(buf.Bytes(), want); err != nil {
-		t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
-	}
+			if err := Deploy(project); err != nil {
+				t.Fatalf("Deploy: %v", err)
+			}
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
-	}
-}
+			got := make(map[string]interface{})
+			want := make(map[string]interface{})
+			if err := yaml.Unmarshal(commander.gotConfigFileContents, got); err != nil {
+				t.Fatalf("yaml.Unmarshal got config: %v", err)
+			}
 
-func TestMain(m *testing.M) {
-	config = new(Config)
-	if err := yaml.Unmarshal([]byte(configYAML), config); err != nil {
-		log.Fatalf("unmarshal config: %v", err)
+			if err := yaml.Unmarshal(buf.Bytes(), want); err != nil {
+				t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
+			}
+
+			if diff := cmp.Diff(got, want); diff != "" {
+				t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
+			}
+
+			// TODO: validate against schema file too
+		})
 	}
-	if len(config.Projects) != 1 {
-		log.Fatalf("len(config.Projects)=%v, want 1", len(config.Projects))
-	}
-	project = config.Projects[0]
-	os.Exit(m.Run())
 }
