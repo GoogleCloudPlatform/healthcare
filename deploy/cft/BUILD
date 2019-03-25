@@ -28,7 +28,7 @@ go_test(
     srcs = [
         "bigquery_dataset_test.go",
         "cft_test.go",
-        "default_resource.go",
+        "default_resource_test.go",
         "deployment_test.go",
         "gcs_bucket_test.go",
         "gke_workload_test.go",
