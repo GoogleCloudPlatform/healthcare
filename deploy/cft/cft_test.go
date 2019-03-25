@@ -78,19 +78,22 @@ func getTestConfigAndProject(t *testing.T, opts *ConfigOptions) (*Config, *Proje
 func TestDeploy(t *testing.T) {
 	tests := []struct {
 		name                     string
+		resourceName             string
 		templatePath             string
 		configOpts               *ConfigOptions
 		wantDeploymentProperties string
 	}{
 		{
 			name:         "bigquery_dataset",
+			resourceName: "foo-dataset",
 			templatePath: "bigquery_dataset.py",
 			configOpts: &ConfigOptions{`
 resources:
 - bigquery_dataset:
     properties:
-      name: my-dataset`},
+      name: foo-dataset`},
 			wantDeploymentProperties: `
+name: foo-dataset
 access:
 - groupByEmail: my-project-owners@my-domain.com
   role: OWNER
@@ -100,8 +103,35 @@ access:
   role: READER
 - groupByEmail: another-readonly-group@googlegroups.com
   role: READER
-name: my-dataset
 setDefaultOwner: false`,
+		},
+		{
+			name:         "gcs_bucket",
+			resourceName: "foo-bucket",
+			templatePath: "gcs_bucket.py",
+			configOpts: &ConfigOptions{`
+resources:
+- gcs_bucket:
+    no_prefix: true
+    properties:
+      name: foo-bucket
+      location: us-east1`},
+			wantDeploymentProperties: `
+name: foo-bucket
+location: us-east1
+bindings:
+- role: roles/storage.admin
+  members:
+  - 'group:my-project-owners@my-domain.com'
+- role: roles/storage.objectAdmin
+  members:
+  - 'group:some-readwrite-group@my-domain.com'
+- role: roles/storage.objectViewer
+  members:
+  - 'group:some-readonly-group@my-domain.com'
+  - 'group:another-readonly-group@googlegroups.com'
+versioning:
+  enabled: true`,
 		},
 	}
 
@@ -113,7 +143,7 @@ setDefaultOwner: false`,
 imports:
 - path: {{.ImportPath}}
 resources:
-- name: my-dataset
+- name: {{.Name}}
   type: {{.Type}}
   properties:`
 			wantDeploymentYAML += lpad(tc.wantDeploymentProperties, 4)
@@ -130,9 +160,9 @@ resources:
 
 			var buf bytes.Buffer
 			data := struct {
-				ImportPath, Type string
+				Name, ImportPath, Type string
 			}{
-				path, tc.templatePath,
+				tc.resourceName, path, tc.templatePath,
 			}
 			if err := tmpl.Execute(&buf, data); err != nil {
 				t.Fatalf("tmpl.Execute: %v", err)

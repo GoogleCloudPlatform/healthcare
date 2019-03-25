@@ -79,13 +79,9 @@ func getResourcePairs(project *Project) ([]resourcePair, error) {
 	for _, r := range project.Resources {
 
 		initialPairs := []resourcePair{
-			{
-				&BigqueryDataset{},
-				r.BigqueryDataset,
-			}, {
-				&DefaultResource{templatePath: "gke.py"},
-				r.GKECluster,
-			},
+			{&BigqueryDataset{}, r.BigqueryDataset},
+			{NewGCSBucket(), r.GCSBucket},
+			{&DefaultResource{templatePath: "gke.py"}, r.GKECluster},
 		}
 
 		for _, pair := range initialPairs {
