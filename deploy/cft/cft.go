@@ -25,6 +25,7 @@ type Project struct {
 	Resources           []struct {
 		BigqueryDataset interface{} `yaml:"bigquery_dataset"`
 		GCSBucket       interface{} `yaml:"gcs_bucket"`
+		GKECluster      interface{} `yaml:"gke_cluster"`
 	} `yaml:"resources"`
 }
 
@@ -81,6 +82,9 @@ func getResourcePairs(project *Project) ([]resourcePair, error) {
 			{
 				&BigqueryDataset{},
 				r.BigqueryDataset,
+			}, {
+				&DefaultResource{templatePath: "gke.py"},
+				r.GKECluster,
 			},
 		}
 

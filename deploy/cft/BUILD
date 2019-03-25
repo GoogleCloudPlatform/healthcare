@@ -9,6 +9,7 @@ go_library(
     srcs = [
         "bigquery_dataset.go",
         "cft.go",
+        "default_resource.go",
         "deployment.go",
         "gke_workload.go",
         "resourcepair.go",
@@ -26,6 +27,7 @@ go_test(
     srcs = [
         "bigquery_dataset_test.go",
         "cft_test.go",
+        "default_resource.go",
         "deployment_test.go",
         "gke_workload_test.go",
         "resourcepair_test.go",
