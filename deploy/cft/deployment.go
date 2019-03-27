@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const deploymentName = "managed-cloud-foundation-toolkit"
+const deploymentName = "managed-data-protect-toolkit"
 
 // The following vars are stubbed in tests.
 var (

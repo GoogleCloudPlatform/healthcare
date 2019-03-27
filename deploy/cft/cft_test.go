@@ -169,9 +169,9 @@ resources:
 			}
 
 			commander := &fakeCommander{
-				listDeploymentName: "managed-cloud-foundation-toolkit",
+				listDeploymentName: "managed-data-protect-toolkit",
 				wantDeploymentCommand: []string{
-					"gcloud", "deployment-manager", "deployments", "update", "managed-cloud-foundation-toolkit",
+					"gcloud", "deployment-manager", "deployments", "update", "managed-data-protect-toolkit",
 					"--delete-policy", "ABANDON", "--project", project.ID},
 			}
 
