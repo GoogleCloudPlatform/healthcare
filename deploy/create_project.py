@@ -256,8 +256,7 @@ def deploy_gcs_audit_logs(config):
           },
       }]
   }
-  utils.run_deployment(dm_template_dict, deployment_name, audit_project_id,
-                       is_deployed(config.project))
+  utils.run_deployment(dm_template_dict, deployment_name, audit_project_id)
 
 
 def _is_service_enabled(service_name, project_id):
@@ -319,7 +318,7 @@ def deploy_project_resources(config):
   try:
     # Create the deployment.
     utils.run_deployment(dm_template_dict, 'data-project-deployment',
-                         project_id, is_deployed(config.project))
+                         project_id)
 
     # Create project liens if requested.
     if config.project.get('create_deletion_lien'):
@@ -447,8 +446,7 @@ def deploy_bigquery_audit_logs(config):
           },
       }]
   }
-  utils.run_deployment(dm_template_dict, deployment_name, audit_project_id,
-                       is_deployed(config.project))
+  utils.run_deployment(dm_template_dict, deployment_name, audit_project_id)
 
 
 def create_compute_images(config):
@@ -552,10 +550,9 @@ def create_compute_vms(config):
       'resources': [resource],
   }
 
-  deployed = is_deployed(config.project)
+  deployed = utils.deployment_exists(deployment_name, project_id)
   try:
-    utils.run_deployment(dm_template_dict, deployment_name, project_id,
-                         deployed)
+    utils.run_deployment(dm_template_dict, deployment_name, project_id)
   except subprocess.CalledProcessError:
     # Only retry vm deployment for updates
     if not deployed:
@@ -571,8 +568,7 @@ def create_compute_vms(config):
         for instance in config.project.get('gce_instances', [])
     ]
     resource['properties']['vm_names_to_shutdown'] = vm_names_to_shutdown
-    utils.run_deployment(dm_template_dict, deployment_name, project_id,
-                         deployed)
+    utils.run_deployment(dm_template_dict, deployment_name, project_id)
 
 
 def create_stackdriver_account(config):

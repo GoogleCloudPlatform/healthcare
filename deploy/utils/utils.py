@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
 import os
 import string
 import sys
@@ -109,7 +110,7 @@ def validate_config_yaml(config):
   jsonschema.validate(config, schema)
 
 
-def run_deployment(deployment_template, deployment_name, project_id, is_update):
+def run_deployment(deployment_template, deployment_name, project_id):
   """Creates a new Deployment Manager deployment from a template.
 
   Args:
@@ -117,14 +118,13 @@ def run_deployment(deployment_template, deployment_name, project_id, is_update):
       manager YAML template.
     deployment_name (string): The name for the deployment.
     project_id (string): The project under which to create the deployment.
-    is_update (bool): Whether this deployment is an update.
   """
   # Save the deployment manager template to a temporary file in the same
   # directory as the deployment manager templates.
   dm_template_file = tempfile.NamedTemporaryFile(suffix='.yaml')
   write_yaml_file(deployment_template, dm_template_file.name)
 
-  if is_update:
+  if deployment_exists(deployment_name, project_id):
     gcloud_cmd = [
         'deployment-manager',
         'deployments',
@@ -153,6 +153,26 @@ def run_deployment(deployment_template, deployment_name, project_id, is_update):
   runner.run_gcloud_command(
       ['deployment-manager', 'deployments', 'describe', deployment_name],
       project_id=project_id)
+
+
+def deployment_exists(deployment_name, project_id):
+  """Determine whether the deployment exists.
+
+  Args:
+    deployment_name (string): name of deployment.
+    project_id: ID of project.
+
+  Returns:
+    bool: True if deployment exists in the projet.
+  """
+  out = runner.run_gcloud_command(
+      ['deployment-manager', 'deployments', 'list', '--format', 'json'],
+      project_id=project_id)
+
+  for info in json.loads(out):
+    if deployment_name == info['name']:
+      return True
+  return False
 
 
 def create_notification_channel(alert_email, project_id):
