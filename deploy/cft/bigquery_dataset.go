@@ -64,5 +64,5 @@ func (d *BigqueryDataset) Name() string {
 
 // TemplatePath returns the name of the template to use for this dataset.
 func (d *BigqueryDataset) TemplatePath() string {
-	return "bigquery_dataset.py"
+	return "deploy/cft/templates/bigquery_dataset.py"
 }

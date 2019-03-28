@@ -99,5 +99,5 @@ func (b *GCSBucket) Name() string {
 
 // TemplatePath returns the name of the template to use for the bucket.
 func (b *GCSBucket) TemplatePath() string {
-	return "gcs_bucket.py"
+	return "deploy/cft/templates/gcs_bucket.py"
 }

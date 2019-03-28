@@ -2,6 +2,7 @@ package cft
 
 import (
 	"bytes"
+	"path/filepath"
 	"strings"
 	"testing"
 	"text/template"
@@ -86,7 +87,7 @@ func TestDeploy(t *testing.T) {
 		{
 			name:         "bigquery_dataset",
 			resourceName: "foo-dataset",
-			templatePath: "bigquery_dataset.py",
+			templatePath: "deploy/cft/templates/bigquery_dataset.py",
 			configOpts: &ConfigOptions{`
 resources:
 - bigquery_dataset:
@@ -108,7 +109,7 @@ setDefaultOwner: false`,
 		{
 			name:         "gcs_bucket",
 			resourceName: "foo-bucket",
-			templatePath: "gcs_bucket.py",
+			templatePath: "deploy/cft/templates/gcs_bucket.py",
 			configOpts: &ConfigOptions{`
 resources:
 - gcs_bucket:
@@ -153,9 +154,9 @@ resources:
 				t.Fatalf("template Parse: %v", err)
 			}
 
-			path, err := getCFTTemplatePath(tc.templatePath)
+			path, err := filepath.Abs(tc.templatePath)
 			if err != nil {
-				t.Fatalf("getCFTTemplatePath: %v", err)
+				t.Fatalf("filepath.Abs(%q): %v", tc.templatePath, err)
 			}
 
 			var buf bytes.Buffer

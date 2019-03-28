@@ -11,6 +11,7 @@ filegroup(
     srcs = [
         "data_project.py",
         "gce_vms.py",
+        "metric.py",
         "remote_audit_logs.py",
     ],
 )

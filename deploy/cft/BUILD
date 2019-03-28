@@ -13,9 +13,13 @@ go_library(
         "deployment.go",
         "gcs_bucket.go",
         "gke_workload.go",
+        "metric.go",
         "resourcepair.go",
     ],
-    data = ["//deploy/cft/templates"],
+    data = [
+        "//deploy/cft/templates",
+        "//deploy/templates",
+    ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cft",
     deps = [
         "@com_github_imdario_mergo//:go_default_library",
@@ -32,6 +36,7 @@ go_test(
         "deployment_test.go",
         "gcs_bucket_test.go",
         "gke_workload_test.go",
+        "metric_test.go",
         "resourcepair_test.go",
     ],
     embed = [":go_default_library"],

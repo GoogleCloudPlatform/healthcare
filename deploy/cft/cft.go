@@ -8,8 +8,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const templatesRoot = "deploy/cft/templates"
-
 // Config represents a (partial) representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
 type Config struct {
@@ -61,7 +59,7 @@ func Deploy(project *Project) error {
 	}
 
 	for imp := range importSet {
-		path, err := getCFTTemplatePath(imp)
+		path, err := filepath.Abs(imp)
 		if err != nil {
 			return fmt.Errorf("failed to get template path for %q: %v", imp, err)
 		}
@@ -81,7 +79,7 @@ func getResourcePairs(project *Project) ([]resourcePair, error) {
 		initialPairs := []resourcePair{
 			{&BigqueryDataset{}, r.BigqueryDataset},
 			{NewGCSBucket(), r.GCSBucket},
-			{&DefaultResource{templatePath: "gke.py"}, r.GKECluster},
+			{&DefaultResource{templatePath: "deploy/cft/templates/gke.py"}, r.GKECluster},
 		}
 
 		for _, pair := range initialPairs {
@@ -116,13 +114,4 @@ func unmarshal(in interface{}, out interface{}) error {
 		return fmt.Errorf("failed to unmarshal %v: %v", string(b), err)
 	}
 	return nil
-}
-
-// getCFTTemplatePath gets the absolute path for the given template file name.
-func getCFTTemplatePath(name string) (string, error) {
-	t, err := filepath.Abs(filepath.Join(templatesRoot, name))
-	if err != nil {
-		return "", fmt.Errorf("failed to get template path for %q: %v", name, err)
-	}
-	return t, nil
 }
