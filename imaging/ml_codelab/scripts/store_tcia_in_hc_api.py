@@ -148,9 +148,8 @@ def _UploadInstanceToHealthcareAPI(sop_instance_uid, inst):
       'multipart/related; type="application/dicom"; boundary="%s"'
   ) % multipart_boundary
   body = related.as_string()
-  path = "https://healthcare.googleapis.com/v1alpha/projects/{}/locations/{}/datasets/{}/dicomStores/{}/dicomWeb/studies".format(
-      FLAGS.project_id, FLAGS.location, FLAGS.dataset_id,
-      FLAGS.dicom_store_id)
+  path = "https://healthcare.googleapis.com/v1beta1/projects/{}/locations/{}/datasets/{}/dicomStores/{}/dicomWeb/studies".format(
+      FLAGS.project_id, FLAGS.location, FLAGS.dataset_id, FLAGS.dicom_store_id)
   resp, content = http.request(path, method="POST", headers=headers, body=body)
   if resp.status == 409:
     logger.debug("Instance with SOP Instance UID already exists: %s", sop_instance_uid)

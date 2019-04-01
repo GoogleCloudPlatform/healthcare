@@ -91,7 +91,7 @@ _logger.setLevel(logging.INFO)
 FLAGS = None
 
 # Prefix for Cloud Healthcare API.
-_HEALTHCARE_API_URL_PREFIX = 'https://healthcare.googleapis.com/v1alpha'
+_HEALTHCARE_API_URL_PREFIX = 'https://healthcare.googleapis.com/v1beta1'
 
 # Credentails used to access Cloud Healthcare API.
 _CREDENTIALS = GoogleCredentials.get_application_default().create_scoped(
