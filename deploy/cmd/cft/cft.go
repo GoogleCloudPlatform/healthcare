@@ -12,7 +12,7 @@ import (
 	"flag"
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 var (

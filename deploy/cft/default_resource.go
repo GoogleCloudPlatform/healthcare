@@ -2,13 +2,13 @@ package cft
 
 // DefaultResource represents a resource supported by CFT
 type DefaultResource struct {
-	DefaultResourceProperties `yaml:"properties"`
+	DefaultResourceProperties `json:"properties"`
 	templatePath              string
 }
 
 // DefaultResourceProperties represents a partial CFT resource implementation.
 type DefaultResourceProperties struct {
-	ResourceName string `yaml:"name"`
+	ResourceName string `json:"name"`
 }
 
 // Init initializes a new default resource with the given project.

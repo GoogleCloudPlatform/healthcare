@@ -17,9 +17,9 @@ type resourcePair struct {
 // On the other hand, the parsed resource may set some defaults or change values.
 // Thus, the merged map contains the union of all fields.
 // For keys in the intersection, the parsed value is given precedence.
-func (r resourcePair) MergedPropertiesMap() (map[interface{}]interface{}, error) {
-	parsedMap := make(map[interface{}]interface{})
-	if err := unmarshal(r.parsed, parsedMap); err != nil {
+func (r resourcePair) MergedPropertiesMap() (map[string]interface{}, error) {
+	parsedMap := make(map[string]interface{})
+	if err := unmarshal(r.parsed, &parsedMap); err != nil {
 		return nil, err
 	}
 
@@ -32,7 +32,7 @@ func (r resourcePair) MergedPropertiesMap() (map[interface{}]interface{}, error)
 		return nil, fmt.Errorf("merged map is missing properties field: %v", parsedMap)
 	}
 
-	m, ok := props.(map[interface{}]interface{})
+	m, ok := props.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("properties is not a map: %v", props)
 	}

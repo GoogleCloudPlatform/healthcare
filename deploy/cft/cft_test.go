@@ -8,7 +8,7 @@ import (
 	"text/template"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 const configYAML = `
@@ -185,11 +185,11 @@ resources:
 
 			got := make(map[string]interface{})
 			want := make(map[string]interface{})
-			if err := yaml.Unmarshal(commander.gotConfigFileContents, got); err != nil {
+			if err := yaml.Unmarshal(commander.gotConfigFileContents, &got); err != nil {
 				t.Fatalf("yaml.Unmarshal got config: %v", err)
 			}
 
-			if err := yaml.Unmarshal(buf.Bytes(), want); err != nil {
+			if err := yaml.Unmarshal(buf.Bytes(), &want); err != nil {
 				t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
 			}
 

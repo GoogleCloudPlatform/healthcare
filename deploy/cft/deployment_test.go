@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 func TestCreateOrUpdateDeployment(t *testing.T) {
@@ -18,7 +18,7 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 		Resources: []Resource{{
 			Name: "foo-resource",
 			Type: "path/to/foo-template",
-			Properties: map[interface{}]interface{}{
+			Properties: map[string]interface{}{
 				"name":    "foo-resource",
 				"foo-key": "foo-value",
 			},
@@ -73,10 +73,10 @@ resources:
 
 			got := make(map[string]interface{})
 			want := make(map[string]interface{})
-			if err := yaml.Unmarshal(commander.gotConfigFileContents, got); err != nil {
+			if err := yaml.Unmarshal(commander.gotConfigFileContents, &got); err != nil {
 				t.Fatalf("yaml.Unmarshal got config: %v", err)
 			}
-			if err := yaml.Unmarshal([]byte(wantDeploymentYAML), want); err != nil {
+			if err := yaml.Unmarshal([]byte(wantDeploymentYAML), &want); err != nil {
 				t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
 			}
 
@@ -85,7 +85,6 @@ resources:
 			}
 		})
 	}
-
 }
 
 type fakeCommander struct {

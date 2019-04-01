@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 const deploymentName = "managed-data-protect-toolkit"
@@ -21,20 +21,20 @@ var (
 
 // Deployment represents a single deployment which can be used by the GCP Deployment Manager.
 type Deployment struct {
-	Imports   []Import   `yaml:"imports"`
-	Resources []Resource `yaml:"resources"`
+	Imports   []Import   `json:"imports"`
+	Resources []Resource `json:"resources"`
 }
 
 // Import respresents a deployment manager template import.
 type Import struct {
-	Path string `yaml:"path"`
+	Path string `json:"path"`
 }
 
 // Resource defines the deployment manager resources to deploy.
 type Resource struct {
-	Name       string                      `yaml:"name"`
-	Type       string                      `yaml:"type"`
-	Properties map[interface{}]interface{} `yaml:"properties"`
+	Name       string                 `json:"name"`
+	Type       string                 `json:"type"`
+	Properties map[string]interface{} `json:"properties"`
 }
 
 // createOrUpdateDeployment creates the deployment if it does not exist, else updates it.
@@ -88,7 +88,7 @@ func createOrUpdateDeployment(projectID string, deployment *Deployment) error {
 // checkDeploymentExists determines whether the deployment with the given name exists in the given project.
 func checkDeploymentExists(projectID, name string) (bool, error) {
 	type deploymentInfo struct {
-		Name string `yaml:"name"`
+		Name string `json:"name"`
 	}
 
 	cmd := exec.Command("gcloud", "deployment-manager", "deployments", "list", "--format", "json", "--project", projectID)

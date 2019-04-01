@@ -23,7 +23,7 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cft",
     deps = [
         "@com_github_imdario_mergo//:go_default_library",
-        "@in_gopkg_yaml//:go_default_library",
+        "@in_ghodss_yaml//:go_default_library",
     ],
 )
 
@@ -42,6 +42,6 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "@com_github_google_cmp//cmp:go_default_library",
-        "@in_gopkg_yaml//:go_default_library",
+        "@in_ghodss_yaml//:go_default_library",
     ],
 )

@@ -29,7 +29,13 @@ go_repository(
 )
 
 go_repository(
-    name = "in_gopkg_yaml",
+    name = "in_ghodss_yaml",
+    importpath = "github.com/ghodss/yaml",
+    tag = "v1.0.0",
+)
+
+go_repository(
+    name = "in_gopkg_yaml_v2",
     importpath = "gopkg.in/yaml.v2",
     tag = "v2.2.2",
 )

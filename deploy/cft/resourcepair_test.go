@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 type testResource struct {
 	CFTResource struct {
-		A     int `yaml:"a,omitempty"`
-		Inner struct {
-			B int `yaml:"b"`
-		} `yaml:"inner,omitempty"`
-	} `yaml:"properties"`
+		A     int `json:"a,omitempty"`
+		Inner *struct {
+			B int `json:"b"`
+		} `json:"inner,omitempty"`
+	} `json:"properties"`
 }
 
 func (r testResource) Init(*Project) error {
@@ -73,16 +73,16 @@ func TestMergedMap(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			parsed := new(testResource)
-			raw := make(map[interface{}]interface{})
-			want := make(map[interface{}]interface{})
+			raw := make(map[string]interface{})
+			want := make(map[string]interface{})
 
 			if err := yaml.Unmarshal([]byte(tc.parsed), parsed); err != nil {
 				t.Fatalf("yaml.Unmarshal parsed: %v", err)
 			}
-			if err := yaml.Unmarshal([]byte(tc.raw), raw); err != nil {
+			if err := yaml.Unmarshal([]byte(tc.raw), &raw); err != nil {
 				t.Fatalf("yaml.Unmarshal raw: %v", err)
 			}
-			if err := yaml.Unmarshal([]byte(tc.want), want); err != nil {
+			if err := yaml.Unmarshal([]byte(tc.want), &want); err != nil {
 				t.Fatalf("yaml.Unmarshal want: %v", err)
 			}
 

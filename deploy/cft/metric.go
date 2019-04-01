@@ -6,29 +6,29 @@ import (
 
 // Metric wraps a logging metric.
 type Metric struct {
-	MetricProperties `yaml:"properties"`
+	MetricProperties `json:"properties"`
 }
 
 // MetricProperties wraps the metric template properties.
 type MetricProperties struct {
-	MetricName      string            `yaml:"metric"`
-	Description     string            `yaml:"description"`
-	Filter          string            `yaml:"filter"`
-	Descriptor      descriptor        `yaml:"metricDescriptor"`
-	LabelExtractors map[string]string `yaml:"labelExtractors"`
+	MetricName      string            `json:"metric"`
+	Description     string            `json:"description"`
+	Filter          string            `json:"filter"`
+	Descriptor      descriptor        `json:"metricDescriptor"`
+	LabelExtractors map[string]string `json:"labelExtractors"`
 }
 
 type descriptor struct {
-	MetricKind string  `yaml:"metricKind"`
-	ValueType  string  `yaml:"valueType"`
-	Unit       string  `yaml:"unit"`
-	Labels     []label `yaml:"labels"`
+	MetricKind string  `json:"metricKind"`
+	ValueType  string  `json:"valueType"`
+	Unit       string  `json:"unit"`
+	Labels     []label `json:"labels"`
 }
 
 type label struct {
-	Key         string `yaml:"key"`
-	ValueType   string `yaml:"valueType"`
-	Description string `yaml:"description"`
+	Key         string `json:"key"`
+	ValueType   string `json:"valueType"`
+	Description string `json:"description"`
 }
 
 // Init initializes the metric.

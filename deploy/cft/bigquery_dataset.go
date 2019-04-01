@@ -6,24 +6,24 @@ import (
 
 // BigqueryDataset represents a bigquery dataset.
 type BigqueryDataset struct {
-	BigqueryDatasetProperties `yaml:"properties"`
+	BigqueryDatasetProperties `json:"properties"`
 }
 
 // BigqueryDatasetProperties represents a partial CFT dataset implementation.
 type BigqueryDatasetProperties struct {
-	BigqueryDatasetName string   `yaml:"name"`
-	Accesses            []access `yaml:"access"`
-	SetDefaultOwner     bool     `yaml:"setDefaultOwner"`
+	BigqueryDatasetName string   `json:"name"`
+	Accesses            []access `json:"access"`
+	SetDefaultOwner     bool     `json:"setDefaultOwner"`
 }
 
 type access struct {
-	Role         string `yaml:"role"`
-	UserByEmail  string `yaml:"userByEmail,omitempty"`
-	GroupByEmail string `yaml:"groupByEmail,omitempty"`
-	SpecialGroup string `yaml:"specialGroup,omitempty"`
+	Role         string `json:"role"`
+	UserByEmail  string `json:"userByEmail,omitempty"`
+	GroupByEmail string `json:"groupByEmail,omitempty"`
+	SpecialGroup string `json:"specialGroup,omitempty"`
 
 	// View is allowed but not monitored. Parse it into a generic map.
-	View map[string]interface{} `yaml:"view,omitempty"`
+	View map[string]interface{} `json:"view,omitempty"`
 }
 
 // Init initializes a new dataset with the given project.

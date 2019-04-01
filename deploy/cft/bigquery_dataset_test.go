@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 func TestDataset(t *testing.T) {
@@ -55,10 +55,10 @@ properties:
 	if err != nil {
 		t.Fatalf("yaml.Marshal dataset: %v", err)
 	}
-	if err := yaml.Unmarshal(b, got); err != nil {
+	if err := yaml.Unmarshal(b, &got); err != nil {
 		t.Fatalf("yaml.Unmarshal got config: %v", err)
 	}
-	if err := yaml.Unmarshal([]byte(wantdatasetYAML), want); err != nil {
+	if err := yaml.Unmarshal([]byte(wantdatasetYAML), &want); err != nil {
 		t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
 	}
 

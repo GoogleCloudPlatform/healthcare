@@ -9,24 +9,24 @@ import (
 // TODO: set logging bucket ID
 // TODO: add support for expected users + creating unexpected users metrics.
 type GCSBucket struct {
-	GCSBucketProperties `yaml:"properties"`
-	NoPrefix            bool `yaml:"no_prefix,omitempty"`
+	GCSBucketProperties `json:"properties"`
+	NoPrefix            bool `json:"no_prefix,omitempty"`
 }
 
 // GCSBucketProperties  represents a partial CFT bucket implementation.
 type GCSBucketProperties struct {
-	GCSBucketName string     `yaml:"name"`
-	Bindings      []binding  `yaml:"bindings"`
-	Versioning    versioning `yaml:"versioning"`
+	GCSBucketName string     `json:"name"`
+	Bindings      []binding  `json:"bindings"`
+	Versioning    versioning `json:"versioning"`
 }
 
 type binding struct {
-	Role    string   `yaml:"role"`
-	Members []string `yaml:"members"`
+	Role    string   `json:"role"`
+	Members []string `json:"members"`
 }
 
 type versioning struct {
-	Enabled bool `yaml:"enabled"`
+	Enabled bool `json:"enabled"`
 }
 
 // NewGCSBucket creates a new default bucket.

@@ -5,26 +5,26 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 // Config represents a (partial) representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
 type Config struct {
-	Projects []*Project `yaml:"projects"`
+	Projects []*Project `json:"projects"`
 }
 
 // Project defines a single project's configuration.
 type Project struct {
-	ID                  string   `yaml:"project_id"`
-	OwnersGroup         string   `yaml:"owners_group"`
-	DataReadWriteGroups []string `yaml:"data_readwrite_groups"`
-	DataReadOnlyGroups  []string `yaml:"data_readonly_groups"`
+	ID                  string   `json:"project_id"`
+	OwnersGroup         string   `json:"owners_group"`
+	DataReadWriteGroups []string `json:"data_readwrite_groups"`
+	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
 	Resources           []struct {
-		BigqueryDataset interface{} `yaml:"bigquery_dataset"`
-		GCSBucket       interface{} `yaml:"gcs_bucket"`
-		GKECluster      interface{} `yaml:"gke_cluster"`
-	} `yaml:"resources"`
+		BigqueryDataset interface{} `json:"bigquery_dataset"`
+		GCSBucket       interface{} `json:"gcs_bucket"`
+		GKECluster      interface{} `json:"gke_cluster"`
+	} `json:"resources"`
 }
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.

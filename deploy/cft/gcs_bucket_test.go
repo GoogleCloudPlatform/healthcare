@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 func TestGCSBucket(t *testing.T) {
@@ -54,10 +54,10 @@ properties:
 	if err != nil {
 		t.Fatalf("yaml.Marshal dataset: %v", err)
 	}
-	if err := yaml.Unmarshal(byt, got); err != nil {
+	if err := yaml.Unmarshal(byt, &got); err != nil {
 		t.Fatalf("yaml.Unmarshal got config: %v", err)
 	}
-	if err := yaml.Unmarshal([]byte(wantBucketYAML), want); err != nil {
+	if err := yaml.Unmarshal([]byte(wantBucketYAML), &want); err != nil {
 		t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
 	}
 
