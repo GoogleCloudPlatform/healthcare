@@ -65,7 +65,7 @@ spec:
             - "/import/bin/import"
             - "--dimse_aet=IMPORTADAPTER"
             - "--dimse_port=2575"
-            - "--dicomweb_addr=https://healthcare.googleapis.com/v1alpha"
+            - "--dicomweb_addr=https://healthcare.googleapis.com/v1beta1"
             - "--dicomweb_stow_path=/projects/myproject/locations/us-central1/datasets/mydataset/dicomStores/mydicomstore/dicomWeb/studies"
 ```
 
@@ -82,7 +82,7 @@ containers in `dicom_adapter.yaml`. Modify the flags for your use case.
             - "--peer_dimse_port=104"
             - "--project_id=myproject"
             - "--subscription_id=mysub"
-            - "--dicomweb_addr=https://healthcare.googleapis.com/v1alpha"
+            - "--dicomweb_addr=https://healthcare.googleapis.com/v1beta1"
             - "--oauth_scopes=https://www.googleapis.com/auth/pubsub"
 ```
 
