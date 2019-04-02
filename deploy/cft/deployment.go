@@ -20,9 +20,10 @@ var (
 )
 
 // Deployment represents a single deployment which can be used by the GCP Deployment Manager.
+// TODO: move into separate package.
 type Deployment struct {
-	Imports   []Import   `json:"imports"`
-	Resources []Resource `json:"resources"`
+	Imports   []*Import   `json:"imports"`
+	Resources []*Resource `json:"resources"`
 }
 
 // Import respresents a deployment manager template import.
@@ -34,7 +35,13 @@ type Import struct {
 type Resource struct {
 	Name       string                 `json:"name"`
 	Type       string                 `json:"type"`
-	Properties map[string]interface{} `json:"properties"`
+	Properties map[string]interface{} `json:"properties,omitempty"`
+	Metadata   *Metadata              `json:"metadata,omitempty"`
+}
+
+// Metadata contains extra metadata of the deployment.
+type Metadata struct {
+	DependsOn []string `json:"dependsOn"`
 }
 
 // createOrUpdateDeployment creates the deployment if it does not exist, else updates it.

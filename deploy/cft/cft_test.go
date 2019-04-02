@@ -38,7 +38,7 @@ projects:
 {{lpad .ExtraProjectConfig 2}}
 `
 
-type ConfigOptions struct {
+type ConfigData struct {
 	ExtraProjectConfig string
 }
 
@@ -52,9 +52,9 @@ func lpad(s string, n int) string {
 	return b.String()
 }
 
-func getTestConfigAndProject(t *testing.T, opts *ConfigOptions) (*Config, *Project) {
-	if opts == nil {
-		opts = &ConfigOptions{}
+func getTestConfigAndProject(t *testing.T, data *ConfigData) (*Config, *Project) {
+	if data == nil {
+		data = &ConfigData{}
 	}
 
 	tmpl, err := template.New("test").Funcs(template.FuncMap{"lpad": lpad}).Parse(configYAML)
@@ -62,7 +62,7 @@ func getTestConfigAndProject(t *testing.T, opts *ConfigOptions) (*Config, *Proje
 		t.Fatalf("template Parse: %v", err)
 	}
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, opts); err != nil {
+	if err := tmpl.Execute(&buf, data); err != nil {
 		t.Fatalf("template Execute: %v", err)
 	}
 
@@ -78,96 +78,101 @@ func getTestConfigAndProject(t *testing.T, opts *ConfigOptions) (*Config, *Proje
 
 func TestDeploy(t *testing.T) {
 	tests := []struct {
-		name                     string
-		resourceName             string
-		templatePath             string
-		configOpts               *ConfigOptions
-		wantDeploymentProperties string
+		name       string
+		configData *ConfigData
+		want       string
 	}{
 		{
-			name:         "bigquery_dataset",
-			resourceName: "foo-dataset",
-			templatePath: "deploy/cft/templates/bigquery_dataset.py",
-			configOpts: &ConfigOptions{`
+			name: "bigquery_dataset",
+			configData: &ConfigData{`
 resources:
 - bigquery_dataset:
     properties:
       name: foo-dataset`},
-			wantDeploymentProperties: `
-name: foo-dataset
-access:
-- groupByEmail: my-project-owners@my-domain.com
-  role: OWNER
-- groupByEmail: some-readwrite-group@my-domain.com
-  role: WRITER
-- groupByEmail: some-readonly-group@my-domain.com
-  role: READER
-- groupByEmail: another-readonly-group@googlegroups.com
-  role: READER
-setDefaultOwner: false`,
+			want: `
+imports:
+- path: {{abs "deploy/cft/templates/bigquery_dataset.py"}}
+resources:
+- name: foo-dataset
+  type: {{abs "deploy/cft/templates/bigquery_dataset.py"}}
+  properties:
+    name: foo-dataset
+    access:
+    - groupByEmail: my-project-owners@my-domain.com
+      role: OWNER
+    - groupByEmail: some-readwrite-group@my-domain.com
+      role: WRITER
+    - groupByEmail: some-readonly-group@my-domain.com
+      role: READER
+    - groupByEmail: another-readonly-group@googlegroups.com
+      role: READER
+    setDefaultOwner: false`,
 		},
 		{
-			name:         "gcs_bucket",
-			resourceName: "foo-bucket",
-			templatePath: "deploy/cft/templates/gcs_bucket.py",
-			configOpts: &ConfigOptions{`
+			name: "gcs_bucket",
+			configData: &ConfigData{`
 resources:
 - gcs_bucket:
     no_prefix: true
+    expected_users:
+    - some-expected-user@my-domain.com
     properties:
       name: foo-bucket
       location: us-east1`},
-			wantDeploymentProperties: `
-name: foo-bucket
-location: us-east1
-bindings:
-- role: roles/storage.admin
-  members:
-  - 'group:my-project-owners@my-domain.com'
-- role: roles/storage.objectAdmin
-  members:
-  - 'group:some-readwrite-group@my-domain.com'
-- role: roles/storage.objectViewer
-  members:
-  - 'group:some-readonly-group@my-domain.com'
-  - 'group:another-readonly-group@googlegroups.com'
-versioning:
-  enabled: true`,
+			want: `
+imports:
+- path: {{abs "deploy/cft/templates/gcs_bucket.py"}}
+- path: {{abs "deploy/templates/metric.py"}}
+
+resources:
+- name: foo-bucket
+  type: {{abs "deploy/cft/templates/gcs_bucket.py"}}
+  properties:
+    name: foo-bucket
+    location: us-east1
+    bindings:
+    - role: roles/storage.admin
+      members:
+      - 'group:my-project-owners@my-domain.com'
+    - role: roles/storage.objectAdmin
+      members:
+      - 'group:some-readwrite-group@my-domain.com'
+    - role: roles/storage.objectViewer
+      members:
+      - 'group:some-readonly-group@my-domain.com'
+      - 'group:another-readonly-group@googlegroups.com'
+    versioning:
+      enabled: true
+- name: unexpected-access-foo-bucket
+  type: {{abs "deploy/templates/metric.py"}}
+  properties:
+    metric: unexpected-access-foo-bucket
+    description: Count of unexpected data access to foo-bucket
+    metricDescriptor:
+      metricKind: DELTA
+      valueType: INT64
+      unit: '1'
+      labels:
+      - key: user
+        description: Unexpected user
+        valueType: STRING
+    labelExtractors:
+      user: 'EXTRACT(protoPayload.authenticationInfo.principalEmail)'
+    filter: |
+      resource.type=gcs_bucket AND
+      logName=projects/my-project/logs/cloudaudit.googleapis.com%2Fdata_access AND
+      protoPayload.resourceName=projects/_/buckets/foo-bucket AND
+      protoPayload.status.code!=7 AND
+      protoPayload.authenticationInfo.principalEmail!=(some-expected-user@my-domain.com)
+  metadata:
+    dependsOn:
+    - foo-bucket`,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, project := getTestConfigAndProject(t, tc.configOpts)
-
-			wantDeploymentYAML := `
-imports:
-- path: {{.ImportPath}}
-resources:
-- name: {{.Name}}
-  type: {{.Type}}
-  properties:`
-			wantDeploymentYAML += lpad(tc.wantDeploymentProperties, 4)
-
-			tmpl, err := template.New("test").Parse(wantDeploymentYAML)
-			if err != nil {
-				t.Fatalf("template Parse: %v", err)
-			}
-
-			path, err := filepath.Abs(tc.templatePath)
-			if err != nil {
-				t.Fatalf("filepath.Abs(%q): %v", tc.templatePath, err)
-			}
-
-			var buf bytes.Buffer
-			data := struct {
-				Name, ImportPath, Type string
-			}{
-				tc.resourceName, path, tc.templatePath,
-			}
-			if err := tmpl.Execute(&buf, data); err != nil {
-				t.Fatalf("tmpl.Execute: %v", err)
-			}
+			_, project := getTestConfigAndProject(t, tc.configData)
 
 			commander := &fakeCommander{
 				listDeploymentName: "managed-data-protect-toolkit",
@@ -183,15 +188,12 @@ resources:
 				t.Fatalf("Deploy: %v", err)
 			}
 
-			got := make(map[string]interface{})
-			want := make(map[string]interface{})
+			got := new(Deployment)
 			if err := yaml.Unmarshal(commander.gotConfigFileContents, &got); err != nil {
-				t.Fatalf("yaml.Unmarshal got config: %v", err)
+				t.Fatal(err)
 			}
 
-			if err := yaml.Unmarshal(buf.Bytes(), &want); err != nil {
-				t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
-			}
+			want := getWantDeployment(t, tc.want)
 
 			if diff := cmp.Diff(got, want); diff != "" {
 				t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
@@ -200,4 +202,32 @@ resources:
 			// TODO: validate against schema file too
 		})
 	}
+}
+
+func getWantDeployment(t *testing.T, yamlTemplate string) *Deployment {
+	t.Helper()
+	tmpl, err := template.New("test-deployment").Funcs(template.FuncMap{"abs": abs}).Parse(yamlTemplate)
+	if err != nil {
+		t.Fatalf("template Parse: %v", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, nil); err != nil {
+		t.Fatalf("tmpl.Execute: %v", err)
+	}
+
+	deployment := new(Deployment)
+	if err := yaml.Unmarshal(buf.Bytes(), deployment); err != nil {
+		t.Fatalf("yaml.Unmarshal: %v", err)
+	}
+
+	return deployment
+}
+
+func abs(p string) string {
+	a, err := filepath.Abs(p)
+	if err != nil {
+		panic(err)
+	}
+	return a
 }

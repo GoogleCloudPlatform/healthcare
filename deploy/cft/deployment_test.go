@@ -14,15 +14,24 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 	projID := "foo-project"
 
 	deployment := &Deployment{
-		Imports: []Import{{Path: "path/to/foo-template"}},
-		Resources: []Resource{{
-			Name: "foo-resource",
-			Type: "path/to/foo-template",
-			Properties: map[string]interface{}{
-				"name":    "foo-resource",
-				"foo-key": "foo-value",
+		Imports: []*Import{{Path: "path/to/foo-template"}},
+		Resources: []*Resource{
+			{
+				Name: "foo-resource",
+				Type: "path/to/foo-template",
+				Properties: map[string]interface{}{
+					"name":    "foo-resource",
+					"foo-key": "foo-value",
+				},
+				Metadata: &Metadata{
+					DependsOn: []string{"bar-resource"},
+				},
 			},
-		}},
+			{
+				Name: "bar-resource",
+				Type: "path/to/bar-template",
+			},
+		},
 	}
 
 	wantDeploymentYAML := `
@@ -35,6 +44,11 @@ resources:
   properties:
     name: foo-resource
     foo-key: foo-value
+  metadata:
+    dependsOn:
+    - bar-resource
+- name: bar-resource
+  type: path/to/bar-template
 `
 
 	tests := []struct {

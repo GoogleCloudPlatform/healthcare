@@ -1,16 +1,27 @@
 package cft
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"strings"
+	"text/template"
 )
+
+var metricFilterTemplate = template.Must(template.New("metricFilter").Parse(`resource.type=gcs_bucket AND
+logName=projects/{{.Project.ID}}/logs/cloudaudit.googleapis.com%2Fdata_access AND
+protoPayload.resourceName=projects/_/buckets/{{.Bucket.Name}} AND
+protoPayload.status.code!=7 AND
+protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})
+`))
 
 // GCSBucket wraps a CFT Cloud Storage Bucket.
 // TODO: set logging bucket ID
 // TODO: add support for expected users + creating unexpected users metrics.
 type GCSBucket struct {
 	GCSBucketProperties `json:"properties"`
-	NoPrefix            bool `json:"no_prefix,omitempty"`
+	NoPrefix            bool     `json:"no_prefix,omitempty"`
+	ExpectedUsers       []string `json:"expected_users,omitempty"`
 }
 
 // GCSBucketProperties  represents a partial CFT bucket implementation.
@@ -100,4 +111,49 @@ func (b *GCSBucket) Name() string {
 // TemplatePath returns the name of the template to use for the bucket.
 func (b *GCSBucket) TemplatePath() string {
 	return "deploy/cft/templates/gcs_bucket.py"
+}
+
+// DependentResources gets the dependent resources of this bucket.
+// If the bucket has expected users, this list will contain a metric that will detect unexpected
+// access to the bucket from users not in the expected users list.
+func (b *GCSBucket) DependentResources(project *Project) ([]parsedResource, error) {
+	if len(b.ExpectedUsers) == 0 {
+		return nil, nil
+	}
+
+	var buf bytes.Buffer
+	data := struct {
+		Project       *Project
+		Bucket        *GCSBucket
+		ExpectedUsers string
+	}{
+		project,
+		b,
+		strings.Join(b.ExpectedUsers, " AND "),
+	}
+	if err := metricFilterTemplate.Execute(&buf, data); err != nil {
+		return nil, fmt.Errorf("failed to execute filter template: %v", err)
+	}
+
+	m := &Metric{
+		MetricProperties: MetricProperties{
+			MetricName:  "unexpected-access-" + b.Name(),
+			Description: "Count of unexpected data access to " + b.Name(),
+			Filter:      buf.String(),
+			Descriptor: descriptor{
+				MetricKind: "DELTA",
+				ValueType:  "INT64",
+				Unit:       "1",
+				Labels: []label{{
+					Key:         "user",
+					ValueType:   "STRING",
+					Description: "Unexpected user",
+				}},
+			},
+			LabelExtractors: map[string]string{
+				"user": "EXTRACT(protoPayload.authenticationInfo.principalEmail)",
+			},
+		},
+	}
+	return []parsedResource{m}, nil
 }

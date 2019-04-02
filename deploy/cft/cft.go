@@ -34,48 +34,25 @@ type parsedResource interface {
 	TemplatePath() string
 }
 
+// depender is the interface that defines a method to get dependent resources.
+type depender interface {
+	DependentResources(*Project) ([]parsedResource, error)
+}
+
 // Deploy deploys the CFT resources in the project.
 func Deploy(project *Project) error {
-	pairs, err := getResourcePairs(project)
+	deployment, err := getDeployment(project)
 	if err != nil {
 		return err
 	}
-
-	deployment := &Deployment{}
-	importSet := make(map[string]bool)
-
-	for _, pair := range pairs {
-		importSet[pair.parsed.TemplatePath()] = true
-
-		merged, err := pair.MergedPropertiesMap()
-		if err != nil {
-			return fmt.Errorf("failed to merge raw map with parsed: %v", err)
-		}
-		deployment.Resources = append(deployment.Resources, Resource{
-			Name:       pair.parsed.Name(),
-			Type:       pair.parsed.TemplatePath(),
-			Properties: merged,
-		})
-	}
-
-	for imp := range importSet {
-		path, err := filepath.Abs(imp)
-		if err != nil {
-			return fmt.Errorf("failed to get template path for %q: %v", imp, err)
-		}
-		deployment.Imports = append(deployment.Imports, Import{Path: path})
-	}
-
 	return createOrUpdateDeployment(project.ID, deployment)
 }
 
-// getResourcePairs returns the resource pair for all resources in the project.
-// TODO: support additional resources.
-func getResourcePairs(project *Project) ([]resourcePair, error) {
-	var pairs []resourcePair
+func getDeployment(project *Project) (*Deployment, error) {
+	deployment := &Deployment{}
 
 	for _, r := range project.Resources {
-
+		// typically only one of these will have a raw that is not nil
 		initialPairs := []resourcePair{
 			{&BigqueryDataset{}, r.BigqueryDataset},
 			{NewGCSBucket(), r.GCSBucket},
@@ -91,14 +68,77 @@ func getResourcePairs(project *Project) ([]resourcePair, error) {
 				return nil, fmt.Errorf("failed to unmarshal %q: %v", pair.parsed.TemplatePath(), err)
 			}
 
-			if err := pair.parsed.Init(project); err != nil {
-				return nil, fmt.Errorf("failed to init %q: %v", pair.parsed.Name(), err)
+			resources, importSet, err := getDeploymentResourcesAndImports(pair, project)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get resource and imports for %q: %v", pair.parsed.Name(), err)
 			}
+			deployment.Resources = append(deployment.Resources, resources...)
 
-			pairs = append(pairs, pair)
+			for imp := range importSet {
+				deployment.Imports = append(deployment.Imports, &Import{Path: imp})
+			}
 		}
 	}
-	return pairs, nil
+
+	return deployment, nil
+}
+
+// getDeploymentResourcesAndImports gets the deploment resources and imports for the given resource pair.
+// It also recursively adds the resoures and imports of any dependent resources.
+func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (resources []*Resource, importSet map[string]bool, err error) {
+	importSet = make(map[string]bool)
+
+	templatePath, err := filepath.Abs(pair.parsed.TemplatePath())
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get absolute path for %q: %v", pair.parsed.TemplatePath(), err)
+	}
+	importSet[templatePath] = true
+
+	if err := pair.parsed.Init(project); err != nil {
+		return nil, nil, fmt.Errorf("failed to init %q: %v", pair.parsed.TemplatePath(), err)
+	}
+
+	merged, err := pair.MergedPropertiesMap()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to merge raw map with parsed: %v", err)
+	}
+
+	resources = []*Resource{{
+		Name:       pair.parsed.Name(),
+		Type:       templatePath,
+		Properties: merged,
+	}}
+
+	dr, ok := pair.parsed.(depender)
+	if !ok { // doesn't implement dependent resources method so has no dependent resources
+		return resources, importSet, nil
+	}
+
+	dependencies, err := dr.DependentResources(project)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get dependent resources for %q: %v", pair.parsed.Name(), err)
+	}
+
+	for _, dep := range dependencies {
+		depPair := resourcePair{raw: make(map[string]interface{}), parsed: dep}
+		depResources, depImports, err := getDeploymentResourcesAndImports(depPair, project)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get resources and imports for %q: %v", dep.Name(), err)
+		}
+
+		for _, res := range depResources {
+			if res.Metadata == nil {
+				res.Metadata = &Metadata{}
+			}
+			res.Metadata.DependsOn = append(res.Metadata.DependsOn, pair.parsed.Name())
+		}
+		resources = append(resources, depResources...)
+
+		for imp := range depImports {
+			importSet[imp] = true
+		}
+	}
+	return resources, importSet, nil
 }
 
 // unmarshal converts one YAML supported type into another.
