@@ -24,6 +24,7 @@ type Project struct {
 		BigqueryDataset interface{} `json:"bigquery_dataset"`
 		GCSBucket       interface{} `json:"gcs_bucket"`
 		GKECluster      interface{} `json:"gke_cluster"`
+		GKEWorkload     interface{} `json:"gke_workload"`
 	} `json:"resources"`
 }
 
