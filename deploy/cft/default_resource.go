@@ -1,5 +1,7 @@
 package cft
 
+import "errors"
+
 // DefaultResource represents a resource supported by CFT
 type DefaultResource struct {
 	DefaultResourceProperties `json:"properties"`
@@ -13,6 +15,9 @@ type DefaultResourceProperties struct {
 
 // Init initializes a new default resource with the given project.
 func (dr *DefaultResource) Init(*Project) error {
+	if dr.Name() == "" {
+		return errors.New("name must be set")
+	}
 	return nil
 }
 

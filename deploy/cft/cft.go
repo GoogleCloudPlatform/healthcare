@@ -22,6 +22,8 @@ type Project struct {
 	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
 	Resources           []struct {
 		BigqueryDataset interface{} `json:"bigquery_dataset"`
+		Firewall        interface{} `json:"firewall"`
+		GCEInstance     interface{} `json:"gce_instance"`
 		GCSBucket       interface{} `json:"gcs_bucket"`
 		GKECluster      interface{} `json:"gke_cluster"`
 		GKEWorkload     interface{} `json:"gke_workload"`
@@ -56,8 +58,10 @@ func getDeployment(project *Project) (*Deployment, error) {
 		// typically only one of these will have a raw that is not nil
 		initialPairs := []resourcePair{
 			{&BigqueryDataset{}, r.BigqueryDataset},
+			{&DefaultResource{templatePath: "deploy/cft/templates/instance.py"}, r.GCEInstance},
 			{NewGCSBucket(), r.GCSBucket},
 			{&DefaultResource{templatePath: "deploy/cft/templates/gke.py"}, r.GKECluster},
+			{&DefaultResource{templatePath: "deploy/cft/templates/firewall.py"}, r.Firewall},
 		}
 
 		for _, pair := range initialPairs {
