@@ -37,18 +37,8 @@ type binding struct {
 }
 
 type versioning struct {
-	Enabled bool `json:"enabled"`
-}
-
-// NewGCSBucket creates a new default bucket.
-func NewGCSBucket() *GCSBucket {
-	return &GCSBucket{
-		GCSBucketProperties: GCSBucketProperties{
-			Versioning: versioning{
-				Enabled: true,
-			},
-		},
-	}
+	// Use pointer to differentiate between zero value and intentionally being set to false.
+	Enabled *bool `json:"enabled"`
 }
 
 // Init initializes the bucket with the given project.
@@ -56,13 +46,16 @@ func (b *GCSBucket) Init(project *Project) error {
 	if b.GCSBucketName == "" {
 		return errors.New("name must be set")
 	}
-	if !b.Versioning.Enabled {
+	if b.Versioning.Enabled != nil && !*b.Versioning.Enabled {
 		return errors.New("versioning must not be disabled")
 	}
 
 	if !b.NoPrefix {
 		b.GCSBucketName = fmt.Sprintf("%s-%s", project.ID, b.GCSBucketName)
 	}
+
+	t := true
+	b.Versioning.Enabled = &t
 
 	b.Bindings = b.getBindings(project)
 	return nil

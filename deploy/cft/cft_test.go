@@ -53,6 +53,7 @@ func lpad(s string, n int) string {
 }
 
 func getTestConfigAndProject(t *testing.T, data *ConfigData) (*Config, *Project) {
+	t.Helper()
 	if data == nil {
 		data = &ConfigData{}
 	}
@@ -73,7 +74,11 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*Config, *Project)
 	if len(config.Projects) != 1 {
 		t.Fatalf("len(config.Projects)=%v, want 1", len(config.Projects))
 	}
-	return config, config.Projects[0]
+	proj := config.Projects[0]
+	if err := proj.Init(); err != nil {
+		t.Fatalf("proj.Init: %v", err)
+	}
+	return config, proj
 }
 
 func TestDeploy(t *testing.T) {

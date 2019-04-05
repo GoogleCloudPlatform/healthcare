@@ -1,6 +1,7 @@
 package cft
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -35,7 +36,7 @@ func TestMergedMap(t *testing.T) {
 		{
 			"empty_raw",
 			"properties: {a: 1}",
-			"",
+			"{}",
 			"a: 1",
 		},
 		{
@@ -53,7 +54,7 @@ func TestMergedMap(t *testing.T) {
 		{
 			"inner_parsed",
 			"properties: {inner: {b: 1}}",
-			"",
+			"{}",
 			"inner: {b: 1}",
 		},
 		{
@@ -73,7 +74,7 @@ func TestMergedMap(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			parsed := new(testResource)
-			raw := make(map[string]interface{})
+			var raw json.RawMessage
 			want := make(map[string]interface{})
 
 			if err := yaml.Unmarshal([]byte(tc.parsed), parsed); err != nil {

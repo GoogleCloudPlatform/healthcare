@@ -1,13 +1,12 @@
 package cft
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-
-	"google3/third_party/golang/yaml/yaml"
 )
 
 // GKEWorkload represents a GKE resources, not limited to workloads.
@@ -54,7 +53,7 @@ func applyClusterWorkload(containerYamlPath string) error {
 // InstallClusterWorkload creates and updates (when it exists) not only workloads
 // but also all resources supported by "kubectl apply -f". Data comes from a GKEWorkload struct.
 func InstallClusterWorkload(projectID, clusterName, region string, workload interface{}) error {
-	b, err := yaml.Marshal(workload)
+	b, err := json.Marshal(workload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal workload : %v", err)
 	}
@@ -105,7 +104,7 @@ func getGKEWorkloads(project *Project) ([]GKEWorkload, error) {
 	for _, r := range project.Resources {
 		if r.GKEWorkload != nil {
 			var newWorkload GKEWorkload
-			if err := unmarshal(r.GKEWorkload, &newWorkload); err != nil {
+			if err := json.Unmarshal(r.GKEWorkload, &newWorkload); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal %q: %v", newWorkload, err)
 			}
 			workloads = append(workloads, newWorkload)

@@ -46,6 +46,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := proj.Init(); err != nil {
+		log.Fatalf("failed to initialize project: %v", err)
+	}
+
 	if err := cft.Deploy(proj); err != nil {
 		log.Fatalf("failed to deploy %q resources: %v", *projectID, err)
 	}

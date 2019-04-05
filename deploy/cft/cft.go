@@ -2,14 +2,14 @@
 package cft
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
-
-	"github.com/ghodss/yaml"
 )
 
 // Config represents a (partial) representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
+// TODO: move config to its own package
 type Config struct {
 	Projects []*Project `json:"projects"`
 }
@@ -20,14 +20,86 @@ type Project struct {
 	OwnersGroup         string   `json:"owners_group"`
 	DataReadWriteGroups []string `json:"data_readwrite_groups"`
 	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
-	Resources           []struct {
-		BigqueryDataset interface{} `json:"bigquery_dataset"`
-		Firewall        interface{} `json:"firewall"`
-		GCEInstance     interface{} `json:"gce_instance"`
-		GCSBucket       interface{} `json:"gcs_bucket"`
-		GKECluster      interface{} `json:"gke_cluster"`
-		GKEWorkload     interface{} `json:"gke_workload"`
+
+	// Note: typically only one resource in the struct is set at one time.
+	// Go does not have the concept of "one-of", so despite only one of these resources
+	// typically being non-empty, we still check them all. The one-of check is done by the schema.
+	Resources []*struct {
+		// The following structs are embedded so the json parser skips directly to their fields.
+		BigqueryDatasetPair
+		FirewallPair
+		GCEInstancePair
+		GCSBucketPair
+		GKEClusterPair
+
+		// TODO: make this behave more like standard deployment manager resources
+		GKEWorkload json.RawMessage `json:"gke_workload"`
 	} `json:"resources"`
+}
+
+// BigqueryDatasetPair pairs a raw dataset with its parsed version.
+type BigqueryDatasetPair struct {
+	Raw    json.RawMessage `json:"bigquery_dataset"`
+	Parsed BigqueryDataset `json:"-"`
+}
+
+// FirewallPair pairs a raw firewall with its parsed version.
+type FirewallPair struct {
+	Raw    json.RawMessage `json:"firewall"`
+	Parsed DefaultResource `json:"-"`
+}
+
+// GCEInstancePair pairs a raw instance with its parsed version.
+type GCEInstancePair struct {
+	Raw    json.RawMessage `json:"gce_instance"`
+	Parsed DefaultResource `json:"-"`
+}
+
+// GCSBucketPair pairs a raw bucket with its parsed version.
+type GCSBucketPair struct {
+	Raw    json.RawMessage `json:"gcs_bucket"`
+	Parsed GCSBucket       `json:"-"`
+}
+
+// GKEClusterPair pairs a raw cluster with its parsed version.
+type GKEClusterPair struct {
+	Raw    json.RawMessage `json:"gke_cluster"`
+	Parsed DefaultResource `json:"-"`
+}
+
+// Init initializes a project.
+func (p *Project) Init() error {
+	for _, pair := range p.resourcePairs() {
+		if err := json.Unmarshal(pair.raw, pair.parsed); err != nil {
+			return err
+		}
+		if err := pair.parsed.Init(p); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *Project) resourcePairs() []resourcePair {
+	var pairs []resourcePair
+	appendPair := func(raw json.RawMessage, parsed parsedResource) {
+		if len(raw) > 0 {
+			pairs = append(pairs, resourcePair{raw, parsed})
+		}
+	}
+	appendDefaultResPair := func(raw json.RawMessage, parsed *DefaultResource, path string) {
+		parsed.templatePath = path
+		appendPair(raw, parsed)
+	}
+	for _, res := range p.Resources {
+		appendPair(res.BigqueryDatasetPair.Raw, &res.BigqueryDatasetPair.Parsed)
+		appendDefaultResPair(res.FirewallPair.Raw, &res.FirewallPair.Parsed, "deploy/cft/templates/firewall.py")
+		appendDefaultResPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed, "deploy/cft/templates/instance.py")
+		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
+		appendDefaultResPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed, "deploy/cft/templates/gke.py")
+	}
+	return pairs
 }
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.
@@ -54,34 +126,20 @@ func Deploy(project *Project) error {
 func getDeployment(project *Project) (*Deployment, error) {
 	deployment := &Deployment{}
 
-	for _, r := range project.Resources {
-		// typically only one of these will have a raw that is not nil
-		initialPairs := []resourcePair{
-			{&BigqueryDataset{}, r.BigqueryDataset},
-			{&DefaultResource{templatePath: "deploy/cft/templates/instance.py"}, r.GCEInstance},
-			{NewGCSBucket(), r.GCSBucket},
-			{&DefaultResource{templatePath: "deploy/cft/templates/gke.py"}, r.GKECluster},
-			{&DefaultResource{templatePath: "deploy/cft/templates/firewall.py"}, r.Firewall},
+	allImports := make(map[string]bool)
+
+	for _, pair := range project.resourcePairs() {
+		resources, importSet, err := getDeploymentResourcesAndImports(pair, project)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get resource and imports for %q: %v", pair.parsed.Name(), err)
 		}
+		deployment.Resources = append(deployment.Resources, resources...)
 
-		for _, pair := range initialPairs {
-			if pair.raw == nil {
-				continue
-			}
-
-			if err := unmarshal(pair.raw, pair.parsed); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal %q: %v", pair.parsed.TemplatePath(), err)
-			}
-
-			resources, importSet, err := getDeploymentResourcesAndImports(pair, project)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get resource and imports for %q: %v", pair.parsed.Name(), err)
-			}
-			deployment.Resources = append(deployment.Resources, resources...)
-
-			for imp := range importSet {
+		for imp := range importSet {
+			if !allImports[imp] {
 				deployment.Imports = append(deployment.Imports, &Import{Path: imp})
 			}
+			allImports[imp] = true
 		}
 	}
 
@@ -98,10 +156,6 @@ func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (reso
 		return nil, nil, fmt.Errorf("failed to get absolute path for %q: %v", pair.parsed.TemplatePath(), err)
 	}
 	importSet[templatePath] = true
-
-	if err := pair.parsed.Init(project); err != nil {
-		return nil, nil, fmt.Errorf("failed to init %q: %v", pair.parsed.TemplatePath(), err)
-	}
 
 	merged, err := pair.MergedPropertiesMap()
 	if err != nil {
@@ -125,7 +179,7 @@ func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (reso
 	}
 
 	for _, dep := range dependencies {
-		depPair := resourcePair{raw: make(map[string]interface{}), parsed: dep}
+		depPair := resourcePair{parsed: dep}
 		depResources, depImports, err := getDeploymentResourcesAndImports(depPair, project)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get resources and imports for %q: %v", dep.Name(), err)
@@ -144,19 +198,4 @@ func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (reso
 		}
 	}
 	return resources, importSet, nil
-}
-
-// unmarshal converts one YAML supported type into another.
-// Note: both in and out must support YAML marshalling.
-// See yaml.Unmarshal details on supported types.
-func unmarshal(in interface{}, out interface{}) error {
-	b, err := yaml.Marshal(in)
-	if err != nil {
-		return fmt.Errorf("failed to marshal %v: %v", in, err)
-	}
-
-	if err := yaml.Unmarshal(b, out); err != nil {
-		return fmt.Errorf("failed to unmarshal %v: %v", string(b), err)
-	}
-	return nil
 }
