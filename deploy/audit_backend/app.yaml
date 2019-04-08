@@ -1,0 +1,33 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+runtime: python37
+service: audit-backend
+
+# TODO: tweak this, it may need more memory/CPU. B1 is smallest (128MB, 600MHz).
+# https://cloud.google.com/appengine/docs/standard/python/configuration-files
+instance_class: B1
+# As this service is only used as a cron job or for file change notifications, it only needs a
+# single instance with a short idle timeout.
+basic_scaling:
+  idle_timeout: 10m
+  max_instances: 1
+
+handlers:
+- url: /
+  script: auto
+
+env_variables:
+    CLOUD_STORAGE_BUCKET: <gcs_bucket_name> # REPLACE THIS WITH THE BUCKET CONTAINING CONFIGS.
+    # Path to the project config YAML file withing CLOUD_STORAGE_BUCKET.
+    PROJECT_CONFIG_YAML_PATH: configs/project_config.yaml
