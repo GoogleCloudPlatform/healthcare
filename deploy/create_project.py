@@ -384,9 +384,23 @@ def get_iam_policy_cleanup(config):
             for group in config.project['editors_group']
         ]
     })
-  want_role_to_members = _get_role_to_members(
-      initial_bindings, config.project.get('additional_project_permissions',
-                                           []))
+  for additional in config.project.get('additional_project_permissions', []):
+    for role in additional['roles']:
+      initial_bindings.append({
+          'role': role,
+          'members': additional['members'],
+      })
+  if 'forseti' in config.root:
+    forseti_service_account = config.root['forseti'].get(
+        _GENERATED_FIELDS_NAME, {}).get('service_account')
+    if forseti_service_account:
+      for role in forseti.get_forseti_roles(project_id):
+        initial_bindings.append({
+            'role': role,
+            'members': ['serviceAccount:{}'.format(forseti_service_account)],
+        })
+
+  want_role_to_members = _get_role_to_members(initial_bindings)
 
   for role, members in existing_role_to_members.items():
     existing_role_to_members[role].difference_update(want_role_to_members[role])
@@ -402,11 +416,10 @@ def get_iam_policy_cleanup(config):
   return Output(cleanup_commands=cleanup_commands)
 
 
-def _get_role_to_members(*bindings_list):
+def _get_role_to_members(bindings):
   res = collections.defaultdict(set)
-  for bindings in bindings_list:
-    for binding in bindings:
-      res[binding['role']].update(set(binding['members']))
+  for binding in bindings:
+    res[binding['role']].update(set(binding['members']))
   return res
 
 

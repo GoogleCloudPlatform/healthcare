@@ -159,6 +159,16 @@ _CUSTOM_ROLES = [
 ]
 
 
+def get_forseti_roles(project_id):
+  """Gets a list of all roles granted to the Forseti service account."""
+  standard_roles = ['roles/{}'.format(role) for role in _STANDARD_ROLES]
+  custom_roles = [
+      'projects/{}/roles/{}'.format(project_id, role.name)
+      for role in _CUSTOM_ROLES
+  ]
+  return standard_roles + custom_roles
+
+
 def grant_access(project_id, forseti_service_account):
   """Grant the necessary permissions to the Forseti service account."""
   for role in _STANDARD_ROLES:
