@@ -64,7 +64,7 @@ type GCSBucketPair struct {
 // GKEClusterPair pairs a raw cluster with its parsed version.
 type GKEClusterPair struct {
 	Raw    json.RawMessage `json:"gke_cluster"`
-	Parsed DefaultResource `json:"-"`
+	Parsed GKECluster      `json:"-"`
 }
 
 // Init initializes a project.
@@ -97,7 +97,7 @@ func (p *Project) resourcePairs() []resourcePair {
 		appendDefaultResPair(res.FirewallPair.Raw, &res.FirewallPair.Parsed, "deploy/cft/templates/firewall.py")
 		appendDefaultResPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed, "deploy/cft/templates/instance.py")
 		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
-		appendDefaultResPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed, "deploy/cft/templates/gke.py")
+		appendPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed)
 	}
 	return pairs
 }
