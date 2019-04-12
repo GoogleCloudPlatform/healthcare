@@ -7,8 +7,36 @@ import (
 	"path/filepath"
 )
 
+// GKECluster wraps a CFT GKE cluster.
+type GKECluster struct {
+	GKEClusterProperties `yaml:"properties"`
+}
+
+// GKEClusterProperties represents a partial GKE cluster implementation.
+type GKEClusterProperties struct {
+	ResourceName        string `json:"name"`
+	ClusterLocationType string `json:"clusterLocationType"`
+	Region              string `json:"region"`
+	Zone                string `json:"zone"`
+}
+
+// Init initializes a new GKE cluster with the given project.
+func (cluster *GKECluster) Init(proj *Project) error {
+	return nil
+}
+
+// Name returns the name of this cluster.
+func (cluster *GKECluster) Name() string {
+	return cluster.ResourceName
+}
+
+// TemplatePath returns the name of the template to use for this cluster.
+func (cluster *GKECluster) TemplatePath() string {
+	return "deploy/cft/templates/gke.py"
+}
+
 // Config represents a (partial) representation of a projects YAML file.
-// Only the required fields are present. See project_config.yaml.schema for details.
+// Only the required fields are present. See project_config.yaml.schema for details. Test
 // TODO: move config to its own package
 type Config struct {
 	Projects []*Project `json:"projects"`
@@ -64,7 +92,7 @@ type GCSBucketPair struct {
 // GKEClusterPair pairs a raw cluster with its parsed version.
 type GKEClusterPair struct {
 	Raw    json.RawMessage `json:"gke_cluster"`
-	Parsed DefaultResource `json:"-"`
+	Parsed GKECluster      `json:"-"`
 }
 
 // Init initializes a project.
@@ -97,7 +125,7 @@ func (p *Project) resourcePairs() []resourcePair {
 		appendDefaultResPair(res.FirewallPair.Raw, &res.FirewallPair.Parsed, "deploy/cft/templates/firewall.py")
 		appendDefaultResPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed, "deploy/cft/templates/instance.py")
 		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
-		appendDefaultResPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed, "deploy/cft/templates/gke.py")
+		appendPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed)
 	}
 	return pairs
 }
