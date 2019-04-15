@@ -69,6 +69,8 @@ flags.DEFINE_string('output_rules_path', None,
                      'files. If unset, directly writes to the Forseti server '
                      'bucket.'))
 flags.DEFINE_string('output_cleanup_path', None, 'Path to save cleanup file.')
+flags.DEFINE_boolean('enable_new_style_resources', None, 'Enable new style '
+                     'resources. Developer only.')
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
@@ -939,6 +941,9 @@ def is_deployed(project_dict):
 
 def main(argv):
   del argv  # Unused.
+
+  if FLAGS.enable_new_style_resources:
+    logging.info('--enable_new_style_resources is true.')
 
   input_yaml_path = utils.normalize_path(FLAGS.project_yaml)
   output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
