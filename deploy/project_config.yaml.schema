@@ -451,6 +451,72 @@ definitions:
           type: string
           minLength: 2
 
+      resources:
+        type: array
+        description: |
+          NOT READY FOR GENERAL USE.
+          Resources to deploy. Only one resource is allowed to be set per item.
+          CFT templates can be found at https://github.com/GoogleCloudPlatform/deploymentmanager-samples/tree/master/community/cloud-foundation.
+        items:
+          oneOf:
+          - bigquery_dataset:
+              type: object
+              description: Provides support for BigQuery Datasets.
+              additionalProperties: false
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template bigquery_dataset.py.
+                    In addition, setDefaultOwner must not be set to true.
+          - firewall:
+              type: object
+              description: Provides support for firewalls.
+              additionalProperties: false
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template firewall.py.
+          - gce_instance:
+              type: object
+              description: Provides support for GCE instances.
+              additionalProperties: false
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template instance.py.
+          - gcs_bucket:
+              type: object
+              description: Provides support for GCS Buckets.
+              additionalProperties: false
+              properties:
+                no_prefix:
+                  type: bool
+                  description: |
+                    Whether to not attach the project id as a prefix to the
+                    bucket name. Since bucket names are globally unique, we add
+                    a prefix by default to reduce chances of name collisions.
+                properties:
+                  properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template gcs_bucket.py.
+                    In addition, versioning.enabled must not be set to false.
+          - gke_cluster:
+              type: object
+              description: Provides support for GKE Clusters.
+              additionalProperties: false
+              properties:
+                properties:
+                  properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template gke.py.
+          - gke_workload:
+              type: object
+              description: Provides support for GKE workloads supported by kubectl.
       generated_fields:
         type: object
         description: |
