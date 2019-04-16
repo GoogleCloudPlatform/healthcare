@@ -71,6 +71,8 @@ flags.DEFINE_string('output_rules_path', None,
 flags.DEFINE_string('output_cleanup_path', None, 'Path to save cleanup file.')
 flags.DEFINE_boolean('enable_new_style_resources', None, 'Enable new style '
                      'resources. Developer only.')
+flags.DEFINE_string('cft_binary', None,
+                    'Path to CFT binary. Set automatically by Bazel rule.')
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
@@ -351,6 +353,18 @@ def deploy_project_resources(config):
     if iam_api_disable:
       runner.run_gcloud_command(['services', 'disable', 'iam.googleapis.com'],
                                 project_id=project_id)
+
+
+def deploy_new_style_resources(config):
+  """Deploy new style resources."""
+  if FLAGS.enable_new_style_resources:
+    subprocess.check_call([
+        FLAGS.cft_binary,
+        '--project_yaml_path',
+        FLAGS.project_yaml,
+        '--project',
+        config.project['project_id'],
+    ])
 
 
 def get_iam_policy_cleanup(config):
@@ -774,6 +788,11 @@ _SETUP_STEPS = [
         updatable=True,
     ),
     Step(
+        func=deploy_new_style_resources,
+        description='Deploy new style resources',
+        updatable=True,
+    ),
+    Step(
         func=get_iam_policy_cleanup,
         description='Generate IAM policy cleanup',
         updatable=True,
@@ -945,15 +964,14 @@ def main(argv):
   if FLAGS.enable_new_style_resources:
     logging.info('--enable_new_style_resources is true.')
 
-  input_yaml_path = utils.normalize_path(FLAGS.project_yaml)
-  output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
-  output_cleanup_path = utils.normalize_path(FLAGS.output_cleanup_path)
-  output_rules_path = None
+  FLAGS.project_yaml = utils.normalize_path(FLAGS.project_yaml)
+  FLAGS.output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
+  FLAGS.output_cleanup_path = utils.normalize_path(FLAGS.output_cleanup_path)
   if FLAGS.output_rules_path:
-    output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
+    FLAGS.output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
 
   # Read and parse the project configuration YAML file.
-  root_config = utils.load_config(input_yaml_path)
+  root_config = utils.load_config(FLAGS.project_yaml)
   if not root_config:
     logging.error('Error loading project YAML.')
     return
@@ -965,7 +983,7 @@ def main(argv):
     logging.error('Error in YAML config: %s', e)
     return
 
-  with open(output_cleanup_path, 'w') as f:
+  with open(FLAGS.output_cleanup_path, 'w') as f:
     f.write(_CLEANUP_HEADER)
 
   want_projects = set(FLAGS.projects)
@@ -1037,12 +1055,13 @@ def main(argv):
   for config in projects:
     logging.info('Setting up project %s', config.project['project_id'])
 
-    if not setup_project(config, output_yaml_path, output_cleanup_path):
+    if not setup_project(config, FLAGS.output_yaml_path,
+                         FLAGS.output_cleanup_path):
       # Don't attempt to deploy additional projects if one project failed.
       return
 
   if forseti_config:
-    rule_generator.run(root_config, output_path=output_rules_path)
+    rule_generator.run(root_config, output_path=FLAGS.output_rules_path)
 
   logging.info(
       'All projects successfully deployed. Please remember to sync '
@@ -1055,4 +1074,5 @@ if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
   flags.mark_flag_as_required('output_yaml_path')
   flags.mark_flag_as_required('output_cleanup_path')
+  flags.mark_flag_as_required('cft_binary')
   app.run(main)

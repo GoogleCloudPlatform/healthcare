@@ -14,6 +14,9 @@ exports_files(["project_config.yaml.schema"])
 py_binary(
     name = "create_project",
     srcs = ["create_project.py"],
+    # Pass cft binary path as arg due to unstable location in bazel built binaries.
+    args = ["--cft_binary=$(location //deploy/cmd/cft)"],
+    data = ["//deploy/cmd/cft"],
     python_version = "PY3",
     deps = [":create_project_lib"],
 )

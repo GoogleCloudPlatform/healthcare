@@ -4,6 +4,7 @@ package cft
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"path/filepath"
 )
 
@@ -116,19 +117,25 @@ type depender interface {
 
 // Deploy deploys the CFT resources in the project.
 func Deploy(project *Project) error {
-	deployment, err := getDeployment(project)
+	pairs := project.resourcePairs()
+	if len(pairs) == 0 {
+		log.Println("No resources to deploy.")
+		return nil
+	}
+
+	deployment, err := getDeployment(project, pairs)
 	if err != nil {
 		return err
 	}
 	return createOrUpdateDeployment(project.ID, deployment)
 }
 
-func getDeployment(project *Project) (*Deployment, error) {
+func getDeployment(project *Project, pairs []resourcePair) (*Deployment, error) {
 	deployment := &Deployment{}
 
 	allImports := make(map[string]bool)
 
-	for _, pair := range project.resourcePairs() {
+	for _, pair := range pairs {
 		resources, importSet, err := getDeploymentResourcesAndImports(pair, project)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get resource and imports for %q: %v", pair.parsed.Name(), err)
