@@ -271,14 +271,20 @@ definitions:
           type: object
           additionalProperties: false
           required:
-          - name_suffix
           - location
           - storage_class
           properties:
+            name:
+              type: string
+              description: |
+                Name of the GCS bucket exactly.
+              pattern: ^[-_.a-zA-Z0-9]{0,215}$
             name_suffix:
               type: string
               description: |
                 Suffix appended to project_id as the name of the GCS bucket.
+                Suffix is required, if name is not specified.
+                Otherwise, suffix should be ignored.
               pattern: ^[-_.a-zA-Z0-9]{0,215}$
             location:
               type: string

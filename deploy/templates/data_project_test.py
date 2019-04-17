@@ -98,8 +98,8 @@ class TestDataProject(absltest.TestCase):
           ],
           'data_buckets': [
               {
-                  'name_suffix':
-                      '-nlp-bucket',
+                  'name':
+                      'my-project-nlp-bucket',
                   'location':
                       'US-CENTRAL1',
                   'storage_class':
@@ -124,12 +124,12 @@ class TestDataProject(absltest.TestCase):
                   ],
               },
               {
-                  'name_suffix': '-other-bucket',
+                  'name': 'my-project-other-bucket',
                   'location': 'US-EAST1',
                   'storage_class': 'REGIONAL',
               },
               {
-                  'name_suffix': '-euro-bucket',
+                  'name': 'my-project-euro-bucket',
                   'location': 'EUROPE-WEST1',
                   'storage_class': 'REGIONAL',
                   'expected_users': ['auth_user_3@mydomain.com'],
@@ -138,8 +138,8 @@ class TestDataProject(absltest.TestCase):
           'pubsub': {
               'topic': 'test-topic',
               'subscription': 'test-subscription',
-              'publisher_account': (
-                  'cloud-healthcare-eng@system.gserviceaccount.com'),
+              'publisher_account':
+                  ('cloud-healthcare-eng@system.gserviceaccount.com'),
               'ack_deadline_sec': 100
           },
           'enabled_apis': [
@@ -841,7 +841,7 @@ class TestDataProject(absltest.TestCase):
               'location': 'US',
           },],
           'data_buckets': [{
-              'name_suffix': '-data',
+              'name': 'my-project-data',
               'location': 'US',
               'storage_class': 'MULTI_REGIONAL',
           },],

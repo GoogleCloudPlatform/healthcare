@@ -47,7 +47,7 @@ projects:
     expected_users:
     - auth_user_1@mydomain.com
     - auth_user_2@mydomain.com
-  - name_suffix: -other-bucket
+  - name: my-project-other-bucket
     location: US-EAST1
     storage_class: REGIONAL
   - name_suffix: -euro-bucket

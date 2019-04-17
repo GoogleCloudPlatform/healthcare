@@ -328,8 +328,7 @@ def generate_config(context):
     })
 
     bindings = [role for role in bucket_roles if role['members']]
-
-    data_bucket_id = project_id + data_bucket['name_suffix']
+    data_bucket_id = data_bucket['name']
     data_bucket_resource = {
         'name': data_bucket_id,
         'type': 'storage.v1.bucket',

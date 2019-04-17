@@ -161,7 +161,7 @@ properties:
     items:
       type: object
       required:
-      - name_suffix
+      - name
       - location
       - storage_class
       properties:

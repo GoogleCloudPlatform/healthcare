@@ -84,6 +84,36 @@ class CreateProjectTest(absltest.TestCase):
       FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
       create_project.main([])
 
+  def test_get_data_bucket_name(self):
+    data_bucket = {
+        'name': 'my-project-data1',
+        'storage_class': 'MULTI_REGIONAL',
+        'location': 'US'
+    }
+    bucket_name = create_project.get_data_bucket_name(data_bucket, 'my-project')
+    self.assertEqual(bucket_name, 'my-project-data1')
+
+    data_bucket = {
+        'name_suffix': '-data2',
+        'storage_class': 'MULTI_REGIONAL',
+        'location': 'US'
+    }
+    bucket_name = create_project.get_data_bucket_name(data_bucket, 'my-project')
+    self.assertEqual(bucket_name, 'my-project-data2')
+
+    data_bucket = {'storage_class': 'MULTI_REGIONAL', 'location': 'US'}
+    with self.assertRaises(utils.InvalidConfigError):
+      create_project.get_data_bucket_name(data_bucket, 'my-project')
+
+    data_bucket = {
+        'name': 'my-project-data3',
+        'name_suffix': '-data2',
+        'storage_class': 'MULTI_REGIONAL',
+        'location': 'US'
+    }
+    with self.assertRaises(utils.InvalidConfigError):
+      create_project.get_data_bucket_name(data_bucket, 'my-project')
+
 
 def _deploy(config_filename):
   FLAGS.project_yaml = os.path.join(

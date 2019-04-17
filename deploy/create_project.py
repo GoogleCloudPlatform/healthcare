@@ -271,6 +271,20 @@ def _is_service_enabled(service_name, project_id):
   return service_name in services_list
 
 
+def get_data_bucket_name(data_bucket, project_id):
+  """Get the name of data buckets."""
+  if 'name' not in data_bucket:
+    if 'name_suffix' not in data_bucket:
+      raise utils.InvalidConfigError(
+          'Data buckets must contains either name or name_suffix')
+    return project_id + data_bucket['name_suffix']
+  else:
+    if 'name_suffix' in data_bucket:
+      raise utils.InvalidConfigError(
+          'Data buckets must not contains both name and name_suffix')
+    return data_bucket['name']
+
+
 def deploy_project_resources(config):
   """Deploys resources into the new data project."""
   setup_account = utils.get_gcloud_user()
@@ -301,6 +315,12 @@ def deploy_project_resources(config):
           audit_logs['logs_gcs_bucket']['name'])
   else:
     properties['local_audit_logs'] = audit_logs
+
+  # Set data buckets' names.
+  for data_bucket in properties.get('data_buckets', []):
+    data_bucket['name'] = get_data_bucket_name(data_bucket, project_id)
+    data_bucket.pop('name_suffix', '')
+
   path = os.path.join(os.path.dirname(__file__), 'templates/data_project.py')
   dm_template_dict = {
       'imports': [{
@@ -726,7 +746,7 @@ def create_alerts(config):
     if 'expected_users' not in data_bucket:
       continue
 
-    bucket_name = project_id + data_bucket['name_suffix']
+    bucket_name = get_data_bucket_name(data_bucket, project_id)
     metric_name = 'unexpected-access-' + bucket_name
     display_name = 'Unexpected Access to {} Alert'.format(bucket_name)
     if display_name not in existing_alerts:
