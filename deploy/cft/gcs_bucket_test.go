@@ -22,7 +22,7 @@ properties:
 
 	wantBucketYAML := `
 properties:
-  name: my-project-foo-bucket
+  name: foo-bucket
   bindings:
   - role: roles/storage.admin
     members:
@@ -65,7 +65,7 @@ properties:
 		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
 	}
 
-	if gotName, wantName := b.Name(), "my-project-foo-bucket"; gotName != wantName {
+	if gotName, wantName := b.Name(), "foo-bucket"; gotName != wantName {
 		t.Errorf("d.ResourceName() = %v, want %v", gotName, wantName)
 	}
 }

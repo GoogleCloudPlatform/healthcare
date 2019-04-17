@@ -118,7 +118,6 @@ resources:
 			configData: &ConfigData{`
 resources:
 - gcs_bucket:
-    no_prefix: true
     expected_users:
     - some-expected-user@my-domain.com
     properties:

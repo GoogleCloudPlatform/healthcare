@@ -17,10 +17,8 @@ protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})
 
 // GCSBucket wraps a CFT Cloud Storage Bucket.
 // TODO: set logging bucket ID
-// TODO: add support for expected users + creating unexpected users metrics.
 type GCSBucket struct {
 	GCSBucketProperties `json:"properties"`
-	NoPrefix            bool     `json:"no_prefix,omitempty"`
 	ExpectedUsers       []string `json:"expected_users,omitempty"`
 }
 
@@ -48,10 +46,6 @@ func (b *GCSBucket) Init(project *Project) error {
 	}
 	if b.Versioning.Enabled != nil && !*b.Versioning.Enabled {
 		return errors.New("versioning must not be disabled")
-	}
-
-	if !b.NoPrefix {
-		b.GCSBucketName = fmt.Sprintf("%s-%s", project.ID, b.GCSBucketName)
 	}
 
 	t := true
