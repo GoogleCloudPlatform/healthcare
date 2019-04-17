@@ -144,6 +144,13 @@ class ProjectConfig(object):
         bindings[role].extend(additional['members'])
     return bindings
 
+  def get_data_bucket_name(self, data_bucket):
+    """Get the name of data buckets."""
+    if 'name' not in data_bucket:
+      return self.project_id + data_bucket['name_suffix']
+    else:
+      return data_bucket['name']
+
   def get_buckets(self):
     """Get the GCS buckets in the project.
 
@@ -152,10 +159,9 @@ class ProjectConfig(object):
     """
     buckets = [
         Bucket(
-            id=self.project_id + bucket_dict['name_suffix'],
+            id=self.get_data_bucket_name(bucket_dict),
             location=bucket_dict['location'],
-        )
-        for bucket_dict in self._project_config.get('data_buckets', [])
+        ) for bucket_dict in self._project_config.get('data_buckets', [])
     ]
     return buckets
 
@@ -194,7 +200,7 @@ class ProjectConfig(object):
       # All data buckets by default have the same bindings.
       standard_data_buckets = []
       for data_bucket in self._project_config['data_buckets']:
-        bucket_id = self.project_id + data_bucket['name_suffix']
+        bucket_id = self.get_data_bucket_name(data_bucket)
         if 'additional_bucket_permissions' in data_bucket:
           extra = data_bucket['additional_bucket_permissions']
           # Bucket has extra, custom permissions.
