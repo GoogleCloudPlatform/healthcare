@@ -172,6 +172,48 @@ resources:
     dependsOn:
     - foo-bucket`,
 		},
+		{
+			name: "pubsub",
+			configData: &ConfigData{`
+resources:
+- pubsub:
+    properties:
+      topic: foo-topic
+      accessControl:
+      - role: roles/pubsub.publisher
+        members:
+        - 'user:foo@user.com'
+      subscriptions:
+      - name: foo-subscription
+        accessControl:
+        - role: roles/pubsub.viewer
+          members:
+          - 'user:extra-reader@google.com'`},
+			want: `
+imports:
+- path: {{abs "deploy/cft/templates/pubsub.py"}}
+
+resources:
+- name: foo-topic
+  type: {{abs "deploy/cft/templates/pubsub.py"}}
+  properties:
+    topic: foo-topic
+    accessControl:
+    - role: roles/pubsub.publisher
+      members:
+      - 'user:foo@user.com'
+    subscriptions:
+    - name: foo-subscription
+      accessControl:
+      - role: roles/pubsub.editor
+        members:
+        - 'group:some-readwrite-group@my-domain.com'
+      - role: roles/pubsub.viewer
+        members:
+        - 'group:some-readonly-group@my-domain.com'
+        - 'group:another-readonly-group@googlegroups.com'
+        - 'user:extra-reader@google.com'`,
+		},
 	}
 
 	for _, tc := range tests {

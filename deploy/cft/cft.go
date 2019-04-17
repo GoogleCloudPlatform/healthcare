@@ -32,6 +32,7 @@ type Project struct {
 		GCEInstancePair
 		GCSBucketPair
 		GKEClusterPair
+		PubsubPair
 
 		// TODO: make this behave more like standard deployment manager resources
 		GKEWorkload json.RawMessage `json:"gke_workload"`
@@ -68,6 +69,12 @@ type GKEClusterPair struct {
 	Parsed GKECluster      `json:"-"`
 }
 
+// PubsubPair pairs a raw pubsub with its parsed version.
+type PubsubPair struct {
+	Raw    json.RawMessage `json:"pubsub"`
+	Parsed Pubsub          `json:"-"`
+}
+
 // Init initializes a project.
 func (p *Project) Init() error {
 	for _, pair := range p.resourcePairs() {
@@ -99,6 +106,7 @@ func (p *Project) resourcePairs() []resourcePair {
 		appendDefaultResPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed, "deploy/cft/templates/instance.py")
 		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
 		appendPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed)
+		appendPair(res.PubsubPair.Raw, &res.PubsubPair.Parsed)
 	}
 	return pairs
 }

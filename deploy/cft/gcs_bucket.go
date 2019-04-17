@@ -29,11 +29,6 @@ type GCSBucketProperties struct {
 	Versioning    versioning `json:"versioning"`
 }
 
-type binding struct {
-	Role    string   `json:"role"`
-	Members []string `json:"members"`
-}
-
 type versioning struct {
 	// Use pointer to differentiate between zero value and intentionally being set to false.
 	Enabled *bool `json:"enabled"`
@@ -51,11 +46,6 @@ func (b *GCSBucket) Init(project *Project) error {
 	t := true
 	b.Versioning.Enabled = &t
 
-	b.Bindings = b.getBindings(project)
-	return nil
-}
-
-func (b *GCSBucket) getBindings(project *Project) []binding {
 	appendGroupPrefix := func(ss ...string) []string {
 		res := make([]string, 0, len(ss))
 		for _, s := range ss {
@@ -71,23 +61,8 @@ func (b *GCSBucket) getBindings(project *Project) []binding {
 		{"roles/storage.objectViewer", appendGroupPrefix(project.DataReadOnlyGroups...)},
 	}
 
-	roleToMembers := make(map[string][]string)
-
-	allBindings := append(defaultBindings, b.Bindings...)
-	var roles []string // preserve ordering
-
-	for _, b := range allBindings {
-		if _, ok := roleToMembers[b.Role]; !ok {
-			roles = append(roles, b.Role)
-		}
-		roleToMembers[b.Role] = append(roleToMembers[b.Role], b.Members...)
-	}
-
-	var merged []binding
-	for _, role := range roles {
-		merged = append(merged, binding{Role: role, Members: roleToMembers[role]})
-	}
-	return merged
+	b.Bindings = mergeBindings(append(defaultBindings, b.Bindings...)...)
+	return nil
 }
 
 // Name returns the name of the bucket.

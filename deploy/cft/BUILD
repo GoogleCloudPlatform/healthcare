@@ -8,6 +8,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "bigquery_dataset.go",
+        "binding.go",
         "cft.go",
         "default_resource.go",
         "deployment.go",
@@ -15,6 +16,7 @@ go_library(
         "gke_cluster.go",
         "gke_workload.go",
         "metric.go",
+        "pubsub.go",
         "resourcepair.go",
     ],
     data = [
@@ -39,6 +41,7 @@ go_test(
         "gke_cluster_test.go",
         "gke_workload_test.go",
         "metric_test.go",
+        "pubsub_test.go",
         "resourcepair_test.go",
     ],
     embed = [":go_default_library"],

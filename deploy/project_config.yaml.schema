@@ -492,12 +492,6 @@ definitions:
               description: Provides support for GCS Buckets.
               additionalProperties: false
               properties:
-                no_prefix:
-                  type: bool
-                  description: |
-                    Whether to not attach the project id as a prefix to the
-                    bucket name. Since bucket names are globally unique, we add
-                    a prefix by default to reduce chances of name collisions.
                 properties:
                   properties:
                   type: object
@@ -510,13 +504,21 @@ definitions:
               additionalProperties: false
               properties:
                 properties:
-                  properties:
                   type: object
                   description: |
                     Wraps the CFT template gke.py.
           - gke_workload:
               type: object
               description: Provides support for GKE workloads supported by kubectl.
+          - pubsub:
+              type: object
+              description: Provides support for Pubsub channels.
+              additionalProperties: false
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template pubsub.py.
       generated_fields:
         type: object
         description: |
