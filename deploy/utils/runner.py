@@ -77,8 +77,6 @@ def fake_run(f, *args, **kwargs):
     return '__DRY_RUN_CHANNEL DRY_RUN@domain.com'
   elif cmd[:4] == ['gcloud', 'compute', 'instances', 'list']:
     return '__DRY_RUN_NAME__ __DRY_RUN_ID__'
-  elif cmd[:5] == ['gcloud', 'services', 'list', '--format', 'value(name)']:
-    return ''
   elif cmd[:6] == [
       'gcloud', 'deployment-manager', 'deployments', 'list', '--format', 'json'
   ]:
