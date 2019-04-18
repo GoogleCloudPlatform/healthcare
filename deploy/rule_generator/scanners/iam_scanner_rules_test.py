@@ -120,6 +120,7 @@ rules:
         resource_ids:
           - 'project_1-data'
           - 'project_1-more-data'
+          - 'full-bucket-name-testcase'
           - 'project_1-euro-data'
     inherit_from_parents: true
     bindings:
@@ -197,6 +198,9 @@ _PROJECTS = [
                 },
                 {
                     'name_suffix': '-more-data'
+                },
+                {
+                    'name': 'full-bucket-name-testcase'
                 },
                 {
                     'name_suffix': '-euro-data'
