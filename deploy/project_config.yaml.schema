@@ -464,8 +464,11 @@ definitions:
           Resources to deploy. Only one resource is allowed to be set per item.
           CFT templates can be found at https://github.com/GoogleCloudPlatform/deploymentmanager-samples/tree/master/community/cloud-foundation.
         items:
-          oneOf:
-          - bigquery_dataset:
+          # TODO: make this a oneOf check.
+          type: object
+          additionalProperties: false
+          properties:
+            bigquery_dataset:
               type: object
               description: Provides support for BigQuery Datasets.
               additionalProperties: false
@@ -475,7 +478,7 @@ definitions:
                   description: |
                     Wraps the CFT template bigquery_dataset.py.
                     In addition, setDefaultOwner must not be set to true.
-          - firewall:
+            firewall:
               type: object
               description: Provides support for firewalls.
               additionalProperties: false
@@ -484,7 +487,7 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template firewall.py.
-          - gce_instance:
+            gce_instance:
               type: object
               description: Provides support for GCE instances.
               additionalProperties: false
@@ -493,18 +496,17 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template instance.py.
-          - gcs_bucket:
+            gcs_bucket:
               type: object
               description: Provides support for GCS Buckets.
               additionalProperties: false
               properties:
                 properties:
-                  properties:
                   type: object
                   description: |
                     Wraps the CFT template gcs_bucket.py.
                     In addition, versioning.enabled must not be set to false.
-          - gke_cluster:
+            gke_cluster:
               type: object
               description: Provides support for GKE Clusters.
               additionalProperties: false
@@ -513,10 +515,16 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template gke.py.
-          - gke_workload:
+            gke_workload:
               type: object
               description: Provides support for GKE workloads supported by kubectl.
-          - pubsub:
+              additionalProperties: false
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Must be a valid kubectl workload definition.
+            pubsub:
               type: object
               description: Provides support for Pubsub channels.
               additionalProperties: false
