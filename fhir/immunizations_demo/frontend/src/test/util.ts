@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {isUndefined} from 'lodash';
+import {isFunction, isUndefined} from 'lodash';
 import {TestScheduler} from 'rxjs/testing';
 
 /**
@@ -27,10 +27,12 @@ export function createTestScheduler(): TestScheduler {
  * Resets all of the method calls on the given spy object.
  * @param spyObj The jasmine spy object to reset.
  */
-export function resetSpyObj(
-    spyObj: jasmine.SpyObj<{[spyMethod: string]: Function}>) {
-  for (const m of Object.keys(spyObj)) {
-    spyObj[m].calls.reset();
+export function resetSpyObj<T>(spyObj: jasmine.SpyObj<T>) {
+  for (const m of Object.keys(spyObj) as Array<keyof T>) {
+    const p = spyObj[m];
+    if (isFunction(p)) {
+      (p as jasmine.Spy).calls.reset();
+    }
   }
 }
 

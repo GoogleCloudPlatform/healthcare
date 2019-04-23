@@ -20,12 +20,14 @@ import {ResourceService} from '../app/resource.service';
 
 export function createResourceServiceSpy(): jasmine.SpyObj<ResourceService> {
   const spy = jasmine.createSpyObj<ResourceService>('ResourceService', {
-    createResource: undefined,
+    createResource: Promise.resolve({} as fhir.Resource),
     deleteResource: Promise.resolve(),
-    executeBatch: Promise.resolve(),
-    getResource: Promise.resolve(),
-    saveResource: Promise.resolve(),
-    searchResource: new Promise(() => {}),
+    executeBatch:
+        Promise.resolve({entry: [] as fhir.Resource[]} as fhir.Bundle),
+    getResource: Promise.resolve({} as fhir.Resource),
+    saveResource: Promise.resolve({} as fhir.Resource),
+    searchResource:
+        Promise.resolve({entry: [], type: 'searchset'} as fhir.Bundle),
   });
   // Allows spyOnProperty to be used
   Object.defineProperty(spy, 'requests$', {

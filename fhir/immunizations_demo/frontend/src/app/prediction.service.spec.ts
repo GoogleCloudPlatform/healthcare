@@ -57,10 +57,14 @@ describe('PredictionService', () => {
       resource: yellowFeverAssessment,
     }],
   };
-  const immunizationServiceStub = new ImmunizationServiceStub();
+  let immunizationServiceStub: ImmunizationServiceStub;
   const patientServiceSpy =
       jasmine.createSpyObj<PatientService>('PatientService', ['getPatient']);
   const resourceServiceSpy = createResourceServiceSpy();
+
+  beforeAll(fakeAsync(() => {
+    immunizationServiceStub = new ImmunizationServiceStub();
+  }));
 
   beforeEach(() => {
     resetSpyObj(patientServiceSpy);
