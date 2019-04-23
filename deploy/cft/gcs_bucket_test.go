@@ -37,6 +37,8 @@ properties:
     - 'user:extra-reader@google.com'
   versioning:
     enabled: True
+  logging:
+    logBucket: my-project-logs
 `
 
 	b := &GCSBucket{}

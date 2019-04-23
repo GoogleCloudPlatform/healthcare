@@ -147,6 +147,8 @@ resources:
       - 'group:another-readonly-group@googlegroups.com'
     versioning:
       enabled: true
+    logging:
+      logBucket: my-project-logs
 - name: unexpected-access-foo-bucket
   type: {{abs "deploy/templates/metric.py"}}
   properties:

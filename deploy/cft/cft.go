@@ -37,6 +37,12 @@ type Project struct {
 		// TODO: make this behave more like standard deployment manager resources
 		GKEWorkload json.RawMessage `json:"gke_workload"`
 	} `json:"resources"`
+
+	AuditLogs struct {
+		LogsGCSBucket struct {
+			Name string `json:"name"`
+		} `json:"logs_gcs_bucket"`
+	} `json:"audit_logs"`
 }
 
 // BigqueryDatasetPair pairs a raw dataset with its parsed version.

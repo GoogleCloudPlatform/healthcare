@@ -27,6 +27,9 @@ type GCSBucketProperties struct {
 	GCSBucketName string     `json:"name"`
 	Bindings      []binding  `json:"bindings"`
 	Versioning    versioning `json:"versioning"`
+	Logging       struct {
+		LogBucket string `json:"logBucket"`
+	} `json:"logging"`
 }
 
 type versioning struct {
@@ -62,6 +65,12 @@ func (b *GCSBucket) Init(project *Project) error {
 	}
 
 	b.Bindings = mergeBindings(append(defaultBindings, b.Bindings...)...)
+
+	logBucket := project.AuditLogs.LogsGCSBucket.Name
+	if logBucket == "" {
+		logBucket = project.ID + "-logs"
+	}
+	b.Logging.LogBucket = logBucket
 	return nil
 }
 
