@@ -25,7 +25,7 @@ export const environment = {
   production: false,
   clientId: TODO_OAUTH_CLIENT_ID,
   fhirEndpoint: {
-    baseURL: "https://healthcare.googleapis.com/v1alpha/",
+    baseURL: "https://healthcare.googleapis.com/v1beta1/",
     project: TODO_PROJECT,
     location: TODO_REGION,
     dataset: TODO_DATASET,

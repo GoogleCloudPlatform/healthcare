@@ -68,8 +68,7 @@ export class ResourceService {
   async searchResource(
       resourceType: string,
       queryParams?: {[key: string]: string}): Promise<fhir.Bundle> {
-    const resourceUrl =
-        this.FHIR_STORE_URL + encodeURL`resources/${resourceType}/`;
+    const resourceUrl = this.FHIR_STORE_URL + encodeURL`fhir/${resourceType}/`;
     return this.performRequest<fhir.Bundle>({
       path: resourceUrl,
       headers: getFHIRHeaders(),
@@ -84,8 +83,8 @@ export class ResourceService {
    */
   async getResource<R extends fhir.Resource>(
       resourceType: string, resourceId: string): Promise<R> {
-    const resourceUrl = this.FHIR_STORE_URL +
-        encodeURL`resources/${resourceType}/${resourceId}`;
+    const resourceUrl =
+        this.FHIR_STORE_URL + encodeURL`fhir/${resourceType}/${resourceId}`;
     return this.performRequest<R>({
       path: resourceUrl,
       headers: getFHIRHeaders(),
@@ -99,8 +98,7 @@ export class ResourceService {
    */
   async createResource<R extends fhir.Resource>(resource: R): Promise<R> {
     const resourceType = getResourceType(resource);
-    const resourceUrl =
-        this.FHIR_STORE_URL + encodeURL`resources/${resourceType}`;
+    const resourceUrl = this.FHIR_STORE_URL + encodeURL`fhir/${resourceType}`;
     return this.performRequest<R>({
       path: resourceUrl,
       method: 'POST',
@@ -118,8 +116,8 @@ export class ResourceService {
   async saveResource<R extends fhir.Resource>(resource: R): Promise<R> {
     const resourceType = getResourceType(resource);
     const resourceID = getResourceID(resource);
-    const resourceUrl = this.FHIR_STORE_URL +
-        encodeURL`resources/${resourceType}/${resourceID}`;
+    const resourceUrl =
+        this.FHIR_STORE_URL + encodeURL`fhir/${resourceType}/${resourceID}`;
     return this.performRequest<R>({
       path: resourceUrl,
       method: 'PUT',
@@ -154,8 +152,7 @@ export class ResourceService {
       resourceID = getResourceID(resource);
     }
     this.performRequest({
-      path: this.FHIR_STORE_URL +
-          encodeURL`resources/${resourceType}/${resourceID}`,
+      path: this.FHIR_STORE_URL + encodeURL`fhir/${resourceType}/${resourceID}`,
       method: 'DELETE',
       headers: getFHIRHeaders(),
     });

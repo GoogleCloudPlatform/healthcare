@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {MatSnackBar} from '@angular/material';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {get, includes, isUndefined, sortBy} from 'lodash';
 import * as moment from 'moment';
 import {Observable, of, Subject} from 'rxjs';

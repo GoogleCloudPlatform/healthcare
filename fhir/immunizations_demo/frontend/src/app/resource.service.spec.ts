@@ -64,7 +64,7 @@ describe('ResourceService', () => {
     const searchResult = await service.searchResource('Patient', {_id: '1'});
 
     expect(clientSpy).toHaveBeenCalledWith({
-      path: `${FHIR_STORE_URL}resources/Patient/`,
+      path: `${FHIR_STORE_URL}fhir/Patient/`,
       headers: FHIR_HEADERS,
       params: {
         '_id': '1',
@@ -79,7 +79,7 @@ describe('ResourceService', () => {
     const getResult = await service.getResource('Patient', '1');
 
     expect(clientSpy).toHaveBeenCalledWith({
-      path: `${FHIR_STORE_URL}resources/Patient/1`,
+      path: `${FHIR_STORE_URL}fhir/Patient/1`,
       headers: FHIR_HEADERS,
     });
     expect(getResult).toBe(testResource);
@@ -92,7 +92,7 @@ describe('ResourceService', () => {
     const createResult = await service.createResource(testResource);
 
     expect(clientSpy).toHaveBeenCalledWith({
-      path: `${FHIR_STORE_URL}resources/Patient`,
+      path: `${FHIR_STORE_URL}fhir/Patient`,
       headers: FHIR_HEADERS,
       method: 'POST',
       body: testResource,
@@ -121,7 +121,7 @@ describe('ResourceService', () => {
     const saveResult = await service.saveResource(testResource);
 
     expect(clientSpy).toHaveBeenCalledWith({
-      path: `${FHIR_STORE_URL}resources/Patient/1`,
+      path: `${FHIR_STORE_URL}fhir/Patient/1`,
       headers: FHIR_HEADERS,
       method: 'PUT',
       body: testResource,
@@ -135,7 +135,7 @@ describe('ResourceService', () => {
     await service.deleteResource(testResource);
 
     expect(clientSpy).toHaveBeenCalledWith({
-      path: `${FHIR_STORE_URL}resources/Patient/1`,
+      path: `${FHIR_STORE_URL}fhir/Patient/1`,
       headers: FHIR_HEADERS,
       method: 'DELETE',
     });
@@ -147,7 +147,7 @@ describe('ResourceService', () => {
     await service.deleteResource(testResource.resourceType!, testResource.id!);
 
     expect(clientSpy).toHaveBeenCalledWith({
-      path: `${FHIR_STORE_URL}resources/Patient/1`,
+      path: `${FHIR_STORE_URL}fhir/Patient/1`,
       headers: FHIR_HEADERS,
       method: 'DELETE',
     });

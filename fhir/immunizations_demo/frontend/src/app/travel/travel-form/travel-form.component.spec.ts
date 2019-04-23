@@ -14,7 +14,8 @@
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
-import {MatAutocompleteModule, MatDatepickerModule} from '@angular/material';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatDatepickerModule} from '@angular/material/datepicker';
 import * as moment from 'moment';
 import {of} from 'rxjs';
 

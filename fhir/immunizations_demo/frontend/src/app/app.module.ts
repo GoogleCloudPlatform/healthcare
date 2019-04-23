@@ -16,8 +16,23 @@
 import {HttpClientModule} from '@angular/common/http';
 import {APP_INITIALIZER, NgModule} from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import * as mat from '@angular/material';
 import {MatMomentDateModule} from '@angular/material-moment-adapter';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCardModule} from '@angular/material/card';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import {MatExpansionModule} from '@angular/material/expansion';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatGridListModule} from '@angular/material/grid-list';
+import {MatIconModule} from '@angular/material/icon';
+import {MatInputModule} from '@angular/material/input';
+import {MatListModule} from '@angular/material/list';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatSelectModule} from '@angular/material/select';
+import {MatSidenavModule} from '@angular/material/sidenav';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatToolbarModule} from '@angular/material/toolbar';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
@@ -54,29 +69,14 @@ import {LOCATION, SESSION_STORAGE} from './window-injection-tokens';
     DebugPanelComponent,
   ],
   imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    mat.MatToolbarModule,
-    mat.MatListModule,
-    mat.MatCardModule,
-    mat.MatExpansionModule,
-    mat.MatFormFieldModule,
-    mat.MatInputModule,
-    mat.MatButtonModule,
-    mat.MatSelectModule,
-    mat.MatSidenavModule,
-    mat.MatIconModule,
-    mat.MatDatepickerModule,
-    mat.MatProgressBarModule,
-    mat.MatTooltipModule,
-    mat.MatSnackBarModule,
-    mat.MatGridListModule,
-    mat.MatAutocompleteModule,
-    MatMomentDateModule,
-    ReactiveFormsModule,
-    FormsModule,
-    HttpClientModule,
-    AppRoutingModule,
+    BrowserModule,       BrowserAnimationsModule, MatToolbarModule,
+    MatListModule,       MatCardModule,           MatExpansionModule,
+    MatFormFieldModule,  MatInputModule,          MatButtonModule,
+    MatSelectModule,     MatSidenavModule,        MatIconModule,
+    MatDatepickerModule, MatProgressBarModule,    MatTooltipModule,
+    MatSnackBarModule,   MatGridListModule,       MatAutocompleteModule,
+    MatMomentDateModule, ReactiveFormsModule,     FormsModule,
+    HttpClientModule,    AppRoutingModule,
   ],
   bootstrap: [AppComponent],
   providers: [

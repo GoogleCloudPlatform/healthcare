@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {Component, Inject, OnInit} from '@angular/core';
-import {MatSnackBar} from '@angular/material';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {from, Observable, of} from 'rxjs';
 import {map, scan, switchAll} from 'rxjs/operators';
 

@@ -14,7 +14,7 @@
 
 import {NO_ERRORS_SCHEMA} from '@angular/core';
 import {async, ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
-import {MatSnackBar} from '@angular/material';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subject} from 'rxjs';
 
 import {environment} from '../../environments/environment';

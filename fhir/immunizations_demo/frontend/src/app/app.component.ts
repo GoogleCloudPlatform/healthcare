@@ -15,7 +15,7 @@
 
 import {MediaMatcher} from '@angular/cdk/layout';
 import {ChangeDetectorRef, Component, OnDestroy} from '@angular/core';
-import {MatIconRegistry} from '@angular/material';
+import {MatIconRegistry} from '@angular/material/icon';
 import {DomSanitizer} from '@angular/platform-browser';
 
 @Component({
