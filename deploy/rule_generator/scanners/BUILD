@@ -191,6 +191,7 @@ py_library(
 py_test(
     name = "resource_scanner_rules_test",
     srcs = ["resource_scanner_rules_test.py"],
+    python_version = "PY2",
     deps = [
         requirement("absl-py"),
         requirement("pyyaml"),

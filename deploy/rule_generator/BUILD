@@ -27,6 +27,7 @@ py_test(
 py_binary(
     name = "rule_generator",
     srcs = ["rule_generator.py"],
+    python_version = "PY2",
     deps = [":rule_generator_main_lib"],
 )
 
