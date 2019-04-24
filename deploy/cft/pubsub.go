@@ -1,6 +1,10 @@
 package cft
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+)
 
 // Pubsub represents a GCP pubsub channel resource.
 type Pubsub struct {
@@ -9,18 +13,34 @@ type Pubsub struct {
 
 // PubsubProperties represents a partial CFT pubsub implementation.
 type PubsubProperties struct {
-	TopicName string `json:"topic"`
+	TopicName         string              `json:"topic"`
+	SubscriptionPairs []*subscriptionPair `json:"subscriptions"`
+}
 
-	// Note: mergo.Merge does not merge slices together, so subscription should implement all fields, even if it does not use it so that fields are not lost.
-	// TODO: figure out a way to avoid doing this.
-	Subscriptions []*subscription `json:"subscriptions"`
+// subscriptionPair is used to retain fields not defined by the parsed subscription.
+// mergo.Merge can only override or append slices, not merge them,
+// so this merges the raw and parsed subscriptions before the pubsub merge happens.
+type subscriptionPair struct {
+	raw    json.RawMessage
+	parsed subscription
+}
+
+func (p *subscriptionPair) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &p.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal subscription into raw form: %v", err)
+	}
+	if err := json.Unmarshal(data, &p.parsed); err != nil {
+		return fmt.Errorf("failed to unmarshal subscription into parsed form: %v", err)
+	}
+	return nil
+}
+
+func (p subscriptionPair) MarshalJSON() ([]byte, error) {
+	return interfacePair{p.raw, p.parsed}.MarshalJSON()
 }
 
 type subscription struct {
-	Name               string    `json:"name"`
-	Bindings           []binding `json:"accessControl,omitempty"`
-	PushEndpoint       string    `json:"pushEndpoint,omitempty"`
-	AckDeadlineSeconds int       `json:"ackDeadlineSeconds,omitempty"`
+	Bindings []binding `json:"accessControl,omitempty"`
 }
 
 // Init initializes a new pubsub with the given project.
@@ -42,8 +62,8 @@ func (p *Pubsub) Init(project *Project) error {
 		{"roles/pubsub.viewer", appendGroupPrefix(project.DataReadOnlyGroups...)},
 	}
 
-	for _, sub := range p.Subscriptions {
-		sub.Bindings = mergeBindings(append(defaultBindings, sub.Bindings...)...)
+	for _, subp := range p.SubscriptionPairs {
+		subp.parsed.Bindings = mergeBindings(append(defaultBindings, subp.parsed.Bindings...)...)
 	}
 
 	return nil
