@@ -44,7 +44,7 @@ type Project struct {
 		GKEWorkload json.RawMessage `json:"gke_workload"`
 	} `json:"resources"`
 
-	AuditLogs struct {
+	AuditLogs *struct {
 		LogsGCSBucket struct {
 			Name string `json:"name"`
 		} `json:"logs_gcs_bucket"`
@@ -107,6 +107,9 @@ func (c *Config) Init() error {
 
 // Init initializes a project and all its resources.
 func (p *Project) Init() error {
+	if p.AuditLogs.LogsBigqueryDataset.Name == "" {
+		p.AuditLogs.LogsBigqueryDataset.Name = "audit_logs"
+	}
 	for _, pair := range p.resourcePairs() {
 		if err := json.Unmarshal(pair.raw, pair.parsed); err != nil {
 			return err

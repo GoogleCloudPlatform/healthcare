@@ -5,8 +5,9 @@ import (
 )
 
 type resource struct {
-	Type string   `yaml:"type"`
-	IDs  []string `yaml:"resource_ids"`
+	Type      string   `yaml:"type"`
+	AppliesTo string   `yaml:"applies_to,omitempty"`
+	IDs       []string `yaml:"resource_ids"`
 }
 
 // globalResource tries to find the broadest scope of resources defined in the config.
