@@ -5,7 +5,7 @@ import (
 )
 
 type resource struct {
-	Type      string   `yaml:"type"`
+	Type      string   `yaml:"type,omitempty"`
 	AppliesTo string   `yaml:"applies_to,omitempty"`
 	IDs       []string `yaml:"resource_ids"`
 }

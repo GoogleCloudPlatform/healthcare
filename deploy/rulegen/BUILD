@@ -7,7 +7,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = [
+        "audit_logging.go",
         "bigquery.go",
+        "bucket.go",
+        "cloud_sql.go",
+        "lien.go",
+        "log_sink.go",
         "resource.go",
         "rulegen.go",
     ],
@@ -23,7 +28,12 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
+        "audit_logging_test.go",
         "bigquery_test.go",
+        "bucket_test.go",
+        "cloud_sql_test.go",
+        "lien_test.go",
+        "log_sink_test.go",
         "rulegen_test.go",
     ],
     embed = [":go_default_library"],
