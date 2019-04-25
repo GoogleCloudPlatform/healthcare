@@ -23,6 +23,12 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_mitchellh_hashstructure",
+    importpath = "github.com/mitchellh/hashstructure",
+    tag = "v1.0.0",
+)
+
+go_repository(
     name = "com_github_imdario_mergo",
     importpath = "github.com/imdario/mergo",
     tag = "v0.3.7",

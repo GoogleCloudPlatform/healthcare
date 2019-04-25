@@ -12,11 +12,12 @@ type BigqueryDataset struct {
 // BigqueryDatasetProperties represents a partial CFT dataset implementation.
 type BigqueryDatasetProperties struct {
 	BigqueryDatasetName string   `json:"name"`
-	Accesses            []access `json:"access"`
+	Accesses            []Access `json:"access"`
 	SetDefaultOwner     bool     `json:"setDefaultOwner"`
 }
 
-type access struct {
+// Access defines a dataset access. Only one non-role field should be set.
+type Access struct {
 	Role         string `json:"role"`
 	UserByEmail  string `json:"userByEmail,omitempty"`
 	GroupByEmail string `json:"groupByEmail,omitempty"`
@@ -47,7 +48,7 @@ func (d *BigqueryDataset) Init(project *Project) error {
 
 	for _, rg := range roleAndGroups {
 		for _, g := range rg.Groups {
-			d.Accesses = append(d.Accesses, access{
+			d.Accesses = append(d.Accesses, Access{
 				Role:         rg.Role,
 				GroupByEmail: g,
 			})

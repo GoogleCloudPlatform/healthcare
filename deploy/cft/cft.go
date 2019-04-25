@@ -12,13 +12,19 @@ import (
 // Only the required fields are present. See project_config.yaml.schema for details.
 // TODO: move config to its own package
 type Config struct {
-	Projects []*Project `json:"projects"`
+	Overall struct {
+		OrganizationID string `json:"organization_id"`
+		FolderID       string `json:"folder_id"`
+	} `json:"overall"`
+	AuditLogsProject *Project   `json:"audit_logs_project"`
+	Projects         []*Project `json:"projects"`
 }
 
 // Project defines a single project's configuration.
 type Project struct {
 	ID                  string   `json:"project_id"`
 	OwnersGroup         string   `json:"owners_group"`
+	AuditorsGroup       string   `json:"auditors_group"`
 	DataReadWriteGroups []string `json:"data_readwrite_groups"`
 	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
 
@@ -42,7 +48,15 @@ type Project struct {
 		LogsGCSBucket struct {
 			Name string `json:"name"`
 		} `json:"logs_gcs_bucket"`
+
+		LogsBigqueryDataset struct {
+			Name string `json:"name"`
+		} `json:"logs_bigquery_dataset"`
 	} `json:"audit_logs"`
+
+	GeneratedFields struct {
+		LogSinkServiceAccount string `json:"log_sink_service_account"`
+	} `json:"generated_fields"`
 }
 
 // BigqueryDatasetPair pairs a raw dataset with its parsed version.
@@ -81,7 +95,17 @@ type PubsubPair struct {
 	Parsed Pubsub          `json:"-"`
 }
 
-// Init initializes a project.
+// Init initializes the config and all its projects.
+func (c *Config) Init() error {
+	for _, p := range c.Projects {
+		if err := p.Init(); err != nil {
+			return fmt.Errorf("failed to init project %q: %v", p.ID, err)
+		}
+	}
+	return nil
+}
+
+// Init initializes a project and all its resources.
 func (p *Project) Init() error {
 	for _, pair := range p.resourcePairs() {
 		if err := json.Unmarshal(pair.raw, pair.parsed); err != nil {
@@ -91,7 +115,6 @@ func (p *Project) Init() error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -115,6 +138,17 @@ func (p *Project) resourcePairs() []resourcePair {
 		appendPair(res.PubsubPair.Raw, &res.PubsubPair.Parsed)
 	}
 	return pairs
+}
+
+// BigqueryDatasets gets all bigquery datasets in this project.
+func (p *Project) BigqueryDatasets() []*BigqueryDataset {
+	var datasets []*BigqueryDataset
+	for _, r := range p.Resources {
+		if len(r.BigqueryDatasetPair.Raw) > 0 {
+			datasets = append(datasets, &r.BigqueryDatasetPair.Parsed)
+		}
+	}
+	return datasets
 }
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.
