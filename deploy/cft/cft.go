@@ -13,8 +13,9 @@ import (
 // TODO: move config to its own package
 type Config struct {
 	Overall struct {
-		OrganizationID string `json:"organization_id"`
-		FolderID       string `json:"folder_id"`
+		OrganizationID string   `json:"organization_id"`
+		FolderID       string   `json:"folder_id"`
+		AllowedAPIs    []string `json:"allowed_apis"`
 	} `json:"overall"`
 	AuditLogsProject *Project   `json:"audit_logs_project"`
 	Projects         []*Project `json:"projects"`
@@ -27,6 +28,7 @@ type Project struct {
 	AuditorsGroup       string   `json:"auditors_group"`
 	DataReadWriteGroups []string `json:"data_readwrite_groups"`
 	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
+	EnabledAPIs         []string `json:"enabled_apis"`
 
 	// Note: typically only one resource in the struct is set at one time.
 	// Go does not have the concept of "one-of", so despite only one of these resources

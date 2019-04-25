@@ -17,6 +17,9 @@ overall:
   folder_id: '98765321'
   billing_account: 000000-000000-000000
   domain: 'domain.com'
+  allowed_apis:
+  - foo-api.googleapis.com
+  - bar-api.googleapis.com
 
 projects:
 - project_id: my-project
@@ -28,6 +31,8 @@ projects:
   data_readonly_groups:
   - my-project-readonly@my-domain.com
   - another-readonly-group@googlegroups.com
+  enabled_apis:
+  - foo-api.googleapis.com
   audit_logs:
     logs_gcs_bucket:
       location: US
