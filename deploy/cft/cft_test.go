@@ -35,6 +35,12 @@ projects:
       ttl_days: 365
     logs_bigquery_dataset:
       location: US
+  generated_fields:
+    project_number: '1111'
+    log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+    gce_instance_info:
+    - name: foo-instance
+      id: '123'
 {{lpad .ExtraProjectConfig 2}}
 `
 
@@ -93,7 +99,8 @@ func TestDeploy(t *testing.T) {
 resources:
 - bigquery_dataset:
     properties:
-      name: foo-dataset`},
+      name: foo-dataset
+      location: US`},
 			want: `
 imports:
 - path: {{abs "deploy/cft/templates/bigquery_dataset.py"}}
@@ -102,6 +109,7 @@ resources:
   type: {{abs "deploy/cft/templates/bigquery_dataset.py"}}
   properties:
     name: foo-dataset
+    location: US
     access:
     - groupByEmail: my-project-owners@my-domain.com
       role: OWNER
@@ -112,6 +120,30 @@ resources:
     - groupByEmail: another-readonly-group@googlegroups.com
       role: READER
     setDefaultOwner: false`,
+		},
+		{
+			name: "gce_instance",
+			configData: &ConfigData{`
+resources:
+- gce_instance:
+    properties:
+      name: foo-instance
+      diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
+      zone: us-east1-a
+      machineType: f1-micro`},
+
+			want: `
+imports:
+- path: {{abs "deploy/cft/templates/instance.py"}}
+
+resources:
+- name: foo-instance
+  type: {{abs "deploy/cft/templates/instance.py"}}
+  properties:
+    name: foo-instance
+    diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
+    zone: us-east1-a
+    machineType: f1-micro`,
 		},
 		{
 			name: "gcs_bucket",
@@ -278,4 +310,22 @@ func abs(p string) string {
 		panic(err)
 	}
 	return a
+}
+
+func TestInstanceID(t *testing.T) {
+	_, project := getTestConfigAndProject(t, nil)
+
+	name := "foo-instance"
+	id, err := project.InstanceID(name)
+	if err != nil {
+		t.Fatalf("project.InstanceID(%q): got error %v", name, err)
+	}
+	if got, want := id, "123"; got != want {
+		t.Errorf("project.InstanceID(%q) id: got %q, want %q", name, got, want)
+	}
+
+	name = "dne"
+	if _, err := project.InstanceID(name); err == nil {
+		t.Fatalf("project.InstanceID(%q): got nil error, want non-nil error", name)
+	}
 }

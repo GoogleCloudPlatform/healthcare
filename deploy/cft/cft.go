@@ -48,16 +48,22 @@ type Project struct {
 
 	AuditLogs *struct {
 		LogsGCSBucket struct {
-			Name string `json:"name"`
+			Name     string `json:"name"`
+			Location string `json:"location"`
 		} `json:"logs_gcs_bucket"`
 
 		LogsBigqueryDataset struct {
-			Name string `json:"name"`
+			Name     string `json:"name"`
+			Location string `json:"location"`
 		} `json:"logs_bigquery_dataset"`
 	} `json:"audit_logs"`
 
 	GeneratedFields struct {
 		LogSinkServiceAccount string `json:"log_sink_service_account"`
+		GCEInstanceInfo       []struct {
+			Name string `json:"name"`
+			ID   string `json:"id"`
+		} `json:"gce_instance_info"`
 	} `json:"generated_fields"`
 }
 
@@ -76,7 +82,7 @@ type FirewallPair struct {
 // GCEInstancePair pairs a raw instance with its parsed version.
 type GCEInstancePair struct {
 	Raw    json.RawMessage `json:"gce_instance"`
-	Parsed DefaultResource `json:"-"`
+	Parsed GCEInstance     `json:"-"`
 }
 
 // GCSBucketPair pairs a raw bucket with its parsed version.
@@ -112,6 +118,9 @@ func (p *Project) Init() error {
 	if p.AuditLogs.LogsBigqueryDataset.Name == "" {
 		p.AuditLogs.LogsBigqueryDataset.Name = "audit_logs"
 	}
+	if p.AuditLogs.LogsGCSBucket.Name == "" {
+		p.AuditLogs.LogsGCSBucket.Name = p.ID + "-logs"
+	}
 	for _, pair := range p.resourcePairs() {
 		if err := json.Unmarshal(pair.raw, pair.parsed); err != nil {
 			return err
@@ -137,7 +146,7 @@ func (p *Project) resourcePairs() []resourcePair {
 	for _, res := range p.Resources {
 		appendPair(res.BigqueryDatasetPair.Raw, &res.BigqueryDatasetPair.Parsed)
 		appendDefaultResPair(res.FirewallPair.Raw, &res.FirewallPair.Parsed, "deploy/cft/templates/firewall.py")
-		appendDefaultResPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed, "deploy/cft/templates/instance.py")
+		appendPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed)
 		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
 		appendPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed)
 		appendPair(res.PubsubPair.Raw, &res.PubsubPair.Parsed)
@@ -145,15 +154,37 @@ func (p *Project) resourcePairs() []resourcePair {
 	return pairs
 }
 
-// BigqueryDatasets gets all bigquery datasets in this project.
-func (p *Project) BigqueryDatasets() []*BigqueryDataset {
-	var datasets []*BigqueryDataset
+// DataResources represents all data holding resources in the project.
+type DataResources struct {
+	BigqueryDatasets []*BigqueryDataset
+	GCSBuckets       []*GCSBucket
+	GCEInstances     []*GCEInstance
+}
+
+// DataResources gets all data holding resources in this project.
+func (p *Project) DataResources() *DataResources {
+	rs := &DataResources{}
 	for _, r := range p.Resources {
-		if len(r.BigqueryDatasetPair.Raw) > 0 {
-			datasets = append(datasets, &r.BigqueryDatasetPair.Parsed)
+		switch {
+		case len(r.BigqueryDatasetPair.Raw) > 0:
+			rs.BigqueryDatasets = append(rs.BigqueryDatasets, &r.BigqueryDatasetPair.Parsed)
+		case len(r.GCSBucketPair.Raw) > 0:
+			rs.GCSBuckets = append(rs.GCSBuckets, &r.GCSBucketPair.Parsed)
+		case len(r.GCEInstancePair.Raw) > 0:
+			rs.GCEInstances = append(rs.GCEInstances, &r.GCEInstancePair.Parsed)
 		}
 	}
-	return datasets
+	return rs
+}
+
+// InstanceID returns the ID of the instance with the given name.
+func (p *Project) InstanceID(name string) (string, error) {
+	for _, info := range p.GeneratedFields.GCEInstanceInfo {
+		if info.Name == name {
+			return info.ID, nil
+		}
+	}
+	return "", fmt.Errorf("info for instance %q not found in generated_fields", name)
 }
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.

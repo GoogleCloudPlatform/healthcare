@@ -43,6 +43,9 @@ projects:
   generated_fields:
     project_number: '1111'
     log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+    gce_instance_info:
+    - name: foo-instance
+      id: '123'
 {{lpad .ExtraProjectConfig 2}}
 `
 

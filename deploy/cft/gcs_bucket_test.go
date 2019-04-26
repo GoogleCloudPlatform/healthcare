@@ -14,6 +14,7 @@ func TestGCSBucket(t *testing.T) {
 	bucketYAML := `
 properties:
   name: foo-bucket
+  location: us-east1
   bindings:
   - role: roles/storage.objectViewer
     members:
@@ -23,6 +24,7 @@ properties:
 	wantBucketYAML := `
 properties:
   name: foo-bucket
+  location: us-east1
   bindings:
   - role: roles/storage.admin
     members:
@@ -68,7 +70,7 @@ properties:
 	}
 
 	if gotName, wantName := b.Name(), "foo-bucket"; gotName != wantName {
-		t.Errorf("d.ResourceName() = %v, want %v", gotName, wantName)
+		t.Errorf("d.Name() = %v, want %v", gotName, wantName)
 	}
 }
 
@@ -82,11 +84,17 @@ func TestGCSBucketErrors(t *testing.T) {
 	}{
 		{
 			"missing_name",
-			`properties	: {}`,
+			"properties	: {}",
 			"name must be set",
-		}, {
+		},
+		{
+			"missing_location",
+			"properties: {name: foo-bucket}",
+			"location must be set",
+		},
+		{
 			"versioning_disabled",
-			`properties: { name: foo-bucket, versioning: { enabled: false }}`,
+			"properties: { name: foo-bucket, location: us-east1, versioning: { enabled: false }}",
 			"versioning must not be disabled",
 		},
 	}

@@ -465,6 +465,8 @@ definitions:
           CFT templates can be found at https://github.com/GoogleCloudPlatform/deploymentmanager-samples/tree/master/community/cloud-foundation.
         items:
           # TODO: make this a oneOf check.
+          # TODO: investigate implementing a subset of the CFT
+          # schema here for the fields we change.
           type: object
           additionalProperties: false
           properties:
@@ -477,7 +479,8 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template bigquery_dataset.py.
-                    In addition, setDefaultOwner must not be set to true.
+                    In addition, location must be set and setDefaultOwner must
+                    not be set to true.
             firewall:
               type: object
               description: Provides support for firewalls.
@@ -505,7 +508,8 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template gcs_bucket.py.
-                    In addition, versioning.enabled must not be set to false.
+                    In addition, location must be set and versioning.enabled
+                    must not be set to false.
             gke_cluster:
               type: object
               description: Provides support for GKE Clusters.

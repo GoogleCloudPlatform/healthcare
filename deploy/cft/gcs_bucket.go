@@ -25,6 +25,7 @@ type GCSBucket struct {
 // GCSBucketProperties  represents a partial CFT bucket implementation.
 type GCSBucketProperties struct {
 	GCSBucketName string     `json:"name"`
+	Location      string     `json:"location"`
 	Bindings      []binding  `json:"bindings"`
 	Versioning    versioning `json:"versioning"`
 	Logging       struct {
@@ -41,6 +42,9 @@ type versioning struct {
 func (b *GCSBucket) Init(project *Project) error {
 	if b.GCSBucketName == "" {
 		return errors.New("name must be set")
+	}
+	if b.Location == "" {
+		return errors.New("location must be set")
 	}
 	if b.Versioning.Enabled != nil && !*b.Versioning.Enabled {
 		return errors.New("versioning must not be disabled")

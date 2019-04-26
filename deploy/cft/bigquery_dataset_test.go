@@ -14,6 +14,7 @@ func TestDataset(t *testing.T) {
 	datasetYAML := `
 properties:
   name: foo-dataset
+  location: US
   access:
   - userByEmail: some-admin@domain.com
     role: OWNER
@@ -24,6 +25,7 @@ properties:
 	wantdatasetYAML := `
 properties:
   name: foo-dataset
+  location: US
   access:
   - userByEmail: some-admin@domain.com
     role: OWNER
@@ -81,12 +83,17 @@ func TestDatasetErrors(t *testing.T) {
 	}{
 		{
 			"missing_name",
-			`"properties": {}`,
+			"properties: {}",
 			"name must be set",
 		},
 		{
+			"missing_location",
+			"properties: {name: foo-dataset}",
+			"location must be set",
+		},
+		{
 			"set_default_owner",
-			`"properties": {"name": "foo-dataset", "setDefaultOwner": true}`,
+			"properties: {name: foo-dataset, location: US, setDefaultOwner: true}",
 			"setDefaultOwner must not be true",
 		},
 	}

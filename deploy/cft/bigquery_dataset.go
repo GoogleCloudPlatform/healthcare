@@ -12,6 +12,7 @@ type BigqueryDataset struct {
 // BigqueryDatasetProperties represents a partial CFT dataset implementation.
 type BigqueryDatasetProperties struct {
 	BigqueryDatasetName string   `json:"name"`
+	Location            string   `json:"location"`
 	Accesses            []Access `json:"access"`
 	SetDefaultOwner     bool     `json:"setDefaultOwner"`
 }
@@ -31,6 +32,9 @@ type Access struct {
 func (d *BigqueryDataset) Init(project *Project) error {
 	if d.Name() == "" {
 		return errors.New("name must be set")
+	}
+	if d.Location == "" {
+		return errors.New("location must be set")
 	}
 	if d.SetDefaultOwner {
 		return errors.New("setDefaultOwner must not be true")
