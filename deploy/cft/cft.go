@@ -180,7 +180,15 @@ func Deploy(project *Project) error {
 	if err != nil {
 		return err
 	}
-	return createOrUpdateDeployment(project.ID, deployment)
+	if err := createOrUpdateDeployment(project.ID, deployment); err != nil {
+		return fmt.Errorf("failed to deploy deployment manager resources: %v", err)
+	}
+
+	if err := deployGKEWorkloads(project); err != nil {
+		return fmt.Errorf("failed to deploy GKE workloads: %v", err)
+	}
+
+	return nil
 }
 
 func getDeployment(project *Project, pairs []resourcePair) (*Deployment, error) {
