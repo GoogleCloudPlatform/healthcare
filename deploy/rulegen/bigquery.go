@@ -62,17 +62,24 @@ func BigqueryRules(config *cft.Config) ([]BigqueryRule, error) {
 
 func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
 	var rules []BigqueryRule
+
 	// group rules that have the same access together to reduce duplicated rules
 	accessHashToDatasets := make(map[uint64][]*cft.BigqueryDataset)
+	var hashes []uint64 // for stable ordering
+
 	for _, dataset := range project.DataResources().BigqueryDatasets {
 		h, err := hashstructure.Hash(dataset.Accesses, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to hash access %v: %v", dataset.Accesses, err)
 		}
+		if _, ok := accessHashToDatasets[h]; !ok {
+			hashes = append(hashes, h)
+		}
 		accessHashToDatasets[h] = append(accessHashToDatasets[h], dataset)
 	}
 
-	for _, ds := range accessHashToDatasets {
+	for _, h := range hashes {
+		ds := accessHashToDatasets[h]
 		var ids []string
 		for _, d := range ds {
 			// forseti bigquery dataset id is in the form projectID:datasetName
@@ -101,6 +108,7 @@ func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
 
 func accessesToBindings(accesses []cft.Access) []bigqueryBinding {
 	roleToMembers := make(map[string][]bigqueryMember)
+	var roles []string // for stable ordering
 	for _, access := range accesses {
 		// only one should be non-empty (checked by bigquery CFT schema)
 		member := bigqueryMember{
@@ -112,11 +120,14 @@ func accessesToBindings(accesses []cft.Access) []bigqueryBinding {
 			log.Printf("unmonitored access: %v", access)
 			continue
 		}
+		if _, ok := roleToMembers[access.Role]; !ok {
+			roles = append(roles, access.Role)
+		}
 		roleToMembers[access.Role] = append(roleToMembers[access.Role], member)
 	}
 	var bs []bigqueryBinding
-	for role, members := range roleToMembers {
-		bs = append(bs, bigqueryBinding{role, members})
+	for _, role := range roles {
+		bs = append(bs, bigqueryBinding{role, roleToMembers[role]})
 	}
 	return bs
 }
