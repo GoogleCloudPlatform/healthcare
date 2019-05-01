@@ -51,7 +51,7 @@ func LocationRules(config *cft.Config) ([]LocationRule, error) {
 			})
 		}
 
-		auditLogsProjectID := project.ID
+		auditLogsProjectID := config.AuditLogsProjectID(project)
 		if config.AuditLogsProject != nil {
 			auditLogsProjectID = config.AuditLogsProject.ID
 		}

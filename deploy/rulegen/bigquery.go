@@ -139,10 +139,7 @@ func getAuditLogDatasetRule(config *cft.Config, project *cft.Project) BigqueryRu
 		{Role: "READER", Members: []bigqueryMember{{GroupEmail: project.AuditorsGroup}}},
 	}
 
-	auditProjectID := project.ID
-	if config.AuditLogsProject != nil {
-		auditProjectID = config.AuditLogsProject.ID
-	}
+	auditProjectID := config.AuditLogsProjectID(project)
 	return BigqueryRule{
 		Name:       fmt.Sprintf("Whitelist for project %s audit logs", project.ID),
 		Mode:       "whitelist",

@@ -1,29 +1,88 @@
 package rulegen
 
 import (
+	"fmt"
+
 	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
 )
 
-type resource struct {
-	Type      string   `yaml:"type,omitempty"`
-	AppliesTo string   `yaml:"applies_to,omitempty"`
-	IDs       []string `yaml:"resource_ids"`
+var resourceTypes = []string{
+	"project",
+	"bucket",
+	"dataset",
+	"instance",
 }
 
-// globalResource tries to find the broadest scope of resources defined in the config.
-// This is required due to organization and folder IDs being optional.
-// The order of preference is organization, folder or all projects defined in the config.
-func globalResource(config *cft.Config) resource {
-	switch {
-	case config.Overall.OrganizationID != "":
-		return resource{Type: "organization", IDs: []string{config.Overall.OrganizationID}}
-	case config.Overall.FolderID != "":
-		return resource{Type: "folder", IDs: []string{config.Overall.FolderID}}
-	default:
-		ids := make([]string, 0, len(config.Projects))
-		for _, p := range config.Projects {
-			ids = append(ids, p.ID)
-		}
-		return resource{Type: "project", IDs: ids}
+// ResourceRule represents a forseti resource scanner rule.
+type ResourceRule struct {
+	Name          string         `yaml:"name"`
+	Mode          string         `yaml:"mode"`
+	ResourceTypes []string       `yaml:"resource_types"`
+	ResourceTrees []resourceTree `yaml:"resource_trees"`
+}
+
+type resourceTree struct {
+	Type       string         `yaml:"type"`
+	ResourceID string         `yaml:"resource_id"`
+	Children   []resourceTree `yaml:"children"`
+}
+
+// ResourceRules builds resource scanner rules for the given config.
+func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
+	trees := []resourceTree{
+		{Type: "project", ResourceID: "*"}, // ignore unmonitored projects
 	}
+
+	for _, project := range config.Projects {
+		pt := resourceTree{
+			Type:       "project",
+			ResourceID: project.ID,
+			Children: []resourceTree{
+				{
+					Type:       "bucket",
+					ResourceID: project.AuditLogs.LogsGCSBucket.Name,
+				},
+				{
+					Type:       "dataset",
+					ResourceID: fmt.Sprintf("%s:%s", config.AuditLogsProjectID(project), project.AuditLogs.LogsBigqueryDataset.Name),
+				},
+			},
+		}
+
+		rs := project.DataResources()
+
+		for _, b := range rs.GCSBuckets {
+			pt.Children = append(pt.Children, resourceTree{
+				Type:       "bucket",
+				ResourceID: b.Name(),
+			})
+		}
+
+		for _, d := range rs.BigqueryDatasets {
+			pt.Children = append(pt.Children, resourceTree{
+				Type:       "dataset",
+				ResourceID: fmt.Sprintf("%s:%s", project.ID, d.Name()),
+			})
+		}
+
+		for _, i := range rs.GCEInstances {
+			id, err := project.InstanceID(i.Name())
+			if err != nil {
+				return nil, err
+			}
+			pt.Children = append(pt.Children, resourceTree{
+				Type:       "instance",
+				ResourceID: id,
+			})
+		}
+
+		trees = append(trees, pt)
+	}
+
+	return []ResourceRule{{
+		Name:          "Project resource trees.",
+		Mode:          "required",
+		ResourceTypes: resourceTypes,
+		ResourceTrees: trees,
+	}}, nil
 }

@@ -47,7 +47,7 @@ func LogSinkRules(config *cft.Config) ([]LogSinkRule, error) {
 
 	for _, project := range config.Projects {
 		res := []resource{{Type: "project", AppliesTo: "self", IDs: []string{project.ID}}}
-		s := getSink(auditLogSinkDestination(project))
+		s := getSink(auditLogSinkDestination(config, project))
 		rules = append(rules,
 			LogSinkRule{
 				Name:      fmt.Sprintf("Require Log sink for project %s.", project.ID),
@@ -76,6 +76,6 @@ func getSink(destination string) sink {
 	}
 }
 
-func auditLogSinkDestination(project *cft.Project) string {
-	return fmt.Sprintf("bigquery.googleapis.com/projects/%s/datasets/%s", project.ID, project.AuditLogs.LogsBigqueryDataset.Name)
+func auditLogSinkDestination(config *cft.Config, project *cft.Project) string {
+	return fmt.Sprintf("bigquery.googleapis.com/projects/%s/datasets/%s", config.AuditLogsProjectID(project), project.AuditLogs.LogsBigqueryDataset.Name)
 }

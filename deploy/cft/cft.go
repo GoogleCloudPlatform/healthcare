@@ -113,6 +113,16 @@ func (c *Config) Init() error {
 	return nil
 }
 
+// AuditLogsProjectID is a helper function to get the audit logs project ID for the given project.
+// If a remote audit logs project exists, return it will host all other projects' audit logs.
+// Else, each project will locally host their own.
+func (c *Config) AuditLogsProjectID(p *Project) string {
+	if c.AuditLogsProject != nil {
+		return c.AuditLogsProject.ID
+	}
+	return p.ID
+}
+
 // Init initializes a project and all its resources.
 func (p *Project) Init() error {
 	if p.AuditLogs.LogsBigqueryDataset.Name == "" {
