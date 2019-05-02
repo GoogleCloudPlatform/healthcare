@@ -15,7 +15,12 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-var projectsYAMLPath = flag.String("projects_yaml_path", "", "Path to projects yaml file")
+var (
+	projectsYAMLPath = flag.String("projects_yaml_path", "", "Path to projects yaml file")
+	outputPath       = flag.String("output_path", "",
+		"Path to local directory or GCS bucket to write forseti rules. "+
+			"If unset, directly writes to the Forseti server bucket")
+)
 
 func main() {
 	flag.Parse()
@@ -35,10 +40,10 @@ func main() {
 	}
 
 	if err := conf.Init(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to init config: %v", err)
 	}
 
-	if err := rulegen.Run(conf); err != nil {
+	if err := rulegen.Run(conf, *outputPath); err != nil {
 		log.Fatal(err)
 	}
 

@@ -18,8 +18,15 @@ type Config struct {
 		FolderID       string   `json:"folder_id"`
 		AllowedAPIs    []string `json:"allowed_apis"`
 	} `json:"overall"`
-	AuditLogsProject *Project   `json:"audit_logs_project"`
-	Projects         []*Project `json:"projects"`
+	AuditLogsProject *Project `json:"audit_logs_project"`
+	Forseti          *struct {
+		Project         *Project `json:"project"`
+		GeneratedFields struct {
+			ServiceAccount string `json:"service_account"`
+			ServerBucket   string `json:"server_bucket"`
+		} `json:"generated_fields"`
+	} `json:"forseti"`
+	Projects []*Project `json:"projects"`
 }
 
 // Project defines a single project's configuration.

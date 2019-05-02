@@ -24,7 +24,7 @@ type ResourceRule struct {
 type resourceTree struct {
 	Type       string         `yaml:"type"`
 	ResourceID string         `yaml:"resource_id"`
-	Children   []resourceTree `yaml:"children"`
+	Children   []resourceTree `yaml:"children,omitempty"`
 }
 
 // ResourceRules builds resource scanner rules for the given config.

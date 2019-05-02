@@ -2,11 +2,18 @@ package rulegen
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"text/template"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
@@ -20,6 +27,28 @@ overall:
   allowed_apis:
   - foo-api.googleapis.com
   - bar-api.googleapis.com
+
+forseti:
+  project:
+    project_id: my-forseti-project
+    owners_group: my-forseti-project-owners@my-domain.com
+    auditors_group: my-forseti-project-auditors@my-domain.com
+    audit_logs:
+      logs_gcs_bucket:
+        location: US
+        storage_class: MULTI_REGIONAL
+        ttl_days: 365
+      logs_bigquery_dataset:
+        location: US
+    generated_fields:
+      project_number: '2222'
+      log_sink_service_account: audit-logs-bq@logging-2222.iam.gserviceaccount.com
+      gce_instance_info:
+      - name: foo-instance
+        id: '123'
+  generated_fields:
+    service_account: forseti@my-forseti-project.iam.gserviceaccount.com
+    server_bucket: gs://my-forseti-project-server/
 
 projects:
 - project_id: my-project
@@ -90,4 +119,87 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*cft.Config, *cft.
 		t.Fatalf("proj.Init: %v", err)
 	}
 	return config, proj
+}
+
+func TestRunOutputPath(t *testing.T) {
+	config, _ := getTestConfigAndProject(t, nil)
+
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+
+	if err := Run(config, tmpDir); err != nil {
+		t.Fatalf("Run = %v", err)
+	}
+
+	checkRulesDir(t, tmpDir)
+}
+
+func TestRunServerBucket(t *testing.T) {
+	config, _ := getTestConfigAndProject(t, nil)
+
+	var gotArgs []string
+	cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
+		if len(gotArgs) != 0 {
+			return nil, errors.New("fake CombinedOutput: unexpectedly called more than once")
+		}
+
+		gotArgs = cmd.Args
+		if len(gotArgs) != 4 {
+			return nil, fmt.Errorf("fake CombinedOutput: unexpected number of args: got %d, want 4, %v ", len(cmd.Args), cmd.Args)
+		}
+		checkRulesDir(t, filepath.Dir(gotArgs[2]))
+		return nil, nil
+	}
+	if err := Run(config, ""); err != nil {
+		t.Fatalf("Run = %v", err)
+	}
+
+	wantRE, err := regexp.Compile(`gsutil cp .*\*\.yaml gs://my-forseti-project-server/rules`)
+	if err != nil {
+		t.Fatalf("regexp.Compile = %v", err)
+	}
+	got := strings.Join(gotArgs, " ")
+	if !wantRE.MatchString(got) {
+		t.Fatalf("rules upload command does not match: got %q, want match of %q", got, wantRE)
+	}
+}
+
+func checkRulesDir(t *testing.T, rulesDir string) {
+	t.Helper()
+
+	// check one rules file
+	b, err := ioutil.ReadFile(filepath.Join(rulesDir, "audit_logging_rules.yaml"))
+	if err != nil {
+		t.Fatalf("ioutil.ReadFile = %v", err)
+	}
+
+	wantYAML := `
+rules:
+- name: Require all Cloud Audit logs.
+  resource:
+  - type: project
+    resource_ids:
+    - '*'
+  service: allServices
+  log_types:
+  - ADMIN_READ
+  - DATA_READ
+  - DATA_WRITE
+`
+	got := make(map[string]interface{})
+	want := make(map[string]interface{})
+
+	if err := yaml.Unmarshal(b, &got); err != nil {
+		t.Fatalf("yaml.Unmarshal = %v", err)
+	}
+
+	if err := yaml.Unmarshal([]byte(wantYAML), &want); err != nil {
+		t.Fatalf("yaml.Unmarshal = %v", err)
+	}
+
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("audit logging rules differ (-got, +want):\n%v", diff)
+	}
 }
