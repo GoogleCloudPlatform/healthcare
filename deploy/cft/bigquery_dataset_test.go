@@ -95,7 +95,7 @@ func TestDatasetErrors(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(*testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			d := new(BigqueryDataset)
 			if err := yaml.Unmarshal([]byte(tc.yaml), d); err != nil {
 				t.Fatalf("yaml unmarshal: %v", err)

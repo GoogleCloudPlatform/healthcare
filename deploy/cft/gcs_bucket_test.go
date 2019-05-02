@@ -100,7 +100,7 @@ func TestGCSBucketErrors(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(*testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			b := &GCSBucket{}
 			if err := yaml.Unmarshal([]byte(tc.yaml), b); err != nil {
 				t.Fatalf("yaml unmarshal: %v", err)

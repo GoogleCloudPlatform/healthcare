@@ -72,7 +72,7 @@ resources:
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(*testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			commander := &fakeCommander{
 				listDeploymentName:    tc.listDeploymentName,
 				wantDeploymentCommand: tc.wantDeploymentCommand,
