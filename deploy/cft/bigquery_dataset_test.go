@@ -18,8 +18,6 @@ properties:
   access:
   - userByEmail: some-admin@domain.com
     role: OWNER
-  - specialGroup: allAuthenticatedUsers
-    role: READER
 `
 
 	wantdatasetYAML := `
@@ -29,8 +27,6 @@ properties:
   access:
   - userByEmail: some-admin@domain.com
     role: OWNER
-  - specialGroup: allAuthenticatedUsers
-    role: READER
   - groupByEmail: my-project-owners@my-domain.com
     role: OWNER
   - groupByEmail: some-readwrite-group@my-domain.com

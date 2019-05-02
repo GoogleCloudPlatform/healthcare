@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"sort"
 )
 
 // Config represents a (partial) representation of a projects YAML file.
@@ -244,7 +245,13 @@ func getDeployment(project *Project, pairs []resourcePair) (*Deployment, error) 
 		}
 		deployment.Resources = append(deployment.Resources, resources...)
 
+		var imports []string
 		for imp := range importSet {
+			imports = append(imports, imp)
+		}
+		sort.Strings(imports) // for stable ordering
+
+		for _, imp := range imports {
 			if !allImports[imp] {
 				deployment.Imports = append(deployment.Imports, &Import{Path: imp})
 			}

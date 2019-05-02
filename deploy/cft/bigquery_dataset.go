@@ -2,6 +2,7 @@ package cft
 
 import (
 	"errors"
+	"fmt"
 )
 
 // BigqueryDataset represents a bigquery dataset.
@@ -22,10 +23,10 @@ type Access struct {
 	Role         string `json:"role"`
 	UserByEmail  string `json:"userByEmail,omitempty"`
 	GroupByEmail string `json:"groupByEmail,omitempty"`
-	SpecialGroup string `json:"specialGroup,omitempty"`
 
-	// View is allowed but not monitored. Parse it into a generic map.
-	View map[string]interface{} `json:"view,omitempty"`
+	// Unsupported roles.
+	SpecialGroup string      `json:"specialGroup,omitempty"`
+	View         interface{} `json:"view,omitempty"`
 }
 
 // Init initializes a new dataset with the given project.
@@ -38,6 +39,15 @@ func (d *BigqueryDataset) Init(project *Project) error {
 	}
 	if d.SetDefaultOwner {
 		return errors.New("setDefaultOwner must not be true")
+	}
+
+	for _, access := range d.Accesses {
+		if access.SpecialGroup != "" {
+			return fmt.Errorf("special groups are not allowed: %v", access)
+		}
+		if access.View != nil {
+			return fmt.Errorf("view access is not allowed: %v", access)
+		}
 	}
 
 	// Note: duplicate accesses are de-duplicated by deployment manager.
