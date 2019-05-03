@@ -5,4 +5,4 @@ google-auth==1.5.1
 # Tensorflow is not available yet on Cloud Functions.
 # See https://github.com/tensorflow/tensorflow/issues/20517
 #tensorflow==1.11.0
-urllib3==1.23
+urllib3>=1.24.2
