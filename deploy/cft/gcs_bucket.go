@@ -16,7 +16,6 @@ protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})
 `))
 
 // GCSBucket wraps a CFT Cloud Storage Bucket.
-// TODO: set logging bucket ID
 type GCSBucket struct {
 	GCSBucketProperties `json:"properties"`
 	ExpectedUsers       []string `json:"expected_users,omitempty"`
@@ -26,7 +25,7 @@ type GCSBucket struct {
 type GCSBucketProperties struct {
 	GCSBucketName string     `json:"name"`
 	Location      string     `json:"location"`
-	Bindings      []binding  `json:"bindings"`
+	Bindings      []Binding  `json:"bindings"`
 	Versioning    versioning `json:"versioning"`
 	Logging       struct {
 		LogBucket string `json:"logBucket"`
@@ -62,13 +61,13 @@ func (b *GCSBucket) Init(project *Project) error {
 	}
 
 	// Note: duplicate bindings are de-duplicated by deployment manager.
-	defaultBindings := []binding{
+	defaultBindings := []Binding{
 		{"roles/storage.admin", appendGroupPrefix(project.OwnersGroup)},
 		{"roles/storage.objectAdmin", appendGroupPrefix(project.DataReadWriteGroups...)},
 		{"roles/storage.objectViewer", appendGroupPrefix(project.DataReadOnlyGroups...)},
 	}
 
-	b.Bindings = mergeBindings(append(defaultBindings, b.Bindings...)...)
+	b.Bindings = MergeBindings(append(defaultBindings, b.Bindings...)...)
 
 	logBucket := project.AuditLogs.LogsGCSBucket.Name
 	if logBucket == "" {

@@ -40,7 +40,7 @@ func (p subscriptionPair) MarshalJSON() ([]byte, error) {
 }
 
 type subscription struct {
-	Bindings []binding `json:"accessControl,omitempty"`
+	Bindings []Binding `json:"accessControl,omitempty"`
 }
 
 // Init initializes a new pubsub with the given project.
@@ -57,13 +57,13 @@ func (p *Pubsub) Init(project *Project) error {
 		return res
 	}
 
-	defaultBindings := []binding{
+	defaultBindings := []Binding{
 		{"roles/pubsub.editor", appendGroupPrefix(project.DataReadWriteGroups...)},
 		{"roles/pubsub.viewer", appendGroupPrefix(project.DataReadOnlyGroups...)},
 	}
 
 	for _, subp := range p.SubscriptionPairs {
-		subp.parsed.Bindings = mergeBindings(append(defaultBindings, subp.parsed.Bindings...)...)
+		subp.parsed.Bindings = MergeBindings(append(defaultBindings, subp.parsed.Bindings...)...)
 	}
 
 	return nil

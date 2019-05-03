@@ -1,13 +1,14 @@
 package cft
 
-type binding struct {
-	Role    string   `json:"role"`
-	Members []string `json:"members"`
+// Binding represents a GCP policy binding.
+type Binding struct {
+	Role    string   `json:"role" yaml:"role"`
+	Members []string `json:"members" yaml:"members"`
 }
 
-// mergeBindings merges bindings together. It is typically used to merge default bindings with user specified bindings.
+// MergeBindings merges bindings together. It is typically used to merge default bindings with user specified bindings.
 // Roles will be de-duplicated and merged into a single binding. Members are de-duplicated by deployment manager.
-func mergeBindings(bs ...binding) []binding {
+func MergeBindings(bs ...Binding) []Binding {
 	roleToMembers := make(map[string][]string)
 	var roles []string // preserve ordering
 
@@ -18,9 +19,9 @@ func mergeBindings(bs ...binding) []binding {
 		roleToMembers[b.Role] = append(roleToMembers[b.Role], b.Members...)
 	}
 
-	var merged []binding
+	var merged []Binding
 	for _, role := range roles {
-		merged = append(merged, binding{Role: role, Members: roleToMembers[role]})
+		merged = append(merged, Binding{Role: role, Members: roleToMembers[role]})
 	}
 	return merged
 }

@@ -12,8 +12,10 @@ import (
 // Config represents a (partial) representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
 // TODO: move config to its own package
+// TODO: support new generated_fields
 type Config struct {
 	Overall struct {
+		Domain         string   `json:"domain"`
 		OrganizationID string   `json:"organization_id"`
 		FolderID       string   `json:"folder_id"`
 		AllowedAPIs    []string `json:"allowed_apis"`
@@ -31,12 +33,17 @@ type Config struct {
 
 // Project defines a single project's configuration.
 type Project struct {
-	ID                  string   `json:"project_id"`
-	OwnersGroup         string   `json:"owners_group"`
-	AuditorsGroup       string   `json:"auditors_group"`
-	DataReadWriteGroups []string `json:"data_readwrite_groups"`
-	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
-	EnabledAPIs         []string `json:"enabled_apis"`
+	ID                    string   `json:"project_id"`
+	OwnersGroup           string   `json:"owners_group"`
+	AuditorsGroup         string   `json:"auditors_group"`
+	EditorsGroup          string   `json:"editors_group"`
+	DataReadWriteGroups   []string `json:"data_readwrite_groups"`
+	DataReadOnlyGroups    []string `json:"data_readonly_groups"`
+	EnabledAPIs           []string `json:"enabled_apis"`
+	AdditionalPermissions []struct {
+		Roles   []string `json:"roles"`
+		Members []string `json:"members"`
+	} `json:"additional_project_permissions"`
 
 	// Note: typically only one resource in the struct is set at one time.
 	// Go does not have the concept of "one-of", so despite only one of these resources
@@ -67,6 +74,7 @@ type Project struct {
 	} `json:"audit_logs"`
 
 	GeneratedFields struct {
+		ProjectNumber         string `json:"project_number"`
 		LogSinkServiceAccount string `json:"log_sink_service_account"`
 		GCEInstanceInfo       []struct {
 			Name string `json:"name"`
@@ -113,12 +121,26 @@ type PubsubPair struct {
 
 // Init initializes the config and all its projects.
 func (c *Config) Init() error {
-	for _, p := range c.Projects {
+	for _, p := range c.AllProjects() {
 		if err := p.Init(); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)
 		}
 	}
 	return nil
+}
+
+// AllProjects returns all projects in this config.
+// This includes Audit, Forseti and all data hosting projects.
+func (c *Config) AllProjects() []*Project {
+	ps := make([]*Project, 0, len(c.Projects))
+	if c.AuditLogsProject != nil {
+		ps = append(ps, c.AuditLogsProject)
+	}
+	if c.Forseti != nil {
+		ps = append(ps, c.Forseti.Project)
+	}
+	ps = append(ps, c.Projects...)
+	return ps
 }
 
 // AuditLogsProjectID is a helper function to get the audit logs project ID for the given project.
@@ -139,6 +161,7 @@ func (p *Project) Init() error {
 	if p.AuditLogs.LogsGCSBucket.Name == "" {
 		p.AuditLogs.LogsGCSBucket.Name = p.ID + "-logs"
 	}
+
 	for _, pair := range p.resourcePairs() {
 		if err := json.Unmarshal(pair.raw, pair.parsed); err != nil {
 			return err

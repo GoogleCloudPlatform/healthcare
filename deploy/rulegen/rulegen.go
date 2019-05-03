@@ -129,3 +129,4 @@ func copyRulesToBucket(local, remote string) error {
 	}
 	return nil
 }
+
