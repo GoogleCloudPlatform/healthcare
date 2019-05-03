@@ -15,62 +15,76 @@
 
 
 def generate_config(context):
-  """ Entry point for the deployment resources. """
+    """ Entry point for the deployment resources. """
 
-  resources = []
-  project_id = context.env['project']
-  bucket_name = context.properties.get('name', context.env['name'])
+    resources = []
+    project_id = context.env['project']
+    bucket_name = context.properties.get('name', context.env['name'])
 
-  # output variables
-  bucket_selflink = '$(ref.{}.selfLink)'.format(bucket_name)
-  bucket_uri = 'gs://' + bucket_name + '/'
+    # output variables
+    bucket_selflink = '$(ref.{}.selfLink)'.format(bucket_name)
+    bucket_uri = 'gs://' + bucket_name + '/'
 
-  bucket = {
-      'name': bucket_name,
-      'type': 'storage.v1.bucket',
-      'properties': {
-          'project': project_id,
-          'name': bucket_name
-      }
-  }
-
-  optional_props = [
-      'location', 'versioning', 'storageClass', 'predefinedAcl',
-      'predefinedDefaultObjectAcl', 'logging', 'lifecycle', 'labels', 'website'
-  ]
-
-  for prop in optional_props:
-    if prop in context.properties:
-      bucket['properties'][prop] = context.properties[prop]
-
-  resources.append(bucket)
-
-  # If IAM policy bindings are defined, apply these bindings.
-  storage_provider_type = 'gcp-types/storage-v1:storage.buckets.setIamPolicy'
-  bindings = context.properties.get('bindings', [])
-  if bindings:
-    iam_policy = {
-        'name': bucket_name + '-iampolicy',
-        'action': (storage_provider_type),
+    bucket = {
+        'name': bucket_name,
+        'type': 'storage.v1.bucket',
         'properties': {
-            'bucket': '$(ref.' + bucket_name + '.name)',
             'project': project_id,
-            'bindings': bindings
+            'name': bucket_name
         }
     }
-    resources.append(iam_policy)
 
-  return {
-      'resources':
-          resources,
-      'outputs': [{
-          'name': 'name',
-          'value': bucket_name
-      }, {
-          'name': 'selfLink',
-          'value': bucket_selflink
-      }, {
-          'name': 'url',
-          'value': bucket_uri
-      }]
-  }
+    optional_props = [
+        'billing',
+        'location',
+        'versioning',
+        'storageClass',
+        'predefinedAcl',
+        'predefinedDefaultObjectAcl',
+        'logging',
+        'lifecycle',
+        'labels',
+        'website'
+    ]
+
+    for prop in optional_props:
+        if prop in context.properties:
+            bucket['properties'][prop] = context.properties[prop]
+
+    resources.append(bucket)
+
+    # If IAM policy bindings are defined, apply these bindings.
+    storage_provider_type = 'gcp-types/storage-v1:storage.buckets.setIamPolicy'
+    bindings = context.properties.get('bindings', [])
+    if bindings:
+        iam_policy = {
+            'name': bucket_name + '-iampolicy',
+            'action': (storage_provider_type),
+            'properties':
+                {
+                    'bucket': '$(ref.' + bucket_name + '.name)',
+                    'project': project_id,
+                    'bindings': bindings
+                }
+        }
+        resources.append(iam_policy)
+
+    return {
+        'resources':
+            resources,
+        'outputs':
+            [
+                {
+                    'name': 'name',
+                    'value': bucket_name
+                },
+                {
+                    'name': 'selfLink',
+                    'value': bucket_selflink
+                },
+                {
+                    'name': 'url',
+                    'value': bucket_uri
+                }
+            ]
+    }
