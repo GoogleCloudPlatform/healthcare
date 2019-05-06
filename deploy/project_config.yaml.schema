@@ -470,7 +470,7 @@ definitions:
           type: object
           additionalProperties: false
           properties:
-            bigquery_dataset:
+            bq_dataset:
               type: object
               description: Provides support for BigQuery Datasets.
               additionalProperties: false

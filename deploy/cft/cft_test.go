@@ -94,10 +94,10 @@ func TestDeploy(t *testing.T) {
 		want       string
 	}{
 		{
-			name: "bigquery_dataset",
+			name: "bq_dataset",
 			configData: &ConfigData{`
 resources:
-- bigquery_dataset:
+- bq_dataset:
     properties:
       name: foo-dataset
       location: US`},

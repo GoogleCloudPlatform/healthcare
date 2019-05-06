@@ -10,7 +10,7 @@ import (
 func TestResourceRules(t *testing.T) {
 	configData := &ConfigData{`
 resources:
-- bigquery_dataset:
+- bq_dataset:
     properties:
       name: foo-dataset
       location: US

@@ -85,7 +85,7 @@ type Project struct {
 
 // BigqueryDatasetPair pairs a raw dataset with its parsed version.
 type BigqueryDatasetPair struct {
-	Raw    json.RawMessage `json:"bigquery_dataset"`
+	Raw    json.RawMessage `json:"bq_dataset"`
 	Parsed BigqueryDataset `json:"-"`
 }
 

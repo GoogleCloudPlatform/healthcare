@@ -54,11 +54,11 @@ func TestBigqueryRules(t *testing.T) {
 			name: "dataset",
 			configData: &ConfigData{`
 resources:
-- bigquery_dataset:
+- bq_dataset:
     properties:
       name: foo-dataset
       location: US
-- bigquery_dataset:
+- bq_dataset:
     properties:
       name: bar-dataset
       location: US`},
