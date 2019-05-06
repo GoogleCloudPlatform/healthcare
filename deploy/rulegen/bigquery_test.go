@@ -19,10 +19,29 @@ const globalBigqueryRule = `
   - role: '*'
     members:
       - domain: '*'
-      - special_group: '*'`
+      - special_group: '*'
+- name: Whitelist for project my-forseti-project audit logs.
+  mode: whitelist
+  resource:
+  - type: project
+    resource_ids:
+    - my-forseti-project
+  dataset_ids:
+  - my-forseti-project:audit_logs
+  bindings:
+  - role: OWNER
+    members:
+    - group_email: my-forseti-project-owners@my-domain.com
+  - role: WRITER
+    members:
+    - user_email: audit-logs-bq@logging-2222.iam.gserviceaccount.com
+  - role: READER
+    members:
+    - group_email: my-forseti-project-auditors@my-domain.com
+`
 
 const auditDatasetRule = `
-- name: Whitelist for project my-project audit logs
+- name: Whitelist for project my-project audit logs.
   mode: whitelist
   resource:
   - type: project
@@ -63,7 +82,7 @@ resources:
       name: bar-dataset
       location: US`},
 			wantYAML: `
-- name: 'Whitelist for dataset(s): my-project:foo-dataset, my-project:bar-dataset'
+- name: 'Whitelist for dataset(s): my-project:foo-dataset, my-project:bar-dataset.'
   mode: whitelist
   resource:
   - type: project

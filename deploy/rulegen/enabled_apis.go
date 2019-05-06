@@ -23,7 +23,7 @@ func EnabledAPIsRules(config *cft.Config) ([]EnabledAPIsRule, error) {
 		Services:  config.Overall.AllowedAPIs,
 	}}
 
-	for _, project := range config.Projects {
+	for _, project := range config.AllProjects() {
 		if len(project.EnabledAPIs) == 0 {
 			continue
 		}

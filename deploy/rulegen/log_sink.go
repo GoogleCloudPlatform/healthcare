@@ -45,7 +45,7 @@ func LogSinkRules(config *cft.Config) ([]LogSinkRule, error) {
 		},
 	}
 
-	for _, project := range config.Projects {
+	for _, project := range config.AllProjects() {
 		res := []resource{{Type: "project", AppliesTo: "self", IDs: []string{project.ID}}}
 		s := getSink(auditLogSinkDestination(config, project))
 		rules = append(rules,

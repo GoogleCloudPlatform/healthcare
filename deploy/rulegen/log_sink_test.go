@@ -37,6 +37,30 @@ func TestLogSinkRules(t *testing.T) {
     destination: 'bigquery.googleapis.com/*'
     filter: '*'
     include_children: '*'
+- name: 'Require Log sink for project my-forseti-project.'
+  mode: required
+  resource:
+  - type: project
+    applies_to: self
+    resource_ids:
+    - my-forseti-project
+  sink:
+    destination: >-
+      bigquery.googleapis.com/projects/my-forseti-project/datasets/audit_logs
+    filter: '*'
+    include_children: '*'
+- name: 'Whitelist Log sink for project my-forseti-project.'
+  mode: whitelist
+  resource:
+  - type: project
+    applies_to: self
+    resource_ids:
+    - my-forseti-project
+  sink:
+    destination: >-
+      bigquery.googleapis.com/projects/my-forseti-project/datasets/audit_logs
+    filter: '*'
+    include_children: '*'
 - name: 'Require Log sink for project my-project.'
   mode: required
   resource:

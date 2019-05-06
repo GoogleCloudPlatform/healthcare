@@ -27,7 +27,7 @@ func LocationRules(config *cft.Config) ([]LocationRule, error) {
 	allLocs := make(map[string]bool)
 	var projectRules []LocationRule
 
-	for _, project := range config.Projects {
+	for _, project := range config.AllProjects() {
 		m := make(locationToResources)
 		if err := m.addResources(project); err != nil {
 			return nil, err

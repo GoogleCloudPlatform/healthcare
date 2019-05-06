@@ -48,7 +48,7 @@ func BigqueryRules(config *cft.Config) ([]BigqueryRule, error) {
 
 	rules := []BigqueryRule{global}
 
-	for _, project := range config.Projects {
+	for _, project := range config.AllProjects() {
 		prules, err := getProjectDatasetsRules(project)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dataset rules for project %q: %v", project.ID, err)
@@ -87,7 +87,9 @@ func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
 		}
 
 		joined := strings.Join(ids, ", ")
-		if len(joined) > 127 {
+		if len(joined) < 127 {
+			joined += "."
+		} else {
 			joined = joined[:122] + ", ..."
 		}
 
@@ -141,7 +143,7 @@ func getAuditLogDatasetRule(config *cft.Config, project *cft.Project) BigqueryRu
 
 	auditProjectID := config.AuditLogsProjectID(project)
 	return BigqueryRule{
-		Name:       fmt.Sprintf("Whitelist for project %s audit logs", project.ID),
+		Name:       fmt.Sprintf("Whitelist for project %s audit logs.", project.ID),
 		Mode:       "whitelist",
 		DatasetIDs: []string{fmt.Sprintf("%s:%s", auditProjectID, project.AuditLogs.LogsBigqueryDataset.Name)},
 		Resources: []resource{{

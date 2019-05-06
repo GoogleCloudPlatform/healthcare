@@ -33,7 +33,7 @@ func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
 		{Type: "project", ResourceID: "*"}, // ignore unmonitored projects
 	}
 
-	for _, project := range config.Projects {
+	for _, project := range config.AllProjects() {
 		pt := resourceTree{
 			Type:       "project",
 			ResourceID: project.ID,

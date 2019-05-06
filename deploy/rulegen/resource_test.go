@@ -37,6 +37,13 @@ resources:
   - type: project
     resource_id: '*'
   - type: project
+    resource_id: my-forseti-project
+    children:
+    - type: bucket
+      resource_id: my-forseti-project-logs
+    - type: dataset
+      resource_id: my-forseti-project:audit_logs
+  - type: project
     resource_id: my-project
     children:
     - type: bucket

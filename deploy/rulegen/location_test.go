@@ -39,18 +39,42 @@ const wantLocationYAML = `
   - US
   - US-CENTRAL1
   - US-CENTRAL1-F
+- name: Project my-forseti-project audit logs bucket location whitelist.
+  mode: whitelist
+  resource:
+  - type: project
+    resource_ids:
+    - my-forseti-project
+  applies_to:
+  - type: bucket
+    resource_ids:
+    - my-forseti-project-logs
+  locations:
+  - US
+- name: Project my-forseti-project audit logs dataset location whitelist.
+  mode: whitelist
+  resource:
+  - type: project
+    resource_ids:
+    - my-forseti-project
+  applies_to:
+  - type: dataset
+    resource_ids:
+    - my-forseti-project:audit_logs
+  locations:
+  - US
 - name: Project my-project resource whitelist for location US.
   mode: whitelist
   resource:
-    - type: project
-      resource_ids:
-        - my-project
+  - type: project
+    resource_ids:
+    - my-project
   applies_to:
-    - type: dataset
-      resource_ids:
-        - my-project:foo-dataset
+  - type: dataset
+    resource_ids:
+    - my-project:foo-dataset
   locations:
-    - US
+  - US
 - name: Project my-project resource whitelist for location US-CENTRAL1.
   mode: whitelist
   resource:
