@@ -508,6 +508,12 @@ def create_compute_images(config):
     config (ProjectConfig): config of the project.
   """
   gce_instances = config.project.get('gce_instances')
+  resources = config.project.get('resources', [])
+  for resource in resources:
+    gce_instance = resource.get('gce_instance')
+    if gce_instance:
+      gce_instances.append(gce_instance)
+
   if not gce_instances:
     logging.info('No GCS Images required.')
     return
