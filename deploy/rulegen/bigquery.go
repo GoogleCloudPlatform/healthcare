@@ -67,7 +67,7 @@ func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
 	accessHashToDatasets := make(map[uint64][]*cft.BigqueryDataset)
 	var hashes []uint64 // for stable ordering
 
-	for _, dataset := range project.DataResources().BigqueryDatasets {
+	for _, dataset := range project.ResourcesByType().BigqueryDatasets {
 		h, err := hashstructure.Hash(dataset.Accesses, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to hash access %v: %v", dataset.Accesses, err)

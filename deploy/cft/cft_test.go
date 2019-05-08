@@ -228,6 +228,30 @@ resources:
     - iam.roles.get`,
 		},
 		{
+			name: "iam_policy",
+			configData: &ConfigData{`
+resources:
+- iam_policy:
+    name: foo-owner-binding
+    properties:
+      roles:
+      - role: roles/owner
+        members:
+        - group:foo-owner@my-domain.com`},
+			want: `
+imports:
+- path: {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
+
+resources:
+- name: foo-owner-binding
+  type:  {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
+  properties:
+   roles:
+   - role: roles/owner
+     members:
+     - group:foo-owner@my-domain.com`,
+		},
+		{
 			name: "pubsub",
 			configData: &ConfigData{`
 resources:

@@ -29,3 +29,32 @@ func (i *IAMCustomRole) Name() string {
 func (i *IAMCustomRole) TemplatePath() string {
 	return "deploy/cft/templates/iam_custom_role/project_custom_role.py"
 }
+
+// IAMPolicy wraps a CFT IAM policy.
+type IAMPolicy struct {
+	IAMPolicyProperties `json:"properties"`
+	IAMPolicyName       string `json:"name"`
+}
+
+// IAMPolicyProperties represents a partial IAM policy implementation.
+type IAMPolicyProperties struct {
+	Bindings []Binding `json:"roles"`
+}
+
+// Init initializes a new custom role with the given project.
+func (i *IAMPolicy) Init(*Project) error {
+	if i.Name() == "" {
+		return errors.New("name must be set")
+	}
+	return nil
+}
+
+// Name returns the name of this custom role.
+func (i *IAMPolicy) Name() string {
+	return i.IAMPolicyName
+}
+
+// TemplatePath returns the template to use for this custom role.
+func (i *IAMPolicy) TemplatePath() string {
+	return "deploy/cft/templates/iam_member/iam_member.py"
+}

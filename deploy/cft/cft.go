@@ -33,17 +33,13 @@ type Config struct {
 
 // Project defines a single project's configuration.
 type Project struct {
-	ID                    string   `json:"project_id"`
-	OwnersGroup           string   `json:"owners_group"`
-	AuditorsGroup         string   `json:"auditors_group"`
-	EditorsGroup          string   `json:"editors_group"`
-	DataReadWriteGroups   []string `json:"data_readwrite_groups"`
-	DataReadOnlyGroups    []string `json:"data_readonly_groups"`
-	EnabledAPIs           []string `json:"enabled_apis"`
-	AdditionalPermissions []struct {
-		Roles   []string `json:"roles"`
-		Members []string `json:"members"`
-	} `json:"additional_project_permissions"`
+	ID                  string   `json:"project_id"`
+	OwnersGroup         string   `json:"owners_group"`
+	AuditorsGroup       string   `json:"auditors_group"`
+	EditorsGroup        string   `json:"editors_group"`
+	DataReadWriteGroups []string `json:"data_readwrite_groups"`
+	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
+	EnabledAPIs         []string `json:"enabled_apis"`
 
 	// Note: typically only one resource in the struct is set at one time.
 	// Go does not have the concept of "one-of", so despite only one of these resources
@@ -56,6 +52,7 @@ type Project struct {
 		GCSBucketPair
 		GKEClusterPair
 		IAMCustomRolePair
+		IAMPolicyPair
 		PubsubPair
 
 		// TODO: make this behave more like standard deployment manager resources
@@ -118,6 +115,12 @@ type GKEClusterPair struct {
 type IAMCustomRolePair struct {
 	Raw    json.RawMessage `json:"iam_custom_role"`
 	Parsed IAMCustomRole   `json:"-"`
+}
+
+// IAMPolicyPair pairs a raw iam policy with its parsed version.
+type IAMPolicyPair struct {
+	Raw    json.RawMessage `json:"iam_policy"`
+	Parsed IAMPolicy       `json:"-"`
 }
 
 // PubsubPair pairs a raw pubsub with its parsed version.
@@ -198,21 +201,23 @@ func (p *Project) resourcePairs() []resourcePair {
 		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
 		appendPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed)
 		appendPair(res.IAMCustomRolePair.Raw, &res.IAMCustomRolePair.Parsed)
+		appendPair(res.IAMPolicyPair.Raw, &res.IAMPolicyPair.Parsed)
 		appendPair(res.PubsubPair.Raw, &res.PubsubPair.Parsed)
 	}
 	return pairs
 }
 
-// DataResources represents all data holding resources in the project.
-type DataResources struct {
+// ResourcesByType arranges resources in the project into slices by their type.
+type ResourcesByType struct {
 	BigqueryDatasets []*BigqueryDataset
 	GCSBuckets       []*GCSBucket
 	GCEInstances     []*GCEInstance
+	IAMPolicies      []*IAMPolicy
 }
 
-// DataResources gets all data holding resources in this project.
-func (p *Project) DataResources() *DataResources {
-	rs := &DataResources{}
+// ResourcesByType gets resources in the project as slices arranged by their type.
+func (p *Project) ResourcesByType() *ResourcesByType {
+	rs := &ResourcesByType{}
 	for _, r := range p.Resources {
 		switch {
 		case len(r.BigqueryDatasetPair.Raw) > 0:
@@ -221,6 +226,8 @@ func (p *Project) DataResources() *DataResources {
 			rs.GCSBuckets = append(rs.GCSBuckets, &r.GCSBucketPair.Parsed)
 		case len(r.GCEInstancePair.Raw) > 0:
 			rs.GCEInstances = append(rs.GCEInstances, &r.GCEInstancePair.Parsed)
+		case len(r.IAMPolicyPair.Raw) > 0:
+			rs.IAMPolicies = append(rs.IAMPolicies, &r.IAMPolicyPair.Parsed)
 		}
 	}
 	return rs

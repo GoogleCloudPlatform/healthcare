@@ -28,13 +28,14 @@ resources:
         members:
         - group:internal-bucket-viewers@my-domain.com
         - group:external-bucket-viewers@custom.com
-
-additional_project_permissions:
-- roles:
-  - roles/viewer
-  members:
-  - group:internal-project-viewers@my-domain.com
-  - group:external-project-viewers@custom.com
+- iam_policy:
+    name: foo-policy
+    properties:
+      roles:
+      - role: roles/viewer
+        members:
+        - group:internal-project-viewers@my-domain.com
+        - group:external-project-viewers@custom.com
 `}
 
 const wantIAMRulesYAML = `

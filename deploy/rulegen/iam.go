@@ -143,7 +143,7 @@ func getProjectRules(config *cft.Config, project *cft.Project) ([]IAMRule, error
 	bindingsHashToBuckets := make(map[uint64][]*cft.GCSBucket)
 	// TODO: this pattern is repeated several times and could benefit from a helper struct once generics are supported.
 	var hashes []uint64 // for stable ordering
-	for _, bucket := range project.DataResources().GCSBuckets {
+	for _, bucket := range project.ResourcesByType().GCSBuckets {
 		h, err := hashstructure.Hash(bucket.Bindings, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to hash access %v: %v", bucket.Bindings, err)
@@ -210,11 +210,11 @@ func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding
 	}
 	bs = append(bs, cft.Binding{Role: "roles/editor", Members: ms})
 
-	for _, perm := range project.AdditionalPermissions {
-		for _, r := range perm.Roles {
-			bs = append(bs, cft.Binding{Role: r, Members: perm.Members})
-		}
+	rs := project.ResourcesByType()
+	for _, policy := range rs.IAMPolicies {
+		bs = append(bs, policy.Bindings...)
 	}
+
 	bs = cft.MergeBindings(bs...)
 	return bs, nil
 }

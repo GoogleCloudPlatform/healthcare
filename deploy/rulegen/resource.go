@@ -49,7 +49,7 @@ func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
 			},
 		}
 
-		rs := project.DataResources()
+		rs := project.ResourcesByType()
 
 		for _, b := range rs.GCSBuckets {
 			pt.Children = append(pt.Children, resourceTree{

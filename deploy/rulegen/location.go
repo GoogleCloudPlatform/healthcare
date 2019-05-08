@@ -114,7 +114,7 @@ func (m locationToResources) locations() []string {
 }
 
 func (m locationToResources) addResources(project *cft.Project) error {
-	rs := project.DataResources()
+	rs := project.ResourcesByType()
 	for _, bucket := range rs.GCSBuckets {
 		m.add(bucket.Location, "bucket", bucket.Name())
 	}

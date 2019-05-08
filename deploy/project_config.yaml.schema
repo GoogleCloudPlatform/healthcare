@@ -557,6 +557,20 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template project_custom_role.py.
+            iam_policy:
+              type: object
+              description: |
+                Provides support for adding project level IAM bindings.
+              additionalProperties: false
+              name:
+                type: string
+                description: |
+                  Name of this policy. Only used by deployment manager.
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template iam_member.py.
             pubsub:
               type: object
               description: Provides support for Pubsub channels.
