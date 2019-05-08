@@ -25,7 +25,7 @@ func (cluster *GKECluster) Name() string {
 
 // TemplatePath returns the name of the template to use for this cluster.
 func (cluster *GKECluster) TemplatePath() string {
-	return "deploy/cft/templates/gke.py"
+	return "deploy/cft/templates/gke/gke.py"
 }
 
 // getClusterByName get a cluster that has the given cluster name in a project.

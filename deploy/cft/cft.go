@@ -196,7 +196,7 @@ func (p *Project) resourcePairs() []resourcePair {
 	}
 	for _, res := range p.Resources {
 		appendPair(res.BigqueryDatasetPair.Raw, &res.BigqueryDatasetPair.Parsed)
-		appendDefaultResPair(res.FirewallPair.Raw, &res.FirewallPair.Parsed, "deploy/cft/templates/firewall.py")
+		appendDefaultResPair(res.FirewallPair.Raw, &res.FirewallPair.Parsed, "deploy/cft/templates/firewall/firewall.py")
 		appendPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed)
 		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
 		appendPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed)

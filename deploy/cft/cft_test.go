@@ -103,10 +103,10 @@ resources:
       location: US`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/bigquery_dataset.py"}}
+- path: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
 resources:
 - name: foo-dataset
-  type: {{abs "deploy/cft/templates/bigquery_dataset.py"}}
+  type: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
   properties:
     name: foo-dataset
     location: US
@@ -134,11 +134,11 @@ resources:
 
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/instance.py"}}
+- path: {{abs "deploy/cft/templates/instance/instance.py"}}
 
 resources:
 - name: foo-instance
-  type: {{abs "deploy/cft/templates/instance.py"}}
+  type: {{abs "deploy/cft/templates/instance/instance.py"}}
   properties:
     name: foo-instance
     diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
@@ -157,12 +157,12 @@ resources:
       location: us-east1`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/gcs_bucket.py"}}
+- path: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
 - path: {{abs "deploy/templates/metric.py"}}
 
 resources:
 - name: foo-bucket
-  type: {{abs "deploy/cft/templates/gcs_bucket.py"}}
+  type: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
   properties:
     name: foo-bucket
     location: us-east1
@@ -270,11 +270,11 @@ resources:
           - 'user:extra-reader@google.com'`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/pubsub.py"}}
+- path: {{abs "deploy/cft/templates/pubsub/pubsub.py"}}
 
 resources:
 - name: foo-topic
-  type: {{abs "deploy/cft/templates/pubsub.py"}}
+  type: {{abs "deploy/cft/templates/pubsub/pubsub.py"}}
   properties:
     topic: foo-topic
     accessControl:

@@ -76,5 +76,5 @@ func (p *Pubsub) Name() string {
 
 // TemplatePath returns the name of the template to use for this pubsub.
 func (p *Pubsub) TemplatePath() string {
-	return "deploy/cft/templates/pubsub.py"
+	return "deploy/cft/templates/pubsub/pubsub.py"
 }
