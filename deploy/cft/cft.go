@@ -55,6 +55,7 @@ type Project struct {
 		GCEInstancePair
 		GCSBucketPair
 		GKEClusterPair
+		IAMCustomRolePair
 		PubsubPair
 
 		// TODO: make this behave more like standard deployment manager resources
@@ -113,6 +114,12 @@ type GKEClusterPair struct {
 	Parsed GKECluster      `json:"-"`
 }
 
+// IAMCustomRolePair pairs a raw custom role with its parsed version.
+type IAMCustomRolePair struct {
+	Raw    json.RawMessage `json:"iam_custom_role"`
+	Parsed IAMCustomRole   `json:"-"`
+}
+
 // PubsubPair pairs a raw pubsub with its parsed version.
 type PubsubPair struct {
 	Raw    json.RawMessage `json:"pubsub"`
@@ -167,7 +174,7 @@ func (p *Project) Init() error {
 			return err
 		}
 		if err := pair.parsed.Init(p); err != nil {
-			return err
+			return fmt.Errorf("failed to init: %v, %+v", err, pair.parsed)
 		}
 	}
 	return nil
@@ -190,6 +197,7 @@ func (p *Project) resourcePairs() []resourcePair {
 		appendPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed)
 		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
 		appendPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed)
+		appendPair(res.IAMCustomRolePair.Raw, &res.IAMCustomRolePair.Parsed)
 		appendPair(res.PubsubPair.Raw, &res.PubsubPair.Parsed)
 	}
 	return pairs

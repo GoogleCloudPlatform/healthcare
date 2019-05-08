@@ -548,6 +548,15 @@ definitions:
                   type: object
                   description: |
                     Must be a valid kubectl workload definition.
+            iam_custom_role:
+              type: object
+              description: Provides support for creating IAM custom roles.
+              additionalProperties: false
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template project_custom_role.py.
             pubsub:
               type: object
               description: Provides support for Pubsub channels.

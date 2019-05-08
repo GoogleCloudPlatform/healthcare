@@ -207,6 +207,27 @@ resources:
     - foo-bucket`,
 		},
 		{
+			name: "iam_custom_role",
+			configData: &ConfigData{`
+resources:
+- iam_custom_role:
+    properties:
+      roleId: fooCustomRole
+      includedPermissions:
+      - iam.roles.get`},
+			want: `
+imports:
+- path: {{abs "deploy/cft/templates/iam_custom_role/project_custom_role.py"}}
+
+resources:
+- name: fooCustomRole
+  type:  {{abs "deploy/cft/templates/iam_custom_role/project_custom_role.py"}}
+  properties:
+    roleId: fooCustomRole
+    includedPermissions:
+    - iam.roles.get`,
+		},
+		{
 			name: "pubsub",
 			configData: &ConfigData{`
 resources:
