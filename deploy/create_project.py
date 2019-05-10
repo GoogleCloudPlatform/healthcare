@@ -48,6 +48,7 @@ import jsonschema
 from ruamel import yaml
 
 from deploy.rule_generator import rule_generator
+from deploy.utils import field_generation
 from deploy.utils import forseti
 from deploy.utils import runner
 from deploy.utils import utils
@@ -76,9 +77,6 @@ flags.DEFINE_string('cft_binary', None,
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
-
-# Name of field where generated fields will be added.
-_GENERATED_FIELDS_NAME = 'generated_fields'
 
 # Roles to temporarily grant the deployment manager service account to function.
 _DEPLOYMENT_MANAGER_ROLES = ['roles/owner', 'roles/storage.admin']
@@ -427,8 +425,8 @@ def get_iam_policy_cleanup(config):
           'members': additional['members'],
       })
   if 'forseti' in config.root:
-    forseti_service_account = config.root['forseti'].get(
-        _GENERATED_FIELDS_NAME, {}).get('service_account')
+    forseti_service_account = field_generation.get_forseti_service_generated_fields(
+        config.root).get('service_account')
     if forseti_service_account:
       for role in forseti.get_forseti_roles(project_id):
         initial_bindings.append({
@@ -767,10 +765,8 @@ def add_project_generated_fields(config):
   """Adds a generated_fields block to a project definition."""
   project_id = config.project['project_id']
 
-  generated_fields = config.project.get(_GENERATED_FIELDS_NAME)
-  if not generated_fields:
-    generated_fields = {}
-    config.project[_GENERATED_FIELDS_NAME] = generated_fields
+  generated_fields = field_generation.get_generated_fields_ref(
+      project_id, config.root)
 
   if 'project_number' not in generated_fields:
     generated_fields['project_number'] = utils.get_project_number(project_id)
@@ -875,18 +871,20 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
   Returns:
     A boolean, true if the project was deployed successfully, false otherwise.
   """
+  project_id = config.project['project_id']
   steps = _SETUP_STEPS + config.extra_steps
 
-  starting_step = config.project.get(_GENERATED_FIELDS_NAME, {}).get(
-      'failed_step', 1)
+  starting_step = field_generation.get_generated_fields_copy(
+      project_id, config.root).get('failed_step', 1)
 
-  deployed = is_deployed(config.project)
+  deployed = field_generation.is_deployed(project_id, config.root)
 
   total_steps = len(steps)
   for step_num in range(starting_step, total_steps + 1):
     step = steps[step_num - 1]
-    logging.info('%s: step %d/%d (%s)', config.project['project_id'], step_num,
-                 total_steps, step.description)
+    project_id = config.project['project_id']
+    logging.info('%s: step %d/%d (%s)', project_id, step_num, total_steps,
+                 step.description)
 
     if deployed and not step.updatable:
       logging.info('Step %d is not updatable, skipping', step_num)
@@ -899,8 +897,7 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
           for cmd in output.cleanup_commands:
             f.write('# {}\n'.format(cmd))
     except Exception as e:  # pylint: disable=broad-except
-      logging.error('%s: setup failed on step %s: %s',
-                    config.project['project_id'], step_num, e)
+      logging.error('%s: setup failed on step %s: %s', project_id, step_num, e)
       logging.error(
           'Failure information has been written to --output_yaml_path. '
           'Please ensure the config at --project_yaml is updated with any '
@@ -910,11 +907,8 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
       # only record failed step if project was undeployed, an update can always
       # start from the beginning
       if not deployed:
-        generated_fields = config.project.get('generated_fields')
-        if not generated_fields:
-          generated_fields = {}
-          config.project['generated_fields'] = generated_fields
-        generated_fields['failed_step'] = step_num
+        field_generation.get_generated_fields_ref(
+            project_id, config.root)['failed_step'] = step_num
         utils.write_yaml_file(config.root, output_yaml_path)
 
       return False
@@ -923,7 +917,9 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
 
   # if this deployment was resuming from a previous failure, remove the
   # failed step as it is done
-  config.project.get(_GENERATED_FIELDS_NAME, {}).pop('failed_step', None)
+  if field_generation.is_generated_fields_exist(project_id, config.root):
+    field_generation.get_generated_fields_ref(project_id, config.root,
+                                              False).pop('failed_step', None)
   utils.write_yaml_file(config.root, output_yaml_path)
   logging.info('Setup completed successfully.')
 
@@ -935,19 +931,21 @@ def install_forseti(config):
   forseti_config = config.root['forseti']
   forseti.install(forseti_config)
   forseti_project_id = forseti_config['project']['project_id']
-  forseti_config[_GENERATED_FIELDS_NAME] = {
+  generated_field = {
       'service_account': forseti.get_server_service_account(forseti_project_id),
-      'server_bucket': forseti.get_server_bucket(forseti_project_id),
+      'server_bucket': forseti.get_server_bucket(forseti_project_id)
   }
+  field_generation.set_forseti_service_generated_fields(generated_field,
+                                                        config.root)
 
 
 def get_forseti_access_granter_step(project_id):
   """Get step to grant access to the forseti instance for the project."""
 
   def grant_access(config):
-    forseti.grant_access(
-        project_id,
-        config.root['forseti'][_GENERATED_FIELDS_NAME]['service_account'])
+    service_account = field_generation.get_forseti_service_generated_fields(
+        config.root)['service_account']
+    forseti.grant_access(project_id, service_account)
 
   return Step(
       func=grant_access,
@@ -978,23 +976,26 @@ def validate_project_configs(overall, projects):
          'that are not in the allowed_apis list:\n%s' % missing_allowed_apis))
 
 
-def is_deployed(project_dict):
-  """Determine whether the project has been deployed."""
-  return _GENERATED_FIELDS_NAME in project_dict and (
-      'failed_step' not in project_dict[_GENERATED_FIELDS_NAME])
-
-
 def main(argv):
   del argv  # Unused.
 
   if FLAGS.enable_new_style_resources:
     logging.info('--enable_new_style_resources is true.')
 
-  FLAGS.project_yaml = utils.normalize_path(FLAGS.project_yaml)
   FLAGS.output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
   FLAGS.output_cleanup_path = utils.normalize_path(FLAGS.output_cleanup_path)
   if FLAGS.output_rules_path:
     FLAGS.output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
+
+  FLAGS.project_yaml = utils.normalize_path(FLAGS.project_yaml)
+  if field_generation.move_generated_fields_out_of_projects(FLAGS.project_yaml):
+    if FLAGS.dry_run:
+      logging.error(
+          'Must convert generated fields in nodry_run before running!')
+      return
+    elif not utils.wait_for_yes_no(
+        'Use converted generated fields to continue? [y/N]?'):
+      return
 
   # Read and parse the project configuration YAML file.
   root_config = utils.load_config(FLAGS.project_yaml)

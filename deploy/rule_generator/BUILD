@@ -9,7 +9,10 @@ load("@deploy_deps//:requirements.bzl", "requirement")
 py_library(
     name = "project_config",
     srcs = ["project_config.py"],
-    deps = [requirement("absl-py")],
+    deps = [
+        requirement("absl-py"),
+        "//deploy/utils:field_generation",
+    ],
 )
 
 py_test(
@@ -34,7 +37,24 @@ py_binary(
 py_library(
     name = "rule_generator_main_lib",
     srcs = ["rule_generator.py"],
-    deps = [":rule_generator_lib"],
+    deps = [
+        requirement("absl-py"),
+        requirement("backports.tempfile"),
+        ":project_config",
+        "//deploy/rule_generator/scanners:audit_logging_scanner_rules",
+        "//deploy/rule_generator/scanners:bigquery_scanner_rules",
+        "//deploy/rule_generator/scanners:bucket_scanner_rules",
+        "//deploy/rule_generator/scanners:cloudsql_scanner_rules",
+        "//deploy/rule_generator/scanners:enabled_apis_scanner_rules",
+        "//deploy/rule_generator/scanners:iam_scanner_rules",
+        "//deploy/rule_generator/scanners:lien_scanner_rules",
+        "//deploy/rule_generator/scanners:location_scanner_rules",
+        "//deploy/rule_generator/scanners:log_sink_scanner_rules",
+        "//deploy/rule_generator/scanners:resource_scanner_rules",
+        "//deploy/utils",
+        "//deploy/utils:field_generation",
+        "//deploy/utils:runner",
+    ],
 )
 
 py_library(
@@ -55,6 +75,7 @@ py_library(
         "//deploy/rule_generator/scanners:log_sink_scanner_rules",
         "//deploy/rule_generator/scanners:resource_scanner_rules",
         "//deploy/utils",
+        "//deploy/utils:field_generation",
         "//deploy/utils:runner",
     ],
 )

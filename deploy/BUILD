@@ -31,6 +31,7 @@ py_library(
         requirement("ruamel.yaml"),
         "//deploy/rule_generator:rule_generator_lib",
         "//deploy/utils",
+        "//deploy/utils:field_generation",
         "//deploy/utils:forseti",
         "//deploy/utils:runner",
     ],

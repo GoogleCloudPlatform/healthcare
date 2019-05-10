@@ -21,6 +21,7 @@ from deploy.rule_generator.scanners.lien_scanner_rules import LienScannerRules
 from deploy.rule_generator.scanners.location_scanner_rules import LocationScannerRules
 from deploy.rule_generator.scanners.log_sink_scanner_rules import LogSinkScannerRules
 from deploy.rule_generator.scanners.resource_scanner_rules import ResourceScannerRules
+from deploy.utils import field_generation
 from deploy.utils import runner
 from deploy.utils import utils
 
@@ -56,8 +57,8 @@ def run(deployment_config, output_path=None):
       deployment_config.
   """
   if not output_path:
-    output_path = deployment_config.get('forseti', {}).get(
-        'generated_fields', {}).get('server_bucket')
+    output_path = field_generation.get_forseti_service_generated_fields(
+        deployment_config).get('server_bucket')
     if not output_path:
       raise ValueError(
           ('Must provide an output path or set the "forseti_server_bucket" '
@@ -92,9 +93,6 @@ def _write_rules(deployment_config, directory):
 def get_all_project_configs(config_dict):
   """Returns a list of ProjectConfigs and an overall config dictionary."""
 
-  # forseti is omitted if there is no forseti config
-  forseti = config_dict.get('forseti')
-
   # audit_logs_project is omitted if projects use local audit logs.
   audit_logs_project = config_dict.get('audit_logs_project')
 
@@ -105,7 +103,8 @@ def get_all_project_configs(config_dict):
         ProjectConfig(
             project=audit_logs_project,
             audit_logs_project=None,
-            forseti=forseti))
+            generated_fields=config_dict.get(
+                field_generation.GENERATED_FIELDS_NAME)))
 
   project_dicts = config_dict.get('projects', [])
 
@@ -120,5 +119,6 @@ def get_all_project_configs(config_dict):
         ProjectConfig(
             project=project,
             audit_logs_project=audit_logs_project,
-            forseti=forseti))
+            generated_fields=config_dict.get(
+                field_generation.GENERATED_FIELDS_NAME)))
   return project_configs, config_dict['overall']

@@ -26,12 +26,6 @@ forseti:
       - forseti-project-readwrite@domain.com
     data_readonly_groups:
       - forseti-project-readonly@domain.com
-    generated_fields:
-      project_number: 9999,
-      log_sink_service_account: forseti-logs@logging-9999.iam.gserviceaccount.com
-  generated_fields:
-    service_account: forseti@sample-forseti.iam.gserviceaccount.com
-    server_bucket: gs://forseti-project-server/
 
 projects:
 - project_id: sample-data
@@ -81,9 +75,18 @@ projects:
   enabled_apis:
   - monitoring.googleapis.com
   - logging.googleapis.com
-  generated_fields:
-    project_number: 123546879123
-    log_sink_service_account: audit-logs-bq@logging-123.iam.gserviceaccount.com
+
+generated_fields:
+  forseti:
+    service_account: forseti@sample-forseti.iam.gserviceaccount.com
+    server_bucket: gs://forseti-project-server/
+  projects:
+    sample-data:
+      project_number: 123546879123
+      log_sink_service_account: audit-logs-bq@logging-123.iam.gserviceaccount.com
+    forseti-project:
+      project_number: 9999,
+      log_sink_service_account: forseti-logs@logging-9999.iam.gserviceaccount.com
 """
 
 
@@ -94,7 +97,7 @@ class ProjectConfigTest(absltest.TestCase):
     project = ProjectConfig(
         project=yaml_dict['projects'][0],
         audit_logs_project=None,
-        forseti=yaml_dict['forseti'])
+        generated_fields=yaml_dict['generated_fields'])
     self.assertIsNotNone(project)
 
     self.assertEqual('sample-data', project.project_id)
@@ -164,7 +167,7 @@ class ProjectConfigTest(absltest.TestCase):
     project = ProjectConfig(
         project=yaml_dict['projects'][0],
         audit_logs_project=None,
-        forseti=yaml_dict['forseti'])
+        generated_fields=yaml_dict['generated_fields'])
 
     got_bindings = project.get_project_bigquery_bindings()
     default_bindings = [
@@ -200,7 +203,7 @@ class ProjectConfigTest(absltest.TestCase):
     project = ProjectConfig(
         project=yaml_dict['projects'][0],
         audit_logs_project=None,
-        forseti=yaml_dict['forseti'])
+        generated_fields=yaml_dict['generated_fields'])
 
     got_bindings = project.get_audit_logs_bigquery_bindings()
     want_bindings = [
@@ -236,11 +239,10 @@ class ProjectConfigTest(absltest.TestCase):
         'project_id': 'audit-logs',
         'owners_group': 'auditors-owners@domain.com',
     }
-    forseti = yaml_dict['forseti']
     project = ProjectConfig(
         project=project_dict,
         audit_logs_project=audit_logs_project,
-        forseti=forseti)
+        generated_fields=yaml_dict['generated_fields'])
 
     got_bindings = project.get_audit_logs_bigquery_bindings()
     want_bindings = [
@@ -267,9 +269,10 @@ class ProjectConfigTest(absltest.TestCase):
     # Local audit logs.
     yaml_dict = yaml.load(TEST_PROJECT_YAML)
     project_dict = yaml_dict['projects'][0]
-    forseti = yaml_dict['forseti']
     project = ProjectConfig(
-        project=project_dict, audit_logs_project=None, forseti=forseti)
+        project=project_dict,
+        audit_logs_project=None,
+        generated_fields=yaml_dict['generated_fields'])
     self.assertEqual(
         'bigquery.googleapis.com/projects/sample-data/datasets/audit_logs',
         project.get_audit_log_sink_destination())
@@ -287,7 +290,7 @@ class ProjectConfigTest(absltest.TestCase):
     project = ProjectConfig(
         project=project_dict,
         audit_logs_project=audit_logs_project,
-        forseti=forseti)
+        generated_fields=yaml_dict['generated_fields'])
     self.assertEqual(
         'bigquery.googleapis.com/projects/audit-logs/datasets/some_data_logs',
         project.get_audit_log_sink_destination())

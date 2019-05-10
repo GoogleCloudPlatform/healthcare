@@ -16,26 +16,6 @@ _OVERALL_DICT = {
     'allowed_apis': ['compute.googleapis.com', 'storage.googleapis.com'],
 }
 
-_FORSETI_DICT = {
-    'project': {
-        'project_id': 'forseti-project',
-        'owners_group': 'forseti-project-owners@domain.com',
-        'auditors_group': 'forseti-project-auditors@domain.com',
-        'data_readwrite_groups': ['forseti-project-readwrite@domain.com'],
-        'data_readonly_groups': ['forseti-project-readonly@domain.com'],
-        'generated_fields': {
-            'project_number':
-                9999,
-            'log_sink_service_account': (
-                'forseti-logs@logging-9999.iam.gserviceaccount.com'),
-        },
-    },
-    'generated_fields': {
-        'service_account': 'forseti@sample-forseti.iam.gserviceaccount.com',
-        'server_bucket': 'gs://forseti-project-server/',
-    }
-}
-
 _PROJECT_YAML = """
 projects:
 - project_id: %(project_id)s
@@ -46,12 +26,6 @@ projects:
   data_readonly_groups:
   - %(project_id)s-readonly@domain.com
   - %(project_id)s-readonly-external@domain.com
-  generated_fields:
-    project_number: %(project_num)s
-    log_sink_service_account: audit-logs-bq@logging-%(project_num)s.iam.gserviceaccount.com
-    gce_instance_info:
-    - name: 'instance'
-      id: '123'
   data_buckets:
   - name_suffix: '-bucket'
     location: US-CENTRAL1
@@ -71,6 +45,23 @@ projects:
       location: US
 """
 
+_GENERATED_FIELDS = """
+generated_fields:
+  forseti:
+    service_account: forseti@sample-forseti.iam.gserviceaccount.com
+    server_bucket: gs://forseti-project-server/
+  projects:
+    %(project_id)s:
+      project_number: %(project_num)s
+      log_sink_service_account: audit-logs-bq@logging-%(project_num)s.iam.gserviceaccount.com
+      gce_instance_info:
+      - name: 'instance'
+        id: '123'
+    forseti-project:
+      project_number: 9999
+      log_sink_service_account: forseti-logs@logging-9999.iam.gserviceaccount.com
+"""
+
 
 def create_test_global_config():
   """Creates a global config dictionary for tests."""
@@ -83,12 +74,18 @@ def create_test_project(project_id, project_num, extra_fields=None,
   config_dict = yaml.load(_PROJECT_YAML % {
       'project_id': project_id, 'project_num': project_num})
   project = config_dict['projects'][0]
+  generated_fields = yaml.load(_GENERATED_FIELDS % {
+      'project_id': project_id,
+      'project_num': project_num
+  })
   if extra_fields:
     project.update(extra_fields)
+  print(generated_fields)
+  print('xxxxxxxxxxxxxxxxxxxxxx')
   return project_config.ProjectConfig(
       project=project,
       audit_logs_project=audit_logs_project,
-      forseti=_FORSETI_DICT)
+      generated_fields=generated_fields['generated_fields'])
 
 
 def create_test_projects(num_projects):
