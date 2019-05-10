@@ -34,7 +34,7 @@ from utils import *
 MODEL = os.environ.get('MODEL')
 VERSION = os.environ.get('VERSION')
 
-FHIR_STORE_ENDPOINT_PREFIX = 'https://healthcare.googleapis.com/v1alpha'
+FHIR_STORE_ENDPOINT_PREFIX = 'https://healthcare.googleapis.com/v1beta1'
 CREATE_RESOURCE_ACTION = 'CreateResource'
 UPDATE_RESOURCE_ACTION = 'UpdateResource'
 
@@ -48,7 +48,7 @@ def get_resource(http, resource_name):
     Args:
       resource_name (str): the name of the resource, e.g. 'projects/my-project
         /locations/us-central1/datasets/my-dataset/fhirStores/my-store
-        /resources/Patient/patient-id'
+        /fhir/Patient/patient-id'
     Returns:
       Object: the resource loaded from the FHIR Store.
   """
@@ -114,9 +114,9 @@ def create_or_update_resource(http, path, payload):
     Args:
       path (str): path to the endpoint, e.g. 'projects/my-project
         /locations/us-central1/datasets/my-dataset/fhirStores/my-store
-        /resources/Patient' for create requests and 'projects/my-project
+        /fhir/Patient' for create requests and 'projects/my-project
         /locations/us-central1/datasets/my-dataset/fhirStores/my-store
-        /resources/Patient/patient-id' for update requests.
+        /fhir/Patient/patient-id' for update requests.
       payload (str): resource to be written to the FHIR Store.
     Returns:
       Object: the resource from the server, usually this is an
@@ -142,7 +142,7 @@ def search_resource(http, path, query):
     Args:
       path (str): path to the search endpoint, e.g. 'projects/my-project
         /locations/us-central1/datasets/my-dataset/fhirStores/my-store
-        /resources/Patient'
+        /fhir/Patient'
       query (str): query parameter, e.g. 'age=gt30'
     Returns:
       List[dict]: a list of resources matching the search criteria.
@@ -301,4 +301,3 @@ def _construct_resource_name(project_id, location, dataset_id, fhir_store_id,
   """Constructs a resource name."""
   return '/'.join(['projects', project_id, 'locations', location, 'datasets',
       dataset_id, 'fhirStores', fhir_store_id, 'resources', resource_id])
-  

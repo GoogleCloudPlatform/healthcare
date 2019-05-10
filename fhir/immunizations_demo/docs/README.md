@@ -61,7 +61,7 @@ The application is developed using the [Angular CLI](https://cli.angular.io/).
     be any value you would like. The PubSub topic will be used later for the machine learning
     component, this can also be any identifier you would like.
 
-    At this time the `API_VERSION` is v1alpha, but this may be different for you.
+    At this time the `API_VERSION` is v1beta1, but this may be different for you.
 
   ```sh
   $ PROJECT_ID=TODO_PROJECT_ID
@@ -138,7 +138,7 @@ the frontend application.
   ```sh
   curl \
       -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-      "https://healthcare.googleapis.com/${API_VERSION?}/projects/${PROJECT_ID?}/locations/${REGION?}/datasets/${DATASET_ID?}/fhirStores/${FHIR_STORE_ID?}/resources/Patient?identifier=demo-patient"
+      "https://healthcare.googleapis.com/${API_VERSION?}/projects/${PROJECT_ID?}/locations/${REGION?}/datasets/${DATASET_ID?}/fhirStores/${FHIR_STORE_ID?}/fhir/Patient?identifier=demo-patient"
   ```
 
 ### Running the application
