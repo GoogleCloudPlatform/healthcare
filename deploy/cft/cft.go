@@ -247,6 +247,18 @@ func (p *Project) InstanceID(name string) (string, error) {
 type parsedResource interface {
 	Init(*Project) error
 	Name() string
+}
+
+// deploymentManagerTyper should be implemented by resources that are natively supported by DM.
+// Use this if there is no suitable CFT template for a resource and a custom template is not needed.
+// See https://cloud.google.com/deployment-manager/docs/configuration/supported-resource-types for valid types.
+type deploymentManagerTyper interface {
+	DeploymentManagerType() string
+}
+
+// deploymentManagerPather should be implemented by resources that use a DM template to deploy.
+// Use this if the resource wraps a CFT or custom template.
+type deploymentManagerPather interface {
 	TemplatePath() string
 }
 
@@ -312,11 +324,19 @@ func getDeployment(project *Project, pairs []resourcePair) (*Deployment, error) 
 func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (resources []*Resource, importSet map[string]bool, err error) {
 	importSet = make(map[string]bool)
 
-	templatePath, err := filepath.Abs(pair.parsed.TemplatePath())
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get absolute path for %q: %v", pair.parsed.TemplatePath(), err)
+	var typ string
+	if typer, ok := pair.parsed.(deploymentManagerTyper); ok {
+		typ = typer.DeploymentManagerType()
+	} else if pather, ok := pair.parsed.(deploymentManagerPather); ok {
+		var err error
+		typ, err = filepath.Abs(pather.TemplatePath())
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get absolute path for %q: %v", pather.TemplatePath(), err)
+		}
+		importSet[typ] = true
+	} else {
+		return nil, nil, fmt.Errorf("failed to get type of %+v", pair.parsed)
 	}
-	importSet[templatePath] = true
 
 	merged, err := pair.MergedPropertiesMap()
 	if err != nil {
@@ -325,7 +345,7 @@ func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (reso
 
 	resources = []*Resource{{
 		Name:       pair.parsed.Name(),
-		Type:       templatePath,
+		Type:       typ,
 		Properties: merged,
 	}}
 

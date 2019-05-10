@@ -44,7 +44,7 @@ func (m *Metric) Name() string {
 	return m.MetricName
 }
 
-// TemplatePath returns the name of the template to use for the metric.
-func (m *Metric) TemplatePath() string {
-	return "deploy/templates/metric.py"
+// DeploymentManagerType returns the type to use for deployment manager.
+func (m *Metric) DeploymentManagerType() string {
+	return "logging.v2.metric"
 }

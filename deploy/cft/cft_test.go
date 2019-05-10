@@ -158,7 +158,6 @@ resources:
 			want: `
 imports:
 - path: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
-- path: {{abs "deploy/templates/metric.py"}}
 
 resources:
 - name: foo-bucket
@@ -182,7 +181,7 @@ resources:
     logging:
       logBucket: my-project-logs
 - name: unexpected-access-foo-bucket
-  type: {{abs "deploy/templates/metric.py"}}
+  type: logging.v2.metric
   properties:
     metric: unexpected-access-foo-bucket
     description: Count of unexpected data access to foo-bucket
