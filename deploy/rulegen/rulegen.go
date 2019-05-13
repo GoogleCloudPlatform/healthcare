@@ -81,10 +81,13 @@ func writeRules(config *cft.Config, outputPath string) error {
 	add("bucket", bkt, err)
 
 	cs, err := CloudSQLRules(config)
-	add("cloud_sql", cs, err)
+	add("cloudsql", cs, err)
 
 	api, err := EnabledAPIsRules(config)
 	add("enabled_apis", api, err)
+
+	iam, err := IAMRules(config)
+	add("iam", iam, err)
 
 	lien, err := LienRules(config)
 	add("lien", lien, err)
@@ -129,4 +132,3 @@ func copyRulesToBucket(local, remote string) error {
 	}
 	return nil
 }
-

@@ -7,6 +7,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// TODO: add a test case for remote audit project once test configs
+// can be generated with a remote audit project.
 func TestResourceRules(t *testing.T) {
 	configData := &ConfigData{`
 resources:
@@ -39,17 +41,17 @@ resources:
   - type: project
     resource_id: my-forseti-project
     children:
-    - type: bucket
-      resource_id: my-forseti-project-logs
     - type: dataset
       resource_id: my-forseti-project:audit_logs
+    - type: bucket
+      resource_id: my-forseti-project-logs
   - type: project
     resource_id: my-project
     children:
-    - type: bucket
-      resource_id: my-project-logs
     - type: dataset
       resource_id: my-project:audit_logs
+    - type: bucket
+      resource_id: my-project-logs
     - type: bucket
       resource_id: foo-bucket
     - type: dataset

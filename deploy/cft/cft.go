@@ -62,7 +62,7 @@ type Project struct {
 	} `json:"resources"`
 
 	AuditLogs *struct {
-		LogsGCSBucket struct {
+		LogsGCSBucket *struct {
 			Name     string `json:"name"`
 			Location string `json:"location"`
 		} `json:"logs_gcs_bucket"`
@@ -155,14 +155,13 @@ func (c *Config) AllProjects() []*Project {
 	return ps
 }
 
-// AuditLogsProjectID is a helper function to get the audit logs project ID for the given project.
-// If a remote audit logs project exists, return it will host all other projects' audit logs.
-// Else, each project will locally host their own.
-func (c *Config) AuditLogsProjectID(p *Project) string {
+// ProjectForAuditLogs is a helper function to get the audit logs project for the given project.
+// Return the remote audit logs project if it exists, else return the project itself (to store audit logs locally).
+func (c *Config) ProjectForAuditLogs(p *Project) *Project {
 	if c.AuditLogsProject != nil {
-		return c.AuditLogsProject.ID
+		return c.AuditLogsProject
 	}
-	return p.ID
+	return p
 }
 
 // Init initializes a project and all its resources.
@@ -170,7 +169,8 @@ func (p *Project) Init() error {
 	if p.AuditLogs.LogsBigqueryDataset.Name == "" {
 		p.AuditLogs.LogsBigqueryDataset.Name = "audit_logs"
 	}
-	if p.AuditLogs.LogsGCSBucket.Name == "" {
+
+	if p.AuditLogs.LogsGCSBucket != nil && p.AuditLogs.LogsGCSBucket.Name == "" {
 		p.AuditLogs.LogsGCSBucket.Name = p.ID + "-logs"
 	}
 

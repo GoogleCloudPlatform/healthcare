@@ -2,7 +2,6 @@ package cft
 
 import (
 	"errors"
-	"fmt"
 )
 
 // BigqueryDataset represents a bigquery dataset.
@@ -39,15 +38,6 @@ func (d *BigqueryDataset) Init(project *Project) error {
 	}
 	if d.SetDefaultOwner {
 		return errors.New("setDefaultOwner must not be true")
-	}
-
-	for _, access := range d.Accesses {
-		if access.SpecialGroup != "" {
-			return fmt.Errorf("special groups are not allowed: %v", access)
-		}
-		if access.View != nil {
-			return fmt.Errorf("view access is not allowed: %v", access)
-		}
 	}
 
 	// Note: duplicate accesses are de-duplicated by deployment manager.

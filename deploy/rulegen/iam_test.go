@@ -91,8 +91,8 @@ const wantIAMRulesYAML = `
     - group:*@my-domain.com
     - user:*@my-domain.com
     - serviceAccount:*.gserviceaccount.com
-    - user:nobody
     - group:cloud-storage-analytics@google.com
+    - user:nobody
     - group:another-readonly-group@googlegroups.com
     - group:external-bucket-viewers@custom.com
 - name: Role whitelist for project my-forseti-project log bucket(s).
@@ -104,18 +104,18 @@ const wantIAMRulesYAML = `
     - my-forseti-project-logs
   inherit_from_parents: true
   bindings:
-  - role: roles/owner
+  - role: roles/storage.admin
     members:
     - group:my-forseti-project-owners@my-domain.com
-  - role: roles/storage.objectAdmin
-    members:
-    - user:nobody
   - role: roles/storage.objectCreator
     members:
     - group:cloud-storage-analytics@google.com
   - role: roles/storage.objectViewer
     members:
     - group:my-forseti-project-auditors@my-domain.com
+  - role: roles/storage.objectAdmin
+    members:
+    - user:nobody
 - name: Role whitelist for project my-forseti-project.
   mode: whitelist
   resource:
@@ -146,18 +146,18 @@ const wantIAMRulesYAML = `
     - my-project-logs
   inherit_from_parents: true
   bindings:
-  - role: roles/owner
+  - role: roles/storage.admin
     members:
     - group:my-project-owners@my-domain.com
-  - role: roles/storage.objectAdmin
-    members:
-    - user:nobody
   - role: roles/storage.objectCreator
     members:
     - group:cloud-storage-analytics@google.com
   - role: roles/storage.objectViewer
     members:
     - group:my-project-auditors@my-domain.com
+  - role: roles/storage.objectAdmin
+    members:
+    - user:nobody
 - name: Role whitelist for project my-project.
   mode: whitelist
   resource:
@@ -206,6 +206,9 @@ const wantIAMRulesYAML = `
     - group:another-readonly-group@googlegroups.com
     - group:internal-bucket-viewers@my-domain.com
     - group:external-bucket-viewers@custom.com
+  - role: roles/storage.objectCreator
+    members:
+    - user:nobody
 `
 
 func TestIAMRules(t *testing.T) {

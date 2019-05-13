@@ -61,14 +61,26 @@ func (b *GCSBucket) Init(project *Project) error {
 	}
 
 	// Note: duplicate bindings are de-duplicated by deployment manager.
-	defaultBindings := []Binding{
-		{"roles/storage.admin", appendGroupPrefix(project.OwnersGroup)},
-		{"roles/storage.objectAdmin", appendGroupPrefix(project.DataReadWriteGroups...)},
-		{"roles/storage.objectViewer", appendGroupPrefix(project.DataReadOnlyGroups...)},
+	bindings := []Binding{
+		{Role: "roles/storage.admin", Members: appendGroupPrefix(project.OwnersGroup)},
+	}
+	if len(project.DataReadWriteGroups) > 0 {
+		bindings = append(bindings, Binding{
+			Role: "roles/storage.objectAdmin", Members: appendGroupPrefix(project.DataReadWriteGroups...),
+		})
+	}
+	if len(project.DataReadOnlyGroups) > 0 {
+		bindings = append(bindings, Binding{
+			Role: "roles/storage.objectViewer", Members: appendGroupPrefix(project.DataReadOnlyGroups...),
+		})
 	}
 
-	b.Bindings = MergeBindings(append(defaultBindings, b.Bindings...)...)
+	b.Bindings = MergeBindings(append(bindings, b.Bindings...)...)
 
+	// TODO: this shouldn't be possible (data buckets should imply log bucket exists).
+	if project.AuditLogs.LogsGCSBucket == nil {
+		return nil
+	}
 	logBucket := project.AuditLogs.LogsGCSBucket.Name
 	if logBucket == "" {
 		logBucket = project.ID + "-logs"

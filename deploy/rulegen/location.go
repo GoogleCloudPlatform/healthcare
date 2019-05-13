@@ -51,13 +51,10 @@ func LocationRules(config *cft.Config) ([]LocationRule, error) {
 			})
 		}
 
-		auditLogsProjectID := config.AuditLogsProjectID(project)
-		if config.AuditLogsProject != nil {
-			auditLogsProjectID = config.AuditLogsProject.ID
-		}
-		res := []resource{{Type: "project", IDs: []string{auditLogsProjectID}}}
+		auditProject := config.ProjectForAuditLogs(project)
+		res := []resource{{Type: "project", IDs: []string{auditProject.ID}}}
 
-		if project.AuditLogs.LogsGCSBucket.Name != "" {
+		if project.AuditLogs.LogsGCSBucket != nil {
 			projectRules = append(projectRules, LocationRule{
 				Name:      fmt.Sprintf("Project %s audit logs bucket location whitelist.", project.ID),
 				Mode:      "whitelist",
@@ -67,16 +64,14 @@ func LocationRules(config *cft.Config) ([]LocationRule, error) {
 			})
 		}
 
-		if project.AuditLogs.LogsBigqueryDataset.Name != "" {
-			id := fmt.Sprintf("%s:%s", auditLogsProjectID, project.AuditLogs.LogsBigqueryDataset.Name)
-			projectRules = append(projectRules, LocationRule{
-				Name:      fmt.Sprintf("Project %s audit logs dataset location whitelist.", project.ID),
-				Mode:      "whitelist",
-				Resources: res,
-				AppliesTo: []appliesTo{{Type: "dataset", ResourceIDs: []string{id}}},
-				Locations: []string{project.AuditLogs.LogsBigqueryDataset.Location},
-			})
-		}
+		logDatasetID := fmt.Sprintf("%s:%s", auditProject.ID, project.AuditLogs.LogsBigqueryDataset.Name)
+		projectRules = append(projectRules, LocationRule{
+			Name:      fmt.Sprintf("Project %s audit logs dataset location whitelist.", project.ID),
+			Mode:      "whitelist",
+			Resources: res,
+			AppliesTo: []appliesTo{{Type: "dataset", ResourceIDs: []string{logDatasetID}}},
+			Locations: []string{project.AuditLogs.LogsBigqueryDataset.Location},
+		})
 	}
 
 	locs := make([]string, 0, len(allLocs))

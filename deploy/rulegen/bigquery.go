@@ -13,8 +13,8 @@ import (
 type BigqueryRule struct {
 	Name       string            `yaml:"name"`
 	Mode       string            `yaml:"mode"`
-	Resources  []resource        `yaml:"resource"`
 	DatasetIDs []string          `yaml:"dataset_ids"`
+	Resources  []resource        `yaml:"resource"`
 	Bindings   []bigqueryBinding `yaml:"bindings"`
 }
 
@@ -32,6 +32,7 @@ type bigqueryMember struct {
 
 // BigqueryRules builds bigquery scanner rules for the given config.
 func BigqueryRules(config *cft.Config) ([]BigqueryRule, error) {
+	// TODO: check for public access in config and allow it if it is intentionally given
 	global := BigqueryRule{
 		Name:       "No public, domain or special group dataset access.",
 		Mode:       "blacklist",
@@ -90,9 +91,13 @@ func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
 		if len(joined) < 127 {
 			joined += "."
 		} else {
-			joined = joined[:122] + ", ..."
+			joined += "..."
 		}
 
+		bindings, err := accessesToBindings(ds[0].Accesses)
+		if err != nil {
+			return nil, err
+		}
 		rules = append(rules, BigqueryRule{
 			Name:       "Whitelist for dataset(s): " + joined,
 			Mode:       "whitelist",
@@ -101,16 +106,23 @@ func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
 				Type: "project",
 				IDs:  []string{project.ID},
 			}},
-			Bindings: accessesToBindings(ds[0].Accesses),
+			Bindings: bindings,
 		})
 	}
 
 	return rules, nil
 }
 
-func accessesToBindings(accesses []cft.Access) []bigqueryBinding {
-	roleToMembers := make(map[string][]bigqueryMember)
-	var roles []string // for stable ordering
+// accessToBindings converts a list of access to bindings.
+// Note that due to the way forseti scanner works, all valid roles must be present.
+// Missing roles will allow any member for the role.
+func accessesToBindings(accesses []cft.Access) ([]bigqueryBinding, error) {
+	roles := []string{"OWNER", "WRITER", "READER"}
+	roleToMembers := map[string][]bigqueryMember{
+		"OWNER":  nil,
+		"WRITER": nil,
+		"READER": nil,
+	}
 	for _, access := range accesses {
 		// only one should be non-empty (checked by bigquery CFT schema)
 		member := bigqueryMember{
@@ -123,7 +135,7 @@ func accessesToBindings(accesses []cft.Access) []bigqueryBinding {
 			continue
 		}
 		if _, ok := roleToMembers[access.Role]; !ok {
-			roles = append(roles, access.Role)
+			return nil, fmt.Errorf("unexpected role %q, want one of %v", access.Role, roles)
 		}
 		roleToMembers[access.Role] = append(roleToMembers[access.Role], member)
 	}
@@ -131,24 +143,24 @@ func accessesToBindings(accesses []cft.Access) []bigqueryBinding {
 	for _, role := range roles {
 		bs = append(bs, bigqueryBinding{role, roleToMembers[role]})
 	}
-	return bs
+	return bs, nil
 }
 
 func getAuditLogDatasetRule(config *cft.Config, project *cft.Project) BigqueryRule {
+	auditProject := config.ProjectForAuditLogs(project)
 	bindings := []bigqueryBinding{
-		{Role: "OWNER", Members: []bigqueryMember{{GroupEmail: project.OwnersGroup}}},
+		{Role: "OWNER", Members: []bigqueryMember{{GroupEmail: auditProject.OwnersGroup}}},
 		{Role: "WRITER", Members: []bigqueryMember{{UserEmail: project.GeneratedFields.LogSinkServiceAccount}}},
 		{Role: "READER", Members: []bigqueryMember{{GroupEmail: project.AuditorsGroup}}},
 	}
 
-	auditProjectID := config.AuditLogsProjectID(project)
 	return BigqueryRule{
 		Name:       fmt.Sprintf("Whitelist for project %s audit logs.", project.ID),
 		Mode:       "whitelist",
-		DatasetIDs: []string{fmt.Sprintf("%s:%s", auditProjectID, project.AuditLogs.LogsBigqueryDataset.Name)},
+		DatasetIDs: []string{fmt.Sprintf("%s:%s", auditProject.ID, project.AuditLogs.LogsBigqueryDataset.Name)},
 		Resources: []resource{{
 			Type: "project",
-			IDs:  []string{auditProjectID},
+			IDs:  []string{auditProject.ID},
 		}},
 		Bindings: bindings,
 	}

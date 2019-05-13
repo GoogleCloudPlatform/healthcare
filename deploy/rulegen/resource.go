@@ -37,16 +37,7 @@ func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
 		pt := resourceTree{
 			Type:       "project",
 			ResourceID: project.ID,
-			Children: []resourceTree{
-				{
-					Type:       "bucket",
-					ResourceID: project.AuditLogs.LogsGCSBucket.Name,
-				},
-				{
-					Type:       "dataset",
-					ResourceID: fmt.Sprintf("%s:%s", config.AuditLogsProjectID(project), project.AuditLogs.LogsBigqueryDataset.Name),
-				},
-			},
+			Children:   getAuditTrees(config, project),
 		}
 
 		rs := project.ResourcesByType()
@@ -85,4 +76,33 @@ func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
 		ResourceTypes: resourceTypes,
 		ResourceTrees: trees,
 	}}, nil
+}
+
+func getAuditTrees(config *cft.Config, project *cft.Project) []resourceTree {
+	if config.ProjectForAuditLogs(project).ID != project.ID {
+		return nil
+	}
+
+	if config.AuditLogsProject == nil {
+		return getAuditTreesForProjects(project.ID, project)
+	}
+	// audit project holds audit resources for all projects
+	return getAuditTreesForProjects(project.ID, config.AllProjects()...)
+}
+
+func getAuditTreesForProjects(auditLogsProjectID string, projects ...*cft.Project) []resourceTree {
+	var trees []resourceTree
+	for _, project := range projects {
+		trees = append(trees, resourceTree{
+			Type:       "dataset",
+			ResourceID: fmt.Sprintf("%s:%s", auditLogsProjectID, project.AuditLogs.LogsBigqueryDataset.Name),
+		})
+		if project.AuditLogs.LogsGCSBucket != nil {
+			trees = append(trees, resourceTree{
+				Type:       "bucket",
+				ResourceID: project.AuditLogs.LogsGCSBucket.Name,
+			})
+		}
+	}
+	return trees
 }

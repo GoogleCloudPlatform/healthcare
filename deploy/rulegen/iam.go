@@ -14,6 +14,16 @@ import (
 // https://cloud.google.com/storage/docs/access-logs#delivery.
 const bucketLogsWriter = "group:cloud-storage-analytics@google.com"
 
+// wantBucketRoles are the roles that each bucket rule must have.
+// Forseti will not the role in whitelist mode if it's not found in the rule's bindings list.
+// Thus, every role here must be present. If there are no members for the role, add a non-existent one (e.g. user:nobody).
+var wantBucketRoles = []string{
+	"roles/storage.admin",
+	"roles/storage.objectAdmin",
+	"roles/storage.objectCreator",
+	"roles/storage.objectViewer",
+}
+
 func getTemplates(ss []string) []*template.Template {
 	var ts []*template.Template
 	for _, s := range ss {
@@ -118,8 +128,8 @@ func IAMRules(config *cft.Config) ([]IAMRule, error) {
 // TODO: should we be checking pubsub as well?
 func getProjectRules(config *cft.Config, project *cft.Project) ([]IAMRule, error) {
 	var rules []IAMRule
-	if r := getLogsBucketRule(config, project); r != nil {
-		rules = append(rules, *r)
+	if project.AuditLogs.LogsGCSBucket != nil {
+		rules = append(rules, getLogsBucketRule(config, project))
 	}
 
 	projectBindings, err := getProjectBindings(config, project)
@@ -139,47 +149,11 @@ func getProjectRules(config *cft.Config, project *cft.Project) ([]IAMRule, error
 		Bindings:           projectBindings,
 	})
 
-	// group rules that have the same bindings together to reduce duplicated rules
-	bindingsHashToBuckets := make(map[uint64][]*cft.GCSBucket)
-	// TODO: this pattern is repeated several times and could benefit from a helper struct once generics are supported.
-	var hashes []uint64 // for stable ordering
-	for _, bucket := range project.ResourcesByType().GCSBuckets {
-		h, err := hashstructure.Hash(bucket.Bindings, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to hash access %v: %v", bucket.Bindings, err)
-		}
-		if _, ok := bindingsHashToBuckets[h]; !ok {
-			hashes = append(hashes, h)
-		}
-		bindingsHashToBuckets[h] = append(bindingsHashToBuckets[h], bucket)
+	bucketRules, err := getDataBucketRules(project)
+	if err != nil {
+		return nil, err
 	}
-
-	for _, h := range hashes {
-		buckets := bindingsHashToBuckets[h]
-		var ids []string
-		for _, b := range buckets {
-			ids = append(ids, b.Name())
-		}
-
-		joined := strings.Join(ids, ", ")
-		if len(joined) > 127 {
-			joined = joined[:122] + ", ..."
-		} else {
-			joined += "."
-		}
-
-		rules = append(rules, IAMRule{
-			Name: fmt.Sprintf("Role whitelist for project %s bucket(s): %s", project.ID, joined),
-			Mode: "whitelist",
-			Resources: []resource{{
-				Type:      "bucket",
-				AppliesTo: "self",
-				IDs:       ids,
-			}},
-			InheritFromParents: true,
-			Bindings:           buckets[0].Bindings,
-		})
-	}
+	rules = append(rules, bucketRules...)
 	return rules, nil
 }
 
@@ -222,39 +196,89 @@ func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding
 // getLogsBucketRule gets the iam rule for the logs bucket.
 // For configs with an audit log project, only the audit log project will return a non-nil rule containing all other projects' logs buckets.
 // For configs without an audit log project, each project will have a single rule for its own local logs bucket.
-func getLogsBucketRule(config *cft.Config, project *cft.Project) *IAMRule {
-	// If audit logs project exists, it contains all logs buckets.
-	if config.AuditLogsProject != nil && config.AuditLogsProject.ID != project.ID {
-		return nil
-	}
+func getLogsBucketRule(config *cft.Config, project *cft.Project) IAMRule {
+	owners := config.ProjectForAuditLogs(project).OwnersGroup
 
-	var bucketIDs []string
-	if config.AuditLogsProject == nil {
-		bucketIDs = []string{project.AuditLogs.LogsGCSBucket.Name}
-	} else if config.AuditLogsProject.ID == project.ID {
-		for _, p := range config.AllProjects() {
-			bucketIDs = append(bucketIDs, p.AuditLogs.LogsGCSBucket.Name)
-		}
-	}
+	bindings := fillMissingBucketBindings([]cft.Binding{
+		{Role: "roles/storage.admin", Members: []string{"group:" + owners}},
+		{Role: "roles/storage.objectCreator", Members: []string{bucketLogsWriter}},
+		{Role: "roles/storage.objectViewer", Members: []string{"group:" + project.AuditorsGroup}},
+	})
 
-	return &IAMRule{
+	return IAMRule{
 		Name: fmt.Sprintf("Role whitelist for project %s log bucket(s).", project.ID),
 		Mode: "whitelist",
 		Resources: []resource{{
 			Type:      "bucket",
 			AppliesTo: "self",
-			IDs:       bucketIDs,
+			IDs:       []string{project.AuditLogs.LogsGCSBucket.Name},
 		}},
 		InheritFromParents: true,
-		Bindings: []cft.Binding{
-			{Role: "roles/owner", Members: []string{"group:" + project.OwnersGroup}},
-			// There should be no object admins, but since members must be non-empty, set a value that
-			// won't exist, else the scanner won't check this role.
-			{Role: "roles/storage.objectAdmin", Members: []string{"user:nobody"}},
-			{Role: "roles/storage.objectCreator", Members: []string{bucketLogsWriter}},
-			{Role: "roles/storage.objectViewer", Members: []string{"group:" + project.AuditorsGroup}},
-		},
+		Bindings:           bindings,
 	}
+}
+
+// getDataBucketRules gets the IAM rules for data holding buckets.
+func getDataBucketRules(project *cft.Project) ([]IAMRule, error) {
+	var rules []IAMRule
+
+	// group rules that have the same bindings together to reduce duplicated rules
+	bindingsHashToBuckets := make(map[uint64][]*cft.GCSBucket)
+	// TODO: this pattern is repeated several times and could benefit from a helper struct once generics are supported.
+	var hashes []uint64 // for stable ordering
+	for _, bucket := range project.ResourcesByType().GCSBuckets {
+		h, err := hashstructure.Hash(bucket.Bindings, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash access %v: %v", bucket.Bindings, err)
+		}
+		if _, ok := bindingsHashToBuckets[h]; !ok {
+			hashes = append(hashes, h)
+		}
+		bindingsHashToBuckets[h] = append(bindingsHashToBuckets[h], bucket)
+	}
+
+	for _, h := range hashes {
+		buckets := bindingsHashToBuckets[h]
+		var ids []string
+		for _, b := range buckets {
+			ids = append(ids, b.Name())
+		}
+
+		joined := strings.Join(ids, ", ")
+		if len(joined) < 127 {
+			joined += "."
+		} else {
+			joined += "..."
+		}
+
+		bindings := fillMissingBucketBindings(buckets[0].Bindings)
+
+		rules = append(rules, IAMRule{
+			Name: fmt.Sprintf("Role whitelist for project %s bucket(s): %s", project.ID, joined),
+			Mode: "whitelist",
+			Resources: []resource{{
+				Type:      "bucket",
+				AppliesTo: "self",
+				IDs:       ids,
+			}},
+			InheritFromParents: true,
+			Bindings:           bindings,
+		})
+	}
+	return rules, nil
+}
+
+func fillMissingBucketBindings(bindings []cft.Binding) []cft.Binding {
+	gotRoles := make(map[string]bool)
+	for _, b := range bindings {
+		gotRoles[b.Role] = true
+	}
+	for _, r := range wantBucketRoles {
+		if !gotRoles[r] {
+			bindings = append(bindings, cft.Binding{Role: r, Members: []string{"user:nobody"}})
+		}
+	}
+	return bindings
 }
 
 // getGlobalRuleForType returns the global rule for the given type. It should be called with the project level rules of all projects.
