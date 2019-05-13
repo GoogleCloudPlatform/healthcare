@@ -17,6 +17,7 @@ go_library(
         "gke_cluster.go",
         "gke_workload.go",
         "iam.go",
+        "logsink.go",
         "metric.go",
         "pubsub.go",
         "resourcepair.go",
@@ -37,7 +38,6 @@ go_test(
     srcs = [
         "bigquery_dataset_test.go",
         "cft_test.go",
-        "custom_role_test.go",
         "default_resource_test.go",
         "deployment_test.go",
         "gce_instance_test.go",
@@ -45,6 +45,7 @@ go_test(
         "gke_cluster_test.go",
         "gke_workload_test.go",
         "iam_test.go",
+        "logsink_test.go",
         "metric_test.go",
         "pubsub_test.go",
         "resourcepair_test.go",
