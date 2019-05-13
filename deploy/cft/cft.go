@@ -9,6 +9,8 @@ import (
 	"sort"
 )
 
+const deploymentName = "managed-data-protect-toolkit"
+
 // Config represents a (partial) representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
 // TODO: move config to its own package
@@ -279,7 +281,7 @@ func Deploy(project *Project) error {
 	if err != nil {
 		return err
 	}
-	if err := createOrUpdateDeployment(project.ID, deployment); err != nil {
+	if err := createOrUpdateDeployment(deploymentName, deployment, project.ID); err != nil {
 		return fmt.Errorf("failed to deploy deployment manager resources: %v", err)
 	}
 

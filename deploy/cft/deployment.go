@@ -11,8 +11,6 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-const deploymentName = "managed-data-protect-toolkit"
-
 // The following vars are stubbed in tests.
 var (
 	cmdRun            = (*exec.Cmd).Run
@@ -45,7 +43,7 @@ type Metadata struct {
 }
 
 // createOrUpdateDeployment creates the deployment if it does not exist, else updates it.
-func createOrUpdateDeployment(projectID string, deployment *Deployment) error {
+func createOrUpdateDeployment(name string, deployment *Deployment, projectID string) error {
 	b, err := yaml.Marshal(deployment)
 	if err != nil {
 		return fmt.Errorf("failed to marshal deployment : %v", err)
@@ -65,7 +63,7 @@ func createOrUpdateDeployment(projectID string, deployment *Deployment) error {
 		return fmt.Errorf("failed to close temp file: %v", err)
 	}
 
-	exists, err := checkDeploymentExists(projectID, deploymentName)
+	exists, err := checkDeploymentExists(name, projectID)
 	if err != nil {
 		return fmt.Errorf("failed to check if deployment exists: %v", err)
 	}
@@ -75,9 +73,9 @@ func createOrUpdateDeployment(projectID string, deployment *Deployment) error {
 		// Due to the sensitive nature of the resources we manage, we don't want to
 		// delete any resources after they have been deployed. Instead, abandon the resource
 		// so the user can manually delete them later on.
-		args = append(args, "update", deploymentName, "--delete-policy", "ABANDON")
+		args = append(args, "update", name, "--delete-policy", "ABANDON")
 	} else {
-		args = append(args, "create", deploymentName, "--automatic-rollback-on-error")
+		args = append(args, "create", name, "--automatic-rollback-on-error")
 	}
 	args = append(args, "--project", projectID, "--config", tmp.Name())
 
@@ -93,7 +91,7 @@ func createOrUpdateDeployment(projectID string, deployment *Deployment) error {
 }
 
 // checkDeploymentExists determines whether the deployment with the given name exists in the given project.
-func checkDeploymentExists(projectID, name string) (bool, error) {
+func checkDeploymentExists(name, projectID string) (bool, error) {
 	type deploymentInfo struct {
 		Name string `json:"name"`
 	}

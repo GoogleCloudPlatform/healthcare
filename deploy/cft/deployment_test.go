@@ -60,13 +60,13 @@ resources:
 			name:               "create",
 			listDeploymentName: "some-random-deployment",
 			wantDeploymentCommand: []string{
-				"gcloud", "deployment-manager", "deployments", "create", "managed-data-protect-toolkit",
+				"gcloud", "deployment-manager", "deployments", "create", "foo-deployment",
 				"--automatic-rollback-on-error", "--project", projID},
 		}, {
 			name:               "update",
-			listDeploymentName: "managed-data-protect-toolkit",
+			listDeploymentName: "foo-deployment",
 			wantDeploymentCommand: []string{
-				"gcloud", "deployment-manager", "deployments", "update", "managed-data-protect-toolkit",
+				"gcloud", "deployment-manager", "deployments", "update", "foo-deployment",
 				"--delete-policy", "ABANDON", "--project", projID},
 		},
 	}
@@ -81,7 +81,7 @@ resources:
 			cmdRun = commander.Run
 			cmdCombinedOutput = commander.CombinedOutput
 
-			if err := createOrUpdateDeployment(projID, deployment); err != nil {
+			if err := createOrUpdateDeployment("foo-deployment", deployment, projID); err != nil {
 				t.Fatalf("createOrUpdateDeployment = %v", err)
 			}
 
