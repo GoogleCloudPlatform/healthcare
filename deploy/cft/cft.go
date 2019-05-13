@@ -30,7 +30,8 @@ type Config struct {
 			ServerBucket   string `json:"server_bucket"`
 		} `json:"generated_fields"`
 	} `json:"forseti"`
-	Projects []*Project `json:"projects"`
+	Projects             []*Project         `json:"projects"`
+	AllOfGeneratedFields AllGeneratedFields `json:"generated_fields"`
 }
 
 // Project defines a single project's configuration.
