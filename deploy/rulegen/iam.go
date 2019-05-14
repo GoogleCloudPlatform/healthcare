@@ -159,6 +159,11 @@ func getProjectRules(config *cft.Config, project *cft.Project) ([]IAMRule, error
 
 // getProjectBindings gets the project level bindings for the given project.
 func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding, error) {
+	generatedFields, err := config.AllOfGeneratedFields.Project(project.ID)
+	if err != nil {
+    return nil, err
+	}
+
 	bs := []cft.Binding{
 		{Role: "roles/owner", Members: []string{"group:" + project.OwnersGroup}},
 		{Role: "roles/iam.securityReviewer", Members: []string{
@@ -166,7 +171,7 @@ func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding
 
 			// We can assume Forseti config exists if the rule generator is being called
 			// TODO: check for other forseti service account roles granted on the project
-			"serviceAccount:" + config.Forseti.GeneratedFields.ServiceAccount,
+			"serviceAccount:" + config.AllOfGeneratedFields.Forseti.ServiceAccount,
 		}},
 	}
 
@@ -177,7 +182,7 @@ func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding
 	var ms []string
 	for _, saTmpl := range defaultServiceAccountTemplates {
 		var b strings.Builder
-		if err := saTmpl.Execute(&b, map[string]interface{}{"ProjectNum": project.GeneratedFields.ProjectNumber}); err != nil {
+		if err := saTmpl.Execute(&b, map[string]interface{}{"ProjectNum": generatedFields.ProjectNumber}); err != nil {
 			return nil, err
 		}
 		ms = append(ms, "serviceAccount:"+b.String())

@@ -40,15 +40,6 @@ forseti:
         ttl_days: 365
       logs_bigquery_dataset:
         location: US
-    generated_fields:
-      project_number: '2222'
-      log_sink_service_account: audit-logs-bq@logging-2222.iam.gserviceaccount.com
-      gce_instance_info:
-      - name: foo-instance
-        id: '123'
-  generated_fields:
-    service_account: forseti@my-forseti-project.iam.gserviceaccount.com
-    server_bucket: gs://my-forseti-project-server/
 
 projects:
 - project_id: my-project
@@ -69,13 +60,25 @@ projects:
       ttl_days: 365
     logs_bigquery_dataset:
       location: US
-  generated_fields:
-    project_number: '1111'
-    log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
-    gce_instance_info:
-    - name: foo-instance
-      id: '123'
 {{lpad .ExtraProjectConfig 2}}
+
+generated_fields:
+  projects:
+    my-project:
+      project_number: '1111'
+      log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+      gce_instance_info:
+      - name: foo-instance
+        id: '123'
+    my-forseti-project:
+      project_number: '2222'
+      log_sink_service_account: audit-logs-bq@logging-2222.iam.gserviceaccount.com
+      gce_instance_info:
+      - name: foo-instance
+        id: '123'
+  forseti:
+    service_account: forseti@my-forseti-project.iam.gserviceaccount.com
+    server_bucket: gs://my-forseti-project-server/
 `
 
 type ConfigData struct {

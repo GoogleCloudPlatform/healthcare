@@ -32,7 +32,7 @@ func Run(config *cft.Config, outputPath string) (err error) {
 		return errors.New("forseti config must be set when using the rule generator")
 	}
 	if outputPath == "" {
-		outputPath = config.Forseti.GeneratedFields.ServerBucket
+		outputPath = config.AllOfGeneratedFields.Forseti.ServiceBucket
 	}
 
 	local := outputPath

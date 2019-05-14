@@ -35,13 +35,16 @@ projects:
       ttl_days: 365
     logs_bigquery_dataset:
       location: US
-  generated_fields:
-    project_number: '1111'
-    log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
-    gce_instance_info:
-    - name: foo-instance
-      id: '123'
 {{lpad .ExtraProjectConfig 2}}
+
+generated_fields:
+  projects:
+    my-project:
+      project_number: '1111'
+      log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+      gce_instance_info:
+      - name: foo-instance
+        id: '123'
 `
 
 type ConfigData struct {
@@ -354,22 +357,4 @@ func abs(p string) string {
 		panic(err)
 	}
 	return a
-}
-
-func TestInstanceID(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
-
-	name := "foo-instance"
-	id, err := project.InstanceID(name)
-	if err != nil {
-		t.Fatalf("project.InstanceID(%q): got error %v", name, err)
-	}
-	if got, want := id, "123"; got != want {
-		t.Errorf("project.InstanceID(%q) id: got %q, want %q", name, got, want)
-	}
-
-	name = "dne"
-	if _, err := project.InstanceID(name); err == nil {
-		t.Fatalf("project.InstanceID(%q): got nil error, want non-nil error", name)
-	}
 }

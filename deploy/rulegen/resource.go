@@ -34,6 +34,10 @@ func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
 	}
 
 	for _, project := range config.AllProjects() {
+		generatedFields, err := config.AllOfGeneratedFields.Project(project.ID)
+		if err != nil {
+			return nil, err
+		}
 		pt := resourceTree{
 			Type:       "project",
 			ResourceID: project.ID,
@@ -57,7 +61,7 @@ func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
 		}
 
 		for _, i := range rs.GCEInstances {
-			id, err := project.InstanceID(i.Name())
+			id, err := generatedFields.InstanceID(i.Name())
 			if err != nil {
 				return nil, err
 			}

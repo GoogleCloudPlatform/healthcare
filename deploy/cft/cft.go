@@ -25,10 +25,6 @@ type Config struct {
 	AuditLogsProject *Project `json:"audit_logs_project"`
 	Forseti          *struct {
 		Project         *Project `json:"project"`
-		GeneratedFields struct {
-			ServiceAccount string `json:"service_account"`
-			ServerBucket   string `json:"server_bucket"`
-		} `json:"generated_fields"`
 	} `json:"forseti"`
 	Projects             []*Project         `json:"projects"`
 	AllOfGeneratedFields AllGeneratedFields `json:"generated_fields"`
@@ -75,15 +71,6 @@ type Project struct {
 			Location string `json:"location"`
 		} `json:"logs_bigquery_dataset"`
 	} `json:"audit_logs"`
-
-	GeneratedFields struct {
-		ProjectNumber         string `json:"project_number"`
-		LogSinkServiceAccount string `json:"log_sink_service_account"`
-		GCEInstanceInfo       []struct {
-			Name string `json:"name"`
-			ID   string `json:"id"`
-		} `json:"gce_instance_info"`
-	} `json:"generated_fields"`
 }
 
 // BigqueryDatasetPair pairs a raw dataset with its parsed version.
@@ -236,16 +223,6 @@ func (p *Project) ResourcesByType() *ResourcesByType {
 		}
 	}
 	return rs
-}
-
-// InstanceID returns the ID of the instance with the given name.
-func (p *Project) InstanceID(name string) (string, error) {
-	for _, info := range p.GeneratedFields.GCEInstanceInfo {
-		if info.Name == name {
-			return info.ID, nil
-		}
-	}
-	return "", fmt.Errorf("info for instance %q not found in generated_fields", name)
 }
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.

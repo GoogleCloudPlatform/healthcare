@@ -28,8 +28,12 @@ func LocationRules(config *cft.Config) ([]LocationRule, error) {
 	var projectRules []LocationRule
 
 	for _, project := range config.AllProjects() {
+		generatedFields, err := config.AllOfGeneratedFields.Project(project.ID)
+		if err != nil {
+			return nil, err
+		}
 		m := make(locationToResources)
-		if err := m.addResources(project); err != nil {
+		if err := m.addResources(project, generatedFields); err != nil {
 			return nil, err
 		}
 
@@ -108,7 +112,7 @@ func (m locationToResources) locations() []string {
 	return locs
 }
 
-func (m locationToResources) addResources(project *cft.Project) error {
+func (m locationToResources) addResources(project *cft.Project, generatedFields *cft.GeneratedFields) error {
 	rs := project.ResourcesByType()
 	for _, bucket := range rs.GCSBuckets {
 		m.add(bucket.Location, "bucket", bucket.Name())
@@ -118,7 +122,7 @@ func (m locationToResources) addResources(project *cft.Project) error {
 		m.add(dataset.Location, "dataset", id)
 	}
 	for _, instance := range rs.GCEInstances {
-		id, err := project.InstanceID(instance.Name())
+		id, err := generatedFields.InstanceID(instance.Name())
 		if err != nil {
 			return err
 		}

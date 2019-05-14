@@ -44,8 +44,14 @@ func TestGetInstanceID(t *testing.T) {
 	cfg := Config{}
 	cfg.AllOfGeneratedFields.Projects = make(map[string]*GeneratedFields)
 	cfg.AllOfGeneratedFields.Projects["some-analytics"] = &GeneratedFields{GCEInstanceInfoList: []GCEInstanceInfo{{Name: "foo-instance", ID: "123"}, {Name: "bar-instance", ID: "456"}}}
+
+	project, err := cfg.AllOfGeneratedFields.Project("some-analytics")
+	if err != nil {
+		t.Fatalf("cfg.AllOfGeneratedFields.Project(\"some-analytics\") = %v", err)
+	}
+
 	name := "foo-instance"
-	if id, err := cfg.AllOfGeneratedFields.Projects["some-analytics"].InstanceID(name); err != nil {
+	if id, err := project.InstanceID(name); err != nil {
 		t.Errorf("project.InstanceID(%q): got error %v", name, err)
 	} else {
 		if id != "123" {
@@ -53,8 +59,25 @@ func TestGetInstanceID(t *testing.T) {
 		}
 	}
 
+	_, err = cfg.AllOfGeneratedFields.Project("none-analytics")
+	if err == nil {
+		t.Errorf("AllOfGeneratedFields.Project: got nil error, want non-nil error")
+	}
+
 	name = "dne"
 	if _, err := cfg.AllOfGeneratedFields.Projects["some-analytics"].InstanceID(name); err == nil {
 		t.Errorf("project.InstanceID(%q): got nil error, want non-nil error", name)
+	}
+}
+
+func TestGetProjectInGeneratedFields(t *testing.T) {
+	cfg := Config{}
+	cfg.AllOfGeneratedFields.Projects = make(map[string]*GeneratedFields)
+	cfg.AllOfGeneratedFields.Projects["some-data"] = &GeneratedFields{ProjectNumber: "11111"}
+	expectProjectNumber := "22222"
+	cfg.AllOfGeneratedFields.Projects["some-analytics"] = &GeneratedFields{ProjectNumber: expectProjectNumber}
+	project, err := cfg.AllOfGeneratedFields.Project("some-analytics")
+	if project.ProjectNumber != expectProjectNumber {
+		t.Errorf("get project error: got %v, want %q, err %v", project.ProjectNumber, expectProjectNumber, err)
 	}
 }

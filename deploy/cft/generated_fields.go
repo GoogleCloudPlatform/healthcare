@@ -1,6 +1,8 @@
 package cft
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // AllGeneratedFields defines the generated_fields block.
 // AllGeneratedFields contains resource information when the resources are deployed.
@@ -27,6 +29,15 @@ type GCEInstanceInfo struct {
 type ForsetiServiceInfo struct {
 	ServiceAccount string `json:"service_account"`
 	ServiceBucket  string `json:"server_bucket"`
+}
+
+// Project returns the GeneratedFields pointer with the given project ID.
+func (a *AllGeneratedFields) Project(id string) (*GeneratedFields, error) {
+	projGeneratedFields, ok := a.Projects[id]
+	if !ok {
+		return nil, fmt.Errorf("project %q does not exist in generated_fields", id)
+	}
+	return projGeneratedFields, nil
 }
 
 // InstanceID returns the ID of the instance with the given name.
