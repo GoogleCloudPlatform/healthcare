@@ -42,6 +42,22 @@ definitions:
           the project has been deployed.
         pattern: ^[a-z][-a-z0-9]{4,28}[a-z0-9]$
 
+      billing_account:
+        type: string
+        description: |
+          The ID of the billing account to attach to this project.
+          If set, this will override the billing_account set in the overall
+          config.
+        pattern: ^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}$
+
+      folder_id:
+        type: string
+        description: |
+          Optional ID of the folder that the projects will be created
+          under. Typically a base-10 string representation of an integer.
+          If set, this will override the folder_id set in the overall config.
+        pattern: ^[0-9]{8,25}$
+
       owners_group:
         #$ref: '#/definitions/email_address'
         type: string

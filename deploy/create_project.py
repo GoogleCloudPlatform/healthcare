@@ -134,7 +134,7 @@ def create_new_project(config):
 
   overall_config = config.root['overall']
   org_id = overall_config.get('organization_id')
-  folder_id = overall_config.get('folder_id')
+  folder_id = config.project.get('folder_id', overall_config.get('folder_id'))
 
   create_project_command = ['projects', 'create', project_id]
   if folder_id:
@@ -149,7 +149,8 @@ def create_new_project(config):
 
 def setup_billing(config):
   """Sets the billing account for this project."""
-  billing_acct = config.root['overall']['billing_account']
+  billing_acct = config.project.get('billing_account',
+                                    config.root['overall']['billing_account'])
   project_id = config.project['project_id']
   # Set the appropriate billing account for this project:
   runner.run_gcloud_command([

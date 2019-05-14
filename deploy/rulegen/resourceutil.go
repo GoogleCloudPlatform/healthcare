@@ -12,16 +12,22 @@ type resource struct {
 
 // globalResource tries to find the broadest scope of resources defined in the config.
 // This is required due to organization and folder IDs being optional.
-// The order of preference is organization, folder or all projects defined in the config.
+// The order of preference is organization, folders or all projects defined in the config.
 func globalResource(config *cft.Config) resource {
 	switch {
 	case config.Overall.OrganizationID != "":
 		return resource{Type: "organization", IDs: []string{config.Overall.OrganizationID}}
 	case config.Overall.FolderID != "":
-		return resource{Type: "folder", IDs: []string{config.Overall.FolderID}}
+		ids := []string{config.Overall.FolderID}
+		for _, p := range config.AllProjects() {
+			if p.FolderID != "" {
+				ids = append(ids, p.FolderID)
+			}
+		}
+		return resource{Type: "folder", IDs: ids}
 	default:
-		ids := make([]string, 0, len(config.Projects))
-		for _, p := range config.Projects {
+		var ids []string
+		for _, p := range config.AllProjects() {
 			ids = append(ids, p.ID)
 		}
 		return resource{Type: "project", IDs: ids}
