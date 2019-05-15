@@ -858,7 +858,7 @@ _SETUP_STEPS = [
 ]
 
 
-def setup_project(config, output_yaml_path, output_cleanup_path):
+def setup_project(config, project_yaml, output_yaml_path, output_cleanup_path):
   """Run the full process for initalizing a single new project.
 
   Note: for projects that have already been deployed, only the updatable steps
@@ -866,6 +866,7 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
 
   Args:
     config (ProjectConfig): The config of a single project to setup.
+    project_yaml (str): Path of the project config YAML.
     output_yaml_path (str): Path to output resulting root config in JSON.
     output_cleanup_path (str): Path to output cleanup shell script.
 
@@ -910,18 +911,23 @@ def setup_project(config, output_yaml_path, output_cleanup_path):
       if not deployed:
         field_generation.get_generated_fields_ref(
             project_id, config.root)['failed_step'] = step_num
-        utils.write_yaml_file(config.root, output_yaml_path)
+        field_generation.rewrite_generated_fields_back(project_yaml,
+                                                       output_yaml_path,
+                                                       config.root)
 
       return False
 
-    utils.write_yaml_file(config.root, output_yaml_path)
+    field_generation.rewrite_generated_fields_back(project_yaml,
+                                                   output_yaml_path,
+                                                   config.root)
 
   # if this deployment was resuming from a previous failure, remove the
   # failed step as it is done
   if field_generation.is_generated_fields_exist(project_id, config.root):
     field_generation.get_generated_fields_ref(project_id, config.root,
                                               False).pop('failed_step', None)
-  utils.write_yaml_file(config.root, output_yaml_path)
+  field_generation.rewrite_generated_fields_back(project_yaml, output_yaml_path,
+                                                 config.root)
   logging.info('Setup completed successfully.')
 
   return True
@@ -1083,7 +1089,7 @@ def main(argv):
   for config in projects:
     logging.info('Setting up project %s', config.project['project_id'])
 
-    if not setup_project(config, FLAGS.output_yaml_path,
+    if not setup_project(config, FLAGS.project_yaml, FLAGS.output_yaml_path,
                          FLAGS.output_cleanup_path):
       # Don't attempt to deploy additional projects if one project failed.
       return

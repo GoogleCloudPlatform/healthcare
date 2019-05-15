@@ -1,0 +1,143 @@
+# export G3REP=testonly
+# export YAMLNAME=integration_test
+# g4d ${G3REP}
+# copybara deploy/copy.bara.sky folder_to_folder ../ --folder-dir /tmp/copybara_test_${G3REP}
+# cd /tmp/copybara_test_${G3REP}/deploy/
+# mkdir rules
+# bazel run :create_project -- --project_yaml=integration_test/${YAMLNAME}.yaml --output_yaml_path=${YAMLNAME}.yaml --output_rules_path=rules/ --output_cleanup_path=/tmp/cleanup.sh --projects=ruihuang-sandbox-demo001 --dry_run
+# g4d  ${G3REP}
+# cp /tmp/copybara_test_testonly/deploy/test_datathon.yaml deploy/
+
+overall:
+  organization_id: '433637338589'
+  folder_id: '396521612403'
+  billing_account: 00F4CE-59D8D8-2298AC
+
+# Configure the audit logs hosting project here.
+audit_logs_project:
+  project_id: ruihuang-dtthn171-audit-logs
+  owners_group: ruihuang_owner@google.com
+  auditors_group: ruihuang_audit@google.com
+  audit_logs:
+    logs_bigquery_dataset:
+      location: US
+  stackdriver_alert_email: ruihuang@google.com
+
+forseti:
+  project:
+    project_id: ruihuang-dtthn171-forseti
+    owners_group: ruihuang_owner@google.com
+    auditors_group: ruihuang_audit@google.com
+    enabled_apis:
+    - admin.googleapis.com
+    - appengine.googleapis.com
+    - bigquery-json.googleapis.com
+    - cloudapis.googleapis.com
+    - cloudbilling.googleapis.com
+    - clouddebugger.googleapis.com
+    - cloudresourcemanager.googleapis.com
+    - cloudtrace.googleapis.com
+    - compute.googleapis.com
+    - container.googleapis.com
+    - containerregistry.googleapis.com
+    - datastore.googleapis.com
+    - deploymentmanager.googleapis.com
+    - iam.googleapis.com
+    - logging.googleapis.com
+    - monitoring.googleapis.com
+    - pubsub.googleapis.com
+    - replicapool.googleapis.com
+    - replicapoolupdater.googleapis.com
+    - resourceviews.googleapis.com
+    - servicemanagement.googleapis.com
+    - sql-component.googleapis.com
+    - sqladmin.googleapis.com
+    - storage-api.googleapis.com
+    - storage-component.googleapis.com
+    audit_logs:
+      logs_bigquery_dataset:
+        name: chc_forseti
+        location: US
+
+imports:
+- ./*.yaml
+
+# Multiple team projects can be deployed at once with the one YAML file.
+projects:
+- project_id: ruihuang-dtthn171-project2  # Data-hosting project.
+  owners_group: ruihuang_owner@google.com
+  auditors_group: ruihuang_audit@google.com
+  data_readwrite_groups:
+  - ruihuang_test1@google.com
+  data_readonly_groups:
+  - ruihuang_test2@google.com
+  - ruihuang_test3@google.com
+  bigquery_datasets:
+  - name: us_data
+    location: US
+    additional_dataset_permissions:
+      readwrite:
+      - group:ruihuang_test4@google.com
+  data_buckets:
+  - name_suffix: -bucket333
+    location: ASIA-SOUTHEAST1
+    storage_class: REGIONAL
+  stackdriver_alert_email: ruihuang@google.com
+  audit_logs:
+    logs_gcs_bucket:
+      # Naming convention: ${AUDIT_LOGS_PROJECT_ID}-${PROJECT_ID}
+      name: ruihuang-dtthn171-audit-logs-ruihuang-dtthn171-project2
+      location: ASIA-SOUTHEAST1
+      storage_class: REGIONAL
+      ttl_days: 365
+    logs_bigquery_dataset:
+      # Naming convention: PROJECT_ID, with underscores instead of dashes.
+      name: ruihuang_dtthn171_project2
+      location: US
+- project_id: ruihuang-dtthn171-project3  # Data-hosting project.
+  owners_group: ruihuang_owner@google.com
+  auditors_group: ruihuang_audit@google.com
+  data_readwrite_groups:
+  - ruihuang_test1@google.com
+  data_readonly_groups:
+  - ruihuang_test2@google.com
+  - ruihuang_test3@google.com
+  bigquery_datasets:
+  - name: us_data
+    location: US
+    additional_dataset_permissions:
+      readwrite:
+      - group:ruihuang_test4@google.com
+  data_buckets:
+  - name_suffix: -bucket333
+    location: ASIA-SOUTHEAST1
+    storage_class: REGIONAL
+  stackdriver_alert_email: ruihuang@google.com
+  audit_logs:
+    logs_gcs_bucket:
+      # Naming convention: ${AUDIT_LOGS_PROJECT_ID}-${PROJECT_ID}
+      name: ruihuang-dtthn171-audit-logs-ruihuang-dtthn171-project3
+      location: ASIA-SOUTHEAST1
+      storage_class: REGIONAL
+      ttl_days: 365
+    logs_bigquery_dataset:
+      # Naming convention: PROJECT_ID, with underscores instead of dashes.
+      name: ruihuang_dtthn171_project3
+      location: US
+generated_fields:
+  forseti:
+    server_bucket: gs://forseti-server-21e1105/
+    service_account: forseti-server-gcp-21e1105@ruihuang-dtthn171-forseti.iam.gserviceaccount.com
+  projects:
+    ruihuang-dtthn171-forseti:
+      log_sink_service_account: p814124915333-688381@gcp-sa-logging.iam.gserviceaccount.com
+      project_number: '814124915333'
+    ruihuang-dtthn171-project1:
+      project_number: '531594057107'
+      log_sink_service_account: p531594057107-430530@gcp-sa-logging.iam.gserviceaccount.com
+    ruihuang-dtthn171-audit-logs:
+      log_sink_service_account: p977519748042-805352@gcp-sa-logging.iam.gserviceaccount.com
+      project_number: '977519748042'
+    ruihuang-dtthn171-project2:
+      project_number: '944914374525'
+      log_sink_service_account: p944914374525-709774@gcp-sa-logging.iam.gserviceaccount.com
