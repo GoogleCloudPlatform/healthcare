@@ -45,8 +45,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	auditProject := conf.ProjectForAuditLogs(proj)
 
-	if err := proj.Init(); err != nil {
+	if err := proj.Init(auditProject); err != nil {
 		log.Fatalf("failed to initialize project: %v", err)
 	}
 

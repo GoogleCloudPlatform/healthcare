@@ -59,18 +59,18 @@ func LocationRules(config *cft.Config) ([]LocationRule, error) {
 				Name:      fmt.Sprintf("Project %s audit logs bucket location whitelist.", project.ID),
 				Mode:      "whitelist",
 				Resources: res,
-				AppliesTo: []appliesTo{{Type: "bucket", ResourceIDs: []string{project.AuditLogs.LogsGCSBucket.Name}}},
+				AppliesTo: []appliesTo{{Type: "bucket", ResourceIDs: []string{project.AuditLogs.LogsGCSBucket.Name()}}},
 				Locations: []string{project.AuditLogs.LogsGCSBucket.Location},
 			})
 		}
 
-		logDatasetID := fmt.Sprintf("%s:%s", auditProject.ID, project.AuditLogs.LogsBigqueryDataset.Name)
+		logDatasetID := fmt.Sprintf("%s:%s", auditProject.ID, project.AuditLogs.LogsBQDataset.Name())
 		projectRules = append(projectRules, LocationRule{
 			Name:      fmt.Sprintf("Project %s audit logs dataset location whitelist.", project.ID),
 			Mode:      "whitelist",
 			Resources: res,
 			AppliesTo: []appliesTo{{Type: "dataset", ResourceIDs: []string{logDatasetID}}},
-			Locations: []string{project.AuditLogs.LogsBigqueryDataset.Location},
+			Locations: []string{project.AuditLogs.LogsBQDataset.Location},
 		})
 	}
 

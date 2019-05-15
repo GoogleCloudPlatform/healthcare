@@ -12,7 +12,13 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 )
 
-const deploymentName = "managed-data-protect-toolkit"
+const (
+	// accessLogsWriter is the access logs writer.
+	// https://cloud.google.com/storage/docs/access-logs#delivery.
+	accessLogsWriter = "group:cloud-storage-analytics@google.com"
+
+	deploymentName = "managed-data-protect-toolkit"
+)
 
 // The following vars are stubbed in tests.
 var (
@@ -71,15 +77,11 @@ type Project struct {
 	} `json:"resources"`
 
 	AuditLogs *struct {
-		LogsGCSBucket *struct {
-			Name     string `json:"name"`
-			Location string `json:"location"`
-		} `json:"logs_gcs_bucket"`
-
-		LogsBigqueryDataset struct {
-			Name     string `json:"name"`
-			Location string `json:"location"`
-		} `json:"logs_bigquery_dataset"`
+		// While audit resources use CFT templates under the hood, we only allow them to set
+		// a controlled subset of fields as these resources are managed more tightly by the DPT scripts.
+		// Thus, don't implement them as a resource pair as we don't need to save the raw form.
+		LogsBQDataset BigqueryDataset `json:"logs_bq_dataset"`
+		LogsGCSBucket *GCSBucket      `json:"logs_gcs_bucket"`
 	} `json:"audit_logs"`
 
 	// passed through by config so should not be parsed by json.
@@ -141,7 +143,7 @@ func (c *Config) Init() error {
 		if ok {
 			p.GeneratedFields = genFields
 		}
-		if err := p.Init(); err != nil {
+		if err := p.Init(c.AuditLogsProject); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)
 		}
 	}
@@ -172,13 +174,10 @@ func (c *Config) ProjectForAuditLogs(p *Project) *Project {
 }
 
 // Init initializes a project and all its resources.
-func (p *Project) Init() error {
-	if p.AuditLogs.LogsBigqueryDataset.Name == "" {
-		p.AuditLogs.LogsBigqueryDataset.Name = "audit_logs"
-	}
-
-	if p.AuditLogs.LogsGCSBucket != nil && p.AuditLogs.LogsGCSBucket.Name == "" {
-		p.AuditLogs.LogsGCSBucket.Name = p.ID + "-logs"
+// Audit Logs Project should either be a remote project or nil.
+func (p *Project) Init(auditLogsProject *Project) error {
+	if err := p.initAuditResources(auditLogsProject); err != nil {
+		return fmt.Errorf("failed to init audit resources: %v", err)
 	}
 
 	for _, pair := range p.resourcePairs() {
@@ -189,6 +188,42 @@ func (p *Project) Init() error {
 			return fmt.Errorf("failed to init: %v, %+v", err, pair.parsed)
 		}
 	}
+	return nil
+}
+
+func (p *Project) initAuditResources(auditLogsProject *Project) error {
+	if auditLogsProject == nil {
+		auditLogsProject = p
+	}
+
+	if err := p.AuditLogs.LogsBQDataset.Init(p); err != nil {
+		return fmt.Errorf("failed to init logs bq dataset: %v", err)
+	}
+
+	accesses := []Access{
+		{Role: "OWNER", GroupByEmail: auditLogsProject.OwnersGroup},
+		{Role: "READER", GroupByEmail: p.AuditorsGroup},
+	}
+
+	if p.GeneratedFields != nil && p.GeneratedFields.LogSinkServiceAccount != "" {
+		accesses = append(accesses, Access{Role: "WRITER", UserByEmail: p.GeneratedFields.LogSinkServiceAccount})
+	}
+	p.AuditLogs.LogsBQDataset.Accesses = accesses
+
+	if p.AuditLogs.LogsGCSBucket == nil {
+		return nil
+	}
+
+	if err := p.AuditLogs.LogsGCSBucket.Init(p); err != nil {
+		return fmt.Errorf("faild to init logs gcs bucket: %v", err)
+	}
+
+	p.AuditLogs.LogsGCSBucket.Bindings = []Binding{
+		{Role: "roles/storage.admin", Members: []string{"group:" + auditLogsProject.OwnersGroup}},
+		{Role: "roles/storage.objectCreator", Members: []string{accessLogsWriter}},
+		{Role: "roles/storage.objectViewer", Members: []string{"group:" + p.AuditorsGroup}},
+	}
+
 	return nil
 }
 

@@ -30,12 +30,16 @@ projects:
   - some-readonly-group@my-domain.com
   - another-readonly-group@googlegroups.com
   audit_logs:
+    logs_bq_dataset:
+      properties:
+        name: audit_logs
+        location: US
     logs_gcs_bucket:
-      location: US
-      storage_class: MULTI_REGIONAL
       ttl_days: 365
-    logs_bigquery_dataset:
-      location: US
+      properties:
+        name: my-project-logs
+        location: US
+        storageClass: MULTI_REGIONAL
 {{lpad .ExtraProjectConfig 2}}
 
 generated_fields:
@@ -85,7 +89,7 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*Config, *Project)
 		t.Fatalf("len(config.Projects)=%v, want 1", len(config.Projects))
 	}
 	proj := config.Projects[0]
-	if err := proj.Init(); err != nil {
+	if err := proj.Init(nil); err != nil {
 		t.Fatalf("proj.Init: %v", err)
 	}
 	return config, proj

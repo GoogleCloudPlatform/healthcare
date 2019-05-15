@@ -95,12 +95,12 @@ func getAuditTreesForProjects(auditLogsProjectID string, projects ...*cft.Projec
 	for _, project := range projects {
 		trees = append(trees, resourceTree{
 			Type:       "dataset",
-			ResourceID: fmt.Sprintf("%s:%s", auditLogsProjectID, project.AuditLogs.LogsBigqueryDataset.Name),
+			ResourceID: fmt.Sprintf("%s:%s", auditLogsProjectID, project.AuditLogs.LogsBQDataset.Name()),
 		})
 		if project.AuditLogs.LogsGCSBucket != nil {
 			trees = append(trees, resourceTree{
 				Type:       "bucket",
-				ResourceID: project.AuditLogs.LogsGCSBucket.Name,
+				ResourceID: project.AuditLogs.LogsGCSBucket.Name(),
 			})
 		}
 	}

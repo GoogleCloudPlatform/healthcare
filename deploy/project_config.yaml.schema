@@ -173,6 +173,37 @@ definitions:
         required:
         - logs_bigquery_dataset
         properties:
+          logs_bq_dataset:
+            type: object
+            description: |
+              NOT READY FOR GENERAL USE. BigQuery dataset to hold audit logs.
+            additionalProperties: false
+            required:
+            - properties
+            properties:
+              properties:
+                type: object
+                description: |
+                  Wraps the CFT template bigquery_dataset.py.
+                  See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery for details.
+                  additionalProperties: false
+                  required:
+                  - name
+                  - location
+                  properties:
+                    name:
+                      type: string
+                      description: |
+                        Name of the BiqQuery dataset. For local audit logs,
+                        the recommended name is "audit-logs". For remote audit
+                        logs, the recommended name is the project-id with
+                        hyphens substituted with underscores.
+                      pattern: ^[_a-zA-Z0-9]{1,1024}$
+                    location:
+                      type: string
+                      description: |
+                        Location of the dataset. See BigQuery documenation for
+                        available locations.
           logs_bigquery_dataset:
             type: object
             description: BigQuery dataset to hold audit logs.
@@ -201,8 +232,6 @@ definitions:
               data_buckets.
             additionalProperties: false
             required:
-            - location
-            - storage_class
             - ttl_days
             properties:
               name:
@@ -223,9 +252,36 @@ definitions:
                 minLength: 2
               ttl_days:
                 type: integer
-                description: TTL (in days_ on objects in this bucket.
+                description: |
+                  TTL (in days) on objects in this bucket.
+                  This is a helper that creates a lifecycle rule.
                 minimum: 1
-
+              properties:
+                type: object
+                description: |
+                  NOT READY FOR GENERAL USE.
+                  Wraps the CFT template gcs_bucket.py.
+                  See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket for details.
+                additionalProperties: false
+                required:
+                - name
+                - location
+                - storageClass
+                properties:
+                  name:
+                    type: string
+                    description: |
+                      Globally unique name of the GCS bucket.
+                      See https://cloud.google.com/storage/docs/best-practices
+                      for recommendations on setting names here.
+                    pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}$
+                  location:
+                    type: string
+                    description: Regional or multi-regional location of the bucket.
+                    minLength: 2
+                  storageClass:
+                    type: string
+                    description: Storage class of the bucket.
       stackdriver_alert_email:
         $ref: '#/definitions/email_address'
         description: |

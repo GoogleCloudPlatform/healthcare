@@ -34,12 +34,16 @@ forseti:
     owners_group: my-forseti-project-owners@my-domain.com
     auditors_group: my-forseti-project-auditors@my-domain.com
     audit_logs:
+      logs_bq_dataset:
+        properties:
+          name: audit_logs
+          location: US
       logs_gcs_bucket:
-        location: US
-        storage_class: MULTI_REGIONAL
         ttl_days: 365
-      logs_bigquery_dataset:
-        location: US
+        properties:
+          name: my-forseti-project-logs
+          location: US
+          storageClass: MULTI_REGIONAL
 
 projects:
 - project_id: my-project
@@ -54,12 +58,16 @@ projects:
   enabled_apis:
   - foo-api.googleapis.com
   audit_logs:
+    logs_bq_dataset:
+      properties:
+        name: audit_logs
+        location: US
     logs_gcs_bucket:
-      location: US
-      storage_class: MULTI_REGIONAL
       ttl_days: 365
-    logs_bigquery_dataset:
-      location: US
+      properties:
+        name: my-project-logs
+        location: US
+        storageClass: MULTI_REGIONAL
 {{lpad .ExtraProjectConfig 2}}
 
 generated_fields:

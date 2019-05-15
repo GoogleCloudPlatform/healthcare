@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func TestAudLoggingRules(t *testing.T) {
+func TestAuditLoggingRules(t *testing.T) {
 	config, _ := getTestConfigAndProject(t, nil)
 	got, err := AuditLoggingRules(config)
 	if err != nil {

@@ -77,5 +77,5 @@ func getSink(destination string) sink {
 }
 
 func auditLogSinkDestination(config *cft.Config, project *cft.Project) string {
-	return fmt.Sprintf("bigquery.googleapis.com/projects/%s/datasets/%s", config.ProjectForAuditLogs(project).ID, project.AuditLogs.LogsBigqueryDataset.Name)
+	return fmt.Sprintf("bigquery.googleapis.com/projects/%s/datasets/%s", config.ProjectForAuditLogs(project).ID, project.AuditLogs.LogsBQDataset.Name())
 }

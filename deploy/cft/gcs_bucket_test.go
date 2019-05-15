@@ -12,6 +12,7 @@ func TestGCSBucket(t *testing.T) {
 	_, project := getTestConfigAndProject(t, nil)
 
 	bucketYAML := `
+ttl_days: 7
 properties:
   name: foo-bucket
   location: us-east1
@@ -19,9 +20,24 @@ properties:
   - role: roles/storage.objectViewer
     members:
     - 'user:extra-reader@google.com'
+  lifecycle:
+    rule:
+    - action:
+        type: SetStorageClass
+        storageClass: NEARLINE
+      condition:
+        age: 36500
+        createdBefore: "2018-08-16"
+        isLive: false
+        matchesStorageClass:
+        - REGIONAL
+        - STANDARD
+        - COLDLINE
+        numNewerVersions: 5
 `
 
 	wantBucketYAML := `
+ttl_days: 7
 properties:
   name: foo-bucket
   location: us-east1
@@ -41,6 +57,25 @@ properties:
     enabled: True
   logging:
     logBucket: my-project-logs
+  lifecycle:
+    rule:
+    - action:
+        type: SetStorageClass
+        storageClass: NEARLINE
+      condition:
+        age: 36500
+        createdBefore: "2018-08-16"
+        isLive: false
+        matchesStorageClass:
+        - REGIONAL
+        - STANDARD
+        - COLDLINE
+        numNewerVersions: 5
+    - action:
+        type: DELETE
+      condition:
+        age: 7
+        isLive: true
 `
 
 	b := &GCSBucket{}

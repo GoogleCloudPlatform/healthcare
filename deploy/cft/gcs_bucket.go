@@ -2,6 +2,7 @@ package cft
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -18,6 +19,7 @@ protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})
 // GCSBucket wraps a CFT Cloud Storage Bucket.
 type GCSBucket struct {
 	GCSBucketProperties `json:"properties"`
+	TTLDays             int      `json:"ttl_days,omitempty"`
 	ExpectedUsers       []string `json:"expected_users,omitempty"`
 }
 
@@ -27,6 +29,7 @@ type GCSBucketProperties struct {
 	Location      string     `json:"location"`
 	Bindings      []Binding  `json:"bindings"`
 	Versioning    versioning `json:"versioning"`
+	Lifecycle     *lifecycle `json:"lifecycle,omitempty"`
 	Logging       struct {
 		LogBucket string `json:"logBucket"`
 	} `json:"logging"`
@@ -35,6 +38,44 @@ type GCSBucketProperties struct {
 type versioning struct {
 	// Use pointer to differentiate between zero value and intentionally being set to false.
 	Enabled *bool `json:"enabled"`
+}
+
+type lifecycle struct {
+	// implement as pair so user-defined rules are not lost
+	Rules []lifecycleRulePair `json:"rule,omitempty"`
+}
+
+type lifecycleRulePair struct {
+	raw    json.RawMessage
+	parsed lifecycleRule
+}
+
+type lifecycleRule struct {
+	Action    *action    `json:"action,omitempty"`
+	Condition *condition `json:"condition,omitempty"`
+}
+
+type action struct {
+	Type string `json:"type,omitempty"`
+}
+
+type condition struct {
+	Age    int  `json:"age,omitempty"`
+	IsLive bool `json:"isLive,omitempty"`
+}
+
+func (p *lifecycleRulePair) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &p.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal lifecycle rule into raw form: %v", err)
+	}
+	if err := json.Unmarshal(data, &p.parsed); err != nil {
+		return fmt.Errorf("failed to unmarshal lifecycle rule into parsed form: %v", err)
+	}
+	return nil
+}
+
+func (p *lifecycleRulePair) MarshalJSON() ([]byte, error) {
+	return interfacePair{p.raw, p.parsed}.MarshalJSON()
 }
 
 // Init initializes the bucket with the given project.
@@ -81,11 +122,21 @@ func (b *GCSBucket) Init(project *Project) error {
 	if project.AuditLogs.LogsGCSBucket == nil {
 		return nil
 	}
-	logBucket := project.AuditLogs.LogsGCSBucket.Name
-	if logBucket == "" {
-		logBucket = project.ID + "-logs"
+	if project.AuditLogs.LogsGCSBucket != nil {
+		b.Logging.LogBucket = project.AuditLogs.LogsGCSBucket.Name()
 	}
-	b.Logging.LogBucket = logBucket
+
+	if b.TTLDays > 0 {
+		if b.Lifecycle == nil {
+			b.Lifecycle = &lifecycle{}
+		}
+		b.Lifecycle.Rules = append(b.Lifecycle.Rules, lifecycleRulePair{
+			parsed: lifecycleRule{
+				Action:    &action{Type: "DELETE"},
+				Condition: &condition{Age: b.TTLDays, IsLive: true},
+			},
+		})
+	}
 	return nil
 }
 

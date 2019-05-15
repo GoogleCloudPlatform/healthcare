@@ -158,7 +158,7 @@ func getAuditLogDatasetRule(config *cft.Config, project *cft.Project) BigqueryRu
 	return BigqueryRule{
 		Name:       fmt.Sprintf("Whitelist for project %s audit logs.", project.ID),
 		Mode:       "whitelist",
-		DatasetIDs: []string{fmt.Sprintf("%s:%s", auditProject.ID, project.AuditLogs.LogsBigqueryDataset.Name)},
+		DatasetIDs: []string{fmt.Sprintf("%s:%s", auditProject.ID, project.AuditLogs.LogsBQDataset.Name())},
 		Resources: []resource{{
 			Type: "project",
 			IDs:  []string{auditProject.ID},

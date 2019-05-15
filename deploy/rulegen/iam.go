@@ -211,7 +211,7 @@ func getLogsBucketRule(config *cft.Config, project *cft.Project) IAMRule {
 		Resources: []resource{{
 			Type:      "bucket",
 			AppliesTo: "self",
-			IDs:       []string{project.AuditLogs.LogsGCSBucket.Name},
+			IDs:       []string{project.AuditLogs.LogsGCSBucket.Name()},
 		}},
 		InheritFromParents: true,
 		Bindings:           bindings,
