@@ -7,7 +7,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "go_default_library",
     srcs = ["deploymentmanager.go"],
-    importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/deployment",
+    importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager",
     deps = [
         "@in_ghodss_yaml//:go_default_library",
     ],
