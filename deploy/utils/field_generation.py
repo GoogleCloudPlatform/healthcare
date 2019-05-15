@@ -164,3 +164,17 @@ def move_generated_fields_out_of_projects(input_yaml_path):
       utils.write_yaml_file(overall, input_yaml_path)
     return True
   return False
+
+
+def update_generated_fields(input_yaml_path, new_config):
+  cfg_content = utils.read_yaml_file(input_yaml_path)
+  if GENERATED_FIELDS_NAME not in new_config:
+    cfg_content.pop(GENERATED_FIELDS_NAME, {})
+  else:
+    cfg_content[GENERATED_FIELDS_NAME] = new_config[GENERATED_FIELDS_NAME]
+  return cfg_content
+
+
+def rewrite_generated_fields_back(input_yaml_path, new_config):
+  cfg_content = update_generated_fields(input_yaml_path, new_config)
+  utils.write_yaml_file(cfg_content, input_yaml_path)

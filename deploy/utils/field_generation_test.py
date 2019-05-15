@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tempfile
 from absl.testing import absltest
 import ruamel.yaml
 from deploy.utils import field_generation
@@ -197,6 +198,27 @@ class FieldGeneratingTest(absltest.TestCase):
       self.assertTrue(
           field_generation.is_old_generated_fields_format_exist(overall_root))
       tc.pop('generated_fields')
+
+  def test_update_generated_fields_empty(self):
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml') as f:
+      f.write(TEST_YAML_CONTENT)
+      f.flush()
+      yaml = ruamel.yaml.YAML()
+      overall_root = yaml.load(TEST_YAML_CONTENT)
+      overall_root.pop('generated_fields')
+      new_root = field_generation.update_generated_fields(f.name, overall_root)
+      self.assertEqual(overall_root, new_root)
+
+  def test_update_generated_fields_noempty(self):
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml') as f:
+      f.write(TEST_YAML_CONTENT)
+      f.flush()
+      yaml = ruamel.yaml.YAML()
+      overall_root = yaml.load(TEST_YAML_CONTENT)
+      overall_root['generated_fields']['projects']['data-project-03'][
+          'failed_step'] = 16
+      new_root = field_generation.update_generated_fields(f.name, overall_root)
+      self.assertEqual(overall_root, new_root)
 
 
 if __name__ == '__main__':
