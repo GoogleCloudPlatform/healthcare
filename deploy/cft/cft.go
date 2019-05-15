@@ -36,8 +36,8 @@ type Config struct {
 	Forseti          *struct {
 		Project *Project `json:"project"`
 	} `json:"forseti"`
-	Projects             []*Project         `json:"projects"`
-	AllOfGeneratedFields AllGeneratedFields `json:"generated_fields"`
+	Projects           []*Project         `json:"projects"`
+	AllGeneratedFields AllGeneratedFields `json:"generated_fields"`
 }
 
 // Project defines a single project's configuration.
@@ -81,6 +81,9 @@ type Project struct {
 			Location string `json:"location"`
 		} `json:"logs_bigquery_dataset"`
 	} `json:"audit_logs"`
+
+	// passed through by config so should not be parsed by json.
+	GeneratedFields *GeneratedFields `json:"-"`
 }
 
 // BigqueryDatasetPair pairs a raw dataset with its parsed version.
@@ -134,6 +137,10 @@ type PubsubPair struct {
 // Init initializes the config and all its projects.
 func (c *Config) Init() error {
 	for _, p := range c.AllProjects() {
+		genFields, ok := c.AllGeneratedFields.Projects[p.ID]
+		if ok {
+			p.GeneratedFields = genFields
+		}
 		if err := p.Init(); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)
 		}

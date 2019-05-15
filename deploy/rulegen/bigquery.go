@@ -55,11 +55,7 @@ func BigqueryRules(config *cft.Config) ([]BigqueryRule, error) {
 			return nil, fmt.Errorf("failed to get dataset rules for project %q: %v", project.ID, err)
 		}
 		rules = append(rules, prules...)
-		auditLoggingRule, alrErr := getAuditLogDatasetRule(config, project)
-		if alrErr != nil {
-			return nil, fmt.Errorf("BigqueryRules error %v", alrErr)
-		}
-		rules = append(rules, auditLoggingRule)
+		rules = append(rules, getAuditLogDatasetRule(config, project))
 	}
 
 	return rules, nil
@@ -150,15 +146,12 @@ func accessesToBindings(accesses []cft.Access) ([]bigqueryBinding, error) {
 	return bs, nil
 }
 
-func getAuditLogDatasetRule(config *cft.Config, project *cft.Project) (BigqueryRule, error) {
+func getAuditLogDatasetRule(config *cft.Config, project *cft.Project) BigqueryRule {
 	auditProject := config.ProjectForAuditLogs(project)
-	generatedFields, err := config.AllOfGeneratedFields.Project(project.ID)
-	if err != nil {
-    return BigqueryRule{}, err
-	}
+
 	bindings := []bigqueryBinding{
 		{Role: "OWNER", Members: []bigqueryMember{{GroupEmail: auditProject.OwnersGroup}}},
-		{Role: "WRITER", Members: []bigqueryMember{{UserEmail: generatedFields.LogSinkServiceAccount}}},
+		{Role: "WRITER", Members: []bigqueryMember{{UserEmail: project.GeneratedFields.LogSinkServiceAccount}}},
 		{Role: "READER", Members: []bigqueryMember{{GroupEmail: project.AuditorsGroup}}},
 	}
 
@@ -171,5 +164,5 @@ func getAuditLogDatasetRule(config *cft.Config, project *cft.Project) (BigqueryR
 			IDs:  []string{auditProject.ID},
 		}},
 		Bindings: bindings,
-	}, nil
+	}
 }

@@ -24,30 +24,53 @@ generated_fields:
     service_account: some-forseti-gcp-reader@some-forseti.iam.gserviceaccount.com
     server_bucket: gs://some-forseti-server
 `
-	cfg := &Config{}
-	yaml.Unmarshal([]byte(testYaml), cfg)
-	if err := yaml.Unmarshal([]byte(testYaml), cfg); err != nil {
+	got := new(Config)
+	yaml.Unmarshal([]byte(testYaml), got)
+	if err := yaml.Unmarshal([]byte(testYaml), got); err != nil {
 		t.Fatalf("yaml.Unmarshal got config: %v", err)
 	}
-	expectedConfig := Config{}
-	expectedConfig.AllOfGeneratedFields.Projects = make(map[string]*GeneratedFields)
-	expectedConfig.AllOfGeneratedFields.Projects["some-data"] = &GeneratedFields{ProjectNumber: "123123123123", LogSinkServiceAccount: "p123123123123-001111@gcp-sa-logging.iam.gserviceaccount.com"}
-	expectedConfig.AllOfGeneratedFields.Projects["some-analytics"] = &GeneratedFields{ProjectNumber: "456456456456", LogSinkServiceAccount: "p456456456456-002222@gcp-sa-logging.iam.gserviceaccount.com", GCEInstanceInfoList: []GCEInstanceInfo{{Name: "foo-instance", ID: "123"}}}
-	expectedConfig.AllOfGeneratedFields.Forseti = ForsetiServiceInfo{ServiceAccount: "some-forseti-gcp-reader@some-forseti.iam.gserviceaccount.com", ServiceBucket: "gs://some-forseti-server"}
+	want := &Config{
+		AllGeneratedFields: AllGeneratedFields{
+			Projects: map[string]*GeneratedFields{
+				"some-data": &GeneratedFields{
+					ProjectNumber:         "123123123123",
+					LogSinkServiceAccount: "p123123123123-001111@gcp-sa-logging.iam.gserviceaccount.com",
+				},
+				"some-analytics": &GeneratedFields{
+					ProjectNumber:         "456456456456",
+					LogSinkServiceAccount: "p456456456456-002222@gcp-sa-logging.iam.gserviceaccount.com",
+					GCEInstanceInfoList:   []GCEInstanceInfo{{Name: "foo-instance", ID: "123"}}},
+			},
+			Forseti: ForsetiServiceInfo{
+				ServiceAccount: "some-forseti-gcp-reader@some-forseti.iam.gserviceaccount.com",
+				ServiceBucket:  "gs://some-forseti-server",
+			},
+		},
+	}
 
-	if diff := cmp.Diff(*cfg, expectedConfig); diff != "" {
+	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("AllGeneratedFields mismatch (-want +got):\n%s", diff)
 	}
 }
 
 func TestGetInstanceID(t *testing.T) {
-	cfg := Config{}
-	cfg.AllOfGeneratedFields.Projects = make(map[string]*GeneratedFields)
-	cfg.AllOfGeneratedFields.Projects["some-analytics"] = &GeneratedFields{GCEInstanceInfoList: []GCEInstanceInfo{{Name: "foo-instance", ID: "123"}, {Name: "bar-instance", ID: "456"}}}
+	const projectID = "some-analytics"
+	cfg := Config{
+		AllGeneratedFields: AllGeneratedFields{
+			Projects: map[string]*GeneratedFields{
+				projectID: &GeneratedFields{
+					GCEInstanceInfoList: []GCEInstanceInfo{
+						{Name: "foo-instance", ID: "123"},
+						{Name: "bar-instance", ID: "456"},
+					},
+				},
+			},
+		},
+	}
 
-	project, err := cfg.AllOfGeneratedFields.Project("some-analytics")
-	if err != nil {
-		t.Fatalf("cfg.AllOfGeneratedFields.Project(\"some-analytics\") = %v", err)
+	project, ok := cfg.AllGeneratedFields.Projects[projectID]
+	if !ok {
+		t.Fatalf("missing %q in %v", projectID, cfg.AllGeneratedFields.Projects)
 	}
 
 	name := "foo-instance"
@@ -59,25 +82,8 @@ func TestGetInstanceID(t *testing.T) {
 		}
 	}
 
-	_, err = cfg.AllOfGeneratedFields.Project("none-analytics")
-	if err == nil {
-		t.Errorf("AllOfGeneratedFields.Project: got nil error, want non-nil error")
-	}
-
 	name = "dne"
-	if _, err := cfg.AllOfGeneratedFields.Projects["some-analytics"].InstanceID(name); err == nil {
+	if _, err := cfg.AllGeneratedFields.Projects["some-analytics"].InstanceID(name); err == nil {
 		t.Errorf("project.InstanceID(%q): got nil error, want non-nil error", name)
-	}
-}
-
-func TestGetProjectInGeneratedFields(t *testing.T) {
-	cfg := Config{}
-	cfg.AllOfGeneratedFields.Projects = make(map[string]*GeneratedFields)
-	cfg.AllOfGeneratedFields.Projects["some-data"] = &GeneratedFields{ProjectNumber: "11111"}
-	expectProjectNumber := "22222"
-	cfg.AllOfGeneratedFields.Projects["some-analytics"] = &GeneratedFields{ProjectNumber: expectProjectNumber}
-	project, err := cfg.AllOfGeneratedFields.Project("some-analytics")
-	if project.ProjectNumber != expectProjectNumber {
-		t.Errorf("get project error: got %v, want %q, err %v", project.ProjectNumber, expectProjectNumber, err)
 	}
 }

@@ -31,15 +31,6 @@ type ForsetiServiceInfo struct {
 	ServiceBucket  string `json:"server_bucket"`
 }
 
-// Project returns the GeneratedFields pointer with the given project ID.
-func (a *AllGeneratedFields) Project(id string) (*GeneratedFields, error) {
-	projGeneratedFields, ok := a.Projects[id]
-	if !ok {
-		return nil, fmt.Errorf("project %q does not exist in generated_fields", id)
-	}
-	return projGeneratedFields, nil
-}
-
 // InstanceID returns the ID of the instance with the given name.
 func (g *GeneratedFields) InstanceID(name string) (string, error) {
 	for _, info := range g.GCEInstanceInfoList {
