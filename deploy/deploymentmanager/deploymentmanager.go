@@ -1,4 +1,5 @@
-package cft
+// Package deploymentmanager provides utilities for deployment manager.
+package deploymentmanager
 
 import (
 	"encoding/json"
@@ -42,8 +43,8 @@ type Metadata struct {
 	DependsOn []string `json:"dependsOn"`
 }
 
-// createOrUpdateDeployment creates the deployment if it does not exist, else updates it.
-func createOrUpdateDeployment(name string, deployment *Deployment, projectID string) error {
+// Upsert creates the deployment if it does not exist, else updates it.
+func Upsert(name string, deployment *Deployment, projectID string) error {
 	b, err := yaml.Marshal(deployment)
 	if err != nil {
 		return fmt.Errorf("failed to marshal deployment : %v", err)

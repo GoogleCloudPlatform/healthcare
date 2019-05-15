@@ -7,6 +7,7 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
@@ -301,26 +302,25 @@ resources:
 		t.Run(tc.name, func(t *testing.T) {
 			_, project := getTestConfigAndProject(t, tc.configData)
 
-			commander := &fakeCommander{
-				listDeploymentName: "managed-data-protect-toolkit",
-				wantDeploymentCommand: []string{
-					"gcloud", "deployment-manager", "deployments", "update", "managed-data-protect-toolkit",
-					"--delete-policy", "ABANDON", "--project", project.ID},
+			type upsertCall struct {
+				Name       string
+				Deployment *deploymentmanager.Deployment
+				ProjectID  string
 			}
 
-			cmdRun = commander.Run
-			cmdCombinedOutput = commander.CombinedOutput
+			var got []upsertCall
+			upsertDeployment = func(name string, deployment *deploymentmanager.Deployment, projectID string) error {
+				got = append(got, upsertCall{name, deployment, projectID})
+				return nil
+			}
 
 			if err := Deploy(project); err != nil {
 				t.Fatalf("Deploy: %v", err)
 			}
 
-			got := new(Deployment)
-			if err := yaml.Unmarshal(commander.gotConfigFileContents, &got); err != nil {
-				t.Fatal(err)
+			want := []upsertCall{
+				{"managed-data-protect-toolkit", getWantDeployment(t, tc.want), project.ID},
 			}
-
-			want := getWantDeployment(t, tc.want)
 
 			if diff := cmp.Diff(got, want); diff != "" {
 				t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
@@ -331,7 +331,7 @@ resources:
 	}
 }
 
-func getWantDeployment(t *testing.T, yamlTemplate string) *Deployment {
+func getWantDeployment(t *testing.T, yamlTemplate string) *deploymentmanager.Deployment {
 	t.Helper()
 	tmpl, err := template.New("test-deployment").Funcs(template.FuncMap{"abs": abs}).Parse(yamlTemplate)
 	if err != nil {
@@ -343,7 +343,7 @@ func getWantDeployment(t *testing.T, yamlTemplate string) *Deployment {
 		t.Fatalf("tmpl.Execute: %v", err)
 	}
 
-	deployment := new(Deployment)
+	deployment := new(deploymentmanager.Deployment)
 	if err := yaml.Unmarshal(buf.Bytes(), deployment); err != nil {
 		t.Fatalf("yaml.Unmarshal: %v", err)
 	}

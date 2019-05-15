@@ -5,11 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os/exec"
 	"path/filepath"
 	"sort"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 )
 
 const deploymentName = "managed-data-protect-toolkit"
+
+// The following vars are stubbed in tests.
+var (
+	cmdRun            = (*exec.Cmd).Run
+	cmdCombinedOutput = (*exec.Cmd).CombinedOutput
+	upsertDeployment  = deploymentmanager.Upsert
+)
 
 // Config represents a (partial) representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
@@ -24,7 +34,7 @@ type Config struct {
 	} `json:"overall"`
 	AuditLogsProject *Project `json:"audit_logs_project"`
 	Forseti          *struct {
-		Project         *Project `json:"project"`
+		Project *Project `json:"project"`
 	} `json:"forseti"`
 	Projects             []*Project         `json:"projects"`
 	AllOfGeneratedFields AllGeneratedFields `json:"generated_fields"`
@@ -231,7 +241,7 @@ type parsedResource interface {
 	Name() string
 }
 
-// deploymentManagerTyper should be implemented by resources that are natively supported by DM.
+// deploymentManagerTyper should be implemented by resources that are natively supported by the deployment manager service.
 // Use this if there is no suitable CFT template for a resource and a custom template is not needed.
 // See https://cloud.google.com/deployment-manager/docs/configuration/supported-resource-types for valid types.
 type deploymentManagerTyper interface {
@@ -261,7 +271,7 @@ func Deploy(project *Project) error {
 	if err != nil {
 		return err
 	}
-	if err := createOrUpdateDeployment(deploymentName, deployment, project.ID); err != nil {
+	if err := upsertDeployment(deploymentName, deployment, project.ID); err != nil {
 		return fmt.Errorf("failed to deploy deployment manager resources: %v", err)
 	}
 
@@ -272,8 +282,8 @@ func Deploy(project *Project) error {
 	return nil
 }
 
-func getDeployment(project *Project, pairs []resourcePair) (*Deployment, error) {
-	deployment := &Deployment{}
+func getDeployment(project *Project, pairs []resourcePair) (*deploymentmanager.Deployment, error) {
+	deployment := &deploymentmanager.Deployment{}
 
 	allImports := make(map[string]bool)
 
@@ -292,7 +302,7 @@ func getDeployment(project *Project, pairs []resourcePair) (*Deployment, error) 
 
 		for _, imp := range imports {
 			if !allImports[imp] {
-				deployment.Imports = append(deployment.Imports, &Import{Path: imp})
+				deployment.Imports = append(deployment.Imports, &deploymentmanager.Import{Path: imp})
 			}
 			allImports[imp] = true
 		}
@@ -303,7 +313,7 @@ func getDeployment(project *Project, pairs []resourcePair) (*Deployment, error) 
 
 // getDeploymentResourcesAndImports gets the deploment resources and imports for the given resource pair.
 // It also recursively adds the resoures and imports of any dependent resources.
-func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (resources []*Resource, importSet map[string]bool, err error) {
+func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (resources []*deploymentmanager.Resource, importSet map[string]bool, err error) {
 	importSet = make(map[string]bool)
 
 	var typ string
@@ -325,7 +335,7 @@ func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (reso
 		return nil, nil, fmt.Errorf("failed to merge raw map with parsed: %v", err)
 	}
 
-	resources = []*Resource{{
+	resources = []*deploymentmanager.Resource{{
 		Name:       pair.parsed.Name(),
 		Type:       typ,
 		Properties: merged,
@@ -350,7 +360,7 @@ func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (reso
 
 		for _, res := range depResources {
 			if res.Metadata == nil {
-				res.Metadata = &Metadata{}
+				res.Metadata = &deploymentmanager.Metadata{}
 			}
 			res.Metadata.DependsOn = append(res.Metadata.DependsOn, pair.parsed.Name())
 		}

@@ -1,4 +1,4 @@
-package cft
+package deploymentmanager
 
 import (
 	"fmt"
@@ -81,7 +81,7 @@ resources:
 			cmdRun = commander.Run
 			cmdCombinedOutput = commander.CombinedOutput
 
-			if err := createOrUpdateDeployment("foo-deployment", deployment, projID); err != nil {
+			if err := Upsert("foo-deployment", deployment, projID); err != nil {
 				t.Fatalf("createOrUpdateDeployment = %v", err)
 			}
 
@@ -101,6 +101,7 @@ resources:
 	}
 }
 
+// TODO: simplify this
 type fakeCommander struct {
 	listDeploymentName    string
 	wantDeploymentCommand []string
