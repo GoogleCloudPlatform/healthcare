@@ -55,13 +55,12 @@ properties:
 func TestGetParsedClusters(t *testing.T) {
 	configExtend := &ConfigData{`
 resources:
-- gke_cluster:
-    properties:
+  gke_clusters:
+  - properties:
       name: cluster1
       clusterLocationType: Regional
       region: somewhere1
-- gke_cluster:
-    properties:
+  - properties:
       name: cluster2
       clusterLocationType: Zonal
       zone: somewhere2-c`,

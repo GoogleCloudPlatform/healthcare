@@ -73,12 +73,11 @@ func TestBigqueryRules(t *testing.T) {
 			name: "dataset",
 			configData: &ConfigData{`
 resources:
-- bq_dataset:
-    properties:
+  bq_datasets:
+  - properties:
       name: foo-dataset
       location: US
-- bq_dataset:
-    properties:
+  - properties:
       name: bar-dataset
       location: US`},
 			wantYAML: `

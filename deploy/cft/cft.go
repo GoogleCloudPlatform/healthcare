@@ -58,22 +58,18 @@ type Project struct {
 	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
 	EnabledAPIs         []string `json:"enabled_apis"`
 
-	// Note: typically only one resource in the struct is set at one time.
-	// Go does not have the concept of "one-of", so despite only one of these resources
-	// typically being non-empty, we still check them all. The one-of check is done by the schema.
-	Resources []*struct {
-		// The following structs are embedded so the json parser skips directly to their fields.
-		BigqueryDatasetPair
-		FirewallPair
-		GCEInstancePair
-		GCSBucketPair
-		GKEClusterPair
-		IAMCustomRolePair
-		IAMPolicyPair
-		PubsubPair
+	Resources struct {
+		BQDatasets     []*BigqueryDatasetPair `json:"bq_datasets"`
+		Firewalls      []*FirewallPair        `json:"firewalls"`
+		GCEInstances   []*GCEInstancePair     `json:"gce_instances"`
+		GCSBuckets     []*GCSBucketPair       `json:"gcs_buckets"`
+		GKEClusters    []*GKEClusterPair      `json:"gke_clusters"`
+		IAMCustomRoles []*IAMCustomRolePair   `json:"iam_custom_roles"`
+		IAMPolicies    []*IAMPolicyPair       `json:"iam_policies"`
+		Pubsubs        []*PubsubPair          `json:"pubsubs"`
 
 		// TODO: make this behave more like standard deployment manager resources
-		GKEWorkload json.RawMessage `json:"gke_workload"`
+		GKEWorkloads []json.RawMessage `json:"gke_workloads"`
 	} `json:"resources"`
 
 	AuditLogs *struct {
@@ -90,50 +86,50 @@ type Project struct {
 
 // BigqueryDatasetPair pairs a raw dataset with its parsed version.
 type BigqueryDatasetPair struct {
-	Raw    json.RawMessage `json:"bq_dataset"`
-	Parsed BigqueryDataset `json:"-"`
+	json.RawMessage
+	Parsed BigqueryDataset
 }
 
 // FirewallPair pairs a raw firewall with its parsed version.
 type FirewallPair struct {
-	Raw    json.RawMessage `json:"firewall"`
-	Parsed DefaultResource `json:"-"`
+	json.RawMessage
+	Parsed DefaultResource
 }
 
 // GCEInstancePair pairs a raw instance with its parsed version.
 type GCEInstancePair struct {
-	Raw    json.RawMessage `json:"gce_instance"`
-	Parsed GCEInstance     `json:"-"`
+	json.RawMessage
+	Parsed GCEInstance
 }
 
 // GCSBucketPair pairs a raw bucket with its parsed version.
 type GCSBucketPair struct {
-	Raw    json.RawMessage `json:"gcs_bucket"`
-	Parsed GCSBucket       `json:"-"`
+	json.RawMessage
+	Parsed GCSBucket
 }
 
 // GKEClusterPair pairs a raw cluster with its parsed version.
 type GKEClusterPair struct {
-	Raw    json.RawMessage `json:"gke_cluster"`
-	Parsed GKECluster      `json:"-"`
+	json.RawMessage
+	Parsed GKECluster `json:"-"`
 }
 
 // IAMCustomRolePair pairs a raw custom role with its parsed version.
 type IAMCustomRolePair struct {
-	Raw    json.RawMessage `json:"iam_custom_role"`
-	Parsed IAMCustomRole   `json:"-"`
+	json.RawMessage
+	Parsed IAMCustomRole
 }
 
 // IAMPolicyPair pairs a raw iam policy with its parsed version.
 type IAMPolicyPair struct {
-	Raw    json.RawMessage `json:"iam_policy"`
-	Parsed IAMPolicy       `json:"-"`
+	json.RawMessage
+	Parsed IAMPolicy
 }
 
 // PubsubPair pairs a raw pubsub with its parsed version.
 type PubsubPair struct {
-	Raw    json.RawMessage `json:"pubsub"`
-	Parsed Pubsub          `json:"-"`
+	json.RawMessage
+	Parsed Pubsub
 }
 
 // Init initializes the config and all its projects.
@@ -236,23 +232,38 @@ func (p *Project) resourcePairs() []resourcePair {
 		pairs = append(pairs, resourcePair{parsed: res})
 	}
 	appendPair := func(raw json.RawMessage, parsed parsedResource) {
-		if len(raw) > 0 {
-			pairs = append(pairs, resourcePair{raw, parsed})
-		}
+		pairs = append(pairs, resourcePair{raw, parsed})
 	}
 	appendDefaultResPair := func(raw json.RawMessage, parsed *DefaultResource, path string) {
 		parsed.templatePath = path
 		appendPair(raw, parsed)
 	}
-	for _, res := range p.Resources {
-		appendPair(res.BigqueryDatasetPair.Raw, &res.BigqueryDatasetPair.Parsed)
-		appendDefaultResPair(res.FirewallPair.Raw, &res.FirewallPair.Parsed, "deploy/cft/templates/firewall/firewall.py")
-		appendPair(res.GCEInstancePair.Raw, &res.GCEInstancePair.Parsed)
-		appendPair(res.GCSBucketPair.Raw, &res.GCSBucketPair.Parsed)
-		appendPair(res.GKEClusterPair.Raw, &res.GKEClusterPair.Parsed)
-		appendPair(res.IAMCustomRolePair.Raw, &res.IAMCustomRolePair.Parsed)
-		appendPair(res.IAMPolicyPair.Raw, &res.IAMPolicyPair.Parsed)
-		appendPair(res.PubsubPair.Raw, &res.PubsubPair.Parsed)
+
+	rs := p.Resources
+
+	for _, r := range rs.BQDatasets {
+		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.Firewalls {
+		appendDefaultResPair(r.RawMessage, &r.Parsed, "deploy/cft/templates/firewall/firewall.py")
+	}
+	for _, r := range rs.GCEInstances {
+		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.GCSBuckets {
+		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.GKEClusters {
+		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.IAMCustomRoles {
+		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.IAMPolicies {
+		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.Pubsubs {
+		appendPair(r.RawMessage, &r.Parsed)
 	}
 	return pairs
 }
@@ -290,32 +301,6 @@ var defaultResources = []parsedResource{
 			LabelExtractors: principalEmailLabelExtractor,
 		},
 	},
-}
-
-// ResourcesByType arranges resources in the project into slices by their type.
-type ResourcesByType struct {
-	BigqueryDatasets []*BigqueryDataset
-	GCSBuckets       []*GCSBucket
-	GCEInstances     []*GCEInstance
-	IAMPolicies      []*IAMPolicy
-}
-
-// ResourcesByType gets resources in the project as slices arranged by their type.
-func (p *Project) ResourcesByType() *ResourcesByType {
-	rs := &ResourcesByType{}
-	for _, r := range p.Resources {
-		switch {
-		case len(r.BigqueryDatasetPair.Raw) > 0:
-			rs.BigqueryDatasets = append(rs.BigqueryDatasets, &r.BigqueryDatasetPair.Parsed)
-		case len(r.GCSBucketPair.Raw) > 0:
-			rs.GCSBuckets = append(rs.GCSBuckets, &r.GCSBucketPair.Parsed)
-		case len(r.GCEInstancePair.Raw) > 0:
-			rs.GCEInstances = append(rs.GCEInstances, &r.GCEInstancePair.Parsed)
-		case len(r.IAMPolicyPair.Raw) > 0:
-			rs.IAMPolicies = append(rs.IAMPolicies, &r.IAMPolicyPair.Parsed)
-		}
-	}
-	return rs
 }
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.

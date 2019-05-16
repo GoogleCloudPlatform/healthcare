@@ -31,11 +31,9 @@ func (cluster *GKECluster) TemplatePath() string {
 // getClusterByName get a cluster that has the given cluster name in a project.
 // TODO Replace this function with a general implementation.
 func getClusterByName(project *Project, clusterName string) *GKECluster {
-	for _, res := range project.Resources {
-		if len(res.GKEClusterPair.Raw) > 0 {
-			if res.GKEClusterPair.Parsed.Name() == clusterName {
-				return &res.GKEClusterPair.Parsed
-			}
+	for _, c := range project.Resources.GKEClusters {
+		if c.Parsed.Name() == clusterName {
+			return &c.Parsed
 		}
 	}
 	return nil

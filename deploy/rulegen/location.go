@@ -109,20 +109,19 @@ func (m locationToResources) locations() []string {
 }
 
 func (m locationToResources) addResources(project *cft.Project) error {
-	rs := project.ResourcesByType()
-	for _, bucket := range rs.GCSBuckets {
-		m.add(bucket.Location, "bucket", bucket.Name())
+	for _, bucket := range project.Resources.GCSBuckets {
+		m.add(bucket.Parsed.Location, "bucket", bucket.Parsed.Name())
 	}
-	for _, dataset := range rs.BigqueryDatasets {
-		id := fmt.Sprintf("%s:%s", project.ID, dataset.Name())
-		m.add(dataset.Location, "dataset", id)
+	for _, dataset := range project.Resources.BQDatasets {
+		id := fmt.Sprintf("%s:%s", project.ID, dataset.Parsed.Name())
+		m.add(dataset.Parsed.Location, "dataset", id)
 	}
-	for _, instance := range rs.GCEInstances {
-		id, err := project.GeneratedFields.InstanceID(instance.Name())
+	for _, instance := range project.Resources.GCEInstances {
+		id, err := project.GeneratedFields.InstanceID(instance.Parsed.Name())
 		if err != nil {
 			return err
 		}
-		m.add(instance.Zone, "instance", id)
+		m.add(instance.Parsed.Zone, "instance", id)
 	}
 	return nil
 }

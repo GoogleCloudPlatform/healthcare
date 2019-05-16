@@ -12,18 +12,18 @@ import (
 func TestResourceRules(t *testing.T) {
 	configData := &ConfigData{`
 resources:
-- bq_dataset:
-    properties:
+ bq_datasets:
+ - properties:
       name: foo-dataset
       location: US
-- gce_instance:
-    properties:
+ gce_instances:
+ - properties:
       name: foo-instance
       zone: us-east1-a
       diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
       machineType: f1-micro
-- gcs_bucket:
-    properties:
+ gcs_buckets:
+ - properties:
       name: foo-bucket
       location: us-east1
 `}

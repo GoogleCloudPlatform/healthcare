@@ -116,15 +116,12 @@ func deployGKEWorkloads(project *Project) error {
 func getGKEWorkloads(project *Project) ([]GKEWorkload, error) {
 	var workloads []GKEWorkload
 
-	for _, r := range project.Resources {
-		if r.GKEWorkload != nil {
-			var newWorkload GKEWorkload
-			if err := json.Unmarshal(r.GKEWorkload, &newWorkload); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal %q: %v", newWorkload, err)
-			}
-			workloads = append(workloads, newWorkload)
+	for _, r := range project.Resources.GKEWorkloads {
+		var newWorkload GKEWorkload
+		if err := json.Unmarshal(r, &newWorkload); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal %q: %v", newWorkload, err)
 		}
-
+		workloads = append(workloads, newWorkload)
 	}
 	return workloads, nil
 }

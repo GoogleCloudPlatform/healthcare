@@ -40,24 +40,22 @@ func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
 			Children:   getAuditTrees(config, project),
 		}
 
-		rs := project.ResourcesByType()
-
-		for _, b := range rs.GCSBuckets {
+		for _, b := range project.Resources.GCSBuckets {
 			pt.Children = append(pt.Children, resourceTree{
 				Type:       "bucket",
-				ResourceID: b.Name(),
+				ResourceID: b.Parsed.Name(),
 			})
 		}
 
-		for _, d := range rs.BigqueryDatasets {
+		for _, d := range project.Resources.BQDatasets {
 			pt.Children = append(pt.Children, resourceTree{
 				Type:       "dataset",
-				ResourceID: fmt.Sprintf("%s:%s", project.ID, d.Name()),
+				ResourceID: fmt.Sprintf("%s:%s", project.ID, d.Parsed.Name()),
 			})
 		}
 
-		for _, i := range rs.GCEInstances {
-			id, err := project.GeneratedFields.InstanceID(i.Name())
+		for _, i := range project.Resources.GCEInstances {
+			id, err := project.GeneratedFields.InstanceID(i.Parsed.Name())
 			if err != nil {
 				return nil, err
 			}

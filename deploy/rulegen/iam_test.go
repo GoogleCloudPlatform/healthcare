@@ -10,8 +10,8 @@ import (
 // TODO: add test for remote audit project
 var iamRulesConfigData = &ConfigData{`
 resources:
-- gcs_bucket:
-    properties:
+  gcs_buckets:
+  - properties:
       name: foo-bucket
       location: us-east1
       bindings:
@@ -19,8 +19,7 @@ resources:
         members:
         - group:internal-bucket-viewers@my-domain.com
         - group:external-bucket-viewers@custom.com
-- gcs_bucket:
-    properties:
+  - properties:
       name: bar-bucket
       location: us-east1
       bindings:
@@ -28,8 +27,8 @@ resources:
         members:
         - group:internal-bucket-viewers@my-domain.com
         - group:external-bucket-viewers@custom.com
-- iam_policy:
-    name: foo-policy
+  iam_policies:
+  - name: foo-policy
     properties:
       roles:
       - role: roles/viewer

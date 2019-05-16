@@ -46,13 +46,12 @@ func TestApplyClusterResource(t *testing.T) {
 func TestGetGKEWorkload(t *testing.T) {
 	configExtend := &ConfigData{`
 resources:
-- gke_workload:
-    cluster_name: cluster1
+  gke_workloads:
+  - cluster_name: cluster1
     properties:
       apiVersion: extensions/v1beta1
       kind: Deployment
-- gke_workload:
-    cluster_name: cluster2
+  - cluster_name: cluster2
     properties:
       apiVersion: extensions/v1beta1
       kind: Service`,
@@ -113,15 +112,15 @@ func TestLocationTypeAndValue(t *testing.T) {
 func TestInstallClusterWorkload(t *testing.T) {
 	configExtend := &ConfigData{`
 resources:
-- gke_cluster:
-    properties:
+  gke_clusters:
+  - properties:
       name: cluster1
       clusterLocationType: Regional
       region: somewhere1
       cluster:
         name: cluster1
-- gke_workload:
-    cluster_name: cluster1
+  gke_workloads:
+  - cluster_name: cluster1
     properties:
       apiVersion: extensions/v1beta1`,
 	}
@@ -201,15 +200,15 @@ func TestInstallClusterWorkloadErrors(t *testing.T) {
 		{
 			in: ConfigData{`
 resources:
-- gke_cluster:
-    properties:
+  gke_clusters:
+  - properties:
       name: cluster1
       clusterLocationType: Regional
       region: somewhere1
       cluster:
         name: cluster1
-- gke_workload:
-    cluster_name: clusterX
+  gke_workloads:
+  - cluster_name: clusterX
     properties:
       apiVersion: extensions/v1beta1`,
 			},
@@ -218,15 +217,15 @@ resources:
 		{
 			in: ConfigData{`
 resources:
-- gke_cluster:
-    properties:
+  gke_clusters:
+  - properties:
       name: cluster1
       clusterLocationType: Location
       region: somewhere1
       cluster:
         name: cluster1
-- gke_workload:
-    cluster_name: cluster1
+  gke_workloads:
+  - cluster_name: cluster1
     properties:
       apiVersion: extensions/v1beta1`,
 			},

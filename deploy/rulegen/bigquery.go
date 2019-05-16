@@ -65,10 +65,11 @@ func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
 	var rules []BigqueryRule
 
 	// group rules that have the same access together to reduce duplicated rules
-	accessHashToDatasets := make(map[uint64][]*cft.BigqueryDataset)
+	accessHashToDatasets := make(map[uint64][]cft.BigqueryDataset)
 	var hashes []uint64 // for stable ordering
 
-	for _, dataset := range project.ResourcesByType().BigqueryDatasets {
+	for _, pair := range project.Resources.BQDatasets {
+		dataset := pair.Parsed
 		h, err := hashstructure.Hash(dataset.Accesses, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to hash access %v: %v", dataset.Accesses, err)

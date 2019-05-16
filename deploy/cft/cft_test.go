@@ -166,8 +166,8 @@ func TestDeploy(t *testing.T) {
 			name: "bq_dataset",
 			configData: &ConfigData{`
 resources:
-- bq_dataset:
-    properties:
+  bq_datasets:
+  - properties:
       name: foo-dataset
       location: US`},
 			want: `
@@ -194,8 +194,8 @@ resources:
 			name: "gce_instance",
 			configData: &ConfigData{`
 resources:
-- gce_instance:
-    properties:
+  gce_instances:
+  - properties:
       name: foo-instance
       diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
       zone: us-east1-a
@@ -218,8 +218,8 @@ resources:
 			name: "gcs_bucket",
 			configData: &ConfigData{`
 resources:
-- gcs_bucket:
-    expected_users:
+  gcs_buckets:
+  - expected_users:
     - some-expected-user@my-domain.com
     properties:
       name: foo-bucket
@@ -278,8 +278,8 @@ resources:
 			name: "iam_custom_role",
 			configData: &ConfigData{`
 resources:
-- iam_custom_role:
-    properties:
+  iam_custom_roles:
+  - properties:
       roleId: fooCustomRole
       includedPermissions:
       - iam.roles.get`},
@@ -299,8 +299,8 @@ resources:
 			name: "iam_policy",
 			configData: &ConfigData{`
 resources:
-- iam_policy:
-    name: foo-owner-binding
+  iam_policies:
+  - name: foo-owner-binding
     properties:
       roles:
       - role: roles/owner
@@ -323,8 +323,8 @@ resources:
 			name: "pubsub",
 			configData: &ConfigData{`
 resources:
-- pubsub:
-    properties:
+  pubsubs:
+  - properties:
       topic: foo-topic
       accessControl:
       - role: roles/pubsub.publisher

@@ -184,9 +184,8 @@ func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding
 	}
 	bs = append(bs, cft.Binding{Role: "roles/editor", Members: ms})
 
-	rs := project.ResourcesByType()
-	for _, policy := range rs.IAMPolicies {
-		bs = append(bs, policy.Bindings...)
+	for _, policy := range project.Resources.IAMPolicies {
+		bs = append(bs, policy.Parsed.Bindings...)
 	}
 
 	bs = cft.MergeBindings(bs...)
@@ -223,10 +222,11 @@ func getDataBucketRules(project *cft.Project) ([]IAMRule, error) {
 	var rules []IAMRule
 
 	// group rules that have the same bindings together to reduce duplicated rules
-	bindingsHashToBuckets := make(map[uint64][]*cft.GCSBucket)
+	bindingsHashToBuckets := make(map[uint64][]cft.GCSBucket)
 	// TODO: this pattern is repeated several times and could benefit from a helper struct once generics are supported.
 	var hashes []uint64 // for stable ordering
-	for _, bucket := range project.ResourcesByType().GCSBuckets {
+	for _, pair := range project.Resources.GCSBuckets {
+		bucket := pair.Parsed
 		h, err := hashstructure.Hash(bucket.Bindings, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to hash access %v: %v", bucket.Bindings, err)

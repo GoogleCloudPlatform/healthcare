@@ -9,18 +9,18 @@ import (
 
 var locConfigData = &ConfigData{`
 resources:
-- bq_dataset:
-    properties:
+  bq_datasets:
+  - properties:
       name: foo-dataset
       location: US
-- gce_instance:
-    properties:
+  gce_instances:
+  - properties:
       name: foo-instance
       zone: us-central1-f
       diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
       machineType: f1-micro
-- gcs_bucket:
-    properties:
+  gcs_buckets:
+  - properties:
       name: my-project-foo-bucket
       location: us-central1`}
 
