@@ -177,19 +177,8 @@ func (b *GCSBucket) DependentResources(project *Project) ([]parsedResource, erro
 			MetricName:  "unexpected-access-" + b.Name(),
 			Description: "Count of unexpected data access to " + b.Name(),
 			Filter:      buf.String(),
-			Descriptor: descriptor{
-				MetricKind: "DELTA",
-				ValueType:  "INT64",
-				Unit:       "1",
-				Labels: []label{{
-					Key:         "user",
-					ValueType:   "STRING",
-					Description: "Unexpected user",
-				}},
-			},
-			LabelExtractors: map[string]string{
-				"user": "EXTRACT(protoPayload.authenticationInfo.principalEmail)",
-			},
+			Descriptor:  unexpectedUserDescriptor,
+			LabelExtractors: principalEmailLabelExtractor,
 		},
 	}
 	return []parsedResource{m}, nil

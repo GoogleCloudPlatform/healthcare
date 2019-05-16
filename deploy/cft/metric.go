@@ -4,6 +4,22 @@ import (
 	"errors"
 )
 
+var (
+	unexpectedUserDescriptor = descriptor{
+		MetricKind: "DELTA",
+		ValueType:  "INT64",
+		Unit:       "1",
+		Labels: []label{{
+			Key:         "user",
+			ValueType:   "STRING",
+			Description: "Unexpected user",
+		}},
+	}
+	principalEmailLabelExtractor = map[string]string{
+		"user": "EXTRACT(protoPayload.authenticationInfo.principalEmail)",
+	}
+)
+
 // Metric wraps a logging metric.
 type Metric struct {
 	MetricProperties `json:"properties"`

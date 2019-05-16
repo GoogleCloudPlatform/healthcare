@@ -52,6 +52,67 @@ generated_fields:
         id: '123'
 `
 
+const wantDefaultResourceDeploymentYAML = `
+imports:
+- path: {{abs "deploy/templates/audit_log_config.py"}}
+
+resources:
+- name: enable-all-audit-log-policies
+  type: {{abs "deploy/templates/audit_log_config.py"}}
+  properties:
+    name: enable-all-audit-log-policies
+- name: bigquery-settings-change-count
+  type: logging.v2.metric
+  properties:
+    metric: bigquery-settings-change-count
+    description: Count of bigquery permission changes.
+    filter: resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"
+    metricDescriptor:
+      metricKind: DELTA
+      valueType: INT64
+      unit: '1'
+      labels:
+      - key: user
+        description: Unexpected user
+        valueType: STRING
+    labelExtractors:
+      user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+- name: iam-policy-change-count
+  type: logging.v2.metric
+  properties:
+    metric: iam-policy-change-count
+    description: Count of IAM policy changes.
+    filter: protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"
+    metricDescriptor:
+      metricKind: DELTA
+      valueType: INT64
+      unit: '1'
+      labels:
+      - key: user
+        description: Unexpected user
+        valueType: STRING
+    labelExtractors:
+      user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+- name: bucket-permission-change-count
+  type: logging.v2.metric
+  properties:
+    metric: bucket-permission-change-count
+    description: Count of GCS permissions changes.
+    filter: |-
+      resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
+      (protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)
+    metricDescriptor:
+      metricKind: DELTA
+      valueType: INT64
+      unit: '1'
+      labels:
+      - key: user
+        description: Unexpected user
+        valueType: STRING
+    labelExtractors:
+      user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+`
+
 type ConfigData struct {
 	ExtraProjectConfig string
 }
@@ -323,7 +384,7 @@ resources:
 			}
 
 			want := []upsertCall{
-				{"managed-data-protect-toolkit", getWantDeployment(t, tc.want), project.ID},
+				{"managed-data-protect-toolkit", wantResourceDeployment(t, tc.want), project.ID},
 			}
 
 			if diff := cmp.Diff(got, want); diff != "" {
@@ -335,7 +396,16 @@ resources:
 	}
 }
 
-func getWantDeployment(t *testing.T, yamlTemplate string) *deploymentmanager.Deployment {
+func wantResourceDeployment(t *testing.T, yamlTemplate string) *deploymentmanager.Deployment {
+	t.Helper()
+	defaultDeployment := parseTemplateToDeployment(t, wantDefaultResourceDeploymentYAML)
+	userDeployment := parseTemplateToDeployment(t, yamlTemplate)
+	userDeployment.Imports = append(defaultDeployment.Imports, userDeployment.Imports...)
+	userDeployment.Resources = append(defaultDeployment.Resources, userDeployment.Resources...)
+	return userDeployment
+}
+
+func parseTemplateToDeployment(t *testing.T, yamlTemplate string) *deploymentmanager.Deployment {
 	t.Helper()
 	tmpl, err := template.New("test-deployment").Funcs(template.FuncMap{"abs": abs}).Parse(yamlTemplate)
 	if err != nil {
@@ -351,7 +421,6 @@ func getWantDeployment(t *testing.T, yamlTemplate string) *deploymentmanager.Dep
 	if err := yaml.Unmarshal(buf.Bytes(), deployment); err != nil {
 		t.Fatalf("yaml.Unmarshal: %v", err)
 	}
-
 	return deployment
 }
 

@@ -181,8 +181,10 @@ func (p *Project) Init(auditLogsProject *Project) error {
 	}
 
 	for _, pair := range p.resourcePairs() {
-		if err := json.Unmarshal(pair.raw, pair.parsed); err != nil {
-			return err
+		if len(pair.raw) > 0 {
+			if err := json.Unmarshal(pair.raw, pair.parsed); err != nil {
+				return err
+			}
 		}
 		if err := pair.parsed.Init(p); err != nil {
 			return fmt.Errorf("failed to init: %v, %+v", err, pair.parsed)
@@ -229,6 +231,10 @@ func (p *Project) initAuditResources(auditLogsProject *Project) error {
 
 func (p *Project) resourcePairs() []resourcePair {
 	var pairs []resourcePair
+
+	for _, res := range defaultResources {
+		pairs = append(pairs, resourcePair{parsed: res})
+	}
 	appendPair := func(raw json.RawMessage, parsed parsedResource) {
 		if len(raw) > 0 {
 			pairs = append(pairs, resourcePair{raw, parsed})
@@ -249,6 +255,41 @@ func (p *Project) resourcePairs() []resourcePair {
 		appendPair(res.PubsubPair.Raw, &res.PubsubPair.Parsed)
 	}
 	return pairs
+}
+
+var defaultResources = []parsedResource{
+	&DefaultResource{
+		DefaultResourceProperties: DefaultResourceProperties{ResourceName: "enable-all-audit-log-policies"},
+		templatePath:              "deploy/templates/audit_log_config.py",
+	},
+	&Metric{
+		MetricProperties{
+			MetricName:      "bigquery-settings-change-count",
+			Description:     "Count of bigquery permission changes.",
+			Filter:          `resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"`,
+			Descriptor:      unexpectedUserDescriptor,
+			LabelExtractors: principalEmailLabelExtractor,
+		},
+	},
+	&Metric{
+		MetricProperties{
+			MetricName:      "iam-policy-change-count",
+			Description:     "Count of IAM policy changes.",
+			Filter:          `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`,
+			Descriptor:      unexpectedUserDescriptor,
+			LabelExtractors: principalEmailLabelExtractor,
+		},
+	},
+	&Metric{
+		MetricProperties{
+			MetricName:  "bucket-permission-change-count",
+			Description: "Count of GCS permissions changes.",
+			Filter: `resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
+(protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)`,
+			Descriptor:      unexpectedUserDescriptor,
+			LabelExtractors: principalEmailLabelExtractor,
+		},
+	},
 }
 
 // ResourcesByType arranges resources in the project into slices by their type.

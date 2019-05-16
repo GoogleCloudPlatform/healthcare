@@ -9,6 +9,7 @@ load("@deploy_deps//:requirements.bzl", "requirement")
 filegroup(
     name = "templates",
     srcs = [
+        "audit_log_config.py",
         "data_project.py",
         "gce_vms.py",
         "remote_audit_logs.py",
