@@ -72,7 +72,7 @@ properties:
         - COLDLINE
         numNewerVersions: 5
     - action:
-        type: DELETE
+        type: Delete
       condition:
         age: 7
         isLive: true

@@ -28,6 +28,7 @@ type GCSBucketProperties struct {
 	GCSBucketName string     `json:"name"`
 	Location      string     `json:"location"`
 	Bindings      []Binding  `json:"bindings"`
+	StorageClass  string     `json:"storageClass,omitempty"`
 	Versioning    versioning `json:"versioning"`
 	Lifecycle     *lifecycle `json:"lifecycle,omitempty"`
 	Logging       struct {
@@ -132,7 +133,7 @@ func (b *GCSBucket) Init(project *Project) error {
 		}
 		b.Lifecycle.Rules = append(b.Lifecycle.Rules, lifecycleRulePair{
 			parsed: lifecycleRule{
-				Action:    &action{Type: "DELETE"},
+				Action:    &action{Type: "Delete"},
 				Condition: &condition{Age: b.TTLDays, IsLive: true},
 			},
 		})

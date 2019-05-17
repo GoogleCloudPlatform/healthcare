@@ -35,19 +35,23 @@ func LogSinkRules(config *cft.Config) ([]LogSinkRule, error) {
 			Name:      "Require a BigQuery Log sink in all projects.",
 			Mode:      "required",
 			Resources: []resource{gr},
-			Sink:      getSink(allBigquerySinksDestination),
+			Sink:      getGlobalSink(allBigquerySinksDestination),
 		},
 		{
 			Name:      "Only allow BigQuery Log sinks in all projects.",
 			Mode:      "whitelist",
 			Resources: []resource{gr},
-			Sink:      getSink(allBigquerySinksDestination),
+			Sink:      getGlobalSink(allBigquerySinksDestination),
 		},
 	}
 
 	for _, project := range config.AllProjects() {
 		res := []resource{{Type: "project", AppliesTo: "self", IDs: []string{project.ID}}}
-		s := getSink(auditLogSinkDestination(config, project))
+		s := sink{
+			Destination:     project.BQLogSink.Destination,
+			Filter:          project.BQLogSink.Filter,
+			IncludeChildren: "*",
+		}
 		rules = append(rules,
 			LogSinkRule{
 				Name:      fmt.Sprintf("Require Log sink for project %s.", project.ID),
@@ -67,15 +71,10 @@ func LogSinkRules(config *cft.Config) ([]LogSinkRule, error) {
 	return rules, nil
 }
 
-func getSink(destination string) sink {
+func getGlobalSink(destination string) sink {
 	return sink{
-		Destination: destination,
-		// TODO: Change the filter to be specifically an audit logs sink once deployed log sinks use that filter.
+		Destination:     destination,
 		Filter:          "*",
 		IncludeChildren: "*",
 	}
-}
-
-func auditLogSinkDestination(config *cft.Config, project *cft.Project) string {
-	return fmt.Sprintf("bigquery.googleapis.com/projects/%s/datasets/%s", config.ProjectForAuditLogs(project).ID, project.AuditLogs.LogsBQDataset.Name())
 }

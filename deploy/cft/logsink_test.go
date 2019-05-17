@@ -12,7 +12,7 @@ func TestLogSink(t *testing.T) {
 
 	sinkYAML := `
 properties:
-  name: foo-sink
+  sink: foo-sink
   destination: bigquery.googleapis.com/projects/remote-project/datasets/remote_dataset
   filter: 'logName:"logs/cloudaudit.googleapis.com"'
   uniqueWriterIdentity: true

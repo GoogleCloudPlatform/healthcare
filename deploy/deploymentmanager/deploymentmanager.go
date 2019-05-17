@@ -21,7 +21,7 @@ var (
 // Deployment represents a single deployment which can be used by the GCP Deployment Manager.
 // TODO: move into separate package.
 type Deployment struct {
-	Imports   []*Import   `json:"imports"`
+	Imports   []*Import   `json:"imports,omitempty"`
 	Resources []*Resource `json:"resources"`
 }
 
@@ -49,7 +49,7 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal deployment : %v", err)
 	}
-	log.Printf("Creating deployment:\n%v", string(b))
+	log.Printf("Creating deployment %q:\n%v", name, string(b))
 
 	tmp, err := ioutil.TempFile("", "")
 	if err != nil {
@@ -76,7 +76,7 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 		// so the user can manually delete them later on.
 		args = append(args, "update", name, "--delete-policy", "ABANDON")
 	} else {
-		args = append(args, "create", name, "--automatic-rollback-on-error")
+		args = append(args, "create", name)
 	}
 	args = append(args, "--project", projectID, "--config", tmp.Name())
 

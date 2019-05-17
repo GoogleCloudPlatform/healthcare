@@ -60,14 +60,15 @@ resources:
 			name:               "create",
 			listDeploymentName: "some-random-deployment",
 			wantDeploymentCommand: []string{
-				"gcloud", "deployment-manager", "deployments", "create", "foo-deployment",
-				"--automatic-rollback-on-error", "--project", projID},
+				"gcloud", "deployment-manager", "deployments", "create", "foo-deployment", "--project", projID,
+			},
 		}, {
 			name:               "update",
 			listDeploymentName: "foo-deployment",
 			wantDeploymentCommand: []string{
 				"gcloud", "deployment-manager", "deployments", "update", "foo-deployment",
-				"--delete-policy", "ABANDON", "--project", projID},
+				"--delete-policy", "ABANDON", "--project", projID,
+			},
 		},
 	}
 

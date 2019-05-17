@@ -8,16 +8,19 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 )
 
-const (
-	// accessLogsWriter is the access logs writer.
-	// https://cloud.google.com/storage/docs/access-logs#delivery.
-	accessLogsWriter = "group:cloud-storage-analytics@google.com"
+// accessLogsWriter is the access logs writer.
+// https://cloud.google.com/storage/docs/access-logs#delivery.
+const accessLogsWriter = "group:cloud-storage-analytics@google.com"
 
-	deploymentName = "managed-data-protect-toolkit"
+const (
+	deploymentNamePrefix   = "data-protect-toolkit"
+	auditDeploymentName    = deploymentNamePrefix + "-audit"
+	resourceDeploymentName = deploymentNamePrefix + "-resources"
 )
 
 // The following vars are stubbed in tests.
@@ -80,8 +83,11 @@ type Project struct {
 		LogsGCSBucket *GCSBucket      `json:"logs_gcs_bucket"`
 	} `json:"audit_logs"`
 
-	// passed through by config so should not be parsed by json.
+	// Passed through by config so should not be parsed by json.
 	GeneratedFields *GeneratedFields `json:"-"`
+
+	// Set in init so should not be parsed by json.
+	BQLogSink *LogSink `json:"-"`
 }
 
 // BigqueryDatasetPair pairs a raw dataset with its parsed version.
@@ -135,10 +141,7 @@ type PubsubPair struct {
 // Init initializes the config and all its projects.
 func (c *Config) Init() error {
 	for _, p := range c.AllProjects() {
-		genFields, ok := c.AllGeneratedFields.Projects[p.ID]
-		if ok {
-			p.GeneratedFields = genFields
-		}
+		p.GeneratedFields = c.AllGeneratedFields.Projects[p.ID]
 		if err := p.Init(c.AuditLogsProject); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)
 		}
@@ -172,6 +175,9 @@ func (c *Config) ProjectForAuditLogs(p *Project) *Project {
 // Init initializes a project and all its resources.
 // Audit Logs Project should either be a remote project or nil.
 func (p *Project) Init(auditLogsProject *Project) error {
+	if p.GeneratedFields == nil {
+		p.GeneratedFields = &GeneratedFields{}
+	}
 	if err := p.initAuditResources(auditLogsProject); err != nil {
 		return fmt.Errorf("failed to init audit resources: %v", err)
 	}
@@ -189,9 +195,18 @@ func (p *Project) Init(auditLogsProject *Project) error {
 	return nil
 }
 
-func (p *Project) initAuditResources(auditLogsProject *Project) error {
-	if auditLogsProject == nil {
-		auditLogsProject = p
+func (p *Project) initAuditResources(auditProject *Project) error {
+	if auditProject == nil {
+		auditProject = p
+	}
+
+	p.BQLogSink = &LogSink{
+		LogSinkProperties: LogSinkProperties{
+			Sink:                 "audit-logs-to-bigquery",
+			Destination:          fmt.Sprintf("bigquery.googleapis.com/projects/%s/datasets/%s", auditProject.ID, p.AuditLogs.LogsBQDataset.Name()),
+			Filter:               `logName:"logs/cloudaudit.googleapis.com"`,
+			UniqueWriterIdentity: true,
+		},
 	}
 
 	if err := p.AuditLogs.LogsBQDataset.Init(p); err != nil {
@@ -199,11 +214,11 @@ func (p *Project) initAuditResources(auditLogsProject *Project) error {
 	}
 
 	accesses := []Access{
-		{Role: "OWNER", GroupByEmail: auditLogsProject.OwnersGroup},
+		{Role: "OWNER", GroupByEmail: auditProject.OwnersGroup},
 		{Role: "READER", GroupByEmail: p.AuditorsGroup},
 	}
 
-	if p.GeneratedFields != nil && p.GeneratedFields.LogSinkServiceAccount != "" {
+	if p.GeneratedFields.LogSinkServiceAccount != "" {
 		accesses = append(accesses, Access{Role: "WRITER", UserByEmail: p.GeneratedFields.LogSinkServiceAccount})
 	}
 	p.AuditLogs.LogsBQDataset.Accesses = accesses
@@ -217,7 +232,7 @@ func (p *Project) initAuditResources(auditLogsProject *Project) error {
 	}
 
 	p.AuditLogs.LogsGCSBucket.Bindings = []Binding{
-		{Role: "roles/storage.admin", Members: []string{"group:" + auditLogsProject.OwnersGroup}},
+		{Role: "roles/storage.admin", Members: []string{"group:" + auditProject.OwnersGroup}},
 		{Role: "roles/storage.objectCreator", Members: []string{accessLogsWriter}},
 		{Role: "roles/storage.objectViewer", Members: []string{"group:" + p.AuditorsGroup}},
 	}
@@ -226,7 +241,7 @@ func (p *Project) initAuditResources(auditLogsProject *Project) error {
 }
 
 func (p *Project) resourcePairs() []resourcePair {
-	var pairs []resourcePair
+	pairs := []resourcePair{{parsed: p.BQLogSink}}
 
 	for _, res := range defaultResources {
 		pairs = append(pairs, resourcePair{parsed: res})
@@ -328,25 +343,84 @@ type depender interface {
 }
 
 // Deploy deploys the CFT resources in the project.
-func Deploy(project *Project) error {
-	pairs := project.resourcePairs()
-	if len(pairs) == 0 {
-		log.Println("No resources to deploy.")
-		return nil
+func Deploy(project, auditProject *Project) error {
+	if err := deployResources(project); err != nil {
+		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
 
-	deployment, err := getDeployment(project, pairs)
-	if err != nil {
-		return err
+	// If this is the initial deployment then there won't be a log sink service account
+	// in the generated fields as it is deployed through the data-protect-toolkit-resources deployment.
+	if project.GeneratedFields.LogSinkServiceAccount == "" {
+		sinkSA, err := getLogSinkServiceAccount(project)
+		if err != nil {
+			return fmt.Errorf("failed to get log sink service account: %v", err)
+		}
+		project.GeneratedFields.LogSinkServiceAccount = sinkSA
+		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, Access{
+			Role: "WRITER", UserByEmail: sinkSA,
+		})
 	}
-	if err := upsertDeployment(deploymentName, deployment, project.ID); err != nil {
-		return fmt.Errorf("failed to deploy deployment manager resources: %v", err)
+	if err := deployAudit(project, auditProject); err != nil {
+		return fmt.Errorf("failed to deploy audit resources: %v", err)
 	}
 
 	if err := deployGKEWorkloads(project); err != nil {
 		return fmt.Errorf("failed to deploy GKE workloads: %v", err)
 	}
+	return nil
+}
 
+func getLogSinkServiceAccount(project *Project) (string, error) {
+	cmd := exec.Command("gcloud", "logging", "sinks", "describe", project.BQLogSink.Name(), "--format", "json", "--project", project.ID)
+
+	out, err := cmdCombinedOutput(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to query log sink service account from gcloud: %v\n%v", err, string(out))
+	}
+
+	type sink struct {
+		WriterIdentity string `json:"writerIdentity"`
+	}
+
+	s := new(sink)
+	if err := json.Unmarshal(out, s); err != nil {
+		return "", fmt.Errorf("failed to unmarshal sink output: %v", err)
+	}
+	return strings.TrimPrefix(s.WriterIdentity, "serviceAccount:"), nil
+}
+
+func deployAudit(project, auditProject *Project) error {
+	pairs := []resourcePair{
+		{parsed: &project.AuditLogs.LogsBQDataset},
+		{parsed: project.AuditLogs.LogsGCSBucket},
+	}
+	deployment, err := getDeployment(project, pairs)
+	if err != nil {
+		return err
+	}
+
+	// Append project ID to deployment name so each project has unique deployment if there is
+	// a remote audit logs project.
+	name := fmt.Sprintf("%s-%s", auditDeploymentName, project.ID)
+	if err := upsertDeployment(name, deployment, auditProject.ID); err != nil {
+		return fmt.Errorf("failed to deploy audit resources: %v", err)
+	}
+	return nil
+}
+
+func deployResources(project *Project) error {
+	pairs := project.resourcePairs()
+	if len(pairs) == 0 {
+		log.Println("No resources to deploy.")
+		return nil
+	}
+	deployment, err := getDeployment(project, pairs)
+	if err != nil {
+		return err
+	}
+	if err := upsertDeployment(resourceDeploymentName, deployment, project.ID); err != nil {
+		return fmt.Errorf("failed to deploy deployment manager resources: %v", err)
+	}
 	return nil
 }
 

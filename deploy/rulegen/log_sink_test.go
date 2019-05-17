@@ -47,7 +47,7 @@ func TestLogSinkRules(t *testing.T) {
   sink:
     destination: >-
       bigquery.googleapis.com/projects/my-forseti-project/datasets/audit_logs
-    filter: '*'
+    filter: 'logName:"logs/cloudaudit.googleapis.com"'
     include_children: '*'
 - name: 'Whitelist Log sink for project my-forseti-project.'
   mode: whitelist
@@ -59,7 +59,7 @@ func TestLogSinkRules(t *testing.T) {
   sink:
     destination: >-
       bigquery.googleapis.com/projects/my-forseti-project/datasets/audit_logs
-    filter: '*'
+    filter: 'logName:"logs/cloudaudit.googleapis.com"'
     include_children: '*'
 - name: 'Require Log sink for project my-project.'
   mode: required
@@ -71,7 +71,7 @@ func TestLogSinkRules(t *testing.T) {
   sink:
     destination: >-
       bigquery.googleapis.com/projects/my-project/datasets/audit_logs
-    filter: '*'
+    filter: 'logName:"logs/cloudaudit.googleapis.com"'
     include_children: '*'
 - name: 'Whitelist Log sink for project my-project.'
   mode: whitelist
@@ -83,7 +83,7 @@ func TestLogSinkRules(t *testing.T) {
   sink:
     destination: >-
       bigquery.googleapis.com/projects/my-project/datasets/audit_logs
-    filter: '*'
+    filter: 'logName:"logs/cloudaudit.googleapis.com"'
     include_children: '*'
 `
 	want := make([]LogSinkRule, 0)

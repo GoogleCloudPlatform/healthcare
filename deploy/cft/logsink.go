@@ -8,7 +8,7 @@ type LogSink struct {
 
 // LogSinkProperties represents a partial DM log sink resource.
 type LogSinkProperties struct {
-	LogSinkName          string `json:"name"`
+	Sink                 string `json:"sink"`
 	Destination          string `json:"destination"`
 	Filter               string `json:"filter"`
 	UniqueWriterIdentity bool   `json:"uniqueWriterIdentity"`
@@ -21,7 +21,7 @@ func (l *LogSink) Init(p *Project) error {
 
 // Name returns the name of this log sink.
 func (l *LogSink) Name() string {
-	return l.LogSinkName
+	return l.Sink
 }
 
 // DeploymentManagerType returns the type to use for deployment manager.

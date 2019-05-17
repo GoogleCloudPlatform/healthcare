@@ -2,6 +2,8 @@ package cft
 
 import (
 	"bytes"
+	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -23,7 +25,7 @@ projects:
 - project_id: my-project
   owners_group: my-project-owners@my-domain.com
   editors_group: my-project-editors@mydomain.com
-  auditors_group: some-auditors-group@my-domain.com
+  auditors_group: my-project-auditors@my-domain.com
   data_readwrite_groups:
   - some-readwrite-group@my-domain.com
   data_readonly_groups:
@@ -52,11 +54,66 @@ generated_fields:
         id: '123'
 `
 
+const auditDeploymentYAML = `
+imports:
+- path: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
+- path: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
+
+resources:
+- name: audit_logs
+  type: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
+  properties:
+    name: audit_logs
+    location: US
+    access:
+    - groupByEmail: my-project-owners@my-domain.com
+      role: OWNER
+    - groupByEmail: my-project-auditors@my-domain.com
+      role: READER
+    - userByEmail: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+      role: WRITER
+    setDefaultOwner: false
+- name: my-project-logs
+  type: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
+  properties:
+    name: my-project-logs
+    location: US
+    storageClass: MULTI_REGIONAL
+    bindings:
+    - role: roles/storage.admin
+      members:
+      - group:my-project-owners@my-domain.com
+    - role: roles/storage.objectCreator
+      members:
+      - group:cloud-storage-analytics@google.com
+    - role: roles/storage.objectViewer
+      members:
+      - group:my-project-auditors@my-domain.com
+    versioning:
+      enabled: true
+    logging:
+      logBucket: my-project-logs
+    lifecycle:
+      rule:
+      - action:
+          type: Delete
+        condition:
+          age: 365
+          isLive: true
+`
+
 const wantDefaultResourceDeploymentYAML = `
 imports:
 - path: {{abs "deploy/templates/audit_log_config.py"}}
 
 resources:
+- name: audit-logs-to-bigquery
+  type: logging.v2.sink
+  properties:
+    sink: audit-logs-to-bigquery
+    destination: bigquery.googleapis.com/projects/my-project/datasets/audit_logs
+    filter: 'logName:"logs/cloudaudit.googleapis.com"'
+    uniqueWriterIdentity: true
 - name: enable-all-audit-log-policies
   type: {{abs "deploy/templates/audit_log_config.py"}}
   properties:
@@ -146,13 +203,13 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*Config, *Project)
 	if err := yaml.Unmarshal(buf.Bytes(), config); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
 	}
+	if err := config.Init(); err != nil {
+		t.Fatalf("config.Init = %v", err)
+	}
 	if len(config.Projects) != 1 {
 		t.Fatalf("len(config.Projects)=%v, want 1", len(config.Projects))
 	}
 	proj := config.Projects[0]
-	if err := proj.Init(nil); err != nil {
-		t.Fatalf("proj.Init: %v", err)
-	}
 	return config, proj
 }
 
@@ -365,7 +422,7 @@ resources:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, project := getTestConfigAndProject(t, tc.configData)
+			config, project := getTestConfigAndProject(t, tc.configData)
 
 			type upsertCall struct {
 				Name       string
@@ -379,12 +436,13 @@ resources:
 				return nil
 			}
 
-			if err := Deploy(project); err != nil {
+			if err := Deploy(project, config.ProjectForAuditLogs(project)); err != nil {
 				t.Fatalf("Deploy: %v", err)
 			}
 
 			want := []upsertCall{
-				{"managed-data-protect-toolkit", wantResourceDeployment(t, tc.want), project.ID},
+				{"data-protect-toolkit-resources", wantResourceDeployment(t, tc.want), project.ID},
+				{"data-protect-toolkit-audit-my-project", parseTemplateToDeployment(t, auditDeploymentYAML), project.ID},
 			}
 
 			if diff := cmp.Diff(got, want); diff != "" {
@@ -393,6 +451,37 @@ resources:
 
 			// TODO: validate against schema file too
 		})
+	}
+}
+
+func TestGetLogSinkServiceAccount(t *testing.T) {
+	const logSinkJSON = `{
+		"createTime": "2019-04-15T20:00:16.734389353Z",
+		"destination": "bigquery.googleapis.com/projects/my-project/datasets/audit_logs",
+		"filter": "logName:\"logs/cloudaudit.googleapis.com\"",
+		"name": "audit-logs-to-bigquery",
+		"outputVersionFormat": "V2",
+		"updateTime": "2019-04-15T20:00:16.734389353Z",
+		"writerIdentity": "serviceAccount:p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
+	}`
+
+	cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
+		args := []string{"gcloud", "logging", "sinks", "describe"}
+		if cmp.Equal(cmd.Args[:len(args)], args) {
+			return []byte(logSinkJSON), nil
+		}
+		return nil, fmt.Errorf("unexpected args: %v", cmd.Args)
+	}
+
+	_, project := getTestConfigAndProject(t, nil)
+	got, err := getLogSinkServiceAccount(project)
+	if err != nil {
+		t.Fatalf("getLogSinkServiceAccount: %v", err)
+	}
+
+	want := "p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
+	if got != want {
+		t.Errorf("log sink service account: got %q, want %q", got, want)
 	}
 }
 
