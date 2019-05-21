@@ -111,8 +111,7 @@ remote audit logs) and one or more data hosting projects.
     or `*` (default) to deploy all projects.
 
     WARNING: deploying a project that was previously deployed will trigger an
-    update. Updates are currently in development and NOT supported. If you wish
-    to only deploy new projects, please manually list them in `--projects`.
+    update.
 
 1.  If the projects were deployed successfully, the script will write a YAML
     file at `--output_yaml_path`, containing a `generated_fields` block for each
