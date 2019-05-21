@@ -14,9 +14,15 @@ exports_files(["project_config.yaml.schema"])
 py_binary(
     name = "create_project",
     srcs = ["create_project.py"],
-    # Pass cft binary path as arg due to unstable location in bazel built binaries.
-    args = ["--cft_binary=$(location //deploy/cmd/cft)"],
-    data = ["//deploy/cmd/cft"],
+    # Pass binary paths as arg due to unstable location in bazel built binaries.
+    args = [
+        "--cft_binary=$(location //deploy/cmd/cft)",
+        "--rule_generator_binary=$(location //deploy/cmd/rule_generator)",
+    ],
+    data = [
+        "//deploy/cmd/cft",
+        "//deploy/cmd/rule_generator",
+    ],
     python_version = "PY3",
     deps = [":create_project_lib"],
 )

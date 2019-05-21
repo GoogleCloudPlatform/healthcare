@@ -38,6 +38,7 @@ import copy
 import os
 import subprocess
 import time
+import traceback
 
 from absl import app
 from absl import flags
@@ -73,7 +74,10 @@ flags.DEFINE_string('output_cleanup_path', None, 'Path to save cleanup file.')
 flags.DEFINE_boolean('enable_new_style_resources', None, 'Enable new style '
                      'resources. Developer only.')
 flags.DEFINE_string('cft_binary', None,
-                    'Path to CFT binary. Set automatically by Bazel rule.')
+                    'Path to CFT binary. Set automatically by the Bazel rule.')
+flags.DEFINE_string('rule_generator_binary', None,
+                    ('Path to rule generator binary. '
+                     'Set automatically by the Bazel rule.'))
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
@@ -145,6 +149,9 @@ def create_new_project(config):
     logging.info('Deploying without a parent organization or folder.')
   # Create the new project.
   runner.run_gcloud_command(create_project_command, project_id=None)
+  generated_fields = field_generation.get_generated_fields_ref(
+      project_id, config.root)
+  generated_fields['project_number'] = utils.get_project_number(project_id)
 
 
 def setup_billing(config):
@@ -158,31 +165,6 @@ def setup_billing(config):
       billing_acct
   ],
                             project_id=None)
-
-
-def enable_deployment_manager(config):
-  """Enables Deployment manager, with role/owners for its service account."""
-  project_id = config.project['project_id']
-
-  # Enabled Deployment Manger and Cloud Resource Manager for this project.
-  runner.run_gcloud_command([
-      'services', 'enable', 'deploymentmanager',
-      'cloudresourcemanager.googleapis.com'
-  ],
-                            project_id=project_id)
-
-  # Grant deployment manager service account (temporary) owners access.
-  dm_service_account = utils.get_deployment_manager_service_account(project_id)
-  for role in _DEPLOYMENT_MANAGER_ROLES:
-    runner.run_gcloud_command([
-        'projects', 'add-iam-policy-binding', project_id, '--member',
-        dm_service_account, '--role', role
-    ],
-                              project_id=None)
-
-  logging.info('Sleeping for %d seconds to let IAM updates propagate.',
-               _IAM_PROPAGATAION_WAIT_TIME_SECS)
-  runner.run(time.sleep, _IAM_PROPAGATAION_WAIT_TIME_SECS)
 
 
 def enable_services_apis(config):
@@ -208,6 +190,12 @@ def enable_services_apis(config):
   existing_apis = set([os.path.basename(svc) for svc in existing_services])
 
   want_apis = set(config.project.get('enabled_apis', []))
+  want_apis.add('deploymentmanager.googleapis.com')
+  # For project level iam policy updates.
+  want_apis.add('cloudresourcemanager.googleapis.com')
+  resources = config.project.get('resources', {})
+  if 'iam_custom_roles' in resources:
+    want_apis.add('iam.googleapis.com')
 
   unexpected_apis = existing_apis.difference(want_apis)
   unenabled_apis = list(want_apis.difference(existing_apis))
@@ -225,8 +213,34 @@ def enable_services_apis(config):
   return Output(cleanup_commands=cleanup_commands)
 
 
+def grant_deployment_manager_access(config):
+  """Grants Deployment manager service account administration roles."""
+  if FLAGS.enable_new_style_resources:
+    logging.info('DM service account will be granted access through CFT.')
+    return
+
+  project_id = config.project['project_id']
+
+  # Grant deployment manager service account (temporary) owners access.
+  dm_service_account = utils.get_deployment_manager_service_account(project_id)
+  for role in _DEPLOYMENT_MANAGER_ROLES:
+    runner.run_gcloud_command([
+        'projects', 'add-iam-policy-binding', project_id, '--member',
+        dm_service_account, '--role', role
+    ],
+                              project_id=None)
+
+  logging.info('Sleeping for %d seconds to let IAM updates propagate.',
+               _IAM_PROPAGATAION_WAIT_TIME_SECS)
+  runner.run(time.sleep, _IAM_PROPAGATAION_WAIT_TIME_SECS)
+
+
 def deploy_gcs_audit_logs(config):
   """Deploys the GCS logs bucket to the remote audit logs project, if used."""
+  if FLAGS.enable_new_style_resources:
+    logging.info('GCS audit logs will be deployed through CFT.')
+    return
+
   # The GCS logs bucket must be created before the data buckets.
   if not config.audit_logs_project:
     logging.info('Using local GCS audit logs.')
@@ -286,6 +300,10 @@ def get_data_bucket_name(data_bucket, project_id):
 
 def deploy_project_resources(config):
   """Deploys resources into the new data project."""
+  if FLAGS.enable_new_style_resources:
+    logging.info('Project resources will be deployed through CFT.')
+    return
+
   setup_account = utils.get_gcloud_user()
   has_organization = bool(config.root['overall'].get('organization_id'))
   project_id = config.project['project_id']
@@ -343,23 +361,6 @@ def deploy_project_resources(config):
     utils.run_deployment(dm_template_dict, 'data-project-deployment',
                          project_id)
 
-    # Create project liens if requested.
-    if config.project.get('create_deletion_lien'):
-      existing_restrictions = runner.run_gcloud_command(
-          [
-              'alpha', 'resource-manager', 'liens', 'list', '--format',
-              'value(restrictions)'
-          ],
-          project_id=project_id).split('\n')
-
-      if _LIEN_RESTRICTION not in existing_restrictions:
-        runner.run_gcloud_command([
-            'alpha', 'resource-manager', 'liens', 'create', '--restrictions',
-            _LIEN_RESTRICTION, '--reason',
-            'Automated project deletion lien deployment.'
-        ],
-                                  project_id=project_id)
-
     for role in _DEPLOYMENT_MANAGER_ROLES:
       runner.run_gcloud_command([
           'projects', 'remove-iam-policy-binding', project_id, '--member',
@@ -372,6 +373,28 @@ def deploy_project_resources(config):
     if iam_api_disable:
       runner.run_gcloud_command(['services', 'disable', 'iam.googleapis.com'],
                                 project_id=project_id)
+
+
+def create_deletion_lien(config):
+  """Create the project deletion lien, if specified."""
+  # Create project liens if requested.
+  if 'create_deletion_lien' not in config.project:
+    return
+  project_id = config.project['project_id']
+  existing_restrictions = runner.run_gcloud_command(
+      [
+          'alpha', 'resource-manager', 'liens', 'list', '--format',
+          'value(restrictions)'
+      ],
+      project_id=project_id).split('\n')
+
+  if _LIEN_RESTRICTION not in existing_restrictions:
+    runner.run_gcloud_command([
+        'alpha', 'resource-manager', 'liens', 'create', '--restrictions',
+        _LIEN_RESTRICTION, '--reason',
+        'Automated project deletion lien deployment.'
+    ],
+                              project_id=project_id)
 
 
 def deploy_new_style_resources(config):
@@ -460,6 +483,10 @@ def _get_role_to_members(bindings):
 
 def deploy_bigquery_audit_logs(config):
   """Deploys the BigQuery audit logs dataset, if used."""
+  if FLAGS.enable_new_style_resources:
+    logging.info('BQ audit logs will be deployed through CFT.')
+    return
+
   data_project_id = config.project['project_id']
   logs_dataset = copy.deepcopy(
       config.project['audit_logs']['logs_bigquery_dataset'])
@@ -506,13 +533,9 @@ def create_compute_images(config):
   Args:
     config (ProjectConfig): config of the project.
   """
-  gce_instances = config.project.get('gce_instances')
-  resources = config.project.get('resources', [])
-  for resource in resources:
-    gce_instance = resource.get('gce_instance')
-    if gce_instance:
-      gce_instances.append(gce_instance)
-
+  gce_instances = config.project.get('gce_instances', [])
+  gce_instances.extend(
+      config.project.get('resources', {}).get('gce_instances', []))
   if not gce_instances:
     logging.info('No GCS Images required.')
     return
@@ -548,6 +571,10 @@ def create_compute_images(config):
 
 def create_compute_vms(config):
   """Creates new GCE VMs and firewall rules if specified in config."""
+  if FLAGS.enable_new_style_resources:
+    logging.info('VMs will be deployed through CFT.')
+    return
+
   if 'gce_instances' not in config.project:
     logging.info('No GCS VMs required.')
     return
@@ -765,12 +792,8 @@ def create_alerts(config):
 def add_project_generated_fields(config):
   """Adds a generated_fields block to a project definition."""
   project_id = config.project['project_id']
-
   generated_fields = field_generation.get_generated_fields_ref(
       project_id, config.root)
-
-  if 'project_number' not in generated_fields:
-    generated_fields['project_number'] = utils.get_project_number(project_id)
 
   if 'log_sink_service_account' not in generated_fields:
     generated_fields[
@@ -796,7 +819,12 @@ _SETUP_STEPS = [
         updatable=False,
     ),
     Step(
-        func=enable_deployment_manager,
+        func=enable_services_apis,
+        description='Enable APIs',
+        updatable=True,
+    ),
+    Step(
+        func=grant_deployment_manager_access,
         description='Enable deployment manager',
         updatable=True,
     ),
@@ -808,11 +836,6 @@ _SETUP_STEPS = [
     Step(
         func=deploy_project_resources,
         description='Deploy project resources',
-        updatable=True,
-    ),
-    Step(
-        func=deploy_new_style_resources,
-        description='Deploy new style resources',
         updatable=True,
     ),
     Step(
@@ -836,8 +859,13 @@ _SETUP_STEPS = [
         updatable=True,
     ),
     Step(
-        func=enable_services_apis,
-        description='Enable APIs',
+        func=create_deletion_lien,
+        description='Create deletion lien',
+        updatable=True,
+    ),
+    Step(
+        func=deploy_new_style_resources,
+        description='Deploy new style resources',
         updatable=True,
     ),
     Step(
@@ -899,6 +927,7 @@ def setup_project(config, project_yaml, output_yaml_path, output_cleanup_path):
           for cmd in output.cleanup_commands:
             f.write('# {}\n'.format(cmd))
     except Exception as e:  # pylint: disable=broad-except
+      traceback.print_exc()
       logging.error('%s: setup failed on step %s: %s', project_id, step_num, e)
       logging.error(
           'Failure information has been written to --output_yaml_path. '
@@ -1095,7 +1124,16 @@ def main(argv):
       return
 
   if forseti_config:
-    rule_generator.run(root_config, output_path=FLAGS.output_rules_path)
+    if FLAGS.enable_new_style_resources:
+      subprocess.check_call([
+          FLAGS.rule_generator_binary,
+          '--project_yaml_path',
+          FLAGS.project_yaml,
+          '--output_path',
+          FLAGS.output_rules_path,
+      ])
+    else:
+      rule_generator.run(root_config, output_path=FLAGS.output_rules_path)
 
   logging.info(
       'All projects successfully deployed. Please remember to sync '
@@ -1109,4 +1147,5 @@ if __name__ == '__main__':
   flags.mark_flag_as_required('output_yaml_path')
   flags.mark_flag_as_required('output_cleanup_path')
   flags.mark_flag_as_required('cft_binary')
+  flags.mark_flag_as_required('rule_generator_binary')
   app.run(main)
