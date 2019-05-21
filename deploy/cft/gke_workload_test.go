@@ -2,6 +2,7 @@ package cft
 
 import (
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -40,32 +41,6 @@ func TestApplyClusterResource(t *testing.T) {
 	}
 	if diff := cmp.Diff(gotArgs, wantArgs); len(diff) != 0 {
 		t.Fatalf("applyClusterWorkload commands differ: (-got, +want)\n:%v", diff)
-	}
-}
-
-func TestGetGKEWorkload(t *testing.T) {
-	configExtend := &ConfigData{`
-resources:
-  gke_workloads:
-  - cluster_name: cluster1
-    properties:
-      apiVersion: extensions/v1beta1
-      kind: Deployment
-  - cluster_name: cluster2
-    properties:
-      apiVersion: extensions/v1beta1
-      kind: Service`,
-	}
-	_, project := getTestConfigAndProject(t, configExtend)
-	workloads, err := getGKEWorkloads(project)
-	if err != nil {
-		t.Fatalf("getGKEWorkloads: %v", err)
-	}
-	if len(workloads) != 2 {
-		t.Fatalf("workload len error: %v", len(workloads))
-	}
-	if workloads[0].ClusterName != "cluster1" || workloads[1].ClusterName != "cluster2" {
-		t.Fatalf("workload context error: %v", workloads)
 	}
 }
 
@@ -186,8 +161,8 @@ func TestLocationTypeAndValueError(t *testing.T) {
 
 	for _, tc := range testcases {
 		_, _, err := getLocationTypeAndValue(&tc.in)
-		if err.Error() != tc.err {
-			t.Errorf("getLocationTypeAndValue error at cluster %q: %v", tc.in.ResourceName, err)
+		if err == nil || !strings.Contains(err.Error(), tc.err) {
+			t.Errorf("getLocationTypeAndValue for cluster %q: got %q, want error with substring %q", tc.in.ResourceName, err, tc.err)
 		}
 	}
 }
@@ -240,11 +215,10 @@ resources:
 			gotArgs = append(gotArgs, cmd.Args)
 			return nil
 		}
+
 		err := deployGKEWorkloads(project)
-		if err == nil {
-			t.Errorf("TestInstallClusterWorkloadErrors should have error %v", tc.err)
-		} else if err.Error() != tc.err {
-			t.Errorf("TestInstallClusterWorkloadErrors wrong error %v; expect: %v", err, tc.err)
+		if err == nil || !strings.Contains(err.Error(), tc.err) {
+			t.Errorf("deployGKEWorkloads unexpected error: got %q, want error with substring %q", err, tc.err)
 		}
 	}
 }

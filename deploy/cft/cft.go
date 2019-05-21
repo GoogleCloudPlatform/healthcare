@@ -62,6 +62,7 @@ type Project struct {
 	EnabledAPIs         []string `json:"enabled_apis"`
 
 	Resources struct {
+		// Deployment manager resources
 		BQDatasets     []*BigqueryDatasetPair `json:"bq_datasets"`
 		Firewalls      []*FirewallPair        `json:"firewalls"`
 		GCEInstances   []*GCEInstancePair     `json:"gce_instances"`
@@ -71,8 +72,8 @@ type Project struct {
 		IAMPolicies    []*IAMPolicyPair       `json:"iam_policies"`
 		Pubsubs        []*PubsubPair          `json:"pubsubs"`
 
-		// TODO: make this behave more like standard deployment manager resources
-		GKEWorkloads []json.RawMessage `json:"gke_workloads"`
+		// Kubectl resources
+		GKEWorkloads []*GKEWorkload `json:"gke_workloads"`
 	} `json:"resources"`
 
 	AuditLogs *struct {
