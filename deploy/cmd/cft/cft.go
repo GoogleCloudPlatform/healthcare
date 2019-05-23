@@ -40,18 +40,16 @@ func main() {
 	if err := yaml.Unmarshal(b, conf); err != nil {
 		log.Fatalf("failed to unmarshal config: %v", err)
 	}
+	if err := conf.Init(); err != nil {
+		log.Fatalf("failed to initialize config: %v", err)
+	}
 
 	proj, err := findProject(*projectID, conf)
 	if err != nil {
 		log.Fatal(err)
 	}
-	auditProject := conf.ProjectForAuditLogs(proj)
 
-	if err := proj.Init(auditProject); err != nil {
-		log.Fatalf("failed to initialize project: %v", err)
-	}
-
-	if err := cft.Deploy(proj, auditProject); err != nil {
+	if err := cft.Deploy(conf, proj); err != nil {
 		log.Fatalf("failed to deploy %q resources: %v", *projectID, err)
 	}
 
@@ -59,7 +57,7 @@ func main() {
 }
 
 func findProject(id string, c *cft.Config) (*cft.Project, error) {
-	for _, p := range c.Projects {
+	for _, p := range c.AllProjects() {
 		if p.ID == id {
 			return p, nil
 		}

@@ -36,6 +36,8 @@ beneficial if you have several data projects.
 NOTE: If running through Cloud Shell, all of the following dependencies are
 already available.
 
+-   [Go 1.10+](https://golang.org/dl/)
+
 -   [Python 3.5+](https://www.python.org/downloads/)
 
 -   [Bazel](https://docs.bazel.build/versions/master/install.html)

@@ -126,6 +126,7 @@ func copyRulesToBucket(local, remote string) error {
 		return fmt.Errorf("failed to parse %q: %v", remote, err)
 	}
 	u.Path = path.Join(u.Path, "rules")
+	log.Printf("Uploading rules to %q", u.String())
 	cmd := exec.Command("gsutil", "cp", filepath.Join(local, "*.yaml"), u.String())
 	if out, err := cmdCombinedOutput(cmd); err != nil {
 		return fmt.Errorf("failed to copy yaml files to forseti server bucket: %v, %v", err, string(out))

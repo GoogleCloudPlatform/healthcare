@@ -544,8 +544,7 @@ def create_compute_images(config):
   for instance in gce_instances:
     custom_image = instance.get('custom_boot_image')
     if not custom_image:
-      logging.info('Using existing compute image %s.',
-                   instance['existing_boot_image'])
+      logging.info('Using existing image')
       continue
     # Check if custom image already exists.
     if runner.run_gcloud_command([
@@ -1125,13 +1124,15 @@ def main(argv):
 
   if forseti_config:
     if FLAGS.enable_new_style_resources:
-      subprocess.check_call([
+      call = [
           FLAGS.rule_generator_binary,
           '--project_yaml_path',
           FLAGS.project_yaml,
           '--output_path',
-          FLAGS.output_rules_path,
-      ])
+          FLAGS.output_rules_path or '',
+      ]
+      logging.info('Running rule generator: %s', call)
+      subprocess.check_call(call)
     else:
       rule_generator.run(root_config, output_path=FLAGS.output_rules_path)
 

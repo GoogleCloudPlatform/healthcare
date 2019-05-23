@@ -88,7 +88,6 @@ func getLocationTypeAndValue(cluster *GKECluster) (string, string, error) {
 
 func getGCloudCredentials(clusterName, locationType, locationValue, projectID string) error {
 	cmd := exec.Command("gcloud", "container", "clusters", "get-credentials", clusterName, locationType, locationValue, "--project", projectID)
-	cmd.Stderr = os.Stderr
 	if err := cmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to get cluster credentials for %q: %v", clusterName, err)
 	}
@@ -99,7 +98,6 @@ func applyClusterWorkload(containerYamlPath string) error {
 	// kubectl declarative object configuration
 	// https://kubernetes.io/docs/concepts/overview/object-management-kubectl/overview/
 	cmd := exec.Command("kubectl", "apply", "-f", containerYamlPath)
-	cmd.Stderr = os.Stderr
 	if err := cmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to apply workloads with kubectl: %s", err)
 	}

@@ -48,7 +48,6 @@ forseti:
 projects:
 - project_id: my-project
   owners_group: my-project-owners@my-domain.com
-  editors_group: my-project-editors@my-domain.com
   auditors_group: my-project-auditors@my-domain.com
   data_readwrite_groups:
   - my-project-readwrite@my-domain.com

@@ -11,6 +11,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/ghodss/yaml"
 )
 
@@ -105,6 +106,7 @@ resources:
 const wantDefaultResourceDeploymentYAML = `
 imports:
 - path: {{abs "deploy/templates/audit_log_config.py"}}
+- path: {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
 
 resources:
 - name: audit-logs-to-bigquery
@@ -168,6 +170,16 @@ resources:
         valueType: STRING
     labelExtractors:
       user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+- name: required-project-bindings
+  type: {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
+  properties:
+    roles:
+    - role: roles/owner
+      members:
+      - group:my-project-owners@my-domain.com
+    - role: roles/iam.securityReviewer
+      members:
+      - group:my-project-auditors@my-domain.com
 `
 
 type ConfigData struct {
@@ -214,6 +226,21 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*Config, *Project)
 }
 
 func TestDeploy(t *testing.T) {
+	cmdRun = func(cmd *exec.Cmd) error { return nil }
+	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+		args := strings.Join(cmd.Args, " ")
+		var res string
+		switch {
+		case strings.HasPrefix(args, "gcloud config get-value account"):
+			res = "foo-user@my-domain.com"
+		case strings.HasPrefix(args, "gcloud projects get-iam-policy"):
+			res = "{}"
+		default:
+			return nil, fmt.Errorf("unexpected args: %v", args)
+		}
+		return []byte(res), nil
+	}
+
 	tests := []struct {
 		name       string
 		configData *ConfigData
@@ -364,9 +391,6 @@ resources:
         members:
         - group:foo-owner@my-domain.com`},
 			want: `
-imports:
-- path: {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
-
 resources:
 - name: foo-owner-binding
   type:  {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
@@ -436,7 +460,7 @@ resources:
 				return nil
 			}
 
-			if err := Deploy(project, config.ProjectForAuditLogs(project)); err != nil {
+			if err := Deploy(config, project); err != nil {
 				t.Fatalf("Deploy: %v", err)
 			}
 
@@ -445,7 +469,12 @@ resources:
 				{"data-protect-toolkit-audit-my-project", parseTemplateToDeployment(t, auditDeploymentYAML), project.ID},
 			}
 
-			if diff := cmp.Diff(got, want); diff != "" {
+			// allow imports and resources to be in any order
+			opts := []cmp.Option{
+				cmpopts.SortSlices(func(a, b *deploymentmanager.Resource) bool { return a.Name < b.Name }),
+				cmpopts.SortSlices(func(a, b *deploymentmanager.Import) bool { return a.Path < b.Path }),
+			}
+			if diff := cmp.Diff(got, want, opts...); diff != "" {
 				t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
 			}
 
@@ -465,7 +494,7 @@ func TestGetLogSinkServiceAccount(t *testing.T) {
 		"writerIdentity": "serviceAccount:p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
 	}`
 
-	cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
+	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		args := []string{"gcloud", "logging", "sinks", "describe"}
 		if cmp.Equal(cmd.Args[:len(args)], args) {
 			return []byte(logSinkJSON), nil
@@ -507,8 +536,8 @@ func parseTemplateToDeployment(t *testing.T, yamlTemplate string) *deploymentman
 	}
 
 	deployment := new(deploymentmanager.Deployment)
-	if err := yaml.Unmarshal(buf.Bytes(), deployment); err != nil {
-		t.Fatalf("yaml.Unmarshal: %v", err)
+	if err := yaml.UnmarshalStrict(buf.Bytes(), deployment); err != nil {
+		t.Fatalf("yaml.UnmarshalStrict: %v", err)
 	}
 	return deployment
 }

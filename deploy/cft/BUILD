@@ -55,6 +55,7 @@ go_test(
     deps = [
         "//deploy/deploymentmanager:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
+        "@com_github_google_cmp//cmp/cmpopts:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],
 )

@@ -132,6 +132,11 @@ func TestGCSBucketErrors(t *testing.T) {
 			"properties: { name: foo-bucket, location: us-east1, versioning: { enabled: false }}",
 			"versioning must not be disabled",
 		},
+		{
+			"predefined_acl_set",
+			"properties: { name: foo-bucket, location: us-east1, predefinedAcl: publicRead}",
+			"predefined ACLs must not be set",
+		},
 	}
 
 	for _, tc := range tests {

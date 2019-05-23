@@ -129,7 +129,7 @@ func IAMRules(config *cft.Config) ([]IAMRule, error) {
 func getProjectRules(config *cft.Config, project *cft.Project) ([]IAMRule, error) {
 	var rules []IAMRule
 	if project.AuditLogs.LogsGCSBucket != nil {
-		rules = append(rules, getLogsBucketRule(config, project))
+		rules = append(rules, getLogsBucketRule(project))
 	}
 
 	projectBindings, err := getProjectBindings(config, project)
@@ -159,20 +159,17 @@ func getProjectRules(config *cft.Config, project *cft.Project) ([]IAMRule, error
 
 // getProjectBindings gets the project level bindings for the given project.
 func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding, error) {
-	bs := []cft.Binding{
-		{Role: "roles/owner", Members: []string{"group:" + project.OwnersGroup}},
-		{Role: "roles/iam.securityReviewer", Members: []string{
-			"group:" + project.AuditorsGroup,
-
-			// We can assume Forseti config exists if the rule generator is being called
-			// TODO: check for other forseti service account roles granted on the project
-			"serviceAccount:" + config.AllGeneratedFields.Forseti.ServiceAccount,
-		}},
+	var bs []cft.Binding
+	for _, policy := range project.Resources.IAMPolicies {
+		bs = append(bs, policy.Parsed.Bindings...)
 	}
 
-	if project.EditorsGroup != "" {
-		bs = append(bs, cft.Binding{Role: "roles/editor", Members: []string{"group:" + project.EditorsGroup}})
-	}
+	// We can assume Forseti config exists if the rule generator is being called
+	// TODO: check for other forseti service account roles granted on the project
+	bs = append(bs, cft.Binding{
+		Role:    "roles/iam.securityReviewer",
+		Members: []string{"serviceAccount:" + config.AllGeneratedFields.Forseti.ServiceAccount},
+	})
 
 	var ms []string
 	for _, saTmpl := range defaultServiceAccountTemplates {
@@ -184,10 +181,6 @@ func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding
 	}
 	bs = append(bs, cft.Binding{Role: "roles/editor", Members: ms})
 
-	for _, policy := range project.Resources.IAMPolicies {
-		bs = append(bs, policy.Parsed.Bindings...)
-	}
-
 	bs = cft.MergeBindings(bs...)
 	return bs, nil
 }
@@ -195,14 +188,8 @@ func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding
 // getLogsBucketRule gets the iam rule for the logs bucket.
 // For configs with an audit log project, only the audit log project will return a non-nil rule containing all other projects' logs buckets.
 // For configs without an audit log project, each project will have a single rule for its own local logs bucket.
-func getLogsBucketRule(config *cft.Config, project *cft.Project) IAMRule {
-	owners := config.ProjectForAuditLogs(project).OwnersGroup
-
-	bindings := fillMissingBucketBindings([]cft.Binding{
-		{Role: "roles/storage.admin", Members: []string{"group:" + owners}},
-		{Role: "roles/storage.objectCreator", Members: []string{bucketLogsWriter}},
-		{Role: "roles/storage.objectViewer", Members: []string{"group:" + project.AuditorsGroup}},
-	})
+func getLogsBucketRule(project *cft.Project) IAMRule {
+	bucket := project.AuditLogs.LogsGCSBucket
 
 	return IAMRule{
 		Name: fmt.Sprintf("Role whitelist for project %s log bucket(s).", project.ID),
@@ -210,10 +197,10 @@ func getLogsBucketRule(config *cft.Config, project *cft.Project) IAMRule {
 		Resources: []resource{{
 			Type:      "bucket",
 			AppliesTo: "self",
-			IDs:       []string{project.AuditLogs.LogsGCSBucket.Name()},
+			IDs:       []string{bucket.Name()},
 		}},
 		InheritFromParents: true,
-		Bindings:           bindings,
+		Bindings:           fillMissingBucketBindings(bucket.Bindings),
 	}
 }
 

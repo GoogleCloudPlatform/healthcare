@@ -25,13 +25,15 @@ type GCSBucket struct {
 
 // GCSBucketProperties  represents a partial CFT bucket implementation.
 type GCSBucketProperties struct {
-	GCSBucketName string     `json:"name"`
-	Location      string     `json:"location"`
-	Bindings      []Binding  `json:"bindings"`
-	StorageClass  string     `json:"storageClass,omitempty"`
-	Versioning    versioning `json:"versioning"`
-	Lifecycle     *lifecycle `json:"lifecycle,omitempty"`
-	Logging       struct {
+	GCSBucketName              string     `json:"name"`
+	Location                   string     `json:"location"`
+	Bindings                   []Binding  `json:"bindings"`
+	StorageClass               string     `json:"storageClass,omitempty"`
+	Versioning                 versioning `json:"versioning"`
+	Lifecycle                  *lifecycle `json:"lifecycle,omitempty"`
+	PredefinedACL              string     `json:"predefinedAcl,omitempty"`
+	PredefinedDefaultObjectACL string     `json:"predefinedDefaultObjectAcl,omitempty"`
+	Logging                    struct {
 		LogBucket string `json:"logBucket"`
 	} `json:"logging"`
 }
@@ -89,6 +91,9 @@ func (b *GCSBucket) Init(project *Project) error {
 	}
 	if b.Versioning.Enabled != nil && !*b.Versioning.Enabled {
 		return errors.New("versioning must not be disabled")
+	}
+	if b.PredefinedACL != "" || b.PredefinedDefaultObjectACL != "" {
+		return errors.New("predefined ACLs must not be set")
 	}
 
 	t := true
@@ -175,10 +180,10 @@ func (b *GCSBucket) DependentResources(project *Project) ([]parsedResource, erro
 
 	m := &Metric{
 		MetricProperties: MetricProperties{
-			MetricName:  "unexpected-access-" + b.Name(),
-			Description: "Count of unexpected data access to " + b.Name(),
-			Filter:      buf.String(),
-			Descriptor:  unexpectedUserDescriptor,
+			MetricName:      "unexpected-access-" + b.Name(),
+			Description:     "Count of unexpected data access to " + b.Name(),
+			Filter:          buf.String(),
+			Descriptor:      unexpectedUserDescriptor,
 			LabelExtractors: principalEmailLabelExtractor,
 		},
 	}

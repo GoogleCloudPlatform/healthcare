@@ -166,6 +166,10 @@ const wantIAMRulesYAML = `
     - my-project
   inherit_from_parents: true
   bindings:
+  - role: roles/viewer
+    members:
+    - group:internal-project-viewers@my-domain.com
+    - group:external-project-viewers@custom.com
   - role: roles/owner
     members:
     - group:my-project-owners@my-domain.com
@@ -175,14 +179,9 @@ const wantIAMRulesYAML = `
     - serviceAccount:forseti@my-forseti-project.iam.gserviceaccount.com
   - role: roles/editor
     members:
-    - group:my-project-editors@my-domain.com
     - serviceAccount:1111-compute@developer.gserviceaccount.com
     - serviceAccount:1111@cloudservices.gserviceaccount.com
     - serviceAccount:service-1111@containerregistry.iam.gserviceaccount.com
-  - role: roles/viewer
-    members:
-    - group:internal-project-viewers@my-domain.com
-    - group:external-project-viewers@custom.com
 - name: 'Role whitelist for project my-project bucket(s): foo-bucket, bar-bucket.'
   mode: whitelist
   resource:
