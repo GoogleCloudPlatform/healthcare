@@ -111,6 +111,7 @@ the frontend application.
 1.  Run the data generation script to create one patient (the demo patient).
 
   ```sh
+  # in directory: healthcare/fhir/immunizations_demo
   $ bazel run //datagen:data_gen -- --num=1 --output_path=demo_data.ndjson
   ```
 
