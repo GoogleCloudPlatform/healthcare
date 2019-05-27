@@ -4,8 +4,6 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
-load("@deploy_deps//:requirements.bzl", "requirement")
-
 filegroup(
     name = "templates",
     srcs = [
@@ -16,8 +14,6 @@ filegroup(
     ],
 )
 
-# TODO: Change default python version for tests to PY3 once deployment templates support it.
-
 py_library(
     name = "data_project",
     srcs = ["data_project.py"],
@@ -26,11 +22,8 @@ py_library(
 py_test(
     name = "data_project_test",
     srcs = ["data_project_test.py"],
-    python_version = "PY2",
-    deps = [
-        requirement("absl-py"),
-        ":data_project",
-    ],
+    python_version = "PY3",
+    deps = [":data_project"],
 )
 
 py_library(
@@ -41,11 +34,8 @@ py_library(
 py_test(
     name = "gce_vms_test",
     srcs = ["gce_vms_test.py"],
-    python_version = "PY2",
-    deps = [
-        requirement("absl-py"),
-        ":gce_vms",
-    ],
+    python_version = "PY3",
+    deps = [":gce_vms"],
 )
 
 py_library(
@@ -56,9 +46,6 @@ py_library(
 py_test(
     name = "remote_audit_logs_test",
     srcs = ["remote_audit_logs_test.py"],
-    python_version = "PY2",
-    deps = [
-        requirement("absl-py"),
-        ":remote_audit_logs",
-    ],
+    python_version = "PY3",
+    deps = [":remote_audit_logs"],
 )

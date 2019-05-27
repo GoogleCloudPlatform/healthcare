@@ -4,7 +4,6 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
-load("@deploy_deps//:requirements.bzl", "requirement")
 load("@bazel_gazelle//:def.bzl", "gazelle")
 # gazelle:prefix github.com/GoogleCloudPlatform/healthcare/deploy
 gazelle(name = "gazelle")
@@ -32,9 +31,6 @@ py_library(
     srcs = ["create_project.py"],
     data = ["//deploy/templates"],
     deps = [
-        requirement("absl-py"),
-        requirement("jsonschema"),
-        requirement("ruamel.yaml"),
         "//deploy/rule_generator:rule_generator_lib",
         "//deploy/utils",
         "//deploy/utils:field_generation",
@@ -51,9 +47,6 @@ py_test(
     ],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("backports.tempfile"),
-        requirement("ruamel.yaml"),
         ":create_project_lib",
         "//deploy/utils",
     ],
@@ -63,10 +56,7 @@ py_binary(
     name = "grant_forseti_access",
     srcs = ["grant_forseti_access.py"],
     python_version = "PY3",
-    deps = [
-        requirement("absl-py"),
-        "//deploy/utils:forseti",
-    ],
+    deps = ["//deploy/utils:forseti"],
 )
 
 py_binary(
@@ -74,7 +64,6 @@ py_binary(
     srcs = ["generate_rules.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
         "//deploy/rule_generator:rule_generator_lib",
         "//deploy/utils",
     ],

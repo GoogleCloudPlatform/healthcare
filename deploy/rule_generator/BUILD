@@ -4,15 +4,10 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
-load("@deploy_deps//:requirements.bzl", "requirement")
-
 py_library(
     name = "project_config",
     srcs = ["project_config.py"],
-    deps = [
-        requirement("absl-py"),
-        "//deploy/utils:field_generation",
-    ],
+    deps = ["//deploy/utils:field_generation"],
 )
 
 py_test(
@@ -20,11 +15,7 @@ py_test(
     size = "small",
     srcs = ["project_config_test.py"],
     python_version = "PY3",
-    deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
-        ":project_config",
-    ],
+    deps = [":project_config"],
 )
 
 py_binary(
@@ -38,8 +29,6 @@ py_library(
     name = "rule_generator_main_lib",
     srcs = ["rule_generator.py"],
     deps = [
-        requirement("absl-py"),
-        requirement("backports.tempfile"),
         ":project_config",
         "//deploy/rule_generator/scanners:audit_logging_scanner_rules",
         "//deploy/rule_generator/scanners:bigquery_scanner_rules",
@@ -61,8 +50,6 @@ py_library(
     name = "rule_generator_lib",
     srcs = ["rule_generator.py"],
     deps = [
-        requirement("absl-py"),
-        requirement("backports.tempfile"),
         ":project_config",
         "//deploy/rule_generator/scanners:audit_logging_scanner_rules",
         "//deploy/rule_generator/scanners:bigquery_scanner_rules",

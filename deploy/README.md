@@ -38,9 +38,9 @@ already available.
 
 -   [Go 1.10+](https://golang.org/dl/)
 
--   [Python 3.5+](https://www.python.org/downloads/)
+-   [Python 3.6+](https://www.python.org/downloads/)
 
--   [Bazel](https://docs.bazel.build/versions/master/install.html)
+-   [Bazel 0.25+](https://docs.bazel.build/versions/master/install.html)
 
 -   [Gcloud SDK](https://cloud.google.com/sdk/install)
 
@@ -53,7 +53,7 @@ already available.
 Install Python dependencies with the following command:
 
 ```shell
-$ pip install -r requirements.txt
+$ pip3 install -r requirements.txt
 ```
 
 ### Create Groups
@@ -129,7 +129,9 @@ remote audit logs) and one or more data hosting projects.
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare
-$ bazel run deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=${PROJECT_CONFIG?} --output_cleanup_path=${CLEANUP_PATH?} --nodry_run
+# Note: --incompatible_use_python_toolchains is not needed after Bazel 0.27
+# See https://github.com/bazelbuild/bazel/issues/7899.
+$ bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=${PROJECT_CONFIG?} --output_cleanup_path=${CLEANUP_PATH?} --nodry_run
 ```
 
 1.  Review the cleanup script dumped to see extra configuration that was not set

@@ -59,7 +59,11 @@ def install(config):
     if 'installer_flags' in config:
       install_cmd.extend(shlex.split(config['installer_flags']))
 
+    # Run installer in the temp dir in case cwd is readonly.
+    cwd = os.getcwd()
+    os.chdir(tmp_dir)
     runner.run_command(install_cmd)
+    os.chdir(cwd)
   finally:
     shutil.rmtree(tmp_dir)
 

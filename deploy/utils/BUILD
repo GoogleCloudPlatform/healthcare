@@ -4,32 +4,22 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
-load("@deploy_deps//:requirements.bzl", "requirement")
-
 py_library(
     name = "forseti",
     srcs = ["forseti.py"],
-    deps = [
-        requirement("absl-py"),
-        ":runner",
-    ],
+    deps = [":runner"],
 )
 
 py_test(
     name = "forseti_test",
     srcs = ["forseti_test.py"],
     python_version = "PY3",
-    deps = [
-        requirement("absl-py"),
-        requirement("mock"),
-        ":forseti",
-    ],
+    deps = [":forseti"],
 )
 
 py_library(
     name = "runner",
     srcs = ["runner.py"],
-    deps = [requirement("absl-py")],
 )
 
 py_library(
@@ -38,12 +28,7 @@ py_library(
     data = [
         "//deploy:project_config.yaml.schema",
     ],
-    deps = [
-        requirement("absl-py"),
-        requirement("jsonschema"),
-        requirement("ruamel.yaml"),
-        ":runner",
-    ],
+    deps = [":runner"],
 )
 
 py_test(
@@ -53,10 +38,7 @@ py_test(
         "//deploy/samples:configs",
     ],
     python_version = "PY3",
-    deps = [
-        requirement("absl-py"),
-        ":utils",
-    ],
+    deps = [":utils"],
 )
 
 py_library(
@@ -70,8 +52,6 @@ py_test(
     srcs = ["field_generation_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("ruamel.yaml"),
         ":field_generation",
         ":utils",
     ],

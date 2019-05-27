@@ -3,8 +3,6 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
-load("@deploy_deps//:requirements.bzl", "requirement")
-
 py_library(
     name = "base_scanner_rules",
     srcs = ["base_scanner_rules.py"],
@@ -21,8 +19,6 @@ py_test(
     srcs = ["audit_logging_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":audit_logging_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -39,8 +35,6 @@ py_test(
     srcs = ["bigquery_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":bigquery_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -57,8 +51,6 @@ py_test(
     srcs = ["bucket_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":bucket_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -75,8 +67,6 @@ py_test(
     srcs = ["cloudsql_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":cloudsql_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -93,8 +83,6 @@ py_test(
     srcs = ["enabled_apis_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":enabled_apis_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -111,8 +99,6 @@ py_test(
     srcs = ["iam_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":iam_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -129,8 +115,6 @@ py_test(
     srcs = ["lien_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":lien_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -147,8 +131,6 @@ py_test(
     srcs = ["location_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":location_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -165,8 +147,6 @@ py_test(
     srcs = ["log_sink_scanner_rules_test.py"],
     python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":log_sink_scanner_rules",
         ":scanner_test_utils",
     ],
@@ -176,10 +156,7 @@ py_library(
     name = "scanner_test_utils",
     testonly = 1,
     srcs = ["scanner_test_utils.py"],
-    deps = [
-        requirement("pyyaml"),
-        "//deploy/rule_generator:project_config",
-    ],
+    deps = ["//deploy/rule_generator:project_config"],
 )
 
 py_library(
@@ -191,10 +168,8 @@ py_library(
 py_test(
     name = "resource_scanner_rules_test",
     srcs = ["resource_scanner_rules_test.py"],
-    python_version = "PY2",
+    python_version = "PY3",
     deps = [
-        requirement("absl-py"),
-        requirement("pyyaml"),
         ":resource_scanner_rules",
         ":scanner_test_utils",
     ],

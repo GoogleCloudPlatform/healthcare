@@ -12,7 +12,6 @@ import tempfile
 
 from absl import flags
 from absl.testing import absltest
-from backports import tempfile
 
 import ruamel.yaml
 
