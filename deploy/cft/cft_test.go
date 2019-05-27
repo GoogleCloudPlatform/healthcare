@@ -275,6 +275,47 @@ resources:
     setDefaultOwner: false`,
 		},
 		{
+			name: "gce_firewall",
+			configData: &ConfigData{`
+resources:
+  gce_firewalls:
+  - properties:
+      name: foo-firewall-rules
+      network: foo-network
+      rules:
+      - name: allow-proxy-from-inside
+        allowed:
+        - IPProtocol: tcp
+          ports:
+          - "80"
+          - "443"
+          description: test rule for network-test
+          direction: INGRESS
+          sourceRanges:
+          - 10.0.0.0/8`},
+			want: `
+imports:
+- path: {{abs "deploy/cft/templates/firewall/firewall.py"}}
+
+resources:
+- name: foo-firewall-rules
+  type: {{abs "deploy/cft/templates/firewall/firewall.py"}}
+  properties:
+    name: foo-firewall-rules
+    network: foo-network
+    rules:
+    - name: allow-proxy-from-inside
+      allowed:
+      - IPProtocol: tcp
+        ports:
+        - "80"
+        - "443"
+        description: test rule for network-test
+        direction: INGRESS
+        sourceRanges:
+        - 10.0.0.0/8`,
+		},
+		{
 			name: "gce_instance",
 			configData: &ConfigData{`
 resources:
@@ -284,7 +325,6 @@ resources:
       diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
       zone: us-east1-a
       machineType: f1-micro`},
-
 			want: `
 imports:
 - path: {{abs "deploy/cft/templates/instance/instance.py"}}

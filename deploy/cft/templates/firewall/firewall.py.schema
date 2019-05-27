@@ -17,6 +17,8 @@ info:
   author: Sourced Group Inc.
   description: Deploys firewall rules
 
+additionalProperties: false
+
 required:
   - rules
 
@@ -25,7 +27,7 @@ properties:
     type: string
     description: |
       The (optional) firewall name. This is only for documentation purposes and
-      is not sent to Deployment Manager.
+      is used as the Deployment Manager resource name if set.
   network:
     type: string
     description: |

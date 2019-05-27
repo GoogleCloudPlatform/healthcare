@@ -47,7 +47,7 @@ var (
 	upsertDeployment = deploymentmanager.Upsert
 )
 
-// Config represents a (partial) representation of a projects YAML file.
+// Config represents a (partial)f representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
 // TODO: move config to its own package
 // TODO: support new generated_fields
@@ -80,7 +80,7 @@ type Project struct {
 	Resources struct {
 		// Deployment manager resources
 		BQDatasets     []*BigqueryDatasetPair `json:"bq_datasets"`
-		Firewalls      []*FirewallPair        `json:"firewalls"`
+		GCEFirewalls   []*GCEFirewallPair     `json:"gce_firewalls"`
 		GCEInstances   []*GCEInstancePair     `json:"gce_instances"`
 		GCSBuckets     []*GCSBucketPair       `json:"gcs_buckets"`
 		GKEClusters    []*GKEClusterPair      `json:"gke_clusters"`
@@ -113,8 +113,8 @@ type BigqueryDatasetPair struct {
 	Parsed BigqueryDataset
 }
 
-// FirewallPair pairs a raw firewall with its parsed version.
-type FirewallPair struct {
+// GCEFirewallPair pairs a raw firewall with its parsed version.
+type GCEFirewallPair struct {
 	json.RawMessage
 	Parsed DefaultResource
 }
@@ -373,7 +373,7 @@ func (p *Project) resourcePairs() []resourcePair {
 	for _, r := range rs.BQDatasets {
 		appendPair(r.RawMessage, &r.Parsed)
 	}
-	for _, r := range rs.Firewalls {
+	for _, r := range rs.GCEFirewalls {
 		appendDefaultResPair(r.RawMessage, &r.Parsed, "deploy/cft/templates/firewall/firewall.py")
 	}
 	for _, r := range rs.GCEInstances {
