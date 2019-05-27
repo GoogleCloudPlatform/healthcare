@@ -40,7 +40,7 @@ type Resource struct {
 
 // Metadata contains extra metadata of the deployment.
 type Metadata struct {
-	DependsOn []string `json:"dependsOn"`
+	DependsOn []string `json:"dependsOn,omitempty"`
 }
 
 // Upsert creates the deployment if it does not exist, else updates it.

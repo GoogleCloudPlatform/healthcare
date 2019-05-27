@@ -1,20 +1,10 @@
 package cft
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
-	"text/template"
 )
-
-var metricFilterTemplate = template.Must(template.New("metricFilter").Parse(`resource.type=gcs_bucket AND
-logName=projects/{{.Project.ID}}/logs/cloudaudit.googleapis.com%2Fdata_access AND
-protoPayload.resourceName=projects/_/buckets/{{.Bucket.Name}} AND
-protoPayload.status.code!=7 AND
-protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})
-`))
 
 // GCSBucket wraps a CFT Cloud Storage Bucket.
 type GCSBucket struct {
@@ -154,38 +144,4 @@ func (b *GCSBucket) Name() string {
 // TemplatePath returns the name of the template to use for the bucket.
 func (b *GCSBucket) TemplatePath() string {
 	return "deploy/cft/templates/gcs_bucket/gcs_bucket.py"
-}
-
-// DependentResources gets the dependent resources of this bucket.
-// If the bucket has expected users, this list will contain a metric that will detect unexpected
-// access to the bucket from users not in the expected users list.
-func (b *GCSBucket) DependentResources(project *Project) ([]parsedResource, error) {
-	if len(b.ExpectedUsers) == 0 {
-		return nil, nil
-	}
-
-	var buf bytes.Buffer
-	data := struct {
-		Project       *Project
-		Bucket        *GCSBucket
-		ExpectedUsers string
-	}{
-		project,
-		b,
-		strings.Join(b.ExpectedUsers, " AND "),
-	}
-	if err := metricFilterTemplate.Execute(&buf, data); err != nil {
-		return nil, fmt.Errorf("failed to execute filter template: %v", err)
-	}
-
-	m := &Metric{
-		MetricProperties: MetricProperties{
-			MetricName:      "unexpected-access-" + b.Name(),
-			Description:     "Count of unexpected data access to " + b.Name(),
-			Filter:          buf.String(),
-			Descriptor:      unexpectedUserDescriptor,
-			LabelExtractors: principalEmailLabelExtractor,
-		},
-	}
-	return []parsedResource{m}, nil
 }

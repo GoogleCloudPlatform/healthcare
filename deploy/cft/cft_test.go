@@ -348,7 +348,7 @@ resources:
         valueType: STRING
     labelExtractors:
       user: 'EXTRACT(protoPayload.authenticationInfo.principalEmail)'
-    filter: |
+    filter: |-
       resource.type=gcs_bucket AND
       logName=projects/my-project/logs/cloudaudit.googleapis.com%2Fdata_access AND
       protoPayload.resourceName=projects/_/buckets/foo-bucket AND

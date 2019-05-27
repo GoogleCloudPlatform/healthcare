@@ -23,6 +23,7 @@ var (
 // Metric wraps a logging metric.
 type Metric struct {
 	MetricProperties `json:"properties"`
+	dependencies     []string
 }
 
 // MetricProperties wraps the metric template properties.
@@ -63,4 +64,9 @@ func (m *Metric) Name() string {
 // DeploymentManagerType returns the type to use for deployment manager.
 func (m *Metric) DeploymentManagerType() string {
 	return "logging.v2.metric"
+}
+
+// Dependencies gets the dependencies of this metric.
+func (m *Metric) Dependencies() []string {
+	return m.dependencies
 }

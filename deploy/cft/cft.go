@@ -2,14 +2,15 @@
 package cft
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
@@ -99,11 +100,11 @@ type Project struct {
 		LogsGCSBucket *GCSBucket      `json:"logs_gcs_bucket"`
 	} `json:"audit_logs"`
 
-	// Passed through by config so should not be parsed by json.
-	GeneratedFields *GeneratedFields `json:"-"`
-
-	// Set in init so should not be parsed by json.
-	BQLogSink *LogSink `json:"-"`
+	// The following vars are set through helpers and not directly through the user defined config.
+	GeneratedFields  *GeneratedFields   `json:"-"`
+	BQLogSink        *LogSink           `json:"-"`
+	DefaultResources []*DefaultResource `json:"-"`
+	Metrics          []*Metric          `json:"-"`
 }
 
 // BigqueryDatasetPair pairs a raw dataset with its parsed version.
@@ -194,18 +195,10 @@ func (p *Project) Init(auditLogsProject *Project) error {
 	if p.GeneratedFields == nil {
 		p.GeneratedFields = &GeneratedFields{}
 	}
+
 	if err := p.initAuditResources(auditLogsProject); err != nil {
 		return fmt.Errorf("failed to init audit resources: %v", err)
 	}
-
-	p.Resources.IAMPolicies = append(p.Resources.IAMPolicies, &IAMPolicyPair{
-		Parsed: IAMPolicy{
-			IAMPolicyName: "required-project-bindings",
-			IAMPolicyProperties: IAMPolicyProperties{Bindings: []Binding{
-				{Role: "roles/owner", Members: []string{"group:" + p.OwnersGroup}},
-				{Role: "roles/iam.securityReviewer", Members: []string{"group:" + p.AuditorsGroup}},
-			}}},
-	})
 
 	for _, pair := range p.resourcePairs() {
 		if len(pair.raw) > 0 {
@@ -216,6 +209,10 @@ func (p *Project) Init(auditLogsProject *Project) error {
 		if err := pair.parsed.Init(p); err != nil {
 			return fmt.Errorf("failed to init: %v, %+v", err, pair.parsed)
 		}
+	}
+
+	if err := p.addBaseResources(); err != nil {
+		return fmt.Errorf("failed to add base resources: %v", err)
 	}
 	return nil
 }
@@ -265,12 +262,104 @@ func (p *Project) initAuditResources(auditProject *Project) error {
 	return nil
 }
 
+// addBaseResources adds resources not set by the raw yaml config in the project (i.e. not configured by the user).
+func (p *Project) addBaseResources() error {
+	p.DefaultResources = append(p.DefaultResources, &DefaultResource{
+		DefaultResourceProperties: DefaultResourceProperties{ResourceName: "enable-all-audit-log-policies"},
+		templatePath:              "deploy/templates/audit_log_config.py",
+	})
+
+	p.Resources.IAMPolicies = append(p.Resources.IAMPolicies, &IAMPolicyPair{
+		Parsed: IAMPolicy{
+			IAMPolicyName: "required-project-bindings",
+			IAMPolicyProperties: IAMPolicyProperties{Bindings: []Binding{
+				{Role: "roles/owner", Members: []string{"group:" + p.OwnersGroup}},
+				{Role: "roles/iam.securityReviewer", Members: []string{"group:" + p.AuditorsGroup}},
+			}}},
+	})
+	p.Metrics = append(p.Metrics,
+		&Metric{
+			MetricProperties: MetricProperties{
+				MetricName:      "bigquery-settings-change-count",
+				Description:     "Count of bigquery permission changes.",
+				Filter:          `resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"`,
+				Descriptor:      unexpectedUserDescriptor,
+				LabelExtractors: principalEmailLabelExtractor,
+			},
+		},
+		&Metric{
+			MetricProperties: MetricProperties{
+				MetricName:      "iam-policy-change-count",
+				Description:     "Count of IAM policy changes.",
+				Filter:          `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`,
+				Descriptor:      unexpectedUserDescriptor,
+				LabelExtractors: principalEmailLabelExtractor,
+			},
+		},
+		&Metric{
+			MetricProperties: MetricProperties{
+				MetricName:  "bucket-permission-change-count",
+				Description: "Count of GCS permissions changes.",
+				Filter: `resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
+(protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)`,
+				Descriptor:      unexpectedUserDescriptor,
+				LabelExtractors: principalEmailLabelExtractor,
+			},
+		})
+
+	metricFilterTemplate, err := template.New("metricFilter").Parse(`resource.type=gcs_bucket AND
+logName=projects/{{.Project.ID}}/logs/cloudaudit.googleapis.com%2Fdata_access AND
+protoPayload.resourceName=projects/_/buckets/{{.Bucket.Name}} AND
+protoPayload.status.code!=7 AND
+protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})`)
+	if err != nil {
+		return err
+	}
+
+	for _, pair := range p.Resources.GCSBuckets {
+		b := pair.Parsed
+		if len(b.ExpectedUsers) == 0 {
+			continue
+		}
+
+		var buf bytes.Buffer
+		data := struct {
+			Project       *Project
+			Bucket        *GCSBucket
+			ExpectedUsers string
+		}{
+			p,
+			&b,
+			strings.Join(b.ExpectedUsers, " AND "),
+		}
+		if err := metricFilterTemplate.Execute(&buf, data); err != nil {
+			return fmt.Errorf("failed to execute filter template: %v", err)
+		}
+
+		p.Metrics = append(p.Metrics, &Metric{
+			MetricProperties: MetricProperties{
+				MetricName:      "unexpected-access-" + b.Name(),
+				Description:     "Count of unexpected data access to " + b.Name(),
+				Filter:          buf.String(),
+				Descriptor:      unexpectedUserDescriptor,
+				LabelExtractors: principalEmailLabelExtractor,
+			},
+			dependencies: []string{b.Name()},
+		})
+	}
+	return nil
+}
+
 func (p *Project) resourcePairs() []resourcePair {
 	pairs := []resourcePair{{parsed: p.BQLogSink}}
 
-	for _, res := range defaultResources {
-		pairs = append(pairs, resourcePair{parsed: res})
+	for _, r := range p.DefaultResources {
+		pairs = append(pairs, resourcePair{parsed: r})
 	}
+	for _, r := range p.Metrics {
+		pairs = append(pairs, resourcePair{parsed: r})
+	}
+
 	appendPair := func(raw json.RawMessage, parsed parsedResource) {
 		pairs = append(pairs, resourcePair{raw, parsed})
 	}
@@ -308,41 +397,6 @@ func (p *Project) resourcePairs() []resourcePair {
 	return pairs
 }
 
-var defaultResources = []parsedResource{
-	&DefaultResource{
-		DefaultResourceProperties: DefaultResourceProperties{ResourceName: "enable-all-audit-log-policies"},
-		templatePath:              "deploy/templates/audit_log_config.py",
-	},
-	&Metric{
-		MetricProperties{
-			MetricName:      "bigquery-settings-change-count",
-			Description:     "Count of bigquery permission changes.",
-			Filter:          `resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"`,
-			Descriptor:      unexpectedUserDescriptor,
-			LabelExtractors: principalEmailLabelExtractor,
-		},
-	},
-	&Metric{
-		MetricProperties{
-			MetricName:      "iam-policy-change-count",
-			Description:     "Count of IAM policy changes.",
-			Filter:          `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`,
-			Descriptor:      unexpectedUserDescriptor,
-			LabelExtractors: principalEmailLabelExtractor,
-		},
-	},
-	&Metric{
-		MetricProperties{
-			MetricName:  "bucket-permission-change-count",
-			Description: "Count of GCS permissions changes.",
-			Filter: `resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
-(protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)`,
-			Descriptor:      unexpectedUserDescriptor,
-			LabelExtractors: principalEmailLabelExtractor,
-		},
-	},
-}
-
 // parsedResource is an interface that must be implemented by all concrete resource implementations.
 type parsedResource interface {
 	Init(*Project) error
@@ -364,7 +418,8 @@ type deploymentManagerPather interface {
 
 // depender is the interface that defines a method to get dependent resources.
 type depender interface {
-	DependentResources(*Project) ([]parsedResource, error)
+	// Dependencies returns the name of the resource IDs to depend on.
+	Dependencies() []string
 }
 
 // Deploy deploys the CFT resources in the project.
@@ -500,92 +555,45 @@ func deployResources(project *Project) error {
 func getDeployment(project *Project, pairs []resourcePair) (*deploymentmanager.Deployment, error) {
 	deployment := &deploymentmanager.Deployment{}
 
-	allImports := make(map[string]bool)
+	importSet := make(map[string]bool)
 
 	for _, pair := range pairs {
-		resources, importSet, err := getDeploymentResourcesAndImports(pair, project)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get resource and imports for %q: %v", pair.parsed.Name(), err)
-		}
-		deployment.Resources = append(deployment.Resources, resources...)
-
-		var imports []string
-		for imp := range importSet {
-			imports = append(imports, imp)
-		}
-		sort.Strings(imports) // for stable ordering
-
-		for _, imp := range imports {
-			if !allImports[imp] {
-				deployment.Imports = append(deployment.Imports, &deploymentmanager.Import{Path: imp})
+		var typ string
+		if typer, ok := pair.parsed.(deploymentManagerTyper); ok {
+			typ = typer.DeploymentManagerType()
+		} else if pather, ok := pair.parsed.(deploymentManagerPather); ok {
+			var err error
+			typ, err = filepath.Abs(pather.TemplatePath())
+			if err != nil {
+				return nil, fmt.Errorf("failed to get absolute path for %q: %v", pather.TemplatePath(), err)
 			}
-			allImports[imp] = true
+			if !importSet[typ] {
+				deployment.Imports = append(deployment.Imports, &deploymentmanager.Import{Path: typ})
+				importSet[typ] = true
+			}
+		} else {
+			return nil, fmt.Errorf("failed to get type of %+v", pair.parsed)
 		}
+
+		merged, err := pair.MergedPropertiesMap()
+		if err != nil {
+			return nil, fmt.Errorf("failed to merge raw map with parsed: %v", err)
+		}
+
+		res := &deploymentmanager.Resource{
+			Name:       pair.parsed.Name(),
+			Type:       typ,
+			Properties: merged,
+		}
+
+		if dr, ok := pair.parsed.(depender); ok && len(dr.Dependencies()) > 0 {
+			res.Metadata = &deploymentmanager.Metadata{DependsOn: dr.Dependencies()}
+		}
+
+		deployment.Resources = append(deployment.Resources, res)
 	}
 
 	return deployment, nil
-}
-
-// getDeploymentResourcesAndImports gets the deploment resources and imports for the given resource pair.
-// It also recursively adds the resoures and imports of any dependent resources.
-func getDeploymentResourcesAndImports(pair resourcePair, project *Project) (resources []*deploymentmanager.Resource, importSet map[string]bool, err error) {
-	importSet = make(map[string]bool)
-
-	var typ string
-	if typer, ok := pair.parsed.(deploymentManagerTyper); ok {
-		typ = typer.DeploymentManagerType()
-	} else if pather, ok := pair.parsed.(deploymentManagerPather); ok {
-		var err error
-		typ, err = filepath.Abs(pather.TemplatePath())
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get absolute path for %q: %v", pather.TemplatePath(), err)
-		}
-		importSet[typ] = true
-	} else {
-		return nil, nil, fmt.Errorf("failed to get type of %+v", pair.parsed)
-	}
-
-	merged, err := pair.MergedPropertiesMap()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to merge raw map with parsed: %v", err)
-	}
-
-	resources = []*deploymentmanager.Resource{{
-		Name:       pair.parsed.Name(),
-		Type:       typ,
-		Properties: merged,
-	}}
-
-	dr, ok := pair.parsed.(depender)
-	if !ok { // doesn't implement dependent resources method so has no dependent resources
-		return resources, importSet, nil
-	}
-
-	dependencies, err := dr.DependentResources(project)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get dependent resources for %q: %v", pair.parsed.Name(), err)
-	}
-
-	for _, dep := range dependencies {
-		depPair := resourcePair{parsed: dep}
-		depResources, depImports, err := getDeploymentResourcesAndImports(depPair, project)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get resources and imports for %q: %v", dep.Name(), err)
-		}
-
-		for _, res := range depResources {
-			if res.Metadata == nil {
-				res.Metadata = &deploymentmanager.Metadata{}
-			}
-			res.Metadata.DependsOn = append(res.Metadata.DependsOn, pair.parsed.Name())
-		}
-		resources = append(resources, depResources...)
-
-		for imp := range depImports {
-			importSet[imp] = true
-		}
-	}
-	return resources, importSet, nil
 }
 
 func removeOwnerUser(project *Project) error {
