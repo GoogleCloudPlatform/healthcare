@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import glob
 import json
 import os
 import string
@@ -22,6 +23,11 @@ FLAGS = flags.FLAGS
 # Schema file for project configuration YAML files.
 _PROJECT_CONFIG_SCHEMA = os.path.join(
     os.path.dirname(__file__), '../project_config.yaml.schema')
+
+# Retrieve all files matching the pattern and add them into import_files.
+IMPORT_PATTERN_TAG = 'imports'
+# Merge the files in import_files into the dict where it is declared.
+IMPORT_FILES_TAG = 'import_files'
 
 
 def normalize_path(path):
@@ -339,52 +345,92 @@ def resolve_env_vars(config):
       resolve_env_vars(v)
 
 
-def merge_config_dicts(root_config, included_configs):
-  """Merge config dicts (list of dicts) into a root config dictionary.
-
-  Top-level lists with the same key (e.g. 'projects') are concatenated, other
-  duplicate top-level keys are an error.
+def merge_dicts(dst, src):
+  """Merge src into dst.
 
   Args:
-    root_config: A root config dictionary into which other dictionaries are
-      merged.
-    included_configs: A list of dictionaries to be merged.
+    dst: Dictionary for all configs.
+    src: Dictionary to be merged.
 
   Raises:
-    TypeError: If two dictionaries have the same key for non-list values.
+    TypeError: If two dictionaries have the same key and different value types.
   """
-  for config in included_configs:
-    for key, val in config.items():
-      if key not in root_config:
-        root_config[key] = val
-      elif isinstance(val, list) and isinstance(root_config[key], list):
-        root_config[key].extend(val)
+  for key, val in src.items():
+    if key in dst:
+      root_value = dst[key]
+      if isinstance(val, list) and isinstance(root_value, list):
+        root_value.extend(val)
+      elif isinstance(val, dict) and isinstance(root_value, dict):
+        merge_dicts(root_value, val)
       else:
-        raise TypeError('Duplicate key %s in config files.' % key)
+        raise TypeError('Conflict key %s in config files.' % key)
+    else:
+      dst[key] = val
 
 
-def load_config(path):
+def get_import_files(overall, overall_path):
+  """Get all imported file normalized paths.
+
+  Args:
+    overall: dictionary or list from a parsed YAML file.
+    overall_path: The path of the overall YAML file.
+
+  Returns:
+    A list holding all the imported file normalized paths.
+  """
+  import_list = overall.get(IMPORT_FILES_TAG, [])
+  import_files = set()
+  for file_path in import_list:
+    import_files.add(
+        os.path.normpath(
+            os.path.join(os.path.dirname(overall_path), file_path)))
+  ret_list = list(
+      import_files.union(set(expand_imports(overall, overall_path))))
+  ret_list.sort()
+  return ret_list
+
+
+def expand_imports(overall, overall_path):
+  """Find all to be imported files to extend import_files.
+
+  Args:
+    overall: dictionary or list from a parsed YAML file.
+    overall_path: The path of the overall YAML file.
+
+  Returns:
+    A list holding all the imported file paths.
+  """
+  imports_patterns = overall.get(IMPORT_PATTERN_TAG, [])
+  all_files = set()
+  for pattern in imports_patterns:
+    absolute_pattern = os.path.normpath(
+        os.path.join(os.path.dirname(overall_path), pattern))
+    for path in glob.glob(absolute_pattern):
+      if path != overall_path:
+        all_files.add(path)
+
+  return all_files
+
+
+def load_config(overall_path):
   """Reads and parses a YAML file.
 
   Args:
-    path (string): The path to the YAML file.
+    overall_path (string): The path to the YAML file.
 
   Returns:
     A dict holding the parsed contents of the YAML file, or None if the file
     could not be read or parsed.
   """
-  overall = read_yaml_file(path)
+  overall = read_yaml_file(overall_path)
   if not overall:
     return None
-  resolve_env_vars(overall)
+  import_files = get_import_files(overall, overall_path)
+  for inc_file in import_files:
+    inc_contents = read_yaml_file(inc_file)
+    merge_dicts(overall, inc_contents)
 
-  inc_files = overall.pop('import_files', [])
-  if inc_files:
-    inc_contents = []
-    for inc_file in inc_files:
-      inc_path = os.path.join(os.path.dirname(path), inc_file)
-      inc_contents.append(load_config(inc_path))
-    merge_config_dicts(overall, inc_contents)
+  resolve_env_vars(overall)
   return overall
 
 
