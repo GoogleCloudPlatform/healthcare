@@ -1,6 +1,8 @@
 """Utility functions that are used by the datathon ETL pipelines."""
+import argparse
 import inspect
 import os
+
 import tensorflow as tf
 
 
@@ -68,3 +70,35 @@ def scalar_to_feature(value):
         return bytes_feature(value.encode())
       else:
         return bytes_feature(value)
+
+
+class ArgumentValidator(object):
+  """Validate a argparse.ArgumentParser parameter.
+
+  Args:
+    arg (argparse._StoreAction): The argument to be validated. This is the value
+      that is returned by ArgumentParser.add_argument.
+  """
+
+  def __init__(self, arg):
+    self.arg = arg
+
+  def raise_exception(self, message):
+    raise argparse.ArgumentError(self.arg, message)
+
+  def validate(self, args, **kwargs):
+    """Validate the argument.
+
+    Args:
+      args (argparse.Namespace): the object returned by
+        ArgumentParser.parse_args()
+      **kwargs: Any additional data needed to validate the argument. E.g.
+        credentials, URIs etc.
+
+    Raises:
+      argparse.ArgumentError: if the argument has an invalid value.
+    """
+    self.validate_value(getattr(args, self.arg.dest), **kwargs)
+
+  def validate_value(self, value, **kwargs):
+    raise NotImplementedError

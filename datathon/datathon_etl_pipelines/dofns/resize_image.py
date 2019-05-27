@@ -17,8 +17,10 @@ class ResizeImage(beam.DoFn):
       output images.
   """
 
-  def __init__(self, height, width, color_channels=None, image_format='png'):
+  def __init__(self, image_format, height, width, color_channels=None):
     super(ResizeImage, self).__init__()
+    if image_format == 'jpeg':
+      image_format = 'jpg'
     if image_format not in ('jpg', 'png'):
       raise ValueError('Unrecognized image format ' + image_format)
     self.image_format = image_format
