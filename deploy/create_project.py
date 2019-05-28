@@ -73,7 +73,7 @@ flags.DEFINE_string('output_rules_path', None,
 flags.DEFINE_string('output_cleanup_path', None, 'Path to save cleanup file.')
 flags.DEFINE_boolean('enable_new_style_resources', None, 'Enable new style '
                      'resources. Developer only.')
-flags.DEFINE_string('cft_binary', None,
+flags.DEFINE_string('apply_binary', None,
                     'Path to CFT binary. Set automatically by the Bazel rule.')
 flags.DEFINE_string('rule_generator_binary', None,
                     ('Path to rule generator binary. '
@@ -401,7 +401,7 @@ def deploy_new_style_resources(config):
   """Deploy new style resources."""
   if FLAGS.enable_new_style_resources:
     subprocess.check_call([
-        FLAGS.cft_binary,
+        FLAGS.apply_binary,
         '--project_yaml_path',
         FLAGS.project_yaml,
         '--project',
@@ -1147,6 +1147,6 @@ if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
   flags.mark_flag_as_required('output_yaml_path')
   flags.mark_flag_as_required('output_cleanup_path')
-  flags.mark_flag_as_required('cft_binary')
+  flags.mark_flag_as_required('apply_binary')
   flags.mark_flag_as_required('rule_generator_binary')
   app.run(main)

@@ -1,7 +1,7 @@
-// CFT provides a CLI to deploy CFT definitions for a project in a projects yaml file.
+// Apply provides a CLI to deploy a project config to GCP.
 //
 // Usage:
-//   $ bazel run :cft -- --project_yaml_path=${PROJECT_YAML_PATH?} --project=${PROJECT_ID?}
+//   $ bazel run :apply -- --project_yaml_path=${PROJECT_YAML_PATH?} --project=${PROJECT_ID?}
 package main
 
 import (

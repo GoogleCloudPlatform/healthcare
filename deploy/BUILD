@@ -15,11 +15,11 @@ py_binary(
     srcs = ["create_project.py"],
     # Pass binary paths as arg due to unstable location in bazel built binaries.
     args = [
-        "--cft_binary=$(location //deploy/cmd/cft)",
+        "--apply_binary=$(location //deploy/cmd/apply)",
         "--rule_generator_binary=$(location //deploy/cmd/rule_generator)",
     ],
     data = [
-        "//deploy/cmd/cft",
+        "//deploy/cmd/apply",
         "//deploy/cmd/rule_generator",
     ],
     python_version = "PY3",
