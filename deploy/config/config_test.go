@@ -5,11 +5,10 @@ import (
 	"strings"
 	"testing"
 	"text/template"
-
-	"github.com/ghodss/yaml"
 )
 
-const configYAML = `
+const (
+	configYAML = `
 overall:
   organization_id: '12345678'
   folder_id: '98765321'
@@ -38,17 +37,16 @@ projects:
         location: US
         storageClass: MULTI_REGIONAL
 {{lpad .ExtraProjectConfig 2}}
-
-generated_fields:
-  projects:
-    my-project:
-      project_number: '1111'
-      log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
-      gce_instance_info:
-      - name: foo-instance
-        id: '123'
 `
-
+	generatedFieldsYAML = `
+projects:
+  my-project:
+    project_number: '1111'
+    log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+    gce_instance_info:
+    - name: foo-instance
+      id: '123'`
+)
 const auditDeploymentYAML = `
 imports:
 - path: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
@@ -205,12 +203,9 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*Config, *Project)
 		t.Fatalf("template Execute: %v", err)
 	}
 
-	config := new(Config)
-	if err := yaml.Unmarshal(buf.Bytes(), config); err != nil {
-		t.Fatalf("unmarshal config: %v", err)
-	}
-	if err := config.Init(); err != nil {
-		t.Fatalf("config.Init = %v", err)
+	config, err := Load(buf.Bytes(), []byte(generatedFieldsYAML))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
 	}
 	if len(config.Projects) != 1 {
 		t.Fatalf("len(config.Projects)=%v, want 1", len(config.Projects))

@@ -29,6 +29,7 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/config",
     deps = [
         "@com_github_imdario_mergo//:go_default_library",
+        "@in_ghodss_yaml//:go_default_library",
     ],
 )
 

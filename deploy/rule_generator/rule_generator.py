@@ -21,7 +21,6 @@ from deploy.rule_generator.scanners.lien_scanner_rules import LienScannerRules
 from deploy.rule_generator.scanners.location_scanner_rules import LocationScannerRules
 from deploy.rule_generator.scanners.log_sink_scanner_rules import LogSinkScannerRules
 from deploy.rule_generator.scanners.resource_scanner_rules import ResourceScannerRules
-from deploy.utils import field_generation
 from deploy.utils import runner
 from deploy.utils import utils
 
@@ -57,8 +56,8 @@ def run(deployment_config, output_path=None):
       deployment_config.
   """
   if not output_path:
-    output_path = field_generation.get_forseti_service_generated_fields(
-        deployment_config).get('server_bucket')
+    output_path = (
+        deployment_config['generated_fields']['forseti']['server_bucket'])
     if not output_path:
       raise ValueError(
           ('Must provide an output path or set the "forseti_server_bucket" '
@@ -103,8 +102,7 @@ def get_all_project_configs(config_dict):
         ProjectConfig(
             project=audit_logs_project,
             audit_logs_project=None,
-            generated_fields=config_dict.get(
-                field_generation.GENERATED_FIELDS_NAME)))
+            generated_fields=config_dict['generated_fields']))
 
   project_dicts = config_dict.get('projects', [])
 
@@ -119,6 +117,5 @@ def get_all_project_configs(config_dict):
         ProjectConfig(
             project=project,
             audit_logs_project=audit_logs_project,
-            generated_fields=config_dict.get(
-                field_generation.GENERATED_FIELDS_NAME)))
+            generated_fields=config_dict['generated_fields']))
   return project_configs, config_dict['overall']

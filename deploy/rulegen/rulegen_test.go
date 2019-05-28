@@ -18,7 +18,8 @@ import (
 )
 
 // TODO: This is copied from config_test.go. Pull out into own package.
-const configYAML = `
+const (
+	configYAML = `
 overall:
   organization_id: '12345678'
   folder_id: '98765321'
@@ -68,25 +69,25 @@ projects:
         location: US
         storageClass: MULTI_REGIONAL
 {{lpad .ExtraProjectConfig 2}}
-
-generated_fields:
-  projects:
-    my-project:
-      project_number: '1111'
-      log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
-      gce_instance_info:
-      - name: foo-instance
-        id: '123'
-    my-forseti-project:
-      project_number: '2222'
-      log_sink_service_account: audit-logs-bq@logging-2222.iam.gserviceaccount.com
-      gce_instance_info:
-      - name: foo-instance
-        id: '123'
-  forseti:
-    service_account: forseti@my-forseti-project.iam.gserviceaccount.com
-    server_bucket: gs://my-forseti-project-server/
 `
+	generatedFieldsYAML = `
+projects:
+  my-project:
+    project_number: '1111'
+    log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+    gce_instance_info:
+    - name: foo-instance
+      id: '123'
+  my-forseti-project:
+    project_number: '2222'
+    log_sink_service_account: audit-logs-bq@logging-2222.iam.gserviceaccount.com
+    gce_instance_info:
+    - name: foo-instance
+      id: '123'
+forseti:
+  service_account: forseti@my-forseti-project.iam.gserviceaccount.com
+  server_bucket: gs://my-forseti-project-server/`
+)
 
 type ConfigData struct {
 	ExtraProjectConfig string
@@ -117,12 +118,9 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *c
 		t.Fatalf("template Execute: %v", err)
 	}
 
-	conf := new(config.Config)
-	if err := yaml.Unmarshal(buf.Bytes(), conf); err != nil {
-		t.Fatalf("unmarshal config: %v", err)
-	}
-	if err := conf.Init(); err != nil {
-		t.Fatalf("config.Init = %v", err)
+	conf, err := config.Load(buf.Bytes(), []byte(generatedFieldsYAML))
+	if err != nil {
+		t.Fatalf("config.Load: %v", err)
 	}
 	if len(conf.Projects) != 1 {
 		t.Fatalf("len(config.Projects)=%v, want 1", len(conf.Projects))

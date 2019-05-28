@@ -13,7 +13,7 @@ import tempfile
 from absl import flags
 from absl.testing import absltest
 
-import ruamel.yaml
+import yaml
 
 from deploy import create_project
 from deploy.utils import utils
@@ -41,10 +41,10 @@ class CreateProjectTest(absltest.TestCase):
     utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = []
     with tempfile.TemporaryDirectory() as tmp_dir:
-      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'conf.yaml')
-      FLAGS.project_yaml = FLAGS.output_yaml_path
+      FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
+      FLAGS.generated_fields_path = os.path.join(tmp_dir,
+                                                 'generated_fields.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
-        yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
         f.flush()
       with self.assertRaises(utils.InvalidConfigError):
@@ -64,10 +64,10 @@ class CreateProjectTest(absltest.TestCase):
     ]
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'conf.yaml')
-      FLAGS.project_yaml = FLAGS.output_yaml_path
+      FLAGS.generated_fields_path = os.path.join(tmp_dir,
+                                                 'generated_fields.yaml')
+      FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
-        yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
         f.flush()
       create_project.main([])
@@ -77,7 +77,8 @@ class CreateProjectTest(absltest.TestCase):
         'deploy/samples/spanned_configs/root.yaml')
     FLAGS.projects = ['*']
     with tempfile.TemporaryDirectory() as tmp_dir:
-      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'out.yaml')
+      FLAGS.generated_fields_path = os.path.join(tmp_dir,
+                                                 'generated_fields.yaml')
       create_project.main([])
 
   def test_get_data_bucket_name(self):
@@ -116,7 +117,7 @@ def _deploy(config_filename):
       'deploy/samples/', config_filename)
   FLAGS.projects = ['*']
   with tempfile.TemporaryDirectory() as tmp_dir:
-    FLAGS.output_yaml_path = os.path.join(tmp_dir, 'out.yaml')
+    FLAGS.generated_fields_path = os.path.join(tmp_dir, 'generated_fields.yaml')
     create_project.main([])
 
 

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+
+	"github.com/ghodss/yaml"
 )
 
 // accessLogsWriter is the access logs writer.
@@ -27,8 +29,10 @@ type Config struct {
 	Forseti          *struct {
 		Project *Project `json:"project"`
 	} `json:"forseti"`
-	Projects           []*Project         `json:"projects"`
-	AllGeneratedFields AllGeneratedFields `json:"generated_fields"`
+	Projects []*Project `json:"projects"`
+
+	// Set by helper and not directly through user defined config.
+	AllGeneratedFields *AllGeneratedFields `json:"-"`
 }
 
 // Project defines a single project's configuration.
@@ -120,8 +124,26 @@ type PubsubPair struct {
 	Parsed Pubsub
 }
 
+// Load loads a config from the given config and generated fields bytes.
+// The bytes must be YAML or JSON compatible.
+func Load(confb, genb []byte) (*Config, error) {
+	conf := new(Config)
+	if err := yaml.Unmarshal(confb, conf); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+	}
+	genFields := new(AllGeneratedFields)
+	if err := yaml.Unmarshal(genb, genFields); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal generated fields: %v", err)
+	}
+	if err := conf.Init(genFields); err != nil {
+		return nil, fmt.Errorf("failed to initialize config: %v", err)
+	}
+	return conf, nil
+}
+
 // Init initializes the config and all its projects.
-func (c *Config) Init() error {
+func (c *Config) Init(genFields *AllGeneratedFields) error {
+	c.AllGeneratedFields = genFields
 	for _, p := range c.AllProjects() {
 		p.GeneratedFields = c.AllGeneratedFields.Projects[p.ID]
 		if err := p.Init(c.AuditLogsProject); err != nil {

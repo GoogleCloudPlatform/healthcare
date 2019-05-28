@@ -12,12 +12,12 @@ import (
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/rulegen"
-	"github.com/ghodss/yaml"
 )
 
 var (
-	projectYAMLPath = flag.String("project_yaml_path", "", "Path to projects yaml file")
-	outputPath      = flag.String("output_path", "",
+	projectYAMLPath     = flag.String("project_yaml_path", "", "Path to projects yaml file")
+	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
+	outputPath          = flag.String("output_path", "",
 		"Path to local directory or GCS bucket to write forseti rules. "+
 			"If unset, directly writes to the Forseti server bucket")
 )
@@ -29,18 +29,19 @@ func main() {
 		log.Fatal("--project_yaml_path must be set")
 	}
 
-	b, err := ioutil.ReadFile(*projectYAMLPath)
+	confb, err := ioutil.ReadFile(*projectYAMLPath)
 	if err != nil {
 		log.Fatalf("failed to read input projects yaml file at path %q: %v", *projectYAMLPath, err)
 	}
 
-	conf := new(config.Config)
-	if err := yaml.Unmarshal(b, conf); err != nil {
-		log.Fatalf("failed to unmarshal config: %v", err)
+	genb, err := ioutil.ReadFile(*generatedFieldsPath)
+	if err != nil {
+		log.Fatalf("failed to read generated fields file at path %q: %v", *generatedFieldsPath, err)
 	}
 
-	if err := conf.Init(); err != nil {
-		log.Fatalf("failed to init config: %v", err)
+	conf, err := config.Load(confb, genb)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
 	}
 
 	if err := rulegen.Run(conf, *outputPath); err != nil {

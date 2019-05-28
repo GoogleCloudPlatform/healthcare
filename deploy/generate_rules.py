@@ -34,6 +34,8 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('deployment_config_path', None,
                     'YAML file containing all project configurations.')
+flags.DEFINE_string('generated_fields_path', None,
+                    'Path to generated fields file.')
 flags.DEFINE_string('output_path', None,
                     ('Path to local directory or GCS bucket to output rules '
                      ' files. If unset, directly writes to the Forseti server '
@@ -44,10 +46,14 @@ def main(argv):
   del argv  # Unused.
   deployment_config = utils.read_yaml_file(
       utils.normalize_path(FLAGS.deployment_config_path))
+  generated_fields = utils.read_yaml_file(
+      utils.normalize_path(FLAGS.generated_fields_path))
+  deployment_config['generated_fields'] = generated_fields
   output_path = (utils.normalize_path(FLAGS.output_path)
                  if FLAGS.output_path else None)
   rule_generator.run(deployment_config, output_path=output_path)
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('deployment_config_path')
+  flags.mark_flag_as_required('generated_fields_path')
   app.run(main)

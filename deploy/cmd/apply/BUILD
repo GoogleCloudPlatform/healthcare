@@ -16,6 +16,5 @@ go_library(
     deps = [
         "//deploy/apply:go_default_library",
         "//deploy/config:go_default_library",
-        "@in_ghodss_yaml//:go_default_library",
     ],
 )

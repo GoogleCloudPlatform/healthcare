@@ -1,0 +1,70 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: Generated Fields Schema
+description: The specification for generated fields.
+
+properties:
+  forseti:
+    type: object
+    description: |
+      Output only. Fields whose values are known after Forseti deployment.
+    properties:
+      service_account:
+        type: string
+        description: The forseti server service account that needs to view
+          the GCP resources of all projects.
+      server_bucket:
+        type: string
+        description: The forseti server bucket that holds the configuration.
+  projects:
+    type: object
+    patternProperties:
+      "^[a-z][-a-z0-9]{4,28}[a-z0-9]$":
+        type: object
+        additionalProperties: false
+        description: |
+          Output only. Fields whose values are produced during deployment and
+          are used for monitoring of the project.
+        properties:
+          failed_step:
+            type: number
+            description: |
+              Step the deployment script failed at (if they failed).
+              Presence of this field implies a project has not been fully
+              deployed. Conversely, absence implies the project was deployed
+              and now just needs to be updated.
+          project_number:
+            type: string
+            description: The projects unique number.
+          gce_instance_info:
+            type: array
+            description: List of GCE instance info.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+                - name
+                - id
+              properties:
+                name:
+                  type: string
+                  description: Name of the GCE instance.
+                id:
+                  type: string
+                  description: ID of the GCE instance.
+          log_sink_service_account:
+            type: string
+            description: |
+              The service account used for this project's audit log sink/export.

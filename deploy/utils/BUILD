@@ -40,19 +40,3 @@ py_test(
     python_version = "PY3",
     deps = [":utils"],
 )
-
-py_library(
-    name = "field_generation",
-    srcs = ["field_generation.py"],
-    deps = [":utils"],
-)
-
-py_test(
-    name = "field_generation_test",
-    srcs = ["field_generation_test.py"],
-    python_version = "PY3",
-    deps = [
-        ":field_generation",
-        ":utils",
-    ],
-)

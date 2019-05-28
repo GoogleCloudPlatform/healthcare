@@ -117,22 +117,17 @@ remote audit logs) and one or more data hosting projects.
     update.
 
 1.  If the projects were deployed successfully, the script will write a YAML
-    file at `--output_yaml_path`, containing a `generated_fields` block for each
-    newly-created project. These fields are used to generate monitoring rules.
-    Update the original YAML config to include this block for the new
-    project(s). We recommend setting `--output_yaml_path` to match
-    `--project_yaml`, unless your input YAML is a template with environment
-    variables that you intend to re-use.
-
-    WARNING: if the script failed at any step, please sync `--output_yaml_path`
-    (if it exists) with the input file before trying again.
+    file at `--generated_fields_path`, containing a block for each newly-created
+    project. These fields are used to generate monitoring rules. If you will
+    share this environment with other teammates we recommend checking this
+    generated_fields file into a version control system.
 
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare
 # Note: --incompatible_use_python_toolchains is not needed after Bazel 0.27
 # See https://github.com/bazelbuild/bazel/issues/7899.
-$ bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=${PROJECT_CONFIG?} --nodry_run
+$ bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --generated_fields_path=${PROJECT_CONFIG?} --nodry_run
 ```
 
 If the script fails at any point, try to correct the error, sync the output yaml

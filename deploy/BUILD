@@ -8,7 +8,10 @@ load("@bazel_gazelle//:def.bzl", "gazelle")
 # gazelle:prefix github.com/GoogleCloudPlatform/healthcare/deploy
 gazelle(name = "gazelle")
 
-exports_files(["project_config.yaml.schema"])
+exports_files([
+    "project_config.yaml.schema",
+    "generated_fields.yaml.schema",
+])
 
 py_binary(
     name = "create_project",
@@ -19,6 +22,8 @@ py_binary(
         "--rule_generator_binary=$(location //deploy/cmd/rule_generator)",
     ],
     data = [
+        ":generated_fields.yaml.schema",
+        ":project_config.yaml.schema",
         "//deploy/cmd/apply",
         "//deploy/cmd/rule_generator",
     ],
@@ -33,7 +38,6 @@ py_library(
     deps = [
         "//deploy/rule_generator:rule_generator_lib",
         "//deploy/utils",
-        "//deploy/utils:field_generation",
         "//deploy/utils:forseti",
         "//deploy/utils:runner",
     ],

@@ -7,7 +7,6 @@ licenses(["notice"])  # Apache 2.0
 py_library(
     name = "project_config",
     srcs = ["project_config.py"],
-    deps = ["//deploy/utils:field_generation"],
 )
 
 py_test(
@@ -41,7 +40,6 @@ py_library(
         "//deploy/rule_generator/scanners:log_sink_scanner_rules",
         "//deploy/rule_generator/scanners:resource_scanner_rules",
         "//deploy/utils",
-        "//deploy/utils:field_generation",
         "//deploy/utils:runner",
     ],
 )
@@ -62,7 +60,6 @@ py_library(
         "//deploy/rule_generator/scanners:log_sink_scanner_rules",
         "//deploy/rule_generator/scanners:resource_scanner_rules",
         "//deploy/utils",
-        "//deploy/utils:field_generation",
         "//deploy/utils:runner",
     ],
 )
