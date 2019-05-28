@@ -46,7 +46,6 @@ import argparse
 import csv
 import inspect
 import os
-import re
 
 import apache_beam as beam
 from apache_beam.io.gcp.bigquery import BigQueryDisposition
@@ -56,45 +55,15 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import SetupOptions
 from datathon_etl_pipelines.dofns.read_tar_file import ReadTarFile
 from datathon_etl_pipelines.dofns.resize_image import ResizeImage
-from datathon_etl_pipelines.mimic_cxr.enum_encodings import DATASET_VALUES
 from datathon_etl_pipelines.mimic_cxr.enum_encodings import ID_NAMES
+from datathon_etl_pipelines.mimic_cxr.enum_encodings import ids_to_path
 from datathon_etl_pipelines.mimic_cxr.enum_encodings import LABEL_NAMES
 from datathon_etl_pipelines.mimic_cxr.enum_encodings import LABEL_VALUES
+from datathon_etl_pipelines.mimic_cxr.enum_encodings import path_to_ids
 from datathon_etl_pipelines.mimic_cxr.enum_encodings import VIEW_VALUES
+from datathon_etl_pipelines.mimic_cxr.mimic_cxr_tfrecord_schema import build_features
+from datathon_etl_pipelines.utils import get_setup_file
 import tensorflow as tf
-from typing import Dict, Union
-
-
-def path_to_ids(path):
-  """Parse the path to an image in the dataset.
-
-  Args:
-    path (str): A relative path to a JPG image.
-
-  Returns:
-    Tuple[int, int, int, int, int]: the patient_id, study_id, image_id, view,
-    and dataset for this image.
-  """
-  match = re.match(
-      r'(train|valid)/p([0-9]+)/s([0-9]+)/view([0-9]+)'
-      r'_(frontal|lateral|other)\.jpg', path)
-  if match is not None:
-    d, pid, sid, iid, v = match.groups()
-    patient_id = int(pid)
-    study_id = int(sid)
-    image_id = int(iid)
-    view = VIEW_VALUES[v]
-    dataset = DATASET_VALUES[d]
-    return patient_id, study_id, image_id, view, dataset
-  raise ValueError('unrecognized path: {}'.format(path))
-
-
-def ids_to_path(ids):
-  id_dict = dict(zip(ID_NAMES, ids))  # type: Dict[str, Union[int, str]]
-  id_dict['view'] = VIEW_VALUES(id_dict['view'])
-  id_dict['dataset'] = DATASET_VALUES(id_dict['dataset'])
-  return '{dataset}/p{patient}/s{study:02d}/view{image}_{view}.jpg'.format(
-      **id_dict)
 
 
 class ChexpertConverter(object):
@@ -126,7 +95,6 @@ def to_bigquery_json(ids_row):
   ids, row = ids_row
   bq = {col: val for col, val in zip(LABEL_NAMES, row)}
   bq.update(**dict(zip(ID_NAMES, ids)))
-  del bq['dataset']
   bq['path'] = ids_to_path(ids)
   return bq
 
@@ -150,27 +118,12 @@ def to_tf_example(element):
     tf.train.Example: The labelled image.
   """
   (ids, join) = element
-  (patient, study, image, view, _) = ids
   if len(join['jpgs']) != 1 or len(join['rows']) != 1:
     raise ValueError('{} JPG files matched to {} rows for {}'.format(
         len(join['jpgs']), len(join['rows']), ids_to_path(ids)))
 
-  def _bytes_feature(v):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[v]))
-
-  def _int64_feature(v):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=[v]))
-
-  features = {
-      'jpg_bytes': _bytes_feature(join['jpgs'][0]),
-      'patient': _int64_feature(patient),
-      'study': _int64_feature(study),
-      'image': _int64_feature(image),
-      'view': _int64_feature(view),
-  }
-
-  for label, value in zip(LABEL_NAMES, join['rows'][0]):
-    features[label] = _int64_feature(value)
+  features = build_features(
+      jpg_bytes=join['jpgs'][0], ids=ids, labels=join['rows'][0])
 
   example = tf.train.Example(features=tf.train.Features(feature=features))
   return example
@@ -179,7 +132,7 @@ def to_tf_example(element):
 def import_json_bq_schema():
   path = os.path.join(
       os.path.dirname(inspect.getfile(inspect.currentframe())),
-      'mimic_cxr_bq_schema.json')
+      'mimic_cxr_bigquery_labels_schema.json')
 
   with open(path) as fp:
     return parse_table_schema_from_json(fp.read())
@@ -195,7 +148,7 @@ def build_and_run_pipeline(pipeline_options,
   """Construct and run the Apache Beam Pipeline.
 
   Args:
-    pipeline_options (PipelineOptions): The passed to Apache Beam.
+    pipeline_options (PipelineOptions): Passed to Apache Beam.
     input_tars (List[str]): A set of patterns specifying the paths to the input
       tar files.
     input_csv (str): The path to the (optionally compressed) CSV that contains
@@ -209,7 +162,7 @@ def build_and_run_pipeline(pipeline_options,
   """
   input_paths = []
   for pattern in input_tars:
-    input_paths.extend(tf.gfile.Glob(pattern))
+    input_paths.extend(tf.io.gfile.glob(pattern))
 
   if not input_paths:
     raise ValueError('No matching tar files were found.')
@@ -225,19 +178,14 @@ def build_and_run_pipeline(pipeline_options,
       _ = rows | beam.Map(to_bigquery_json) | WriteToBigQuery(
           table=output_bq_table,
           schema=import_json_bq_schema(),
-          write_disposition=BigQueryDisposition.WRITE_APPEND)
+          write_disposition=BigQueryDisposition.WRITE_TRUNCATE)
 
     if output_jpg_dir is not None or output_tfrecord_dir is not None:
       jpgs = p | beam.Create(input_paths) | beam.ParDo(ReadTarFile(),
                                                        path_to_ids)
 
       if output_image_shape is not None:
-        h = output_image_shape[0]
-        w = output_image_shape[1]
-        c = None
-        if len(output_image_shape) > 2:
-          c = output_image_shape[2]
-        jpgs |= beam.ParDo(ResizeImage(h, w, c, 'jpg'))
+        jpgs |= beam.ParDo(ResizeImage('jpg', *output_image_shape))
 
       if output_jpg_dir is not None:
         if not output_jpg_dir.endswith('/'):
@@ -246,8 +194,8 @@ def build_and_run_pipeline(pipeline_options,
 
       joined = {'jpgs': jpgs, 'rows': rows} | beam.CoGroupByKey()
 
-      frontal, lateral, _ = joined | beam.Partition(
-          lambda e, n: e[0][ID_NAMES['view']], 3)
+      frontal, lateral, _ = joined | 'Partition on view' >> beam.Partition(
+          lambda kv, n_split: kv[0][ID_NAMES['view']], len(VIEW_VALUES))
 
       if output_tfrecord_dir is not None:
         if not output_tfrecord_dir.endswith('/'):
@@ -260,13 +208,6 @@ def build_and_run_pipeline(pipeline_options,
                   output_tfrecord_dir + name,
                   file_name_suffix='.tfrecord',
                   coder=beam.coders.ProtoCoder(tf.train.Example)))
-
-
-def get_setup_file():
-  this_file = inspect.getfile(inspect.currentframe())
-  this_dir = os.path.dirname(this_file)
-  relative_path = os.path.join(this_dir, '..', '..', 'setup.py')
-  return os.path.abspath(relative_path)
 
 
 def main():

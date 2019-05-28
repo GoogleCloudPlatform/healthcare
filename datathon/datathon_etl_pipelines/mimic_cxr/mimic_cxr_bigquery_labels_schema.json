@@ -21,6 +21,11 @@
       "description": "The plane the images was taken of. {0: frontal, 1: lateral, 2: other}"
     },
     {
+      "name": "dataset",
+      "type": "INT64",
+      "description": "The dataset the image is part of. {0: train, 1: validation}"
+    },
+    {
       "name": "path",
       "type": "STRING",
       "description": "The relative path to the .jpg file."

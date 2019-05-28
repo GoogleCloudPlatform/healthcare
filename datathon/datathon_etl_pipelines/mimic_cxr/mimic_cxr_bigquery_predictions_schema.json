@@ -1,0 +1,104 @@
+{
+  "fields": [
+    {
+      "name": "patient",
+      "type": "INT64",
+      "description": "Patient unique identifier"
+    },
+    {
+      "name": "study",
+      "type": "INT64",
+      "description": "Imaging study unique identifier. These are ordered chronologically"
+    },
+    {
+      "name": "image",
+      "type": "INT64",
+      "description": "A unique identifier for an image within a study. Images are numbered with priority given to frontal view positions, then lateral, then other."
+    },
+    {
+      "name": "view",
+      "type": "INT64",
+      "description": "The plane the images was taken of. {0: frontal, 1: lateral, 2: other}"
+    },
+    {
+      "name": "dataset",
+      "type": "INT64",
+      "description": "The dataset the image is part of. {0: train, 1: validation}"
+    },
+    {
+      "name": "path",
+      "type": "STRING",
+      "description": "The relative path to the .jpg file."
+    },
+    {
+      "name": "no_finding",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "enlarged_cardiomediastinum",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "cardiomegaly",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "airspace_opacity",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "lung_lesion",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "edema",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "consolidation",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "pneumonia",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "atelectasis",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "pneumothorax",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "pleural_effusion",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "pleural_other",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "fracture",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    },
+    {
+      "name": "support_devices",
+      "type": "FLOAT64",
+      "description": "The predicted logit probability for the presence of this label. -infinity => negative/not mentioned, +infinity => positive. You can convert this to a probability using this standard SQL formula: `0.5 * (TANH(0.5 * x + 1)`."
+    }
+  ]
+}
