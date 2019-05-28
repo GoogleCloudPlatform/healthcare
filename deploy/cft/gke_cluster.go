@@ -27,14 +27,3 @@ func (cluster *GKECluster) Name() string {
 func (cluster *GKECluster) TemplatePath() string {
 	return "deploy/cft/templates/gke/gke.py"
 }
-
-// getClusterByName get a cluster that has the given cluster name in a project.
-// TODO Replace this function with a general implementation.
-func getClusterByName(project *Project, clusterName string) *GKECluster {
-	for _, c := range project.Resources.GKEClusters {
-		if c.Parsed.Name() == clusterName {
-			return &c.Parsed
-		}
-	}
-	return nil
-}

@@ -28,9 +28,7 @@ go_library(
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cft",
     deps = [
-        "//deploy/deploymentmanager:go_default_library",
         "@com_github_imdario_mergo//:go_default_library",
-        "@in_ghodss_yaml//:go_default_library",
     ],
 )
 
@@ -44,7 +42,6 @@ go_test(
         "gcs_bucket_test.go",
         "generated_fields_test.go",
         "gke_cluster_test.go",
-        "gke_workload_test.go",
         "iam_test.go",
         "logsink_test.go",
         "metric_test.go",
@@ -53,9 +50,7 @@ go_test(
     ],
     embed = [":go_default_library"],
     deps = [
-        "//deploy/deploymentmanager:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
-        "@com_github_google_cmp//cmp/cmpopts:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],
 )

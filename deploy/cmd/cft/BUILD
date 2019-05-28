@@ -14,6 +14,7 @@ go_library(
     srcs = ["cft.go"],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cmd/cft",
     deps = [
+        "//deploy/apply:go_default_library",
         "//deploy/cft:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],

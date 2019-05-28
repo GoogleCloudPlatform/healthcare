@@ -8,16 +8,16 @@ import (
 	"github.com/imdario/mergo"
 )
 
-// resourcePair groups the raw resource with its parsed version.
-type resourcePair struct {
-	raw    json.RawMessage
-	parsed parsedResource
+// ResourcePair groups the raw resource with its parsed version.
+type ResourcePair struct {
+	Raw    json.RawMessage
+	Parsed parsedResource
 }
 
 // MergedPropertiesMap merges the raw and parsed resources and extracts their properties map.
 // See interfacePair.MergedMap for specifics on the merging.
-func (p resourcePair) MergedPropertiesMap() (map[string]interface{}, error) {
-	merged, err := interfacePair{p.raw, p.parsed}.MergedMap()
+func (p ResourcePair) MergedPropertiesMap() (map[string]interface{}, error) {
+	merged, err := interfacePair{p.Raw, p.Parsed}.MergedMap()
 	if err != nil {
 		return nil, err
 	}

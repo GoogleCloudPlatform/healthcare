@@ -51,33 +51,3 @@ properties:
 		t.Fatalf("cluster zone error: %v", cluser.Zone)
 	}
 }
-
-func TestGetParsedClusters(t *testing.T) {
-	configExtend := &ConfigData{`
-resources:
-  gke_clusters:
-  - properties:
-      name: cluster1
-      clusterLocationType: Regional
-      region: somewhere1
-  - properties:
-      name: cluster2
-      clusterLocationType: Zonal
-      zone: somewhere2-c`,
-	}
-	_, project := getTestConfigAndProject(t, configExtend)
-	cluster := getClusterByName(project, "cluster1")
-	if cluster == nil {
-		t.Fatalf("getClusterByName cannot find cluster")
-	}
-	if cluster.Name() != "cluster1" {
-		t.Fatalf("getClusterByName find a wrong cluster: %v", cluster.Name())
-	}
-	cluster = getClusterByName(project, "cluster2")
-	if cluster == nil {
-		t.Fatalf("getClusterByName cannot find cluster")
-	}
-	if cluster.Name() != "cluster2" {
-		t.Fatalf("getClusterByName find a wrong cluster: %v", cluster.Name())
-	}
-}

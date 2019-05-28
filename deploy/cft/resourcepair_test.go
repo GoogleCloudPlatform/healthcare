@@ -87,7 +87,7 @@ func TestMergedMap(t *testing.T) {
 				t.Fatalf("yaml.Unmarshal want: %v", err)
 			}
 
-			pair := resourcePair{parsed: parsed, raw: raw}
+			pair := ResourcePair{Parsed: parsed, Raw: raw}
 
 			got, err := pair.MergedPropertiesMap()
 			if err != nil {

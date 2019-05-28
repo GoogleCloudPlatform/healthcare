@@ -11,6 +11,7 @@ import (
 
 	"flag"
 	
+	"github.com/GoogleCloudPlatform/healthcare/deploy/apply"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
 	"github.com/ghodss/yaml"
 )
@@ -49,7 +50,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := cft.Deploy(conf, proj); err != nil {
+	if err := apply.Apply(conf, proj); err != nil {
 		log.Fatalf("failed to deploy %q resources: %v", *projectID, err)
 	}
 

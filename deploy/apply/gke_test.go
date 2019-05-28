@@ -1,10 +1,11 @@
-package cft
+package apply
 
 import (
 	"os/exec"
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -46,12 +47,12 @@ func TestApplyClusterResource(t *testing.T) {
 
 func TestLocationTypeAndValue(t *testing.T) {
 	testcases := []struct {
-		in            GKECluster
+		in            cft.GKECluster
 		locationType  string
 		locationValue string
 	}{
 		{
-			in: GKECluster{GKEClusterProperties{
+			in: cft.GKECluster{cft.GKEClusterProperties{
 				ResourceName:        "cluster_with_region",
 				ClusterLocationType: "Regional",
 				Region:              "some_region",
@@ -60,7 +61,7 @@ func TestLocationTypeAndValue(t *testing.T) {
 			locationValue: "some_region",
 		},
 		{
-			in: GKECluster{GKEClusterProperties{
+			in: cft.GKECluster{cft.GKEClusterProperties{
 				ResourceName:        "cluster_with_zone",
 				ClusterLocationType: "Zonal",
 				Zone:                "some_zone",
@@ -128,11 +129,11 @@ resources:
 
 func TestLocationTypeAndValueError(t *testing.T) {
 	testcases := []struct {
-		in  GKECluster
+		in  cft.GKECluster
 		err string
 	}{
 		{
-			in: GKECluster{GKEClusterProperties{
+			in: cft.GKECluster{cft.GKEClusterProperties{
 				ResourceName:        "cluster_zonal_error",
 				ClusterLocationType: "Zonal",
 				Region:              "some_region",
@@ -141,7 +142,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 			err: "failed to get cluster's zone: cluster_zonal_error",
 		},
 		{
-			in: GKECluster{GKEClusterProperties{
+			in: cft.GKECluster{cft.GKEClusterProperties{
 				ResourceName:        "cluster_regional_error",
 				ClusterLocationType: "Regional",
 				Zone:                "some_zone",
@@ -149,7 +150,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 			err: "failed to get cluster's region: cluster_regional_error",
 		},
 		{
-			in: GKECluster{GKEClusterProperties{
+			in: cft.GKECluster{cft.GKEClusterProperties{
 				ResourceName:        "cluster_wrong_type",
 				ClusterLocationType: "Location",
 				Region:              "some_region",
