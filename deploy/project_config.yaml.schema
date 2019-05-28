@@ -533,6 +533,7 @@ definitions:
           the resource.
           # TODO: investigate implementing a subset of the CFT
           # schema here for the fields we change.
+        properties:
           bq_datasets:
             type: array
             description: Provides support for BigQuery Datasets.
@@ -549,160 +550,160 @@ definitions:
                     See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery for details.
                     In addition, location must be set and setDefaultOwner must
                     not be set to true.
-            firewalls:
-              type: array
-              description: Provides support for firewalls.
+          firewalls:
+            type: array
+            description: Provides support for firewalls.
+            additionalProperties: false
+            items:
+              type: object
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template firewall.py.
+                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall for details.
+          gce_instances:
+            type: array
+            description: Provides support for GCE instances.
+            items:
+              type: object
               additionalProperties: false
-              items:
-                type: object
-                required:
-                - properties
+              required:
+              - properties
+              properties:
                 properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template instance.py.
+                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance for details.
+                custom_boot_image:
+                  type: object
+                  description: |
+                    A custom disk image to create from a GCS path to use as the boot
+                    disk for this VM. Once deployed, this field cannot be changed.
+                  additionalProperties: false
+                  required:
+                  - image_name
+                  - gcs_path
                   properties:
-                    type: object
-                    description: |
-                      Wraps the CFT template firewall.py.
-                      See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall for details.
-            gce_instances:
-              type: array
-              description: Provides support for GCE instances.
-              items:
-                type: object
-                additionalProperties: false
-                required:
-                - properties
-                properties:
-                  properties:
-                    type: object
-                    description: |
-                      Wraps the CFT template instance.py.
-                      See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance for details.
-                  custom_boot_image:
-                    type: object
-                    description: |
-                      A custom disk image to create from a GCS path to use as the boot
-                      disk for this VM. Once deployed, this field cannot be changed.
-                    additionalProperties: false
-                    required:
-                    - image_name
-                    - gcs_path
-                    properties:
-                      image_name:
-                        type: string
-                        description: Name of the new disk image to create.
-                        pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
-                      gcs_path:
-                        type: string
-                        description: |
-                          GCS path (without gs:// prefix) to the tar.gz file of the
-                          RAW image file to use for the boot image.
-                        pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}\/.+\.tar\.gz$
-            gcs_buckets:
-              type: array
-              description: Provides support for GCS Buckets.
-              items:
-                type: object
-                additionalProperties: false
-                required:
-                - properties
-                properties:
-                  properties:
-                    type: object
-                    description: |
-                      Wraps the CFT template gcs_bucket.py.
-                      See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket for details.
-                      Since GCS bucket names share a global namespace, see
-                      https://cloud.google.com/storage/docs/best-practices for
-                      best pratices.
-                      In addition, location must be set and versioning.enabled
-                      must not be set to false, and predefined ACLs cannot be
-                      set.
-                  ttl_days:
-                    type: number
-                    description: |
-                      A helper to set a deletion lifecycle rule to clean up
-                      objects after the specified number of days.
-                  expected_users:
-                    type: array
-                    description: |
-                      Helper to create an unexpected access metric for accesses
-                      from users outside of this list.
-                    items:
+                    image_name:
                       type: string
-                      description: User emails (e.g. foo@domain.com)
-            gke_clusters:
-              type: array
-              description: Provides support for GKE Clusters.
-              items:
-                type: object
-                additionalProperties: false
-                required:
-                - properties
+                      description: Name of the new disk image to create.
+                      pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+                    gcs_path:
+                      type: string
+                      description: |
+                        GCS path (without gs:// prefix) to the tar.gz file of the
+                        RAW image file to use for the boot image.
+                      pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}\/.+\.tar\.gz$
+          gcs_buckets:
+            type: array
+            description: Provides support for GCS Buckets.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
                 properties:
-                  properties:
-                    type: object
-                    description: |
-                      Wraps the CFT template gke.py.
-                      See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke for details.
-            gke_workloads:
-              type: array
-              description: Provides support for GKE workloads supported by kubectl.
-              items:
-                type: object
-                additionalProperties: false
-                required:
-                - properties
-                properties:
-                  properties:
-                    type: object
-                    description: |
-                      Must be a valid kubectl workload definition.
-            iam_custom_roles:
-              type: array
-              description: Provides support for creating IAM custom roles.
-              items:
-                type: object
-                additionalProperties: false
-                properties:
-                  properties:
-                    type: object
-                    description: |
-                      Wraps the CFT template iam_custom_role.py.
-                      See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role for details.
-            iam_policies:
-              type: array
-              description: |
-                Provides support for adding project level IAM bindings.
-              items:
-                type: object
-                additionalProperties: false
-                required:
-                - name
-                - properties
-                properties:
-                  name:
+                  type: object
+                  description: |
+                    Wraps the CFT template gcs_bucket.py.
+                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket for details.
+                    Since GCS bucket names share a global namespace, see
+                    https://cloud.google.com/storage/docs/best-practices for
+                    best pratices.
+                    In addition, location must be set and versioning.enabled
+                    must not be set to false, and predefined ACLs cannot be
+                    set.
+                ttl_days:
+                  type: number
+                  description: |
+                    A helper to set a deletion lifecycle rule to clean up
+                    objects after the specified number of days.
+                expected_users:
+                  type: array
+                  description: |
+                    Helper to create an unexpected access metric for accesses
+                    from users outside of this list.
+                  items:
                     type: string
-                    description: |
-                      Name of this policy. Only used by deployment manager.
-                  properties:
-                    type: object
-                    description: |
-                      Wraps the CFT template iam_member.py.
-                      See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member for details.
-            pubsubs:
-              type: array
-              description: Provides support for Pubsub channels.
-              items:
-                type: object
-                additionalProperties: false
-                required:
-                - properties
+                    description: User emails (e.g. foo@domain.com)
+          gke_clusters:
+            type: array
+            description: Provides support for GKE Clusters.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
                 properties:
-                  properties:
-                    type: object
-                    description: |
-                      Wraps the CFT template pubsub.py.
-                      See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub for details.
+                  type: object
+                  description: |
+                    Wraps the CFT template gke.py.
+                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke for details.
+          gke_workloads:
+            type: array
+            description: Provides support for GKE workloads supported by kubectl.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Must be a valid kubectl workload definition.
+          iam_custom_roles:
+            type: array
+            description: Provides support for creating IAM custom roles.
+            items:
+              type: object
+              additionalProperties: false
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template iam_custom_role.py.
+                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role for details.
+          iam_policies:
+            type: array
+            description: |
+              Provides support for adding project level IAM bindings.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - name
+              - properties
+              properties:
+                name:
+                  type: string
+                  description: |
+                    Name of this policy. Only used by deployment manager.
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template iam_member.py.
+                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member for details.
+          pubsubs:
+            type: array
+            description: Provides support for Pubsub channels.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template pubsub.py.
+                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub for details.
 
 required:
 - overall
