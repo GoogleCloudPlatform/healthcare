@@ -1,6 +1,6 @@
-# Google Cloud Healthcare Deployment Automation
+# Google Cloud Healthcare Data Protection Toolkit
 
-A collection of templates for configuration of GCP resources to hold datasets.
+Tools to configure GCP environments aimed at healthcare use cases.
 
 *   [Setup Instructions](#setup-instructions)
     *   [Script Prerequisites](#script-prerequisites)
