@@ -46,13 +46,9 @@ def install(config):
     ])
 
     # run forseti installer
-    # TODO: switch to py3 call when Forseti supports it
-    # (https://github.com/GoogleCloudPlatform/forseti-security/issues/1437)
-    # or use the DM template once
-    # https://github.com/GoogleCloudPlatform/forseti-security/issues/2544
-    # is fixed.
+    # TODO: switch to terraform or DM template
     install_cmd = [
-        'python2',
+        'python3',
         os.path.join(tmp_dir, 'install/gcp_installer.py'),
         '--no-cloudshell',
     ]
