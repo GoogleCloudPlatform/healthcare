@@ -43,7 +43,6 @@ class CreateProjectTest(absltest.TestCase):
     with tempfile.TemporaryDirectory() as tmp_dir:
       FLAGS.output_yaml_path = os.path.join(tmp_dir, 'conf.yaml')
       FLAGS.project_yaml = FLAGS.output_yaml_path
-      FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
       with open(FLAGS.project_yaml, 'w') as f:
         yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
@@ -67,7 +66,6 @@ class CreateProjectTest(absltest.TestCase):
     with tempfile.TemporaryDirectory() as tmp_dir:
       FLAGS.output_yaml_path = os.path.join(tmp_dir, 'conf.yaml')
       FLAGS.project_yaml = FLAGS.output_yaml_path
-      FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
       with open(FLAGS.project_yaml, 'w') as f:
         yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
@@ -80,7 +78,6 @@ class CreateProjectTest(absltest.TestCase):
     FLAGS.projects = ['*']
     with tempfile.TemporaryDirectory() as tmp_dir:
       FLAGS.output_yaml_path = os.path.join(tmp_dir, 'out.yaml')
-      FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
       create_project.main([])
 
   def test_get_data_bucket_name(self):
@@ -120,7 +117,6 @@ def _deploy(config_filename):
   FLAGS.projects = ['*']
   with tempfile.TemporaryDirectory() as tmp_dir:
     FLAGS.output_yaml_path = os.path.join(tmp_dir, 'out.yaml')
-    FLAGS.output_cleanup_path = os.path.join(tmp_dir, 'cleanup.sh')
     create_project.main([])
 
 

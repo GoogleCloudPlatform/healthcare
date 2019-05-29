@@ -18,8 +18,7 @@ script with:
   bazel run :create_project -- \
     --project_yaml=my_project_config.yaml \
     --projects='*' \
-    --output_yaml_path=/tmp/output.yaml \
-    --output_cleanup_path=/tmp/cleanup.sh \
+    --output_yaml_path=/tmp/output.yaml \ \
     --nodry_run \
     --alsologtostderr
 
@@ -46,8 +45,6 @@ from absl import logging
 
 import jsonschema
 
-from ruamel import yaml
-
 from deploy.rule_generator import rule_generator
 from deploy.utils import field_generation
 from deploy.utils import forseti
@@ -70,7 +67,6 @@ flags.DEFINE_string('output_rules_path', None,
                     ('Path to local directory or GCS bucket to output rules '
                      'files. If unset, directly writes to the Forseti server '
                      'bucket.'))
-flags.DEFINE_string('output_cleanup_path', None, 'Path to save cleanup file.')
 flags.DEFINE_boolean('enable_new_style_resources', None, 'Enable new style '
                      'resources. Developer only.')
 flags.DEFINE_string('apply_binary', None,
@@ -91,17 +87,6 @@ _IAM_PROPAGATAION_WAIT_TIME_SECS = 60
 
 # Restriction for project lien.
 _LIEN_RESTRICTION = 'resourcemanager.projects.delete'
-
-_CLEANUP_HEADER = """#!/bin/sh
-
-# This file contains commands to remove unexpected configuration.
-# If they are legitimate, consider adding them to the input YAML config so they
-# don't get flagged again.
-# WARNING: proceed with caution!
-
-set -e
-
-"""
 
 # Configuration for deploying a single project.
 ProjectConfig = collections.namedtuple(
@@ -128,8 +113,6 @@ Step = collections.namedtuple(
         # Whether this step should be run when updating a project.
         'updatable',
     ])
-
-Output = collections.namedtuple('Output', ['cleanup_commands'])
 
 
 def create_new_project(config):
@@ -181,13 +164,6 @@ def enable_services_apis(config):
     List[string]: commands to remove APIs not found in the enabled set.
   """
   project_id = config.project['project_id']
-  existing_services = runner.run_gcloud_command(
-      ['services', 'list', '--format', 'value(name)'],
-      project_id=project_id).split('\n')
-
-  # The gcloud call returns service name as a full path (including project id).
-  # We only need the base name which is the URL.
-  existing_apis = set([os.path.basename(svc) for svc in existing_services])
 
   want_apis = set(config.project.get('enabled_apis', []))
   want_apis.add('deploymentmanager.googleapis.com')
@@ -196,21 +172,12 @@ def enable_services_apis(config):
   resources = config.project.get('resources', {})
   if 'iam_custom_roles' in resources:
     want_apis.add('iam.googleapis.com')
-
-  unexpected_apis = existing_apis.difference(want_apis)
-  unenabled_apis = list(want_apis.difference(existing_apis))
+  want_apis = list(want_apis)
 
   # Send in batches to avoid hitting quota limits.
-  for i in range(0, len(unenabled_apis), 10):
+  for i in range(0, len(want_apis), 10):
     runner.run_gcloud_command(
-        ['services', 'enable'] + unenabled_apis[i:i + 10],
-        project_id=project_id)
-
-  cleanup_commands = [
-      'gcloud services disable {} --project={}'.format(api, project_id)
-      for api in unexpected_apis
-  ]
-  return Output(cleanup_commands=cleanup_commands)
+        ['services', 'enable'] + want_apis[i:i + 10], project_id=project_id)
 
 
 def grant_deployment_manager_access(config):
@@ -407,71 +374,6 @@ def deploy_new_style_resources(config):
         '--project',
         config.project['project_id'],
     ])
-
-
-def get_iam_policy_cleanup(config):
-  """Get cleanup commands for unexpected IAM bindings."""
-  project_id = config.project['project_id']
-  policy_str = runner.run_gcloud_command(
-      ['projects', 'get-iam-policy', project_id], project_id=project_id)
-  policy = yaml.YAML().load(policy_str)
-
-  existing_role_to_members = _get_role_to_members(policy['bindings'])
-
-  # TODO: avoid duplication with data_project.py and rule generator
-  # project config once we switch to CFT
-  owners_group_role = ('roles/owner'
-                       if 'organization_id' in config.root['overall'] else
-                       'roles/resourcemanager.projectIamAdmin')
-  initial_bindings = [
-      {
-          'role': owners_group_role,
-          'members': ['group:{}'.format(config.project['owners_group'])]
-      },
-      {
-          'role': 'roles/iam.securityReviewer',
-          'members': ['group:{}'.format(config.project['auditors_group'])]
-      },
-  ]
-  if 'editors_group' in config.project:
-    initial_bindings.append({
-        'role':
-            'roles/editor',
-        'members': [
-            'group:{}'.format(group)
-            for group in config.project['editors_group']
-        ]
-    })
-  for additional in config.project.get('additional_project_permissions', []):
-    for role in additional['roles']:
-      initial_bindings.append({
-          'role': role,
-          'members': additional['members'],
-      })
-  if 'forseti' in config.root:
-    forseti_service_account = field_generation.get_forseti_service_generated_fields(
-        config.root).get('service_account')
-    if forseti_service_account:
-      for role in forseti.get_forseti_roles(project_id):
-        initial_bindings.append({
-            'role': role,
-            'members': ['serviceAccount:{}'.format(forseti_service_account)],
-        })
-
-  want_role_to_members = _get_role_to_members(initial_bindings)
-
-  for role, members in existing_role_to_members.items():
-    existing_role_to_members[role].difference_update(want_role_to_members[role])
-
-  cleanup_commands = []
-  for role, members in existing_role_to_members.items():
-    for member in members:
-      cleanup_commands.append(
-          'gcloud projects remove-iam-policy-binding {project_id} '
-          '--member={member} --role={role} --project={project_id}'.format(
-              project_id=project_id, member=member, role=role))
-
-  return Output(cleanup_commands=cleanup_commands)
 
 
 def _get_role_to_members(bindings):
@@ -838,11 +740,6 @@ _SETUP_STEPS = [
         updatable=True,
     ),
     Step(
-        func=get_iam_policy_cleanup,
-        description='Generate IAM policy cleanup',
-        updatable=True,
-    ),
-    Step(
         func=deploy_bigquery_audit_logs,
         description='Deploy BigQuery audit logs',
         updatable=False,
@@ -885,7 +782,7 @@ _SETUP_STEPS = [
 ]
 
 
-def setup_project(config, project_yaml, output_yaml_path, output_cleanup_path):
+def setup_project(config, project_yaml, output_yaml_path):
   """Run the full process for initalizing a single new project.
 
   Note: for projects that have already been deployed, only the updatable steps
@@ -895,7 +792,6 @@ def setup_project(config, project_yaml, output_yaml_path, output_cleanup_path):
     config (ProjectConfig): The config of a single project to setup.
     project_yaml (str): Path of the project config YAML.
     output_yaml_path (str): Path to output resulting root config in JSON.
-    output_cleanup_path (str): Path to output cleanup shell script.
 
   Returns:
     A boolean, true if the project was deployed successfully, false otherwise.
@@ -920,11 +816,7 @@ def setup_project(config, project_yaml, output_yaml_path, output_cleanup_path):
       continue
 
     try:
-      output = step.func(config)
-      if output and output.cleanup_commands:
-        with open(output_cleanup_path, 'a') as f:
-          for cmd in output.cleanup_commands:
-            f.write('# {}\n'.format(cmd))
+      step.func(config)
     except Exception as e:  # pylint: disable=broad-except
       traceback.print_exc()
       logging.error('%s: setup failed on step %s: %s', project_id, step_num, e)
@@ -1018,7 +910,6 @@ def main(argv):
     logging.info('--enable_new_style_resources is true.')
 
   FLAGS.output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
-  FLAGS.output_cleanup_path = utils.normalize_path(FLAGS.output_cleanup_path)
   if FLAGS.output_rules_path:
     FLAGS.output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
 
@@ -1044,9 +935,6 @@ def main(argv):
   except jsonschema.exceptions.ValidationError as e:
     logging.error('Error in YAML config: %s', e)
     return
-
-  with open(FLAGS.output_cleanup_path, 'w') as f:
-    f.write(_CLEANUP_HEADER)
 
   want_projects = set(FLAGS.projects)
 
@@ -1117,8 +1005,7 @@ def main(argv):
   for config in projects:
     logging.info('Setting up project %s', config.project['project_id'])
 
-    if not setup_project(config, FLAGS.project_yaml, FLAGS.output_yaml_path,
-                         FLAGS.output_cleanup_path):
+    if not setup_project(config, FLAGS.project_yaml, FLAGS.output_yaml_path):
       # Don't attempt to deploy additional projects if one project failed.
       return
 
@@ -1146,7 +1033,6 @@ def main(argv):
 if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
   flags.mark_flag_as_required('output_yaml_path')
-  flags.mark_flag_as_required('output_cleanup_path')
   flags.mark_flag_as_required('apply_binary')
   flags.mark_flag_as_required('rule_generator_binary')
   app.run(main)

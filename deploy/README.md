@@ -132,12 +132,8 @@ $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare
 # Note: --incompatible_use_python_toolchains is not needed after Bazel 0.27
 # See https://github.com/bazelbuild/bazel/issues/7899.
-$ bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=${PROJECT_CONFIG?} --output_cleanup_path=${CLEANUP_PATH?} --nodry_run
+$ bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=${PROJECT_CONFIG?} --nodry_run
 ```
-
-1.  Review the cleanup script dumped to see extra configuration that was not set
-    by the deployment scripts. Update the YAML config with these configs or
-    uncomment the lines and run the shell script to remove them.
 
 If the script fails at any point, try to correct the error, sync the output yaml
 file with the input and try again.
@@ -162,16 +158,12 @@ gcloud services --project ${PROJECT_ID?} disable ${SERVICE_NAME}
 You may wish to modify a project to add additional resources or change an
 existing setting. The `create_project.py` script can be used to also update a
 project. Listing a previously deployed project in the `--projects` flag (or
-setting the flag to be `"*"`), will trigger an update.
+setting the flag to be `"*"` for all projects), will trigger an update.
 
-WARNING: Due to the sensitive nature of resources in these projects, most
-deployment update functions will run in mode "ABANDON". Thus, if a resource is
-removed from a project, it will become unmonitored rather than deleted. It is
-the responsibility of the user to manually remove any references if they become
-abandoned.
-
-TIP: Looking through the deployment manager manifests can help in finding some
-of the abandoned resources and their references.
+WARNING: Deployment Manager will run with deletion policy "ABANDON". Thus, if a
+resource is removed from a project, it will become unmonitored rather than
+deleted. It is the responsibility of the user to manually remove stale
+references including IAM bindings and enabled APIs.
 
 ## Deployment Manager Templates
 
