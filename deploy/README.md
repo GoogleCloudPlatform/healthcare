@@ -13,6 +13,7 @@ Tools to configure GCP environments aimed at healthcare use cases.
     *   [Template data_project.py](#template-data_projectpy)
     *   [Template remote_audit_logs.py](#template-remote_audit_logspy)
     *   [Script create_project.py](#script-create_projectpy)
+*   [Resources](#resources)
 
 ## Setup Instructions
 
@@ -267,3 +268,32 @@ provided, and then creates a data hosting project for each project listed under
     *   Grants permissions for each project to the Forseti service account so
         they may be monitored.
     *   Generates Forseti rules and writes them to the Forseti server bucket.
+
+# Resources
+
+Resources can be added in the config in a uniform way, but may use different
+tools underneath to do the actual deployment. Since each resource may have a
+very large and complex schema, we cannot cover all of it in our tooling layers.
+Thus, we only implement a subset and allow the users to set additional allowed
+fields as they wish. This is done through the `properties` block available for
+most resources. See documentation below for each resource.
+
+See the `samples/` directory for sample resource definitions.
+
+NOTE: project_config.yaml.schema provides documentation on our subset. Please
+reference it before adding your resource to your config.
+
+Resource        | Deployment Tool
+--------------- | ---------------
+bq_dataset      | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery)
+enabled_api     | [Gcloud](https://cloud.google.com/sdk/gcloud/reference/services/enable)
+forseti         | [Forseti Installer](https://github.com/forseti-security/forseti-security/tree/dev/install)
+gce_firewall    | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall)
+gce_instance    | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance)
+gcs_bucket      | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket)
+gke_cluster     | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke)
+gke_workload    | [Kubectl](https://kubernetes.io/docs/tutorials/configuration)
+iam_custom_role | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role)
+iam_policie     | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member)
+pubsub          | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
+service_account | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)

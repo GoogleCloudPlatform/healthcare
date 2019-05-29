@@ -527,10 +527,7 @@ definitions:
       resources:
         type: object
         description: |
-          Resources to deploy.
-          CFT templates can be found at https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates. For each resource that wraps a CFT template,
-          the properties of the CFT template go under the properties block in
-          the resource.
+          Resources to deploy. See README.md for links to resource specific documentation and schemas.
           # TODO: investigate implementing a subset of the CFT
           # schema here for the fields we change.
         properties:
@@ -547,7 +544,6 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template bigquery_dataset.py.
-                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery for details.
                     In addition, location must be set and setDefaultOwner must
                     not be set to true.
           firewalls:
@@ -563,7 +559,6 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template firewall.py.
-                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall for details.
           gce_instances:
             type: array
             description: Provides support for GCE instances.
@@ -577,7 +572,6 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template instance.py.
-                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance for details.
                 custom_boot_image:
                   type: object
                   description: |
@@ -611,7 +605,6 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template gcs_bucket.py.
-                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket for details.
                     Since GCS bucket names share a global namespace, see
                     https://cloud.google.com/storage/docs/best-practices for
                     best pratices.
@@ -644,7 +637,6 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template gke.py.
-                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke for details.
           gke_workloads:
             type: array
             description: Provides support for GKE workloads supported by kubectl.
@@ -669,7 +661,6 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template iam_custom_role.py.
-                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role for details.
           iam_policies:
             type: array
             description: |
@@ -689,7 +680,6 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template iam_member.py.
-                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member for details.
           pubsubs:
             type: array
             description: Provides support for Pubsub channels.
@@ -703,7 +693,6 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template pubsub.py.
-                    See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub for details.
 
 required:
 - overall
