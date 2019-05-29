@@ -9,7 +9,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -58,12 +58,12 @@ generated_fields:
 
 const auditDeploymentYAML = `
 imports:
-- path: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
-- path: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
+- path: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
+- path: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
 
 resources:
 - name: audit_logs
-  type: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
+  type: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
   properties:
     name: audit_logs
     location: US
@@ -76,7 +76,7 @@ resources:
       role: WRITER
     setDefaultOwner: false
 - name: my-project-logs
-  type: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
+  type: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
   properties:
     name: my-project-logs
     location: US
@@ -107,7 +107,7 @@ resources:
 const wantDefaultResourceDeploymentYAML = `
 imports:
 - path: {{abs "deploy/templates/audit_log_config.py"}}
-- path: {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
+- path: {{abs "deploy/config/templates/iam_member/iam_member.py"}}
 
 resources:
 - name: audit-logs-to-bigquery
@@ -172,7 +172,7 @@ resources:
     labelExtractors:
       user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
 - name: required-project-bindings
-  type: {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
+  type: {{abs "deploy/config/templates/iam_member/iam_member.py"}}
   properties:
     roles:
     - role: roles/owner
@@ -197,7 +197,7 @@ func lpad(s string, n int) string {
 	return b.String()
 }
 
-func getTestConfigAndProject(t *testing.T, data *ConfigData) (*cft.Config, *cft.Project) {
+func getTestConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.Project) {
 	t.Helper()
 	if data == nil {
 		data = &ConfigData{}
@@ -212,18 +212,18 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*cft.Config, *cft.
 		t.Fatalf("template Execute: %v", err)
 	}
 
-	config := new(cft.Config)
-	if err := yaml.Unmarshal(buf.Bytes(), config); err != nil {
+	conf := new(config.Config)
+	if err := yaml.Unmarshal(buf.Bytes(), conf); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
 	}
-	if err := config.Init(); err != nil {
-		t.Fatalf("config.Init = %v", err)
+	if err := conf.Init(); err != nil {
+		t.Fatalf("conf.Init = %v", err)
 	}
-	if len(config.Projects) != 1 {
-		t.Fatalf("len(config.Projects)=%v, want 1", len(config.Projects))
+	if len(conf.Projects) != 1 {
+		t.Fatalf("len(conf.Projects)=%v, want 1", len(conf.Projects))
 	}
-	proj := config.Projects[0]
-	return config, proj
+	proj := conf.Projects[0]
+	return conf, proj
 }
 
 func TestDeploy(t *testing.T) {
@@ -257,10 +257,10 @@ resources:
       location: US`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
+- path: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
 resources:
 - name: foo-dataset
-  type: {{abs "deploy/cft/templates/bigquery/bigquery_dataset.py"}}
+  type: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
   properties:
     name: foo-dataset
     location: US
@@ -296,11 +296,11 @@ resources:
           - 10.0.0.0/8`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/firewall/firewall.py"}}
+- path: {{abs "deploy/config/templates/firewall/firewall.py"}}
 
 resources:
 - name: foo-firewall-rules
-  type: {{abs "deploy/cft/templates/firewall/firewall.py"}}
+  type: {{abs "deploy/config/templates/firewall/firewall.py"}}
   properties:
     name: foo-firewall-rules
     network: foo-network
@@ -328,11 +328,11 @@ resources:
       machineType: f1-micro`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/instance/instance.py"}}
+- path: {{abs "deploy/config/templates/instance/instance.py"}}
 
 resources:
 - name: foo-instance
-  type: {{abs "deploy/cft/templates/instance/instance.py"}}
+  type: {{abs "deploy/config/templates/instance/instance.py"}}
   properties:
     name: foo-instance
     diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
@@ -351,11 +351,11 @@ resources:
       location: us-east1`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
+- path: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
 
 resources:
 - name: foo-bucket
-  type: {{abs "deploy/cft/templates/gcs_bucket/gcs_bucket.py"}}
+  type: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
   properties:
     name: foo-bucket
     location: us-east1
@@ -410,11 +410,11 @@ resources:
       - iam.roles.get`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/iam_custom_role/project_custom_role.py"}}
+- path: {{abs "deploy/config/templates/iam_custom_role/project_custom_role.py"}}
 
 resources:
 - name: fooCustomRole
-  type:  {{abs "deploy/cft/templates/iam_custom_role/project_custom_role.py"}}
+  type:  {{abs "deploy/config/templates/iam_custom_role/project_custom_role.py"}}
   properties:
     roleId: fooCustomRole
     includedPermissions:
@@ -434,7 +434,7 @@ resources:
 			want: `
 resources:
 - name: foo-owner-binding
-  type:  {{abs "deploy/cft/templates/iam_member/iam_member.py"}}
+  type:  {{abs "deploy/config/templates/iam_member/iam_member.py"}}
   properties:
    roles:
    - role: roles/owner
@@ -460,11 +460,11 @@ resources:
           - 'user:extra-reader@google.com'`},
 			want: `
 imports:
-- path: {{abs "deploy/cft/templates/pubsub/pubsub.py"}}
+- path: {{abs "deploy/config/templates/pubsub/pubsub.py"}}
 
 resources:
 - name: foo-topic
-  type: {{abs "deploy/cft/templates/pubsub/pubsub.py"}}
+  type: {{abs "deploy/config/templates/pubsub/pubsub.py"}}
   properties:
     topic: foo-topic
     accessControl:
@@ -487,7 +487,7 @@ resources:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			config, project := getTestConfigAndProject(t, tc.configData)
+			conf, project := getTestConfigAndProject(t, tc.configData)
 
 			type upsertCall struct {
 				Name       string
@@ -501,7 +501,7 @@ resources:
 				return nil
 			}
 
-			if err := Apply(config, project); err != nil {
+			if err := Apply(conf, project); err != nil {
 				t.Fatalf("Deploy: %v", err)
 			}
 

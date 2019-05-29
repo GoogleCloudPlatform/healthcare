@@ -1,6 +1,6 @@
 package rulegen
 
-import "github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+import "github.com/GoogleCloudPlatform/healthcare/deploy/config"
 
 // LienRule represents a forseti lien rule.
 type LienRule struct {
@@ -11,11 +11,11 @@ type LienRule struct {
 }
 
 // LienRules builds lien scanner rules for the given config.
-func LienRules(config *cft.Config) ([]LienRule, error) {
+func LienRules(conf *config.Config) ([]LienRule, error) {
 	return []LienRule{{
 		Name:         "Require project deletion liens for all projects.",
 		Mode:         "required",
-		Resources:    []resource{globalResource(config)},
+		Resources:    []resource{globalResource(conf)},
 		Restrictions: []string{"resourcemanager.projects.delete"},
 	}}, nil
 }

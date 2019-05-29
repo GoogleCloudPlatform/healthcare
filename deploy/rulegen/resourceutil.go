@@ -1,8 +1,6 @@
 package rulegen
 
-import (
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
-)
+import "github.com/GoogleCloudPlatform/healthcare/deploy/config"
 
 type resource struct {
 	Type      string   `yaml:"type,omitempty"`
@@ -13,13 +11,13 @@ type resource struct {
 // globalResource tries to find the broadest scope of resources defined in the config.
 // This is required due to organization and folder IDs being optional.
 // The order of preference is organization, folders or all projects defined in the config.
-func globalResource(config *cft.Config) resource {
+func globalResource(conf *config.Config) resource {
 	switch {
-	case config.Overall.OrganizationID != "":
-		return resource{Type: "organization", IDs: []string{config.Overall.OrganizationID}}
-	case config.Overall.FolderID != "":
-		ids := []string{config.Overall.FolderID}
-		for _, p := range config.AllProjects() {
+	case conf.Overall.OrganizationID != "":
+		return resource{Type: "organization", IDs: []string{conf.Overall.OrganizationID}}
+	case conf.Overall.FolderID != "":
+		ids := []string{conf.Overall.FolderID}
+		for _, p := range conf.AllProjects() {
 			if p.FolderID != "" {
 				ids = append(ids, p.FolderID)
 			}
@@ -27,7 +25,7 @@ func globalResource(config *cft.Config) resource {
 		return resource{Type: "folder", IDs: ids}
 	default:
 		var ids []string
-		for _, p := range config.AllProjects() {
+		for _, p := range conf.AllProjects() {
 			ids = append(ids, p.ID)
 		}
 		return resource{Type: "project", IDs: ids}

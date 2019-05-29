@@ -1,4 +1,4 @@
-package cft
+package config
 
 import "errors"
 
@@ -35,5 +35,5 @@ func (i *GCEInstance) Name() string {
 
 // TemplatePath returns the name of the template to use for this instance.
 func (i *GCEInstance) TemplatePath() string {
-	return "deploy/cft/templates/instance/instance.py"
+	return "deploy/config/templates/instance/instance.py"
 }

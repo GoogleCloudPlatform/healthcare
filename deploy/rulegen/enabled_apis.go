@@ -3,7 +3,7 @@ package rulegen
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
 
 // EnabledAPIsRule represents a forseti enabled APIs rule.
@@ -15,15 +15,15 @@ type EnabledAPIsRule struct {
 }
 
 // EnabledAPIsRules builds enabled APIs scanner rules for the given config.
-func EnabledAPIsRules(config *cft.Config) ([]EnabledAPIsRule, error) {
+func EnabledAPIsRules(conf *config.Config) ([]EnabledAPIsRule, error) {
 	rules := []EnabledAPIsRule{{
 		Name:      "Global API whitelist.",
 		Mode:      "whitelist",
 		Resources: []resource{{Type: "project", IDs: []string{"*"}}},
-		Services:  config.Overall.AllowedAPIs,
+		Services:  conf.Overall.AllowedAPIs,
 	}}
 
-	for _, project := range config.AllProjects() {
+	for _, project := range conf.AllProjects() {
 		if len(project.EnabledAPIs) == 0 {
 			continue
 		}

@@ -210,8 +210,8 @@ const wantIAMRulesYAML = `
 `
 
 func TestIAMRules(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, iamRulesConfigData)
-	got, err := IAMRules(config)
+	conf, _ := getTestConfigAndProject(t, iamRulesConfigData)
+	got, err := IAMRules(conf)
 	if err != nil {
 		t.Fatalf("IAMRules = %v", err)
 	}

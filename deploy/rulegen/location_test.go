@@ -126,8 +126,8 @@ const wantLocationYAML = `
 `
 
 func TestLocationRules(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, locConfigData)
-	got, err := LocationRules(config)
+	conf, _ := getTestConfigAndProject(t, locConfigData)
+	got, err := LocationRules(conf)
 	if err != nil {
 		t.Fatalf("LocationRules = %v", err)
 	}

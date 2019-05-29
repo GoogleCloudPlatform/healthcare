@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
 
 // LocationRule represents a forseti location rule.
@@ -23,11 +23,11 @@ type appliesTo struct {
 }
 
 // LocationRules builds location scanner rules for the given config.
-func LocationRules(config *cft.Config) ([]LocationRule, error) {
+func LocationRules(conf *config.Config) ([]LocationRule, error) {
 	allLocs := make(map[string]bool)
 	var projectRules []LocationRule
 
-	for _, project := range config.AllProjects() {
+	for _, project := range conf.AllProjects() {
 		m := make(locationToResources)
 		if err := m.addResources(project); err != nil {
 			return nil, err
@@ -51,7 +51,7 @@ func LocationRules(config *cft.Config) ([]LocationRule, error) {
 			})
 		}
 
-		auditProject := config.ProjectForAuditLogs(project)
+		auditProject := conf.ProjectForAuditLogs(project)
 		res := []resource{{Type: "project", IDs: []string{auditProject.ID}}}
 
 		if project.AuditLogs.LogsGCSBucket != nil {
@@ -83,7 +83,7 @@ func LocationRules(config *cft.Config) ([]LocationRule, error) {
 	globalRule := LocationRule{
 		Name:      "Global location whitelist.",
 		Mode:      "whitelist",
-		Resources: []resource{globalResource(config)},
+		Resources: []resource{globalResource(conf)},
 		AppliesTo: []appliesTo{{Type: "*", ResourceIDs: []string{"*"}}},
 		Locations: locs,
 	}
@@ -108,7 +108,7 @@ func (m locationToResources) locations() []string {
 	return locs
 }
 
-func (m locationToResources) addResources(project *cft.Project) error {
+func (m locationToResources) addResources(project *config.Project) error {
 	for _, bucket := range project.Resources.GCSBuckets {
 		m.add(bucket.Parsed.Location, "bucket", bucket.Parsed.Name())
 	}

@@ -107,8 +107,8 @@ resources:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			config, _ := getTestConfigAndProject(t, tc.configData)
-			got, err := BigqueryRules(config)
+			conf, _ := getTestConfigAndProject(t, tc.configData)
+			got, err := BigqueryRules(conf)
 			if err != nil {
 				t.Fatalf("BigqueryRules = %v", err)
 			}

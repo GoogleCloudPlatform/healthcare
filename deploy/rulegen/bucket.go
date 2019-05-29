@@ -1,6 +1,6 @@
 package rulegen
 
-import "github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+import "github.com/GoogleCloudPlatform/healthcare/deploy/config"
 
 // BucketRule represents a forseti GCS bucket ACL rule.
 type BucketRule struct {
@@ -14,7 +14,7 @@ type BucketRule struct {
 }
 
 // BucketRules builds bucket scanner rules for the given config.
-func BucketRules(config *cft.Config) ([]BucketRule, error) {
+func BucketRules(conf *config.Config) ([]BucketRule, error) {
 	return []BucketRule{{
 		Name:      "Disallow all acl rules, only allow IAM.",
 		Bucket:    "*",

@@ -8,11 +8,11 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
 
 // deployGKEWorkloads deploys the GKE resources (e.g., workloads, services) in the project.
-func deployGKEWorkloads(project *cft.Project) error {
+func deployGKEWorkloads(project *config.Project) error {
 	for _, w := range project.Resources.GKEWorkloads {
 		if err := installClusterWorkload(w.ClusterName, project, w.Properties); err != nil {
 			return fmt.Errorf("failed to deploy workload: %v", err)
@@ -23,7 +23,7 @@ func deployGKEWorkloads(project *cft.Project) error {
 
 // installClusterWorkload creates and updates (when it exists) not only workloads
 // but also all resources supported by "kubectl apply -f". Data comes from a GKEWorkload struct.
-func installClusterWorkload(clusterName string, project *cft.Project, workload interface{}) error {
+func installClusterWorkload(clusterName string, project *config.Project, workload interface{}) error {
 	b, err := json.Marshal(workload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal workload : %v", err)
@@ -47,7 +47,7 @@ func installClusterWorkload(clusterName string, project *cft.Project, workload i
 
 // installClusterWorkloadFromFile creates and updates (when it exists) not only workloads
 // but also all resources supported by "kubectl apply -f".
-func installClusterWorkloadFromFile(clusterName, containerYamlPath string, project *cft.Project) error {
+func installClusterWorkloadFromFile(clusterName, containerYamlPath string, project *config.Project) error {
 	cluster := getClusterByName(project, clusterName)
 	if cluster == nil {
 		return fmt.Errorf("failed to find cluster: %q", clusterName)
@@ -66,7 +66,7 @@ func installClusterWorkloadFromFile(clusterName, containerYamlPath string, proje
 }
 
 // getClusterByName get a cluster that has the given cluster name in a project.
-func getClusterByName(project *cft.Project, clusterName string) *cft.GKECluster {
+func getClusterByName(project *config.Project, clusterName string) *config.GKECluster {
 	for _, c := range project.Resources.GKEClusters {
 		if c.Parsed.Name() == clusterName {
 			return &c.Parsed
@@ -75,7 +75,7 @@ func getClusterByName(project *cft.Project, clusterName string) *cft.GKECluster 
 	return nil
 }
 
-func getLocationTypeAndValue(cluster *cft.GKECluster) (string, string, error) {
+func getLocationTypeAndValue(cluster *config.GKECluster) (string, string, error) {
 	switch cluster.ClusterLocationType {
 	case "Regional":
 		if cluster.Region == "" {

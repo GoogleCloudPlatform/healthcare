@@ -1,4 +1,4 @@
-package cft
+package config
 
 // LogSink wraps a deployment manager Log Sink.
 // TODO: see if we can use the CFT log sink template.

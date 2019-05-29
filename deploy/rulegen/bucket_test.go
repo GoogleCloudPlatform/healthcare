@@ -8,8 +8,8 @@ import (
 )
 
 func TestBucket(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, nil)
-	got, err := BucketRules(config)
+	conf, _ := getTestConfigAndProject(t, nil)
+	got, err := BucketRules(conf)
 	if err != nil {
 		t.Fatalf("BucketRules = %v", err)
 	}

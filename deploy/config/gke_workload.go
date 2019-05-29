@@ -1,4 +1,4 @@
-package cft
+package config
 
 // GKEWorkload represents a GKE resources, not limited to workloads.
 type GKEWorkload struct {

@@ -1,6 +1,6 @@
 package rulegen
 
-import "github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+import "github.com/GoogleCloudPlatform/healthcare/deploy/config"
 
 // AuditLoggingRule represents a forseti audit logging rule.
 type AuditLoggingRule struct {
@@ -11,7 +11,7 @@ type AuditLoggingRule struct {
 }
 
 // AuditLoggingRules builds audit logging scanner rules for the given config.
-func AuditLoggingRules(config *cft.Config) ([]AuditLoggingRule, error) {
+func AuditLoggingRules(conf *config.Config) ([]AuditLoggingRule, error) {
 	return []AuditLoggingRule{{
 		Name: "Require all Cloud Audit logs.",
 		Resources: []resource{{

@@ -9,7 +9,7 @@ go_library(
     srcs = [
         "bigquery_dataset.go",
         "binding.go",
-        "cft.go",
+        "config.go",
         "default_resource.go",
         "gce_instance.go",
         "gcs_bucket.go",
@@ -23,10 +23,10 @@ go_library(
         "resourcepair.go",
     ],
     data = [
-        "//deploy/cft/templates",
+        "//deploy/config/templates",
         "//deploy/templates",
     ],
-    importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cft",
+    importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/config",
     deps = [
         "@com_github_imdario_mergo//:go_default_library",
     ],
@@ -36,7 +36,7 @@ go_test(
     name = "go_default_test",
     srcs = [
         "bigquery_dataset_test.go",
-        "cft_test.go",
+        "config_test.go",
         "default_resource_test.go",
         "gce_instance_test.go",
         "gcs_bucket_test.go",

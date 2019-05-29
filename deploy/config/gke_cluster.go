@@ -1,4 +1,4 @@
-package cft
+package config
 
 // GKECluster wraps a CFT GKE cluster.
 type GKECluster struct {
@@ -25,5 +25,5 @@ func (cluster *GKECluster) Name() string {
 
 // TemplatePath returns the name of the template to use for this cluster.
 func (cluster *GKECluster) TemplatePath() string {
-	return "deploy/cft/templates/gke/gke.py"
+	return "deploy/config/templates/gke/gke.py"
 }

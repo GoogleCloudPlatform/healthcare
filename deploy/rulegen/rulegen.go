@@ -15,7 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"gopkg.in/yaml.v2" // don't use ghodss/yaml as it does not preserve key ordering
 )
 
@@ -27,12 +27,12 @@ var (
 // Run runs the rule generator to generate forseti rules.
 // outputPath should be empty or a path to either a local directory or a GCS bucket (starting with gs://).
 // If the outputPath is empty, then the rules will be written to the forseti server bucket.
-func Run(config *cft.Config, outputPath string) (err error) {
-	if config.Forseti == nil {
-		return errors.New("forseti config must be set when using the rule generator")
+func Run(conf *config.Config, outputPath string) (err error) {
+	if conf.Forseti == nil {
+		return errors.New("forseti conf must be set when using the rule generator")
 	}
 	if outputPath == "" {
-		outputPath = config.AllGeneratedFields.Forseti.ServiceBucket
+		outputPath = conf.AllGeneratedFields.Forseti.ServiceBucket
 	}
 
 	local := outputPath
@@ -57,10 +57,10 @@ func Run(config *cft.Config, outputPath string) (err error) {
 			err = copyRulesToBucket(local, outputPath)
 		}()
 	}
-	return writeRules(config, local)
+	return writeRules(conf, local)
 }
 
-func writeRules(config *cft.Config, outputPath string) error {
+func writeRules(conf *config.Config, outputPath string) error {
 	filenameToRules := make(map[string]interface{})
 
 	var errs []string
@@ -71,34 +71,34 @@ func writeRules(config *cft.Config, outputPath string) error {
 		filenameToRules[fn] = rules
 	}
 
-	al, err := AuditLoggingRules(config)
+	al, err := AuditLoggingRules(conf)
 	add("audit_logging", al, err)
 
-	bq, err := BigqueryRules(config)
+	bq, err := BigqueryRules(conf)
 	add("bigquery", bq, err)
 
-	bkt, err := BucketRules(config)
+	bkt, err := BucketRules(conf)
 	add("bucket", bkt, err)
 
-	cs, err := CloudSQLRules(config)
+	cs, err := CloudSQLRules(conf)
 	add("cloudsql", cs, err)
 
-	api, err := EnabledAPIsRules(config)
+	api, err := EnabledAPIsRules(conf)
 	add("enabled_apis", api, err)
 
-	iam, err := IAMRules(config)
+	iam, err := IAMRules(conf)
 	add("iam", iam, err)
 
-	lien, err := LienRules(config)
+	lien, err := LienRules(conf)
 	add("lien", lien, err)
 
-	loc, err := LocationRules(config)
+	loc, err := LocationRules(conf)
 	add("location", loc, err)
 
-	sink, err := LogSinkRules(config)
+	sink, err := LogSinkRules(conf)
 	add("log_sink", sink, err)
 
-	res, err := ResourceRules(config)
+	res, err := ResourceRules(conf)
 	add("resource", res, err)
 
 	if len(errs) > 0 {

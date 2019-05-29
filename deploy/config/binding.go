@@ -1,4 +1,4 @@
-package cft
+package config
 
 // Binding represents a GCP policy binding.
 type Binding struct {

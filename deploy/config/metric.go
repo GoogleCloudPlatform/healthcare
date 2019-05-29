@@ -1,4 +1,4 @@
-package cft
+package config
 
 import (
 	"errors"

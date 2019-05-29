@@ -60,8 +60,8 @@ resources:
       resource_id: '123'
 `
 
-	config, _ := getTestConfigAndProject(t, configData)
-	got, err := ResourceRules(config)
+	conf, _ := getTestConfigAndProject(t, configData)
+	got, err := ResourceRules(conf)
 	if err != nil {
 		t.Fatalf("ResourceRules = %v", err)
 	}

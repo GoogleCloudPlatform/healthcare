@@ -3,7 +3,7 @@ package rulegen
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
 
 var resourceTypes = []string{
@@ -28,16 +28,16 @@ type resourceTree struct {
 }
 
 // ResourceRules builds resource scanner rules for the given config.
-func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
+func ResourceRules(conf *config.Config) ([]ResourceRule, error) {
 	trees := []resourceTree{
 		{Type: "project", ResourceID: "*"}, // ignore unmonitored projects
 	}
 
-	for _, project := range config.AllProjects() {
+	for _, project := range conf.AllProjects() {
 		pt := resourceTree{
 			Type:       "project",
 			ResourceID: project.ID,
-			Children:   getAuditTrees(config, project),
+			Children:   getAuditTrees(conf, project),
 		}
 
 		for _, b := range project.Resources.GCSBuckets {
@@ -76,19 +76,19 @@ func ResourceRules(config *cft.Config) ([]ResourceRule, error) {
 	}}, nil
 }
 
-func getAuditTrees(config *cft.Config, project *cft.Project) []resourceTree {
-	if config.ProjectForAuditLogs(project).ID != project.ID {
+func getAuditTrees(conf *config.Config, project *config.Project) []resourceTree {
+	if conf.ProjectForAuditLogs(project).ID != project.ID {
 		return nil
 	}
 
-	if config.AuditLogsProject == nil {
+	if conf.AuditLogsProject == nil {
 		return getAuditTreesForProjects(project.ID, project)
 	}
 	// audit project holds audit resources for all projects
-	return getAuditTreesForProjects(project.ID, config.AllProjects()...)
+	return getAuditTreesForProjects(project.ID, conf.AllProjects()...)
 }
 
-func getAuditTreesForProjects(auditLogsProjectID string, projects ...*cft.Project) []resourceTree {
+func getAuditTreesForProjects(auditLogsProjectID string, projects ...*config.Project) []resourceTree {
 	var trees []resourceTree
 	for _, project := range projects {
 		trees = append(trees, resourceTree{

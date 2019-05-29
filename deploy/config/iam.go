@@ -1,4 +1,4 @@
-package cft
+package config
 
 import "errors"
 
@@ -27,7 +27,7 @@ func (i *IAMCustomRole) Name() string {
 
 // TemplatePath returns the template to use for this custom role.
 func (i *IAMCustomRole) TemplatePath() string {
-	return "deploy/cft/templates/iam_custom_role/project_custom_role.py"
+	return "deploy/config/templates/iam_custom_role/project_custom_role.py"
 }
 
 // IAMPolicy wraps a CFT IAM policy.
@@ -56,5 +56,5 @@ func (i *IAMPolicy) Name() string {
 
 // TemplatePath returns the template to use for this custom role.
 func (i *IAMPolicy) TemplatePath() string {
-	return "deploy/cft/templates/iam_member/iam_member.py"
+	return "deploy/config/templates/iam_member/iam_member.py"
 }

@@ -8,8 +8,8 @@ import (
 )
 
 func TestCloudSQLRules(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, nil)
-	got, err := CloudSQLRules(config)
+	conf, _ := getTestConfigAndProject(t, nil)
+	got, err := CloudSQLRules(conf)
 	if err != nil {
 		t.Fatalf("CloudSQLRules = %v", err)
 	}

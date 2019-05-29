@@ -12,12 +12,12 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
-// TODO: This is copied from cft_test.go. Pull out into own package.
+// TODO: This is copied from config_test.go. Pull out into own package.
 const configYAML = `
 overall:
   organization_id: '12345678'
@@ -102,7 +102,7 @@ func lpad(s string, n int) string {
 	return b.String()
 }
 
-func getTestConfigAndProject(t *testing.T, data *ConfigData) (*cft.Config, *cft.Project) {
+func getTestConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.Project) {
 	t.Helper()
 	if data == nil {
 		data = &ConfigData{}
@@ -117,29 +117,29 @@ func getTestConfigAndProject(t *testing.T, data *ConfigData) (*cft.Config, *cft.
 		t.Fatalf("template Execute: %v", err)
 	}
 
-	config := new(cft.Config)
-	if err := yaml.Unmarshal(buf.Bytes(), config); err != nil {
+	conf := new(config.Config)
+	if err := yaml.Unmarshal(buf.Bytes(), conf); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
 	}
-	if err := config.Init(); err != nil {
+	if err := conf.Init(); err != nil {
 		t.Fatalf("config.Init = %v", err)
 	}
-	if len(config.Projects) != 1 {
-		t.Fatalf("len(config.Projects)=%v, want 1", len(config.Projects))
+	if len(conf.Projects) != 1 {
+		t.Fatalf("len(config.Projects)=%v, want 1", len(conf.Projects))
 	}
-	proj := config.Projects[0]
-	return config, proj
+	proj := conf.Projects[0]
+	return conf, proj
 }
 
 func TestRunOutputPath(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, nil)
+	conf, _ := getTestConfigAndProject(t, nil)
 
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("ioutil.TempDir = %v", err)
 	}
 
-	if err := Run(config, tmpDir); err != nil {
+	if err := Run(conf, tmpDir); err != nil {
 		t.Fatalf("Run = %v", err)
 	}
 
@@ -147,7 +147,7 @@ func TestRunOutputPath(t *testing.T) {
 }
 
 func TestRunServerBucket(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, nil)
+	conf, _ := getTestConfigAndProject(t, nil)
 
 	var gotArgs []string
 	cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
@@ -162,7 +162,7 @@ func TestRunServerBucket(t *testing.T) {
 		checkRulesDir(t, filepath.Dir(gotArgs[2]))
 		return nil, nil
 	}
-	if err := Run(config, ""); err != nil {
+	if err := Run(conf, ""); err != nil {
 		t.Fatalf("Run = %v", err)
 	}
 

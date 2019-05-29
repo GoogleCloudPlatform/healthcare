@@ -8,8 +8,8 @@ import (
 )
 
 func TestAuditLoggingRules(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, nil)
-	got, err := AuditLoggingRules(config)
+	conf, _ := getTestConfigAndProject(t, nil)
+	got, err := AuditLoggingRules(conf)
 	if err != nil {
 		t.Fatalf("AuditLoggingRules = %v", err)
 	}

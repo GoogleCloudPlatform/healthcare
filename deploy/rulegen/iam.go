@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/mitchellh/hashstructure"
 )
 
@@ -63,15 +63,15 @@ type typeAndTemplates struct {
 
 // IAMRule represents a forseti iam rule.
 type IAMRule struct {
-	Name               string        `yaml:"name"`
-	Mode               string        `yaml:"mode"`
-	Resources          []resource    `yaml:"resource"`
-	InheritFromParents bool          `yaml:"inherit_from_parents"`
-	Bindings           []cft.Binding `yaml:"bindings"`
+	Name               string           `yaml:"name"`
+	Mode               string           `yaml:"mode"`
+	Resources          []resource       `yaml:"resource"`
+	InheritFromParents bool             `yaml:"inherit_from_parents"`
+	Bindings           []config.Binding `yaml:"bindings"`
 }
 
 // IAMRules builds IAM scanner rules for the given config.
-func IAMRules(config *cft.Config) ([]IAMRule, error) {
+func IAMRules(conf *config.Config) ([]IAMRule, error) {
 	rules := []IAMRule{
 		{
 			Name: "All projects must have an owner group from the domain.",
@@ -82,9 +82,9 @@ func IAMRules(config *cft.Config) ([]IAMRule, error) {
 				IDs:       []string{"*"},
 			}},
 			InheritFromParents: true,
-			Bindings: []cft.Binding{{
+			Bindings: []config.Binding{{
 				Role:    "roles/owner",
-				Members: []string{"group:*@" + config.Overall.Domain},
+				Members: []string{"group:*@" + conf.Overall.Domain},
 			}},
 		},
 		{
@@ -96,16 +96,16 @@ func IAMRules(config *cft.Config) ([]IAMRule, error) {
 				IDs:       []string{"*"},
 			}},
 			InheritFromParents: false,
-			Bindings: []cft.Binding{{
+			Bindings: []config.Binding{{
 				Role:    "*",
-				Members: []string{"group:*@" + config.Overall.Domain},
+				Members: []string{"group:*@" + conf.Overall.Domain},
 			}},
 		},
 	}
 
 	var projectRules []IAMRule
-	for _, project := range config.AllProjects() {
-		prules, err := getProjectRules(config, project)
+	for _, project := range conf.AllProjects() {
+		prules, err := getProjectRules(conf, project)
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +113,7 @@ func IAMRules(config *cft.Config) ([]IAMRule, error) {
 	}
 
 	for _, tt := range typeToAllowedMemberTemplates {
-		grule, err := getGlobalRuleForType(config, tt, projectRules)
+		grule, err := getGlobalRuleForType(conf, tt, projectRules)
 		if err != nil {
 			return nil, err
 		}
@@ -126,13 +126,13 @@ func IAMRules(config *cft.Config) ([]IAMRule, error) {
 
 // getProjectRules gets the rules for the given project as well as any resources that set IAM policies.
 // TODO: should we be checking pubsub as well?
-func getProjectRules(config *cft.Config, project *cft.Project) ([]IAMRule, error) {
+func getProjectRules(conf *config.Config, project *config.Project) ([]IAMRule, error) {
 	var rules []IAMRule
 	if project.AuditLogs.LogsGCSBucket != nil {
 		rules = append(rules, getLogsBucketRule(project))
 	}
 
-	projectBindings, err := getProjectBindings(config, project)
+	projectBindings, err := getProjectBindings(conf, project)
 	if err != nil {
 		return nil, err
 	}
@@ -158,17 +158,17 @@ func getProjectRules(config *cft.Config, project *cft.Project) ([]IAMRule, error
 }
 
 // getProjectBindings gets the project level bindings for the given project.
-func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding, error) {
-	var bs []cft.Binding
+func getProjectBindings(conf *config.Config, project *config.Project) ([]config.Binding, error) {
+	var bs []config.Binding
 	for _, policy := range project.Resources.IAMPolicies {
 		bs = append(bs, policy.Parsed.Bindings...)
 	}
 
 	// We can assume Forseti config exists if the rule generator is being called
 	// TODO: check for other forseti service account roles granted on the project
-	bs = append(bs, cft.Binding{
+	bs = append(bs, config.Binding{
 		Role:    "roles/iam.securityReviewer",
-		Members: []string{"serviceAccount:" + config.AllGeneratedFields.Forseti.ServiceAccount},
+		Members: []string{"serviceAccount:" + conf.AllGeneratedFields.Forseti.ServiceAccount},
 	})
 
 	var ms []string
@@ -179,16 +179,16 @@ func getProjectBindings(config *cft.Config, project *cft.Project) ([]cft.Binding
 		}
 		ms = append(ms, "serviceAccount:"+b.String())
 	}
-	bs = append(bs, cft.Binding{Role: "roles/editor", Members: ms})
+	bs = append(bs, config.Binding{Role: "roles/editor", Members: ms})
 
-	bs = cft.MergeBindings(bs...)
+	bs = config.MergeBindings(bs...)
 	return bs, nil
 }
 
 // getLogsBucketRule gets the iam rule for the logs bucket.
 // For configs with an audit log project, only the audit log project will return a non-nil rule containing all other projects' logs buckets.
 // For configs without an audit log project, each project will have a single rule for its own local logs bucket.
-func getLogsBucketRule(project *cft.Project) IAMRule {
+func getLogsBucketRule(project *config.Project) IAMRule {
 	bucket := project.AuditLogs.LogsGCSBucket
 
 	return IAMRule{
@@ -205,11 +205,11 @@ func getLogsBucketRule(project *cft.Project) IAMRule {
 }
 
 // getDataBucketRules gets the IAM rules for data holding buckets.
-func getDataBucketRules(project *cft.Project) ([]IAMRule, error) {
+func getDataBucketRules(project *config.Project) ([]IAMRule, error) {
 	var rules []IAMRule
 
 	// group rules that have the same bindings together to reduce duplicated rules
-	bindingsHashToBuckets := make(map[uint64][]cft.GCSBucket)
+	bindingsHashToBuckets := make(map[uint64][]config.GCSBucket)
 	// TODO: this pattern is repeated several times and could benefit from a helper struct once generics are supported.
 	var hashes []uint64 // for stable ordering
 	for _, pair := range project.Resources.GCSBuckets {
@@ -255,26 +255,26 @@ func getDataBucketRules(project *cft.Project) ([]IAMRule, error) {
 	return rules, nil
 }
 
-func fillMissingBucketBindings(bindings []cft.Binding) []cft.Binding {
+func fillMissingBucketBindings(bindings []config.Binding) []config.Binding {
 	gotRoles := make(map[string]bool)
 	for _, b := range bindings {
 		gotRoles[b.Role] = true
 	}
 	for _, r := range wantBucketRoles {
 		if !gotRoles[r] {
-			bindings = append(bindings, cft.Binding{Role: r, Members: []string{"user:nobody"}})
+			bindings = append(bindings, config.Binding{Role: r, Members: []string{"user:nobody"}})
 		}
 	}
 	return bindings
 }
 
 // getGlobalRuleForType returns the global rule for the given type. It should be called with the project level rules of all projects.
-func getGlobalRuleForType(config *cft.Config, tt typeAndTemplates, projectRules []IAMRule) (*IAMRule, error) {
+func getGlobalRuleForType(conf *config.Config, tt typeAndTemplates, projectRules []IAMRule) (*IAMRule, error) {
 	membersSet := make(map[string]bool)
 	var members []string
 	for _, memberTmpl := range tt.tmpls {
 		var b strings.Builder
-		if err := memberTmpl.Execute(&b, map[string]interface{}{"Domain": config.Overall.Domain}); err != nil {
+		if err := memberTmpl.Execute(&b, map[string]interface{}{"Domain": conf.Overall.Domain}); err != nil {
 			return nil, err
 		}
 
@@ -316,6 +316,6 @@ func getGlobalRuleForType(config *cft.Config, tt typeAndTemplates, projectRules 
 		Mode:               "whitelist",
 		Resources:          []resource{{Type: tt.typ, AppliesTo: "self", IDs: []string{"*"}}},
 		InheritFromParents: true,
-		Bindings:           []cft.Binding{{Role: "*", Members: members}},
+		Bindings:           []config.Binding{{Role: "*", Members: members}},
 	}, nil
 }

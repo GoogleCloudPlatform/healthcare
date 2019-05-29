@@ -3,7 +3,7 @@ package rulegen
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
 
 const allBigquerySinksDestination = "bigquery.googleapis.com/*"
@@ -23,8 +23,8 @@ type sink struct {
 }
 
 // LogSinkRules builds log sink scanner rules for the given config.
-func LogSinkRules(config *cft.Config) ([]LogSinkRule, error) {
-	gr := globalResource(config)
+func LogSinkRules(conf *config.Config) ([]LogSinkRule, error) {
+	gr := globalResource(conf)
 	if gr.Type == "project" {
 		gr.AppliesTo = "self"
 	} else {
@@ -45,7 +45,7 @@ func LogSinkRules(config *cft.Config) ([]LogSinkRule, error) {
 		},
 	}
 
-	for _, project := range config.AllProjects() {
+	for _, project := range conf.AllProjects() {
 		res := []resource{{Type: "project", AppliesTo: "self", IDs: []string{project.ID}}}
 		s := sink{
 			Destination:     project.BQLogSink.Destination,

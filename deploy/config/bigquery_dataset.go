@@ -1,4 +1,4 @@
-package cft
+package config
 
 import (
 	"errors"
@@ -69,5 +69,5 @@ func (d *BigqueryDataset) Name() string {
 
 // TemplatePath returns the name of the template to use for this dataset.
 func (d *BigqueryDataset) TemplatePath() string {
-	return "deploy/cft/templates/bigquery/bigquery_dataset.py"
+	return "deploy/config/templates/bigquery/bigquery_dataset.py"
 }

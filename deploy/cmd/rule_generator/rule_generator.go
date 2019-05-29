@@ -10,7 +10,7 @@ import (
 
 	"flag"
 	
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/rulegen"
 	"github.com/ghodss/yaml"
 )
@@ -34,7 +34,7 @@ func main() {
 		log.Fatalf("failed to read input projects yaml file at path %q: %v", *projectYAMLPath, err)
 	}
 
-	conf := new(cft.Config)
+	conf := new(config.Config)
 	if err := yaml.Unmarshal(b, conf); err != nil {
 		log.Fatalf("failed to unmarshal config: %v", err)
 	}

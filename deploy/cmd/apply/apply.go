@@ -12,13 +12,13 @@ import (
 	"flag"
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/apply"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/ghodss/yaml"
 )
 
 var (
 	projectYAMLPath = flag.String("project_yaml_path", "", "Path to project yaml file")
-	projectID       = flag.String("project", "", "Project within the project yaml file to deploy CFT resources for")
+	projectID       = flag.String("project", "", "Project within the project yaml file to deploy config resources for")
 )
 
 func main() {
@@ -37,7 +37,7 @@ func main() {
 		log.Fatalf("failed to read input projects yaml file at path %q: %v", *projectYAMLPath, err)
 	}
 
-	conf := new(cft.Config)
+	conf := new(config.Config)
 	if err := yaml.Unmarshal(b, conf); err != nil {
 		log.Fatalf("failed to unmarshal config: %v", err)
 	}
@@ -54,10 +54,10 @@ func main() {
 		log.Fatalf("failed to deploy %q resources: %v", *projectID, err)
 	}
 
-	log.Println("CFT deployment successful")
+	log.Println("Config deployed successfully")
 }
 
-func findProject(id string, c *cft.Config) (*cft.Project, error) {
+func findProject(id string, c *config.Config) (*config.Project, error) {
 	for _, p := range c.AllProjects() {
 		if p.ID == id {
 			return p, nil

@@ -1,5 +1,5 @@
-// Package cft provides utilities to deploy CFT resources.
-package cft
+// Package config provides utilities to parse and create project and resource configurations.
+package config
 
 import (
 	"bytes"
@@ -348,7 +348,7 @@ func (p *Project) ResourcePairs() []ResourcePair {
 		appendPair(r.RawMessage, &r.Parsed)
 	}
 	for _, r := range rs.GCEFirewalls {
-		appendDefaultResPair(r.RawMessage, &r.Parsed, "deploy/cft/templates/firewall/firewall.py")
+		appendDefaultResPair(r.RawMessage, &r.Parsed, "deploy/config/templates/firewall/firewall.py")
 	}
 	for _, r := range rs.GCEInstances {
 		appendPair(r.RawMessage, &r.Parsed)

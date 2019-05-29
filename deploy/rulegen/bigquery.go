@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/mitchellh/hashstructure"
 )
 
@@ -31,12 +31,12 @@ type bigqueryMember struct {
 }
 
 // BigqueryRules builds bigquery scanner rules for the given config.
-func BigqueryRules(config *cft.Config) ([]BigqueryRule, error) {
+func BigqueryRules(conf *config.Config) ([]BigqueryRule, error) {
 	// TODO: check for public access in config and allow it if it is intentionally given
 	global := BigqueryRule{
 		Name:       "No public, domain or special group dataset access.",
 		Mode:       "blacklist",
-		Resources:  []resource{globalResource(config)},
+		Resources:  []resource{globalResource(conf)},
 		DatasetIDs: []string{"*"},
 		Bindings: []bigqueryBinding{{
 			Role: "*",
@@ -49,23 +49,23 @@ func BigqueryRules(config *cft.Config) ([]BigqueryRule, error) {
 
 	rules := []BigqueryRule{global}
 
-	for _, project := range config.AllProjects() {
+	for _, project := range conf.AllProjects() {
 		prules, err := getProjectDatasetsRules(project)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dataset rules for project %q: %v", project.ID, err)
 		}
 		rules = append(rules, prules...)
-		rules = append(rules, getAuditLogDatasetRule(config, project))
+		rules = append(rules, getAuditLogDatasetRule(conf, project))
 	}
 
 	return rules, nil
 }
 
-func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
+func getProjectDatasetsRules(project *config.Project) ([]BigqueryRule, error) {
 	var rules []BigqueryRule
 
 	// group rules that have the same access together to reduce duplicated rules
-	accessHashToDatasets := make(map[uint64][]cft.BigqueryDataset)
+	accessHashToDatasets := make(map[uint64][]config.BigqueryDataset)
 	var hashes []uint64 // for stable ordering
 
 	for _, pair := range project.Resources.BQDatasets {
@@ -117,7 +117,7 @@ func getProjectDatasetsRules(project *cft.Project) ([]BigqueryRule, error) {
 // accessToBindings converts a list of access to bindings.
 // Note that due to the way forseti scanner works, all valid roles must be present.
 // Missing roles will allow any member for the role.
-func accessesToBindings(accesses []cft.Access) ([]bigqueryBinding, error) {
+func accessesToBindings(accesses []config.Access) ([]bigqueryBinding, error) {
 	roles := []string{"OWNER", "WRITER", "READER"}
 	roleToMembers := map[string][]bigqueryMember{
 		"OWNER":  nil,
@@ -125,7 +125,7 @@ func accessesToBindings(accesses []cft.Access) ([]bigqueryBinding, error) {
 		"READER": nil,
 	}
 	for _, access := range accesses {
-		// only one should be non-empty (checked by bigquery CFT schema)
+		// only one should be non-empty (checked by bigquery config schema)
 		member := bigqueryMember{
 			UserEmail:    access.UserByEmail,
 			GroupEmail:   access.GroupByEmail,
@@ -147,8 +147,8 @@ func accessesToBindings(accesses []cft.Access) ([]bigqueryBinding, error) {
 	return bs, nil
 }
 
-func getAuditLogDatasetRule(config *cft.Config, project *cft.Project) BigqueryRule {
-	auditProject := config.ProjectForAuditLogs(project)
+func getAuditLogDatasetRule(conf *config.Config, project *config.Project) BigqueryRule {
+	auditProject := conf.ProjectForAuditLogs(project)
 
 	bindings := []bigqueryBinding{
 		{Role: "OWNER", Members: []bigqueryMember{{GroupEmail: auditProject.OwnersGroup}}},

@@ -12,7 +12,7 @@ go_library(
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/apply",
     deps = [
-        "//deploy/cft:go_default_library",
+        "//deploy/config:go_default_library",
         "//deploy/deploymentmanager:go_default_library",
         "@com_github_imdario_mergo//:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
@@ -27,7 +27,7 @@ go_test(
     ],
     embed = [":go_default_library"],
     deps = [
-        "//deploy/cft:go_default_library",
+        "//deploy/config:go_default_library",
         "//deploy/deploymentmanager:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
         "@com_github_google_cmp//cmp/cmpopts:go_default_library",

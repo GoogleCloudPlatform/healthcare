@@ -1,4 +1,4 @@
-package cft
+package config
 
 import (
 	"encoding/json"
@@ -143,5 +143,5 @@ func (b *GCSBucket) Name() string {
 
 // TemplatePath returns the name of the template to use for the bucket.
 func (b *GCSBucket) TemplatePath() string {
-	return "deploy/cft/templates/gcs_bucket/gcs_bucket.py"
+	return "deploy/config/templates/gcs_bucket/gcs_bucket.py"
 }

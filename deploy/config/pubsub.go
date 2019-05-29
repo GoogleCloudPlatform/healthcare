@@ -1,4 +1,4 @@
-package cft
+package config
 
 import (
 	"encoding/json"
@@ -76,5 +76,5 @@ func (p *Pubsub) Name() string {
 
 // TemplatePath returns the name of the template to use for this pubsub.
 func (p *Pubsub) TemplatePath() string {
-	return "deploy/cft/templates/pubsub/pubsub.py"
+	return "deploy/config/templates/pubsub/pubsub.py"
 }

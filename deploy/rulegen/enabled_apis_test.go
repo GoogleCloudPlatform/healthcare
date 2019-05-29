@@ -8,8 +8,8 @@ import (
 )
 
 func TestEnabledAPIsRules(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, nil)
-	got, err := EnabledAPIsRules(config)
+	conf, _ := getTestConfigAndProject(t, nil)
+	got, err := EnabledAPIsRules(conf)
 	if err != nil {
 		t.Fatalf("EnabledAPIsRules = %v", err)
 	}

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/cft"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 )
 
@@ -44,7 +44,7 @@ var (
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.
 type parsedResource interface {
-	Init(*cft.Project) error
+	Init(*config.Project) error
 	Name() string
 }
 
@@ -68,7 +68,7 @@ type depender interface {
 }
 
 // Apply deploys the CFT resources in the project.
-func Apply(config *cft.Config, project *cft.Project) error {
+func Apply(conf *config.Config, project *config.Project) error {
 	if err := grantDeploymentManagerAccess(project); err != nil {
 		return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
 	}
@@ -94,11 +94,11 @@ func Apply(config *cft.Config, project *cft.Project) error {
 			return fmt.Errorf("failed to get log sink service account: %v", err)
 		}
 		project.GeneratedFields.LogSinkServiceAccount = sinkSA
-		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, cft.Access{
+		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, config.Access{
 			Role: "WRITER", UserByEmail: sinkSA,
 		})
 	}
-	if err := deployAudit(project, config.ProjectForAuditLogs(project)); err != nil {
+	if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
 		return fmt.Errorf("failed to deploy audit resources: %v", err)
 	}
 
@@ -107,7 +107,7 @@ func Apply(config *cft.Config, project *cft.Project) error {
 	}
 
 	// Only remove owner account if there is an organization to ensure the project has an administrator.
-	if config.Overall.OrganizationID != "" {
+	if conf.Overall.OrganizationID != "" {
 		if err := removeOwnerUser(project); err != nil {
 			log.Printf("failed to remove owner user (might have already been removed): %v", err)
 		}
@@ -121,7 +121,7 @@ func Apply(config *cft.Config, project *cft.Project) error {
 // This is not a problem on initial deployment since no resources have been created.
 // DM is HIPAA compliant, so it's ok to leave its access.
 // See https://cloud.google.com/iam/docs/granting-changing-revoking-access.
-func grantDeploymentManagerAccess(project *cft.Project) error {
+func grantDeploymentManagerAccess(project *config.Project) error {
 	pnum := project.GeneratedFields.ProjectNumber
 	if pnum == "" {
 		return fmt.Errorf("project number not set in generated fields %+v", project.GeneratedFields)
@@ -143,7 +143,7 @@ func grantDeploymentManagerAccess(project *cft.Project) error {
 	return nil
 }
 
-func getLogSinkServiceAccount(project *cft.Project) (string, error) {
+func getLogSinkServiceAccount(project *config.Project) (string, error) {
 	cmd := exec.Command("gcloud", "logging", "sinks", "describe", project.BQLogSink.Name(), "--format", "json", "--project", project.ID)
 
 	out, err := cmdOutput(cmd)
@@ -162,8 +162,8 @@ func getLogSinkServiceAccount(project *cft.Project) (string, error) {
 	return strings.TrimPrefix(s.WriterIdentity, "serviceAccount:"), nil
 }
 
-func deployAudit(project, auditProject *cft.Project) error {
-	pairs := []cft.ResourcePair{
+func deployAudit(project, auditProject *config.Project) error {
+	pairs := []config.ResourcePair{
 		{Parsed: &project.AuditLogs.LogsBQDataset},
 		{Parsed: project.AuditLogs.LogsGCSBucket},
 	}
@@ -181,7 +181,7 @@ func deployAudit(project, auditProject *cft.Project) error {
 	return nil
 }
 
-func deployResources(project *cft.Project) error {
+func deployResources(project *config.Project) error {
 	pairs := project.ResourcePairs()
 	if len(pairs) == 0 {
 		log.Println("No resources to deploy.")
@@ -197,7 +197,7 @@ func deployResources(project *cft.Project) error {
 	return nil
 }
 
-func getDeployment(project *cft.Project, pairs []cft.ResourcePair) (*deploymentmanager.Deployment, error) {
+func getDeployment(project *config.Project, pairs []config.ResourcePair) (*deploymentmanager.Deployment, error) {
 	deployment := &deploymentmanager.Deployment{}
 
 	importSet := make(map[string]bool)
@@ -241,7 +241,7 @@ func getDeployment(project *cft.Project, pairs []cft.ResourcePair) (*deploymentm
 	return deployment, nil
 }
 
-func removeOwnerUser(project *cft.Project) error {
+func removeOwnerUser(project *config.Project) error {
 	cmd := exec.Command("gcloud", "config", "get-value", "account", "--format", "json", "--project", project.ID)
 	out, err := cmdOutput(cmd)
 	if err != nil {
@@ -269,7 +269,7 @@ func removeOwnerUser(project *cft.Project) error {
 	return cmdRun(cmd)
 }
 
-func hasBinding(project *cft.Project, role string, member string) (has bool, err error) {
+func hasBinding(project *config.Project, role string, member string) (has bool, err error) {
 	cmd := exec.Command(
 		"gcloud", "projects", "get-iam-policy", project.ID,
 		"--project", project.ID,
@@ -282,7 +282,7 @@ func hasBinding(project *cft.Project, role string, member string) (has bool, err
 	log.Printf("Looking for role %q, member %q in:\n%v", role, member, string(out))
 
 	type policy struct {
-		Bindings []cft.Binding `json:"bindings"`
+		Bindings []config.Binding `json:"bindings"`
 	}
 	p := new(policy)
 	if err := json.Unmarshal(out, p); err != nil {

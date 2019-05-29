@@ -8,8 +8,8 @@ import (
 )
 
 func TestLogSinkRules(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, nil)
-	got, err := LogSinkRules(config)
+	conf, _ := getTestConfigAndProject(t, nil)
+	got, err := LogSinkRules(conf)
 	if err != nil {
 		t.Fatalf("LogSinkRules = %v", err)
 	}

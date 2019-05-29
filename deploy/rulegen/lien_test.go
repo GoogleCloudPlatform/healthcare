@@ -8,8 +8,8 @@ import (
 )
 
 func TestLienRules(t *testing.T) {
-	config, _ := getTestConfigAndProject(t, nil)
-	got, err := LienRules(config)
+	conf, _ := getTestConfigAndProject(t, nil)
+	got, err := LienRules(conf)
 	if err != nil {
 		t.Fatalf("LienRules = %v", err)
 	}
