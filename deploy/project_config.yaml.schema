@@ -546,7 +546,7 @@ definitions:
                     Wraps the CFT template bigquery_dataset.py.
                     In addition, location must be set and setDefaultOwner must
                     not be set to true.
-          firewalls:
+          gce_firewalls:
             type: array
             description: Provides support for firewalls.
             additionalProperties: false
