@@ -14,6 +14,7 @@ Tools to configure GCP environments aimed at healthcare use cases.
     *   [Template remote_audit_logs.py](#template-remote_audit_logspy)
     *   [Script create_project.py](#script-create_projectpy)
 *   [Resources](#resources)
+*   [Debug](#debug)
 
 ## Setup Instructions
 
@@ -261,7 +262,7 @@ provided, and then creates a data hosting project for each project listed under
         they may be monitored.
     *   Generates Forseti rules and writes them to the Forseti server bucket.
 
-# Resources
+## Resources
 
 Resources can be added in the config in a uniform way, but may use different
 tools underneath to do the actual deployment. Since each resource may have a
@@ -290,3 +291,25 @@ iam_policie     | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatf
 pubsub          | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
 vpc_network     | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/network)
 service_account | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)
+
+## Debug
+
+These are solutions to non-typical problems encountered:
+
+#### Bucket Permission Denied
+
+Typically the error message will contain the following during a failed
+deployment manager deployment:
+
+```
+"ResourceType":"storage.v1.bucket", "ResourceErrorCode":"403"
+```
+
+This is due to the Deployment Manager Service account not having storage admin
+permissions. There can be a delay of up to 7 minutes for permission changes to
+propagate. After recent changes, deployment manager permissions will no longer
+be revoked so just retry deployment of all projects that failed after at least 7
+minutes.
+
+NOTE: if remote audit logs failed to deploy due to this error then you will need
+to re-deploy the audit logs project first.
