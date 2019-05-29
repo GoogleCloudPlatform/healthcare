@@ -483,6 +483,35 @@ resources:
         - 'group:another-readonly-group@googlegroups.com'
         - 'user:extra-reader@google.com'`,
 		},
+		{
+			name: "vpc_networks",
+			configData: &ConfigData{`
+resources:
+  vpc_networks:
+  - properties:
+      name: some-private
+      autoCreateSubnetworks: false
+      subnetworks:
+      - name: some-subnetwork
+        region: us-central1
+        ipCidrRange: 172.16.0.0/24
+        enableFlowLogs: true`},
+			want: `
+imports:
+- path: {{abs "deploy/config/templates/network/network.py"}}
+
+resources:
+- name: some-private
+  type: {{abs "deploy/config/templates/network/network.py"}}
+  properties:
+    name: some-private
+    autoCreateSubnetworks: false
+    subnetworks:
+    - name: some-subnetwork
+      region: us-central1
+      ipCidrRange: 172.16.0.0/24
+      enableFlowLogs: true`,
+		},
 	}
 
 	for _, tc := range tests {

@@ -52,6 +52,7 @@ type Project struct {
 		IAMCustomRoles []*IAMCustomRolePair   `json:"iam_custom_roles"`
 		IAMPolicies    []*IAMPolicyPair       `json:"iam_policies"`
 		Pubsubs        []*PubsubPair          `json:"pubsubs"`
+		VPCNetworks    []*VPCNetworkPair      `json:"vpc_networks"`
 
 		// Kubectl resources
 		GKEWorkloads []*GKEWorkload `json:"gke_workloads"`
@@ -118,6 +119,12 @@ type IAMPolicyPair struct {
 type PubsubPair struct {
 	json.RawMessage
 	Parsed Pubsub
+}
+
+// VPCNetworkPair pairs a raw VPC network with its parsed version.
+type VPCNetworkPair struct {
+	json.RawMessage
+	Parsed DefaultResource
 }
 
 // Init initializes the config and all its projects.
@@ -367,6 +374,9 @@ func (p *Project) ResourcePairs() []ResourcePair {
 	}
 	for _, r := range rs.Pubsubs {
 		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.VPCNetworks {
+		appendDefaultResPair(r.RawMessage, &r.Parsed, "deploy/config/templates/network/network.py")
 	}
 	return pairs
 }
