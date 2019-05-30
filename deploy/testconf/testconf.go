@@ -3,6 +3,9 @@ package testconf
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"text/template"
@@ -102,6 +105,7 @@ func ConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.P
 		t.Fatalf("template Execute: %v", err)
 	}
 
+	validateConfig(t, buf.Bytes())
 	conf := new(config.Config)
 	if err := yaml.Unmarshal(buf.Bytes(), conf); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
@@ -109,11 +113,38 @@ func ConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.P
 	if err := conf.Init(); err != nil {
 		t.Fatalf("conf.Init = %v", err)
 	}
+
 	if len(conf.Projects) != 1 {
 		t.Fatalf("len(conf.Projects)=%v, want 1", len(conf.Projects))
 	}
 	proj := conf.Projects[0]
 	return conf, proj
+}
+
+func validateConfig(t *testing.T, confb []byte) {
+	t.Helper()
+
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempFile: %v", err)
+	}
+	defer func() {
+		os.Remove(f.Name())
+	}()
+
+	f.Write(confb)
+	f.Close()
+
+	// TODO: use gojsonschema
+	cmd := exec.Command(
+		"deploy/cmd/validate_config/validate_config",
+		"--config_path", f.Name(),
+		"--schema_path", "deploy/project_config.yaml.schema",
+	)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("cmd.CombinedOutput: %v, output:\n%v", err, out)
+	}
 }
 
 func lpad(s string, n int) string {

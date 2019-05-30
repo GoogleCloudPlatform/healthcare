@@ -45,6 +45,7 @@ go_test(
         "rulegen_test.go",
     ],
     embed = [":go_default_library"],
+    rundir = ".",
     deps = [
         "//deploy/testconf:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",

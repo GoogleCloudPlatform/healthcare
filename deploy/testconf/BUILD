@@ -11,8 +11,8 @@ go_library(
         "testconf.go",
     ],
     data = [
-        "//deploy/config/templates",
-        "//deploy/templates",
+        "//deploy:project_config.yaml.schema",
+        "//deploy/cmd/validate_config",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/testconf",
     deps = [

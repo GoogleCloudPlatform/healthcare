@@ -47,6 +47,7 @@ go_test(
         "pubsub_test.go",
         "resourcepair_test.go",
     ],
+    rundir = ".",
     deps = [
         ":go_default_library",
         "//deploy/testconf:go_default_library",

@@ -644,8 +644,12 @@ definitions:
               type: object
               additionalProperties: false
               required:
+              - cluster_name
               - properties
               properties:
+                cluster_name:
+                  type: string
+                  description: Cluster to run this workload in.
                 properties:
                   type: object
                   description: |
