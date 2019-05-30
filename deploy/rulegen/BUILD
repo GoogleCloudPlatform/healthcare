@@ -46,7 +46,7 @@ go_test(
     ],
     embed = [":go_default_library"],
     deps = [
-        "//deploy/config:go_default_library",
+        "//deploy/testconf:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
         "@in_gopkg_yaml_v2//:go_default_library",

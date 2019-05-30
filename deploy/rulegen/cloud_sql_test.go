@@ -3,12 +3,13 @@ package rulegen
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 )
 
 func TestCloudSQLRules(t *testing.T) {
-	conf, _ := getTestConfigAndProject(t, nil)
+	conf, _ := testconf.ConfigAndProject(t, nil)
 	got, err := CloudSQLRules(conf)
 	if err != nil {
 		t.Fatalf("CloudSQLRules = %v", err)

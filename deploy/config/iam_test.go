@@ -1,20 +1,22 @@
-package config
+package config_test
 
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestIAMCustomRole(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	customRoleYAML := `
 properties:
   roleId: fooCustomRole
 `
-	i := &IAMCustomRole{}
+	i := &config.IAMCustomRole{}
 	if err := yaml.Unmarshal([]byte(customRoleYAML), i); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
@@ -49,7 +51,7 @@ properties:
 }
 
 func TestIAMPolicy(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	customRoleYAML := `
 name: foo-owner-binding
@@ -59,7 +61,7 @@ properties:
     members:
     - group:foo-owner@my-domain.com
 `
-	i := &IAMPolicy{}
+	i := &config.IAMPolicy{}
 	if err := yaml.Unmarshal([]byte(customRoleYAML), i); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}

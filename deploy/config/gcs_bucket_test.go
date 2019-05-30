@@ -1,15 +1,17 @@
-package config
+package config_test
 
 import (
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestGCSBucket(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	bucketYAML := `
 ttl_days: 7
@@ -47,10 +49,10 @@ properties:
     - 'group:my-project-owners@my-domain.com'
   - role: roles/storage.objectAdmin
     members:
-    - 'group:some-readwrite-group@my-domain.com'
+    - 'group:my-project-readwrite@my-domain.com'
   - role: roles/storage.objectViewer
     members:
-    - 'group:some-readonly-group@my-domain.com'
+    - 'group:my-project-readonly@my-domain.com'
     - 'group:another-readonly-group@googlegroups.com'
     - 'user:extra-reader@google.com'
   versioning:
@@ -78,7 +80,7 @@ properties:
         isLive: true
 `
 
-	b := &GCSBucket{}
+	b := &config.GCSBucket{}
 	if err := yaml.Unmarshal([]byte(bucketYAML), b); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
@@ -110,7 +112,7 @@ properties:
 }
 
 func TestGCSBucketErrors(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	tests := []struct {
 		name string
@@ -141,7 +143,7 @@ func TestGCSBucketErrors(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			b := &GCSBucket{}
+			b := &config.GCSBucket{}
 			if err := yaml.Unmarshal([]byte(tc.yaml), b); err != nil {
 				t.Fatalf("yaml unmarshal: %v", err)
 			}

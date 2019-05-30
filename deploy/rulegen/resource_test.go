@@ -3,6 +3,7 @@ package rulegen
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 )
@@ -10,7 +11,7 @@ import (
 // TODO: add a test case for remote audit project once test configs
 // can be generated with a remote audit project.
 func TestResourceRules(t *testing.T) {
-	configData := &ConfigData{`
+	configData := &testconf.ConfigData{`
 resources:
  bq_datasets:
  - properties:
@@ -60,7 +61,7 @@ resources:
       resource_id: '123'
 `
 
-	conf, _ := getTestConfigAndProject(t, configData)
+	conf, _ := testconf.ConfigAndProject(t, configData)
 	got, err := ResourceRules(conf)
 	if err != nil {
 		t.Fatalf("ResourceRules = %v", err)

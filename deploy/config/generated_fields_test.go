@@ -1,8 +1,9 @@
-package config
+package config_test
 
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
@@ -24,24 +25,24 @@ generated_fields:
     service_account: some-forseti-gcp-reader@some-forseti.iam.gserviceaccount.com
     server_bucket: gs://some-forseti-server
 `
-	got := new(Config)
+	got := new(config.Config)
 	yaml.Unmarshal([]byte(testYaml), got)
 	if err := yaml.Unmarshal([]byte(testYaml), got); err != nil {
 		t.Fatalf("yaml.Unmarshal got config: %v", err)
 	}
-	want := &Config{
-		AllGeneratedFields: AllGeneratedFields{
-			Projects: map[string]*GeneratedFields{
-				"some-data": &GeneratedFields{
+	want := &config.Config{
+		AllGeneratedFields: config.AllGeneratedFields{
+			Projects: map[string]*config.GeneratedFields{
+				"some-data": &config.GeneratedFields{
 					ProjectNumber:         "123123123123",
 					LogSinkServiceAccount: "p123123123123-001111@gcp-sa-logging.iam.gserviceaccount.com",
 				},
-				"some-analytics": &GeneratedFields{
+				"some-analytics": &config.GeneratedFields{
 					ProjectNumber:         "456456456456",
 					LogSinkServiceAccount: "p456456456456-002222@gcp-sa-logging.iam.gserviceaccount.com",
-					GCEInstanceInfoList:   []GCEInstanceInfo{{Name: "foo-instance", ID: "123"}}},
+					GCEInstanceInfoList:   []config.GCEInstanceInfo{{Name: "foo-instance", ID: "123"}}},
 			},
-			Forseti: ForsetiServiceInfo{
+			Forseti: config.ForsetiServiceInfo{
 				ServiceAccount: "some-forseti-gcp-reader@some-forseti.iam.gserviceaccount.com",
 				ServiceBucket:  "gs://some-forseti-server",
 			},
@@ -55,11 +56,11 @@ generated_fields:
 
 func TestGetInstanceID(t *testing.T) {
 	const projectID = "some-analytics"
-	cfg := Config{
-		AllGeneratedFields: AllGeneratedFields{
-			Projects: map[string]*GeneratedFields{
-				projectID: &GeneratedFields{
-					GCEInstanceInfoList: []GCEInstanceInfo{
+	cfg := config.Config{
+		AllGeneratedFields: config.AllGeneratedFields{
+			Projects: map[string]*config.GeneratedFields{
+				projectID: &config.GeneratedFields{
+					GCEInstanceInfoList: []config.GCEInstanceInfo{
 						{Name: "foo-instance", ID: "123"},
 						{Name: "bar-instance", ID: "456"},
 					},

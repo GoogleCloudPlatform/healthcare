@@ -1,14 +1,16 @@
-package config
+package config_test
 
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestMetric(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	metricYAML := `
 properties:
@@ -26,7 +28,7 @@ properties:
   labelExtractors:
     user: 'EXTRACT(protoPayload.authenticationInfo.principalEmail)'
 `
-	m := &Metric{}
+	m := &config.Metric{}
 	if err := yaml.Unmarshal([]byte(metricYAML), m); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}

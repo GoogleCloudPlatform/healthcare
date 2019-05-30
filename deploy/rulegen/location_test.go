@@ -3,11 +3,12 @@ package rulegen
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 )
 
-var locConfigData = &ConfigData{`
+var locConfigData = &testconf.ConfigData{`
 resources:
   bq_datasets:
   - properties:
@@ -126,7 +127,7 @@ const wantLocationYAML = `
 `
 
 func TestLocationRules(t *testing.T) {
-	conf, _ := getTestConfigAndProject(t, locConfigData)
+	conf, _ := testconf.ConfigAndProject(t, locConfigData)
 	got, err := LocationRules(conf)
 	if err != nil {
 		t.Fatalf("LocationRules = %v", err)

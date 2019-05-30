@@ -1,15 +1,17 @@
-package config
+package config_test
 
 import (
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestDataset(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	datasetYAML := `
 properties:
@@ -29,16 +31,16 @@ properties:
     role: OWNER
   - groupByEmail: my-project-owners@my-domain.com
     role: OWNER
-  - groupByEmail: some-readwrite-group@my-domain.com
+  - groupByEmail: my-project-readwrite@my-domain.com
     role: WRITER
-  - groupByEmail: some-readonly-group@my-domain.com
+  - groupByEmail: my-project-readonly@my-domain.com
     role: READER
   - groupByEmail: another-readonly-group@googlegroups.com
     role: READER
   setDefaultOwner: false
 `
 
-	d := new(BigqueryDataset)
+	d := new(config.BigqueryDataset)
 	if err := yaml.Unmarshal([]byte(datasetYAML), d); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
@@ -70,7 +72,7 @@ properties:
 }
 
 func TestDatasetErrors(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	tests := []struct {
 		name string
@@ -96,7 +98,7 @@ func TestDatasetErrors(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			d := new(BigqueryDataset)
+			d := new(config.BigqueryDataset)
 			if err := yaml.Unmarshal([]byte(tc.yaml), d); err != nil {
 				t.Fatalf("yaml unmarshal: %v", err)
 			}

@@ -36,7 +36,6 @@ go_test(
     name = "go_default_test",
     srcs = [
         "bigquery_dataset_test.go",
-        "config_test.go",
         "default_resource_test.go",
         "gce_instance_test.go",
         "gcs_bucket_test.go",
@@ -48,8 +47,9 @@ go_test(
         "pubsub_test.go",
         "resourcepair_test.go",
     ],
-    embed = [":go_default_library"],
     deps = [
+        ":go_default_library",
+        "//deploy/testconf:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],

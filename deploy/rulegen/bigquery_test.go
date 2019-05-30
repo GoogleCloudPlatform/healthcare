@@ -3,6 +3,7 @@ package rulegen
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 )
@@ -63,7 +64,7 @@ const auditDatasetRule = `
 func TestBigqueryRules(t *testing.T) {
 	tests := []struct {
 		name       string
-		configData *ConfigData
+		configData *testconf.ConfigData
 		wantYAML   string
 	}{
 		{
@@ -71,7 +72,7 @@ func TestBigqueryRules(t *testing.T) {
 		},
 		{
 			name: "dataset",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   bq_datasets:
   - properties:
@@ -107,7 +108,7 @@ resources:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			conf, _ := getTestConfigAndProject(t, tc.configData)
+			conf, _ := testconf.ConfigAndProject(t, tc.configData)
 			got, err := BigqueryRules(conf)
 			if err != nil {
 				t.Fatalf("BigqueryRules = %v", err)

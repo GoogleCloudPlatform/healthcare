@@ -1,9 +1,10 @@
-package config
+package config_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
@@ -17,7 +18,7 @@ type testResource struct {
 	} `json:"properties"`
 }
 
-func (r testResource) Init(*Project) error {
+func (r testResource) Init(*config.Project) error {
 	return nil
 }
 
@@ -87,7 +88,7 @@ func TestMergedMap(t *testing.T) {
 				t.Fatalf("yaml.Unmarshal want: %v", err)
 			}
 
-			pair := ResourcePair{Parsed: parsed, Raw: raw}
+			pair := config.ResourcePair{Parsed: parsed, Raw: raw}
 
 			got, err := pair.MergedPropertiesMap()
 			if err != nil {

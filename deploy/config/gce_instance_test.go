@@ -1,14 +1,16 @@
-package config
+package config_test
 
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestGCEInstance(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	instanceYAML := `
 properties:
@@ -16,7 +18,7 @@ properties:
   zone: us-east1-a
 `
 
-	ins := &GCEInstance{}
+	ins := &config.GCEInstance{}
 	if err := yaml.Unmarshal([]byte(instanceYAML), ins); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
@@ -48,7 +50,7 @@ properties:
 }
 
 func TestGCEInstance_CustomBootImage(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	instanceYAML := `
 properties:
@@ -59,7 +61,7 @@ custom_boot_image:
   gcs_path: foo-os/some-image.tar.gz
 `
 
-	ins := &GCEInstance{}
+	ins := &config.GCEInstance{}
 	if err := yaml.Unmarshal([]byte(instanceYAML), ins); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}

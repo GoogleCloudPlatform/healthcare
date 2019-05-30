@@ -9,52 +9,12 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/ghodss/yaml"
 )
-
-const configYAML = `
-overall:
-  organization_id: '12345678'
-  folder_id: '98765321'
-  billing_account: 000000-000000-000000
-  domain: 'domain.com'
-
-projects:
-- project_id: my-project
-  owners_group: my-project-owners@my-domain.com
-  editors_group: my-project-editors@mydomain.com
-  auditors_group: my-project-auditors@my-domain.com
-  data_readwrite_groups:
-  - some-readwrite-group@my-domain.com
-  data_readonly_groups:
-  - some-readonly-group@my-domain.com
-  - another-readonly-group@googlegroups.com
-  audit_logs:
-    logs_bq_dataset:
-      properties:
-        name: audit_logs
-        location: US
-    logs_gcs_bucket:
-      ttl_days: 365
-      properties:
-        name: my-project-logs
-        location: US
-        storageClass: MULTI_REGIONAL
-{{lpad .ExtraProjectConfig 2}}
-
-generated_fields:
-  projects:
-    my-project:
-      project_number: '1111'
-      log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
-      gce_instance_info:
-      - name: foo-instance
-        id: '123'
-`
 
 const auditDeploymentYAML = `
 imports:
@@ -183,49 +143,6 @@ resources:
       - group:my-project-auditors@my-domain.com
 `
 
-type ConfigData struct {
-	ExtraProjectConfig string
-}
-
-func lpad(s string, n int) string {
-	var b strings.Builder
-	for _, line := range strings.Split(s, "\n") {
-		b.WriteString(strings.Repeat(" ", n))
-		b.WriteString(line)
-		b.WriteString("\n")
-	}
-	return b.String()
-}
-
-func getTestConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.Project) {
-	t.Helper()
-	if data == nil {
-		data = &ConfigData{}
-	}
-
-	tmpl, err := template.New("test").Funcs(template.FuncMap{"lpad": lpad}).Parse(configYAML)
-	if err != nil {
-		t.Fatalf("template Parse: %v", err)
-	}
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		t.Fatalf("template Execute: %v", err)
-	}
-
-	conf := new(config.Config)
-	if err := yaml.Unmarshal(buf.Bytes(), conf); err != nil {
-		t.Fatalf("unmarshal config: %v", err)
-	}
-	if err := conf.Init(); err != nil {
-		t.Fatalf("conf.Init = %v", err)
-	}
-	if len(conf.Projects) != 1 {
-		t.Fatalf("len(conf.Projects)=%v, want 1", len(conf.Projects))
-	}
-	proj := conf.Projects[0]
-	return conf, proj
-}
-
 func TestDeploy(t *testing.T) {
 	cmdRun = func(cmd *exec.Cmd) error { return nil }
 	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
@@ -244,12 +161,12 @@ func TestDeploy(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		configData *ConfigData
+		configData *testconf.ConfigData
 		want       string
 	}{
 		{
 			name: "bq_dataset",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   bq_datasets:
   - properties:
@@ -267,9 +184,9 @@ resources:
     access:
     - groupByEmail: my-project-owners@my-domain.com
       role: OWNER
-    - groupByEmail: some-readwrite-group@my-domain.com
+    - groupByEmail: my-project-readwrite@my-domain.com
       role: WRITER
-    - groupByEmail: some-readonly-group@my-domain.com
+    - groupByEmail: my-project-readonly@my-domain.com
       role: READER
     - groupByEmail: another-readonly-group@googlegroups.com
       role: READER
@@ -277,7 +194,7 @@ resources:
 		},
 		{
 			name: "gce_firewall",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   gce_firewalls:
   - properties:
@@ -318,7 +235,7 @@ resources:
 		},
 		{
 			name: "gce_instance",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   gce_instances:
   - properties:
@@ -341,7 +258,7 @@ resources:
 		},
 		{
 			name: "gcs_bucket",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   gcs_buckets:
   - expected_users:
@@ -365,10 +282,10 @@ resources:
       - 'group:my-project-owners@my-domain.com'
     - role: roles/storage.objectAdmin
       members:
-      - 'group:some-readwrite-group@my-domain.com'
+      - 'group:my-project-readwrite@my-domain.com'
     - role: roles/storage.objectViewer
       members:
-      - 'group:some-readonly-group@my-domain.com'
+      - 'group:my-project-readonly@my-domain.com'
       - 'group:another-readonly-group@googlegroups.com'
     versioning:
       enabled: true
@@ -401,7 +318,7 @@ resources:
 		},
 		{
 			name: "iam_custom_role",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   iam_custom_roles:
   - properties:
@@ -422,7 +339,7 @@ resources:
 		},
 		{
 			name: "iam_policy",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   iam_policies:
   - name: foo-owner-binding
@@ -443,7 +360,7 @@ resources:
 		},
 		{
 			name: "pubsub",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   pubsubs:
   - properties:
@@ -476,16 +393,16 @@ resources:
       accessControl:
       - role: roles/pubsub.editor
         members:
-        - 'group:some-readwrite-group@my-domain.com'
+        - 'group:my-project-readwrite@my-domain.com'
       - role: roles/pubsub.viewer
         members:
-        - 'group:some-readonly-group@my-domain.com'
+        - 'group:my-project-readonly@my-domain.com'
         - 'group:another-readonly-group@googlegroups.com'
         - 'user:extra-reader@google.com'`,
 		},
 		{
 			name: "vpc_networks",
-			configData: &ConfigData{`
+			configData: &testconf.ConfigData{`
 resources:
   vpc_networks:
   - properties:
@@ -516,7 +433,7 @@ resources:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			conf, project := getTestConfigAndProject(t, tc.configData)
+			conf, project := testconf.ConfigAndProject(t, tc.configData)
 
 			type upsertCall struct {
 				Name       string
@@ -572,7 +489,7 @@ func TestGetLogSinkServiceAccount(t *testing.T) {
 		return nil, fmt.Errorf("unexpected args: %v", cmd.Args)
 	}
 
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 	got, err := getLogSinkServiceAccount(project)
 	if err != nil {
 		t.Fatalf("getLogSinkServiceAccount: %v", err)

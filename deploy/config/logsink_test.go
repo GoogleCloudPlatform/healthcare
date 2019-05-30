@@ -1,14 +1,16 @@
-package config
+package config_test
 
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestLogSink(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	sinkYAML := `
 properties:
@@ -17,7 +19,7 @@ properties:
   filter: 'logName:"logs/cloudaudit.googleapis.com"'
   uniqueWriterIdentity: true
 `
-	s := &LogSink{}
+	s := &config.LogSink{}
 	if err := yaml.Unmarshal([]byte(sinkYAML), s); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}

@@ -1,14 +1,16 @@
-package config
+package config_test
 
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestPubsub(t *testing.T) {
-	_, project := getTestConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	pubsubYAML := `
 properties:
@@ -33,15 +35,15 @@ properties:
     accessControl:
     - role: roles/pubsub.editor
       members:
-      - 'group:some-readwrite-group@my-domain.com'
+      - 'group:my-project-readwrite@my-domain.com'
     - role: roles/pubsub.viewer
       members:
-      - 'group:some-readonly-group@my-domain.com'
+      - 'group:my-project-readonly@my-domain.com'
       - 'group:another-readonly-group@googlegroups.com'
       - 'user:extra-reader@google.com'
 `
 
-	p := &Pubsub{}
+	p := &config.Pubsub{}
 	if err := yaml.Unmarshal([]byte(pubsubYAML), p); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}

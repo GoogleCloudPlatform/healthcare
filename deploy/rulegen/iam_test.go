@@ -3,12 +3,13 @@ package rulegen
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 )
 
 // TODO: add test for remote audit project
-var iamRulesConfigData = &ConfigData{`
+var iamRulesConfigData = &testconf.ConfigData{`
 resources:
   gcs_buckets:
   - properties:
@@ -210,7 +211,7 @@ const wantIAMRulesYAML = `
 `
 
 func TestIAMRules(t *testing.T) {
-	conf, _ := getTestConfigAndProject(t, iamRulesConfigData)
+	conf, _ := testconf.ConfigAndProject(t, iamRulesConfigData)
 	got, err := IAMRules(conf)
 	if err != nil {
 		t.Fatalf("IAMRules = %v", err)

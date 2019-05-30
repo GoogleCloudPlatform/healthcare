@@ -3,12 +3,13 @@ package rulegen
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 )
 
 func TestLienRules(t *testing.T) {
-	conf, _ := getTestConfigAndProject(t, nil)
+	conf, _ := testconf.ConfigAndProject(t, nil)
 	got, err := LienRules(conf)
 	if err != nil {
 		t.Fatalf("LienRules = %v", err)

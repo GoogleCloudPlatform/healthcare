@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -86,7 +87,7 @@ func TestLocationTypeAndValue(t *testing.T) {
 }
 
 func TestInstallClusterWorkload(t *testing.T) {
-	configExtend := &ConfigData{`
+	configExtend := &testconf.ConfigData{`
 resources:
   gke_clusters:
   - properties:
@@ -106,7 +107,7 @@ resources:
 		{"kubectl", "apply", "-f"},
 	}
 
-	_, project := getTestConfigAndProject(t, configExtend)
+	_, project := testconf.ConfigAndProject(t, configExtend)
 	var gotArgs [][]string
 	cmdRun = func(cmd *exec.Cmd) error {
 		gotArgs = append(gotArgs, cmd.Args)
@@ -170,11 +171,11 @@ func TestLocationTypeAndValueError(t *testing.T) {
 
 func TestInstallClusterWorkloadErrors(t *testing.T) {
 	testcases := []struct {
-		in  ConfigData
+		in  testconf.ConfigData
 		err string
 	}{
 		{
-			in: ConfigData{`
+			in: testconf.ConfigData{`
 resources:
   gke_clusters:
   - properties:
@@ -191,7 +192,7 @@ resources:
 			err: "failed to find cluster: \"clusterX\"",
 		},
 		{
-			in: ConfigData{`
+			in: testconf.ConfigData{`
 resources:
   gke_clusters:
   - properties:
@@ -210,7 +211,7 @@ resources:
 	}
 
 	for _, tc := range testcases {
-		_, project := getTestConfigAndProject(t, &tc.in)
+		_, project := testconf.ConfigAndProject(t, &tc.in)
 		var gotArgs [][]string
 		cmdRun = func(cmd *exec.Cmd) error {
 			gotArgs = append(gotArgs, cmd.Args)

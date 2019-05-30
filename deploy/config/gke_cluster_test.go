@@ -1,8 +1,9 @@
-package config
+package config_test
 
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/ghodss/yaml"
 )
 
@@ -14,7 +15,7 @@ properties:
   region: somewhere1
 `
 
-	cluser := new(GKECluster)
+	cluser := new(config.GKECluster)
 	if err := yaml.Unmarshal([]byte(resYAML), cluser); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
@@ -37,7 +38,7 @@ properties:
   zone: somewhere2-c
 `
 
-	cluser := new(GKECluster)
+	cluser := new(config.GKECluster)
 	if err := yaml.Unmarshal([]byte(resYAML), cluser); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
