@@ -76,10 +76,10 @@ func Apply(conf *config.Config, project *config.Project) error {
 	// TODO: stop retrying once
 	// https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/issues/17
 	// is fixed.
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		if err := deployResources(project); err == nil {
 			break
-		} else if i == 2 {
+		} else if i == 1 {
 			return fmt.Errorf("failed to deploy resources: %v", err)
 		}
 		log.Printf("Sleeping for %v and retrying in case failure was due to concurrent IAM policy update", deploymentRetryWaitTime)
