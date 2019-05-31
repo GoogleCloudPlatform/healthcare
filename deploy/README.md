@@ -276,6 +276,11 @@ See the `samples/` directory for sample resource definitions.
 NOTE: project_config.yaml.schema provides documentation on our subset. Please
 reference it before adding your resource to your config.
 
+NOTE: Dependencies can be set implicitly in deployment manager resource
+properties. See
+https://cloud.google.com/deployment-manager/docs/step-by-step-guide/using-references.
+Dependencies are only supported between deployment manager resources.
+
 Resource        | Deployment Tool
 --------------- | ---------------
 bq_dataset      | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery)
