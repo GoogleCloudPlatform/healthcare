@@ -26,6 +26,8 @@ go_test(
         "gke_test.go",
     ],
     embed = [":go_default_library"],
+    # Override default run dir to make it easier to find test files.
+    rundir = ".",
     deps = [
         "//deploy/config:go_default_library",
         "//deploy/deploymentmanager:go_default_library",

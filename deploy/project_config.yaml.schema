@@ -195,7 +195,7 @@ definitions:
                         the recommended name is "audit-logs". For remote audit
                         logs, the recommended name is the project-id with
                         hyphens substituted with underscores.
-                      pattern: ^[_a-zA-Z0-9]{1,1024}$
+                      pattern: ^[_a-zA-Z0-9]{1,}$
                     location:
                       type: string
                       description: |
@@ -215,7 +215,7 @@ definitions:
                   audit_logs_project, or a project with local audit logs. For
                   remote audit logs, the recommended name is the project-id with
                   hyphens substituted with underscores.
-                pattern: ^[_a-zA-Z0-9]{1,1024}$
+                pattern: ^[_a-zA-Z0-9]{1,}$
               location:
                 type: string
                 description: |
@@ -298,7 +298,7 @@ definitions:
             name:
               type: string
               description: Name of the BiqQuery dataset.
-              pattern: ^[_a-zA-Z0-9]{1,1024}$
+              pattern: ^[_a-zA-Z0-9]{1,}$
             location:
               type: string
               description: |
@@ -644,8 +644,11 @@ definitions:
               type: object
               additionalProperties: false
               required:
+              - cluster_name
               - properties
               properties:
+                cluster_name:
+                  type: string
                 properties:
                   type: object
                   description: |

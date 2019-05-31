@@ -35,6 +35,24 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_xeipuuv_gojsonschema",
+    importpath = "github.com/xeipuuv/gojsonschema",
+    tag = "v1.1.0",
+)
+
+go_repository(
+    name = "com_github_xeipuuv_gojsonreference",
+    importpath = "github.com/xeipuuv/gojsonreference",
+    commit = "bd5ef7bd5415a7ac448318e64f11a24cd21e594b",
+)
+
+go_repository(
+    name = "com_github_xeipuuv_gojsonpointer",
+    importpath = "github.com/xeipuuv/gojsonpointer",
+    commit = "4e3ac2762d5f479393488629ee9370b50873b3a6",
+)
+
+go_repository(
     name = "in_ghodss_yaml",
     importpath = "github.com/ghodss/yaml",
     tag = "v1.0.0",

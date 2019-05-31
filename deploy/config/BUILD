@@ -47,6 +47,8 @@ go_test(
         "pubsub_test.go",
         "resourcepair_test.go",
     ],
+    # Override default run dir to make it easier to find test files.
+    rundir = ".",
     deps = [
         ":go_default_library",
         "//deploy/testconf:go_default_library",
