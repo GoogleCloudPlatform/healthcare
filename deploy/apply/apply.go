@@ -109,7 +109,7 @@ func Apply(conf *config.Config, project *config.Project) error {
 	// Only remove owner account if there is an organization to ensure the project has an administrator.
 	if conf.Overall.OrganizationID != "" {
 		if err := removeOwnerUser(project); err != nil {
-			log.Printf("failed to remove owner user (might have already been removed): %v", err)
+			return fmt.Errorf("failed to remove owner user: %v", err)
 		}
 	}
 	return nil
@@ -260,6 +260,7 @@ func removeOwnerUser(project *config.Project) error {
 		return err
 	}
 	if !has {
+		log.Printf("owner user %q already removed", member)
 		return nil
 	}
 

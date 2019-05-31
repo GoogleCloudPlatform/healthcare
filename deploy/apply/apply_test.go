@@ -150,7 +150,7 @@ func TestDeploy(t *testing.T) {
 		var res string
 		switch {
 		case strings.HasPrefix(args, "gcloud config get-value account"):
-			res = "foo-user@my-domain.com"
+			res = `"foo-user@my-domain.com"`
 		case strings.HasPrefix(args, "gcloud projects get-iam-policy"):
 			res = "{}"
 		default:
