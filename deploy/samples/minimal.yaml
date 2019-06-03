@@ -18,13 +18,14 @@
 overall:
   organization_id: '12345678'           # Replace this with your Organization ID, or remove to setup without an organization.
   billing_account: 000000-000000-000000 # Replace this with your Billing Account.
-  domain: 'domain.com'                  # Replace this with your domain.
+  domain: domain.com                    # Replace this with your domain.
 
 projects:
 - project_id: my-project
   owners_group: my-project-owners@my-domain.com      # Replace this with the owners group for this project.
   auditors_group: some-auditors-group@my-domain.com  # Replace this with your auditors group.
   audit_logs:
-    logs_bigquery_dataset:
-      # Local logs dataset will have the name 'audit_logs'.
-      location: US
+    logs_bq_dataset:
+      properties:
+        location: US
+        name: audit_logs

@@ -27,7 +27,7 @@ overall:
   organization_id: '12345678'           # Replace this with your Organization ID, or remove to setup without an organization.
   folder_id: '98765321'                 # Optional. Replace this with an existing folder within the organization.
   billing_account: 000000-000000-000000 # Replace this with your Billing Account.
-  domain: 'domain.com'                  # Replace this with your domain.
+  domain: domain.com                    # Replace this with your domain.
 
 # Configure the audit logs hosting project here.
 audit_logs_project:
@@ -36,9 +36,11 @@ audit_logs_project:
   auditors_group: some-auditors-group@mydomain.com  # Replace this with your auditors group.
   create_deletion_lien: true
   audit_logs:  # Audit logs for acccess to the audit logs project itself.
-    logs_bigquery_dataset:
-      # Local logs dataset will have the name 'audit_logs'.
-      location: US                      # Replace this with the desired the location for the BigQuery dataset holding audit logs for this project.
+    logs_bq_dataset:
+      properties:
+        # Naming convention: PROJECT_ID, with underscores instead of dashes.
+        name: my_audit_logs
+        location: US                    # Replace this with the desired the location for the BigQuery dataset holding audit logs for this project.
   stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
 
 forseti:
@@ -48,11 +50,12 @@ forseti:
     auditors_group: my-forseti-project-auditors@mydomain.com  # Replace this with your auditors group.
     create_deletion_lien: true
     audit_logs:
-      logs_bigquery_dataset:
-        name: my_forseti_project
-        location: US
+      logs_bq_dataset:
+        properties:
+          name: my_forseti_project
+          location: US
     stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
-  installer_flags: '--skip-sendgrid-config'    # Replace with any flags to pass to the installer.
+  installer_flags: --skip-sendgrid-config      # Replace with any flags to pass to the installer.
 
 # Multiple dataset projects can be deployed at once with the one YAML file.
 projects:
@@ -65,52 +68,45 @@ projects:
   data_readonly_groups:
   - some-readonly-group@my-domain.com
   - another-readonly-group@googlegroups.com
-  # BigQuery (non-auditlogs) datasets.
   create_deletion_lien: true
-  bigquery_datasets:
-  - name: us_data
-    location: US
-  - name: euro_data
-    location: EU
-  # Data buckets.
-  data_buckets:
-  - name_suffix: -nlp-bucket
-    location: US-CENTRAL1
-    storage_class: REGIONAL
-    # If expected_users is provided, create an unexpected access metric for
-    # accesses from other users.
-    expected_users:
-    - auth_user_1@mydomain.com
-    - auth_user_2@mydomain.com
-  - name: my-project-other-bucket
-    location: US-EAST1
-    storage_class: REGIONAL
-  - name_suffix: -euro-bucket
-    location: EUROPE-WEST1
-    storage_class: REGIONAL
-    expected_users:
-    - auth_user_3@mydomain.com
-  # Pubsub topic.
-  pubsub:
-    topic: test-topic
-    subscription: test-subscription
-    publisher_account: cloud-healthcare-eng@system.gserviceaccount.com
-    ack_deadline_sec: 100
   # If alert email is present, create StackDriver alerts.
   stackdriver_alert_email: some-alerts-group@my-domain.com
   # These audit logs will be saved to the audit_logs_project.
   audit_logs:
     logs_gcs_bucket:
-      # Naming convention: ${AUDIT_LOGS_PROJECT_ID}-${PROJECT_ID}
-      name: my-audit-logs-my-project
-      location: US
-      storage_class: MULTI_REGIONAL
+      properties:
+        # For naming recommendations, see https://cloud.google.com/storage/docs/best-practices.
+        name: logs-hash-of-my-project
+        location: US
+        storageClass: MULTI_REGIONAL
       ttl_days: 365
-    logs_bigquery_dataset:
-      # Naming convention: PROJECT_ID, with underscores instead of dashes.
-      name: my_project
-      location: US
-
+    logs_bq_dataset:
+      properties:
+        # Naming convention: PROJECT_ID, with underscores instead of dashes.
+        name: my_project
+        location: US
+  resources:
+    bq_datasets:
+    - properties:
+        name: us_data
+        location: US
+    - properties:
+        name: euro_data
+        location: EU
+    gcs_buckets:
+    - properties:
+        location: US-CENTRAL1
+        name: foo-data
+        storageClass: REGIONAL
+    pubsubs:
+    - properties:
+        topic: foo-topic
+        accessControl:
+        - role: roles/pubsub.publisher
+          members:
+          - group:foo-publisher@my-domain.com
+        subscriptions:
+        - name: foo-subscription
 - project_id: my-other-project
   owners_group: my-other-project-owners@my-domain.com
   auditors_group: some-auditors-group@my-domain.com
@@ -120,20 +116,26 @@ projects:
   data_readonly_groups:
   - some-readonly-group@my-domain.com
   - another-readonly-group@googlegroups.com
-  bigquery_datasets:
-  - name: us_data
-    location: US
-  data_buckets:
-  - name_suffix: -data
-    location: EUROPE-WEST1
-    storage_class: REGIONAL
   stackdriver_alert_email: some-alerts-group@my-domain.com
   audit_logs:
     logs_gcs_bucket:
-      name: my-audit-logs-my-other-project
-      location: US
-      storage_class: MULTI_REGIONAL
+      properties:
+        # For naming recommendations, see https://cloud.google.com/storage/docs/best-practices.
+        name: logs-hash-of-my-other-project
+        location: US
+        storageClass: MULTI_REGIONAL
       ttl_days: 365
-    logs_bigquery_dataset:
-      name: my_other_project
-      location: US
+    logs_bq_dataset:
+      properties:
+        name: my_other_project
+        location: US
+  resources:
+    bq_datasets:
+    - properties:
+        name: us_data
+        location: US
+    gcs_buckets:
+    - properties:
+        location: EUROPE-WEST1
+        name: foo-other-data
+        storageClass: REGIONAL

@@ -38,8 +38,10 @@ audit_logs_project:
   owners_group: my-audit-logs-owners@mydomain.com
   auditors_group: some-auditors-group@mydomain.com
   audit_logs:
-    logs_bigquery_dataset:
-      location: US
+    logs_bq_dataset:
+      properties:
+        location: US
+        name: audit_logs
   stackdriver_alert_email: some-alerts-group@mydomain.com
 
 # Multiple team projects can be deployed at once with the one YAML file.
@@ -53,69 +55,36 @@ projects:
   - some-readonly-group@my-domain.com
   - another-readonly-group@googlegroups.com
   create_deletion_lien: true
-  bigquery_datasets:
-  - name: us_data
-    location: US
-  data_buckets:
-  - name_suffix: -bucket
-    location: ASIA-SOUTHEAST1
-    storage_class: REGIONAL
   stackdriver_alert_email: some-alerts-group@my-domain.com
   audit_logs:
     logs_gcs_bucket:
-      # Naming convention: ${AUDIT_LOGS_PROJECT_ID}-${PROJECT_ID}
-      name: my-audit-logs-my-data-project
-      location: ASIA-SOUTHEAST1
-      storage_class: REGIONAL
+      properties:
+        # For naming recommendations, see https://cloud.google.com/storage/docs/best-practices.
+        name: logs-hash-of-my-data-project
+        location: ASIA-SOUTHEAST1
+        storageClass: REGIONAL
       ttl_days: 365
-    logs_bigquery_dataset:
-      # Naming convention: PROJECT_ID, with underscores instead of dashes.
-      name: my_data_project
-      location: US
-
+    logs_bq_dataset:
+      properties:
+        # Naming convention: PROJECT_ID, with underscores instead of dashes.
+        name: my_data_project
+        location: US
+  resources:
+    bq_datasets:
+    - properties:
+        name: us_data
+        location: US
+    gcs_buckets:
+    - properties:
+        location: ASIA-SOUTHEAST1
+        name: data-bucket
+        storageClass: REGIONAL
 - project_id: my-team-project  # Team project.
   owners_group: my-team-project-owners@my-domain.com
   auditors_group: some-auditors-group@my-domain.com
   data_readwrite_groups:
   - my-team-project-users@my-domain.com
-  # Warning: Avoid additional_project_permissions for data hosting projects.
-  additional_project_permissions:
-  - roles:  # Set all required roles for team users.
-    - roles/viewer
-    - roles/bigquery.user
-    - roles/storage.objectCreator
-    - roles/storage.objectViewer
-    - roles/ml.developer
-    members:
-    - group:my-team-project-users@my-domain.com
-  data_buckets:
-  - name_suffix: -shared-files
-    location: ASIA-SOUTHEAST1
-    storage_class: REGIONAL
-  gce_instances:
-  - name: work-machine-1
-    zone: asia-southeast1-a
-    machine_type: n1-standard-1
-    # To use an existing boot image, use existing_boot_image instead of
-    # custom_boot_image.
-    custom_boot_image:
-      # If using a custom image, set gcs_path to the path (without gs:// prefix)
-      # of your boot image.
-      gcs_path: datathon-disks/boot-disk.tar.gz
-      image_name: boot-disk
-    start_vm: True  # If True, VM will be created and left running.
-  - name: work-machine-2
-    zone: asia-southeast1-a
-    machine_type: n1-standard-1
-    existing_boot_image: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
-    start_vm: False
   # Open port 8787 as required by RStudio server.
-  gce_firewall_rules:
-  - name: allow-rstudio
-    allowed:
-    - IPProtocol: tcp
-      ports: ['8787']
-    sourceRanges: [0.0.0.0/0]
   enabled_apis:
   - bigquery-json.googleapis.com  # BigQuery
   - compute.googleapis.com        # Google Compute Engine
@@ -124,12 +93,55 @@ projects:
   stackdriver_alert_email: some-alerts-group@my-domain.com
   audit_logs:
     logs_gcs_bucket:
-      # Naming convention: ${AUDIT_LOGS_PROJECT_ID}-${PROJECT_ID}
-      name: my-audit-logs-my-team-project
-      location: US
-      storage_class: MULTI_REGIONAL
+      # For naming recommendations, see https://cloud.google.com/storage/docs/best-practices.
+      properties:
+        name: logs-hash-of-my-team-project
+        location: US
+        storageClass: MULTI_REGIONAL
       ttl_days: 365
-    logs_bigquery_dataset:
-      # Naming convention: PROJECT_ID, with underscores instead of dashes.
-      name: my_team_project
-      location: US
+    logs_bq_dataset:
+      properties:
+        # Naming convention: PROJECT_ID, with underscores instead of dashes.
+        name: my_team_project
+        location: US
+  resources:
+    gcs_buckets:
+    - properties:
+        location: ASIA-SOUTHEAST1
+        name: my-team-project-shared-files
+        storageClass: REGIONAL
+    gce_firewalls:
+    - properties:
+        name: allow-rstudio
+        rules:
+        - IPProtocol: tcp
+          ports:
+          - '8787'
+        sourceRanges:
+        - '0.0.0.0/0'
+    gce_instances:
+    - properties:
+        name: work-machine-1
+        zone: asia-southeast1-a
+        machineType: n1-standard-1
+        diskImage: family/debian-9
+    # Warning: Avoid additional_project_permissions for data hosting projects.
+    iam_policies:
+    - name: additional_project_permissions
+      properties:
+        roles:
+        - role: roles/viewer
+          members:
+          - group:my-team-project-users@my-domain.com
+        - role: roles/bigquery.user
+          members:
+          - group:my-team-project-users@my-domain.com
+        - role: roles/storage.objectCreator
+          members:
+          - group:my-team-project-users@my-domain.com
+        - role: roles/storage.objectViewer
+          members:
+          - group:my-team-project-users@my-domain.com
+        - role: roles/ml.developer
+          members:
+          - group:my-team-project-users@my-domain.com

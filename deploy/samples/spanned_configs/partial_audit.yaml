@@ -26,9 +26,11 @@ audit_logs_project:
   auditors_group: some-auditors-group@mydomain.com  # Replace this with your auditors group.
   create_deletion_lien: true
   audit_logs:  # Audit logs for acccess to the audit logs project itself.
-    logs_bigquery_dataset:
+    logs_bq_dataset:
+      properties:
       # Local logs dataset will have the name 'audit_logs'.
-      location: US                      # Replace this with the desired the location for the BigQuery dataset holding audit logs for this project.
+        location: US                    # Replace this with the desired the location for the BigQuery dataset holding audit logs for this project.
+        name: my_audit_logs
   stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
 
 forseti:
@@ -38,8 +40,9 @@ forseti:
     auditors_group: my-forseti-project-auditors@mydomain.com  # Replace this with your auditors group.
     create_deletion_lien: true
     audit_logs:
-      logs_bigquery_dataset:
-        name: my_forseti_project
-        location: US
+      logs_bq_dataset:
+        properties:
+          name: my_forseti_project
+          location: US
     stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
-  installer_flags: '--skip-sendgrid-config'    # Replace with any flags to pass to the installer.
+  installer_flags: --skip-sendgrid-config      # Replace with any flags to pass to the installer.

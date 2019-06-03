@@ -30,20 +30,26 @@ projects:
   data_readonly_groups:
   - some-readonly-group@my-domain.com
   - another-readonly-group@googlegroups.com
-  bigquery_datasets:
-  - name: us_data
-    location: US
-  data_buckets:
-  - name_suffix: -data
-    location: EUROPE-WEST1
-    storage_class: REGIONAL
   stackdriver_alert_email: some-alerts-group@my-domain.com
   audit_logs:
+    logs_bq_dataset:
+      properties:
+        name: my_other_project
+        location: US
     logs_gcs_bucket:
-      name: my-audit-logs-my-other-project
-      location: US
-      storage_class: MULTI_REGIONAL
+      properties:
+        # For naming recommendations, see https://cloud.google.com/storage/docs/best-practices.
+        name: logs-hash-of-my-other-project
+        location: US
+        storageClass: MULTI_REGIONAL
       ttl_days: 365
-    logs_bigquery_dataset:
-      name: my_other_project
-      location: US
+  resources:
+    bq_datasets:
+    - properties:
+        name: us_data
+        location: US
+    gcs_buckets:
+    - properties:
+        name: foo-other-data
+        location: EUROPE-WEST1
+        storageClass: REGIONAL
