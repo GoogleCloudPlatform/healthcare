@@ -124,7 +124,8 @@ projects:
         name: work-machine-1
         zone: asia-southeast1-a
         machineType: n1-standard-1
-        diskImage: family/debian-9
+        diskImage: projects/debian-cloud/global/images/family/debian-9
+        network: default
     # Warning: Avoid additional_project_permissions for data hosting projects.
     iam_policies:
     - name: additional_project_permissions
