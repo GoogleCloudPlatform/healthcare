@@ -1,5 +1,7 @@
 # Google Cloud Healthcare Data Protection Toolkit
 
+[![GoDoc](https://godoc.org/github.com/GoogleCloudPlatform/healthcare/deploy?status.svg)](https://godoc.org/github.com/GoogleCloudPlatform/healthcare/deploy)
+
 Tools to configure GCP environments aimed at healthcare use cases.
 
 *   [Setup Instructions](#setup-instructions)
@@ -94,6 +96,12 @@ remote or local audit logs. The schema for these YAML files is in
     describes the project that will host audit logs.
 *   Under `projects`, list each data hosting project to create.
 
+WARNING: these samples use newer configuration that is incompatible with the
+previous and require `--enable_new_style_resources` to be passed to the
+`create_project` script. This flag will soon become default and the old style
+configs will be deprecated. Old style config examples can be found
+[here](https://github.com/GoogleCloudPlatform/healthcare/tree/5bfa6b72a8077028ead4ff8c498325915180c3b8/deploy/samples).
+
 ### Create New Projects
 
 Use the `create_project.py` script to create an audit logs project (if using
@@ -166,96 +174,55 @@ resource is removed from a project, it will become unmonitored rather than
 deleted. It is the responsibility of the user to manually remove stale
 references including IAM bindings and enabled APIs.
 
-## Deployment Manager Templates
+## Steps
 
-There are the following templates in this folder:
-
-*   `data_project.py` will set up a new project for hosting datasets.
-
-*   `remote_audit_logs.py` will add BigQuery datasets or GCS buckets to hold
-    audit logs in a separate project.
-
-*   `gce_vms.py` will create Google Compute Engine VM instances and firewall
-    rules.
-
-There is also a helper script, `create_project.py` which will handle the full
-creation of multiple dataset and optional audit logs project using a single YAML
-config file. This is the recommended way to use the templates.
-
-### Template data_project.py
-
-The Deployment Manager template `templates/data_project.py` will perform the
-following steps on a new project:
-
-*   Replaces the project owners user with an owners group.
-*   Creates BigQuery datasets for data, with access control.
-*   Creates GCS buckets with access control, versioning, logs bucket and
-    (optional) logs-based metrics for unauthorized access.
-*   Creates a Cloud Pubsub topic and subscription with the appropriate access
-    control.
-*   If using local audit logs:
-    *   Creates a BigQuery dataset to hold audit logs, with appropriate access
-        control.
-    *   Creates a logs GCS bucket, with appropriate access control and TTL.
-*   Creates a log sink for all audit logs.
-*   Creates a logs-based metric for IAM policy changes.
-*   Enables data access logging on all services.
-
-See `data_project.py.schema` for details of each field. This template is used by
-the `create_project.py` script.
-
-### Template remote_audit_logs.py
-
-The Deployment Manager template `templates/remote_audit_logs.py` will perform
-the following steps on an existing audit logs project:
-
-*   If `logs_bigquery_dataset` is specified, creates a BigQuery dataset to hold
-    audit logs, with appropriate access control.
-*   If `logs_gcs_bucket` is specified, creates a logs GCS bucket, with
-    appropriate access control and TTL.
-
-See `remote_audit_logs.py.schema` for details of each field. This template is
-used by the `create_project.py` script.
-
-### Template gce_vms.py
-
-The Deployment Manager template `templates/gce_vms.py` will perform the
-following steps on an existing project:
-
-*   Creates a new GCE VM instance for each instance listed in `gce_instances`.
-*   If an instance has `start_vm` set to `True`, it is left running, otherwise
-    it is stopped.
-*   Creates a firewall rule for each rule listed in `firewall_rules` (if any).
-    The format of these rules is the same as the
-    [firewall resource](https://cloud.google.com/compute/docs/reference/rest/v1/firewalls)
-    in the Compute Engine API.
-
-See `gce_vms.py.schema` for details of each field. This template is used by the
-`create_project.py` script if a project config includes `gce_instances`.
-
-### Script create_project.py
-
-The script `create_project.py` takes in a single YAML file and creates one or
+The script `create_project.py` takes in YAML config files and creates one or
 more projects. It creates an audit logs project if `audit_logs_project` is
-provided, and then creates a data hosting project for each project listed under
-`projects`. For each new project, the script performs the following steps:
+provided and a forseti project if `forseti` is provided. It then creates a data
+hosting project for each project listed under `projects`. For each new project,
+the script performs the following steps:
 
-*   Creates a new GCP project.
-*   Enables billing on the project.
-*   Enables Deployment Manager and run the `data_project.py` template to deploy
-    resources in the project, granting the Deployment Manager service account
-    temporary Owners permissions while running the template.
-*   (If using remote audit logs) creates audit logs in the audit logs project
-    using the `remote_audit_logs.py` template.
-*   If `gce_instances` is provided:
-    *   If any VM includes a `custom_boot_image`, creates a new Compute Engine
-        image using the GCS path specified.
-    *   Creates new GCE VMs with SSH access enabled and, if provided in
-        `firewall_rules`, creates firewall rules.
-*   Prompts the user to create a Stackdriver account (currently this must be
+1.  Create a new GCP project.
+1.  Enable billing on the project.
+1.  Enable required services:
+    *   deploymentmanager.googleapis.com (for Deployment Manager)
+    *   cloudresourcemanager.googleapis.com (for project level IAM policy
+        changes)
+    *   iam.googleapis.com (if custom IAM roles were defined)
+1.  Grant the Deployment Manager service account the required roles:
+    *   roles/owner
+    *   roles/storage.admin
+1.  Create custom boot image(s), if specified on a `gce_instance` resource
+1.  Deploy all project resources including:
+
+    *   Default resources:
+        *   IAM Policies to grant owner and auditor groups project level access
+        *   Log sink export to the `logs_bq_dataset`
+        *   Log metrics for alerting on bigquery ACL, IAM and bucket ALC
+            accesses.
+    *   User defined resources (possible resources can be found in the
+        `project_config.yaml.schema` file under the `gcp_project.resources`
+        definition).
+
+    TIP: To view deployed resources, open the project in the GCP console and
+    navigate to the Deployment Manager page. Click the expanded config under the
+    `data-protect-toolkit-resources` deployment to view the list of resources
+    deployed.
+
+1.  Deploys audit resources to hold exported logs
+
+    *   The audit resources will be deployed in the remote audit logs project if
+        one was specified.
+
+1.  Removes the user from the project's owners.
+
+1.  Prompts the user to create a Stackdriver account (currently this must be
     done using the Stackdriver UI).
-*   Creates Stackdriver Alerts for IAM changes and unexpected GCS bucket access.
-*   If a `forseti` block is defined:
+
+1.  Creates Stackdriver Alerts for IAM changes and unexpected GCS bucket access.
+
+1.  If a `forseti` block is defined:
+
     *   Runs the Forseti installer to deploy a Forseti instance (user may be
         prompted during installation)
     *   Grants permissions for each project to the Forseti service account so
