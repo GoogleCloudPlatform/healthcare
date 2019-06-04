@@ -235,7 +235,7 @@ func getDataBucketRules(project *config.Project) ([]IAMRule, error) {
 		if len(joined) < 127 {
 			joined += "."
 		} else {
-			joined += "..."
+			joined = joined[:127] + "..."
 		}
 
 		bindings := fillMissingBucketBindings(buckets[0].Bindings)

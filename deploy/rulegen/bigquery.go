@@ -92,7 +92,7 @@ func getProjectDatasetsRules(project *config.Project) ([]BigqueryRule, error) {
 		if len(joined) < 127 {
 			joined += "."
 		} else {
-			joined += "..."
+			joined = joined[:127] + "..."
 		}
 
 		bindings, err := accessesToBindings(ds[0].Accesses)
