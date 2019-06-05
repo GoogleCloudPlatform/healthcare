@@ -1,0 +1,33 @@
+{
+  "instances": [{
+      "age": 20,
+      "weight": 72,
+      "is_smoker": 1
+    },
+    {
+      "age": 35,
+      "weight": 68,
+      "is_smoker": 0
+    },
+    {
+      "age": 35,
+      "weight": 54,
+      "is_smoker": 1
+    },
+    {
+      "age": 50,
+      "weight": 82,
+      "is_smoker": 0
+    },
+    {
+      "age": 50,
+      "weight": 92,
+      "is_smoker": 1
+    },
+    {
+      "age": 80,
+      "weight": 50,
+      "is_smoker": 1
+    }
+  ]
+}
