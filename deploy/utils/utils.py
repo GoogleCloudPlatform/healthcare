@@ -8,6 +8,7 @@ import glob
 import json
 import os
 import string
+import subprocess
 import sys
 import tempfile
 
@@ -96,7 +97,6 @@ def write_yaml_file(contents, path):
     yaml.dump(contents, sys.stdout)
     print('===================================================================')
     return
-
   with open(path, 'w') as outfile:
     yaml.dump(contents, outfile)
 
@@ -432,6 +432,14 @@ def load_config(overall_path):
 
   resolve_env_vars(overall)
   return overall
+
+
+def call_go_binary(parameter_list):
+  """Call Golang binary."""
+  if FLAGS.dry_run:
+    return
+  if FLAGS.enable_new_style_resources:
+    subprocess.check_call(parameter_list)
 
 
 class InvalidConfigError(Exception):

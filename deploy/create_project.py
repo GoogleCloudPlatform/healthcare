@@ -366,14 +366,13 @@ def create_deletion_lien(config):
 
 def deploy_new_style_resources(config):
   """Deploy new style resources."""
-  if FLAGS.enable_new_style_resources:
-    subprocess.check_call([
-        FLAGS.apply_binary,
-        '--project_yaml_path',
-        FLAGS.project_yaml,
-        '--project',
-        config.project['project_id'],
-    ])
+  utils.call_go_binary([
+      FLAGS.apply_binary,
+      '--project_yaml_path',
+      FLAGS.project_yaml,
+      '--project',
+      config.project['project_id'],
+  ])
 
 
 def _get_role_to_members(bindings):
@@ -1019,7 +1018,7 @@ def main(argv):
           FLAGS.output_rules_path or '',
       ]
       logging.info('Running rule generator: %s', call)
-      subprocess.check_call(call)
+      utils.call_go_binary(call)
     else:
       rule_generator.run(root_config, output_path=FLAGS.output_rules_path)
 
