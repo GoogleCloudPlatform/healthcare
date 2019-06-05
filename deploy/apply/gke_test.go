@@ -103,7 +103,7 @@ resources:
 	}
 
 	wantArgs := [][]string{
-		{"gcloud", "container", "clusters", "get-credentials", "cluster1-cluster", "--region", "somewhere1", "--project", "my-project"},
+		{"gcloud", "container", "clusters", "get-credentials", "cluster1", "--region", "somewhere1", "--project", "my-project"},
 		{"kubectl", "apply", "-f"},
 	}
 

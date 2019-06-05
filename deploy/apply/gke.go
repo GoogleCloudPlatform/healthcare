@@ -56,7 +56,7 @@ func installClusterWorkloadFromFile(clusterName, containerYamlPath string, proje
 	if err != nil {
 		return err
 	}
-	if err := getGCloudCredentials(clusterName+"-cluster", locationType, locationValue, project.ID); err != nil {
+	if err := getGCloudCredentials(clusterName, locationType, locationValue, project.ID); err != nil {
 		return err
 	}
 	if err := applyClusterWorkload(containerYamlPath); err != nil {
