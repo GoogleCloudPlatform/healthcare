@@ -27,6 +27,15 @@ more background information.
 
 ## Command-line Environment Setup
 
+### Setup using Cloud Shell in Google Cloud Platform Console
+
+You can perform all the setup through Cloud Shell in Google Cloud Platform. In
+this case, many of the dependencies will be installed for you already. If
+you will use Cloud Shell, skip to the next section (Billing and Cloning
+Repository)
+
+### Setup using Google Cloud SDK on your own machine
+
 Follow instructions on
 [Google Cloud SDK Installation Page](https://cloud.google.com/sdk/install) to
 install the command-line interface. It contains `gcloud`, `gsutil`, and `bq`,
@@ -41,7 +50,7 @@ gcloud init
 
 As part of the initialization, you will be asked to sign in with your Google
 account and create a default project if you don't have one already. Please sign
-in with the Google account that you will be using for the rest of the proejct
+in with the Google account that you will be using for the rest of the project
 setup. As for the default project, we won't be using it. So you can ignore it or
 create a dummy one.
 
@@ -62,17 +71,22 @@ If you do not have one yet, please visit the billing account
 create a Google Cloud billing account. It is of the form `01ABCD-234E56-F7890G1`
 and needed for the project setup below.
 
+## Billing and Cloning Repository
+
 ```shell
 # The billing account ID will be like the following format.
 export BILLING_ACCOUNT=01ABCD-234E56-F7890G1
 ```
 
 Finally, you need to clone (the `datathon` directory of) the open source toolkit
-from [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare).
+from [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare)
+and install Python dependencies.
 
 ```shell
 git clone https://github.com/GoogleCloudPlatform/healthcare.git
-cd healthcare/datathon/deploy
+cd healthcare/deploy
+pip3 install -r requirements.txt
+cd ..
 ```
 
 ## Choosing Domain Name, Project Prefix and Project Zones
@@ -245,29 +259,27 @@ to create the Google Cloud projects, including
         (in turned-off state) and opens up port 8787 for incoming connections.
 
 ```shell
-../../deploy/create_project.py \
-  --project_yaml datathon_projects.yaml \
-  --dry_run
+bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/datathon_projects.yaml --output_yaml_path=datathon/organizer/datathon_projects_output.yaml --dry_run
 ```
 
 Note that the `--dry_run` flag enables dry run mode, which only prints the
 commands to be run for you to review. If everything looks good, you can rerun
-the command with `--nodry_run` instead to actually create the projects. You can
-also optionally add an `--output_yaml_path` flag, in order to store the exact
-configuration used for creating the projects after environment variable
-substitution.
+the command with `--nodry_run` instead to actually create the projects. The file
+defined in the `--output_yaml_path` flag, will store the exact configuration
+used for creating the projects after environment variable substitution.
 
 ```shell
-../../deploy/create_project.py \
-  --project_yaml datathon_projects.yaml \
-  --output_yaml_path created_projects.yaml \
-  --nodry_run
+bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/datathon_projects.yaml --output_yaml_path=datathon/organizer/datathon_projects_output.yaml --nodry_run
 ```
 
-In case the deployment fails, please examine the error messages, and append the
-`--resume_from_project` and `--resume_from_step` flags to the
-`create_project.py` script when rerun after fix, as directed at the end of the
-error message.
+In case the deployment fails, please examine the error messages and make
+appropriate changes. To resume run the above command, but use the output file
+in place of the project file. You can repeat this to continue resuming at the
+last completed step. For example:
+
+```shell
+bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/datathon_projects_output.yaml --output_yaml_path=datathon/organizer/datathon_projects_output.2.yaml --nodry_run
+```
 
 ### Data Importing
 

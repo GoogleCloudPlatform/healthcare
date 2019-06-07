@@ -22,22 +22,23 @@ overall:
   # organization_id: <your organization id>
   billing_account: ${BILLING_ACCOUNT}
 
-# Configuration for the audit logs project.
-project_config:
+
+# Audit logs project
+audit_logs_project:
   project_id: ${PROJECT_PREFIX}-auditing
   owners_group: ${OWNERS_GROUP}
   auditors_group: ${AUDITORS_GROUP}
-  local_audit_logs:
+  audit_logs:
     logs_bigquery_dataset:
       location: ${BIGQUERY_LOCATION}
+      name: audit_logs
 
 # Configuration for other necessary projects, all of which stream the auditing
-# logs to the audit project above.
+# logs to the audit project.
 projects:
   # Data hosting project
   - project_id: ${PROJECT_PREFIX}-data
     owners_group: ${OWNERS_GROUP}
-    editors_group: ${EDITORS_GROUP}
     auditors_group: ${AUDITORS_GROUP}
     data_readonly_groups:
     - ${DATA_READERS_GROUP}
@@ -54,7 +55,6 @@ projects:
   # Team working project
   - project_id: ${PROJECT_PREFIX}-team
     owners_group: ${OWNERS_GROUP}
-    editors_group: ${EDITORS_GROUP}
     auditors_group: ${AUDITORS_GROUP}
     additional_project_permissions:
     - roles:  # Set all required roles for team users.
