@@ -61,7 +61,6 @@ forseti:
 projects:
 - project_id: my-project
   owners_group: my-project-owners@my-domain.com      # Replace this with the owners group for this project.
-  # editors_group: my-project-editors@mydomain.com   # If an editors group is required, uncomment this field and set the value. (Not recommended)
   auditors_group: some-auditors-group@my-domain.com
   data_readwrite_groups:
   - some-readwrite-group@my-domain.com
