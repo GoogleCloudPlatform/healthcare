@@ -1,17 +1,19 @@
 # Lung Cancer Demo
 
-[![Complete this tutorial in Cloud
-Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/healthcare.git&page=shell&tutorial=fhir/immunizations_demo/docs/README.md)
+[![Complete this tutorial in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/healthcare.git&page=shell&tutorial=fhir/lung-cancer/README.md)
 
 > DISCLAIMER: The predictions made by this application are presented for the purpose of demonstrating how to integrate machine learning into a FHIR application, and are not medical advice. All data in this demo is generated and not based on any patient health data.
 
 ## Setup
 
-1. Create a new project on [Google Cloud](https://cloud.google.com).
-1. Enable the [Cloud Healthcare API](https://console.cloud.google.com/apis/library/healthcare.googleapis.com).
-1. Enable [Cloud AI Platform](https://console.cloud.google.com/apis/library/ml.googleapis.com).
-1. Enable [Cloud Functions]()
-1. Launch the [Google Cloud Shell](https://console.cloud.google.com).
+1.  Create a new project on [Google Cloud](https://cloud.google.com).
+1.  Enable the
+    [Cloud Healthcare API](https://console.cloud.google.com/apis/library/healthcare.googleapis.com).
+1.  Enable
+    [Cloud AI Platform](https://console.cloud.google.com/apis/library/ml.googleapis.com).
+1.  Enable
+    [Cloud Functions](https://console.cloud.google.com/apis/library/cloudfunctions.googleapis.com)
+1.  Launch the [Google Cloud Shell](https://console.cloud.google.com).
 
 ## Create the Training Dataset
 
@@ -29,6 +31,14 @@ PROJECT_ID=`gcloud config get-value project`
 DATASET_BUCKET=synthea-fhir-demo-dataset
 BUCKET=${PROJECT_ID?}-data
 REGION=us-central1
+```
+
+If you get a warning message from the previous command that says you do not
+currently have a project selected use `gcloud` to change the active project. You
+can see your project ID below the username and password in this lab.
+
+```bash
+gcloud config set project
 ```
 
 ### Step 2

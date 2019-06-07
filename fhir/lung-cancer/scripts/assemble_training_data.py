@@ -55,7 +55,7 @@ flags.DEFINE_string(
 def _load_examples_from_gcs():
   """Downloads the examples from a GCS bucket."""
   client = storage.Client()
-  bucket = client.get_bucket(FLAGS.src_bucket)
+  bucket = storage.Bucket(client, FLAGS.src_bucket)
   for blob in bucket.list_blobs(prefix=FLAGS.src_folder):
     if not blob.name.endswith('.gz'):
       continue
