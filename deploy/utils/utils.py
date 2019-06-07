@@ -339,7 +339,7 @@ def resolve_env_vars(config):
     # Only do substitutions on strings.
     v = config[k]
     if isinstance(v, str):
-      config[k] = string.Template(v).substitute(os.environ)
+      config[k] = string.Template(v).safe_substitute(os.environ)
     else:
       # Recursively handle lists and dictionaries.
       resolve_env_vars(v)
