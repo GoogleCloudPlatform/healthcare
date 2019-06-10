@@ -8,10 +8,12 @@ go_library(
     name = "go_default_library",
     srcs = [
         "apply.go",
+        "chc_resource.go",
         "gke.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/apply",
     deps = [
+        "//base/go:log",
         "//deploy/config:go_default_library",
         "//deploy/deploymentmanager:go_default_library",
         "@com_github_imdario_mergo//:go_default_library",
@@ -23,6 +25,7 @@ go_test(
     name = "go_default_test",
     srcs = [
         "apply_test.go",
+        "chc_resource_test.go",
         "gke_test.go",
     ],
     embed = [":go_default_library"],

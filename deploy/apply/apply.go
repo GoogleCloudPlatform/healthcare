@@ -34,6 +34,10 @@ var (
 		cmd.Stderr = os.Stderr
 		return cmd.Output()
 	}
+	cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
+		log.Printf("Running: %v", cmd.Args)
+		return cmd.CombinedOutput()
+	}
 	cmdRun = func(cmd *exec.Cmd) error {
 		log.Printf("Running: %v", cmd.Args)
 		cmd.Stderr = os.Stderr
