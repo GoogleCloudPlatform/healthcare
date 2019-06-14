@@ -21,6 +21,7 @@ go_library(
         "metric.go",
         "pubsub.go",
         "resourcepair.go",
+        "service_account.go",
     ],
     data = [
         "//deploy/config/templates",
@@ -46,6 +47,7 @@ go_test(
         "metric_test.go",
         "pubsub_test.go",
         "resourcepair_test.go",
+        "service_account_test.go",
     ],
     # Override default run dir to make it easier to find test files.
     rundir = ".",
