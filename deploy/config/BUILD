@@ -20,6 +20,7 @@ go_library(
         "logsink.go",
         "metric.go",
         "pubsub.go",
+        "read_config.go",
         "resourcepair.go",
         "service_account.go",
     ],
@@ -30,6 +31,7 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/config",
     deps = [
         "@com_github_imdario_mergo//:go_default_library",
+        "@com_github_mitchellh_homedir//:go_default_library",
     ],
 )
 
@@ -46,8 +48,12 @@ go_test(
         "logsink_test.go",
         "metric_test.go",
         "pubsub_test.go",
+        "read_config_test.go",
         "resourcepair_test.go",
         "service_account_test.go",
+    ],
+    data = [
+        "//deploy/samples:configs",
     ],
     # Override default run dir to make it easier to find test files.
     rundir = ".",

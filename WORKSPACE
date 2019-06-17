@@ -29,6 +29,12 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_mitchellh_homedir",
+    importpath = "github.com/mitchellh/go-homedir",
+    tag = "v1.1.0",
+)
+
+go_repository(
     name = "com_github_imdario_mergo",
     importpath = "github.com/imdario/mergo",
     tag = "v0.3.7",
