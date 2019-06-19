@@ -57,8 +57,8 @@ options(httr_oauth_cache=FALSE)
 
 # Wrapper for running BigQuery queries.
 run_query <- function(query){
-    data <- query_exec(query, project=project_id, use_legacy_sql = FALSE)
-    return(data)
+    tb <- bq_project_query(project_id, query)
+    return(bq_table_download(tb))
 }
 ```
 

@@ -66,8 +66,8 @@ First, let's preview the `subject_id`, `hadm_id`, and `icustay_id` columns of th
 
 ```{r}
 run_query <- function(query){
-    data <- query_exec(query, project=project_id, use_legacy_sql = FALSE)
-    return(data)
+    tb <- bq_project_query(project_id, query)
+    return(bq_table_download(tb))
 }
 
 
