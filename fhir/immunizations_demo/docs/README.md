@@ -39,13 +39,11 @@ You will also need to register
 `http://localhost:4200/oauth-callback` as an authorized redirect URI on the
 OAuth configuration page. Follow these steps:
 
-1. If you haven't already, select **APIs & Services** from the left-hand menu of the Google Cloud Platform dashboard.
+1. Go to the **APIs & Services** page using the left-hand menu of the Google Cloud Platform dashboard.
 
-2. Select **Credentials**. You should see a list of your registered projects under **Your OAuth 2.0 client IDs** (assuming you've created an OAuth client ID).
+2. Select **Credentials**. You will see a list of your registered clients under **Your OAuth 2.0 client IDs**. Click on the name of your client:
 
-3. Click on the name of your project:
-
-![Selecting a project](FHIR_Credentials.png)
+![Selecting a client](FHIR_Credentials.png)
 
 3. Under **Restrictions**, find the field titled **Authorized redirect URIs** and enter your URI:
 
