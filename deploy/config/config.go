@@ -29,6 +29,7 @@ type Config struct {
 	} `json:"forseti"`
 	Projects           []*Project         `json:"projects"`
 	AllGeneratedFields AllGeneratedFields `json:"generated_fields"`
+	Imports            []string           `json:"imports"`
 }
 
 // Project defines a single project's configuration.
