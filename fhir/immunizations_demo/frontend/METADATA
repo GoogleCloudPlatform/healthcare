@@ -1,9 +1,0 @@
-name: "Immunizations Demo Frontend"
-description: "An application to demonstrate how to use the Healthcare FHIR APIs"
-
-third_party {
-  url {
-    type: PIPER
-    value: "http://google3/third_party/cloud/healthcare/fhir/immunizations_demo/frontend"
-  }
-}

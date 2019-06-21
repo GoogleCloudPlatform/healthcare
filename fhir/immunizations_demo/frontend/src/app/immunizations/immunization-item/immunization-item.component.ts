@@ -32,7 +32,7 @@ export class ImmunizationItemComponent implements OnInit {
 
   @ViewChild(ImmunizationFormComponent) immForm!: ImmunizationFormComponent;
 
-  // TODO(b/119403714): This would be better managed as a contained resource,
+  // TODO: This would be better managed as a contained resource,
   // but the API doesn't support internal references IDs yet.
   reaction: fhir.Observation|null = null;
   editing = false;

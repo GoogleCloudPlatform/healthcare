@@ -35,7 +35,7 @@ export interface FHIRRequest {
  * allow this class to be used in non-Angular applications with minimal
  * modification. The FHIR store used is configured in environment.ts.
  */
-// TODO(b/117507489): Add error handling to API requests.
+// TODO: Add error handling to API requests.
 @Injectable({
   providedIn: 'root',
 })
