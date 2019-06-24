@@ -39,8 +39,8 @@ interface PatientData {
 export class PatientPanelComponent implements OnInit, OnDestroy {
   patient: PatientData = {};
 
-  @ViewChild('content') private content!: TemplateRef<{}>;
-  @ViewChild('trigger', {read: ElementRef})
+  @ViewChild('content', {static: true}) private content!: TemplateRef<{}>;
+  @ViewChild('trigger', {read: ElementRef, static: true})
   private trigger!: ElementRef<HTMLElement>;
 
   private overlayRef!: OverlayRef;

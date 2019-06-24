@@ -274,7 +274,7 @@ if (this.immunization === null) {
 }
 ```
 
-<!-- TODO(b/119403714): rewrite if/when we use contained resources -->
+<!-- TODO: rewrite if/when we use contained resources -->
 
 The `ImmunizationFormComponent` controls editing and creating `Immunizations`,
 so first we check if we are currently editing an `Immunization`. If not, we
