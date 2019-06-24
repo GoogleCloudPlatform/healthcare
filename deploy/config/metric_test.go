@@ -61,3 +61,46 @@ properties:
 		t.Errorf("m.ResourceName() = %v, want %v", gotName, wantName)
 	}
 }
+
+func TestViolationExceptions(t *testing.T) {
+	conf := testconf.ConfigBeforeInit(t, nil)
+
+	conf.Projects[0].ViolationExceptions = make(map[string][]string)
+	conf.Projects[0].ViolationExceptions["iam-policy-change-count"] = []string{
+		"some-account1@domain.com",
+		"some-account2@domain.com",
+	}
+	conf.Projects[0].ViolationExceptions["some-not-exist-metrics"] = []string{
+		"some-account9@domain.com",
+		"some-account8@domain.com",
+	}
+	if err := conf.Projects[0].Init(conf.AuditLogsProject); err != nil {
+		t.Fatalf("failed to init project %q: %v", conf.Projects[0].ID, err)
+	}
+	expectedIAMPolicyChangeCountFilter := `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy" AND
+protoPayload.authenticationInfo.principalEmail!=(some-account1@domain.com AND some-account2@domain.com)`
+	for _, m := range conf.Projects[0].Metrics {
+		if m.MetricProperties.MetricName == "iam-policy-change-count" {
+			if diff := cmp.Diff(m.Filter, expectedIAMPolicyChangeCountFilter); diff != "" {
+				t.Fatalf("yaml differs (-got +want):\n%v", diff)
+			}
+		}
+	}
+}
+
+func TestDoNotHaveViolationExceptions(t *testing.T) {
+	conf := testconf.ConfigBeforeInit(t, nil)
+
+	conf.Projects[0].ViolationExceptions = make(map[string][]string)
+	if err := conf.Projects[0].Init(conf.AuditLogsProject); err != nil {
+		t.Fatalf("failed to init project %q: %v", conf.Projects[0].ID, err)
+	}
+	expectedIAMPolicyChangeCountFilter := `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`
+	for _, m := range conf.Projects[0].Metrics {
+		if m.MetricProperties.MetricName == "iam-policy-change-count" {
+			if diff := cmp.Diff(m.Filter, expectedIAMPolicyChangeCountFilter); diff != "" {
+				t.Fatalf("yaml differs (-got +want):\n%v", diff)
+			}
+		}
+	}
+}
