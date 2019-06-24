@@ -1,0 +1,47 @@
+# type provider
+resources:
+- name: cloud-healthcare
+  type: 'deploymentmanager.v2beta.typeProvider'
+  properties:
+    descriptorUrl: https://healthcare.googleapis.com/$discovery/rest?version=v1beta1
+    options:
+      validationOptions:
+        schemaValidation: IGNORE_WITH_WARNINGS
+      inputMappings:
+      - fieldName: Authorization
+        location: HEADER
+        value: >
+          $.concat("Bearer ", $.googleOauth2AccessToken())
+
+    collectionOverrides:
+    - collection: projects.locations.datasets
+      options:
+        inputMappings:
+        - fieldName: name
+          location: PATH
+          methodMatch: ^(delete|get|patch)$
+          value: $.concat($.resource.properties.parent, "/datasets/", $.resource.properties.datasetId)
+
+    - collection: projects.locations.datasets.fhirStores
+      options:
+        inputMappings:
+        - fieldName: name
+          location: PATH
+          methodMatch: ^(delete|get|patch)$
+          value: $.concat($.resource.properties.parent, "/fhirStores/", $.resource.properties.fhirStoreId)
+
+    - collection: projects.locations.datasets.dicomStores
+      options:
+        inputMappings:
+        - fieldName: name
+          location: PATH
+          methodMatch: ^(delete|get|patch)$
+          value: $.concat($.resource.properties.parent, "/dicomStores/", $.resource.properties.dicomStoreId)
+
+    - collection: projects.locations.datasets.hl7V2Stores
+      options:
+        inputMappings:
+        - fieldName: name
+          location: PATH
+          methodMatch: ^(delete|get|patch)$
+          value: $.concat($.resource.properties.parent, "/hl7V2Stores/", $.resource.properties.hl7V2StoreId)
