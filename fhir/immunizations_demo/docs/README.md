@@ -24,9 +24,6 @@ Here is the architecture of the whole system.
 
 ### Setting up your project
 
-Please fill in this [form](https://services.google.com/fb/forms/cloudhealthcareapiearlyaccessprogram/) to get added to the whitelist to use the Cloud
-Healthcare API, if this hasn't been done yet.
-
 First, follow the quickstart guide for the
 [Healthcare API](https://cloud.google.com/healthcare/docs/quickstart) to set up
 a project and configure the Cloud Healtcare API. However, instead of creating a
@@ -142,7 +139,8 @@ the frontend application.
       ```sh
       $ curl -X POST \
           -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-          -d '{"gcsSourceLocation":{"gcsUri":"gs://'${PROJECT_ID?}'/demo_data.ndjson"}}' \
+          -H "Content-Type: application/json" \
+          -d '{"gcsSource":{"uri":"gs://'${PROJECT_ID?}'/demo_data.ndjson"}}' \
           "https://healthcare.googleapis.com/${API_VERSION?}/projects/${PROJECT_ID?}/locations/${REGION?}/datasets/${DATASET_ID?}/fhirStores/${FHIR_STORE_ID?}:import"
       ```
 
@@ -502,10 +500,10 @@ by our model.
      resources at this moment.
 
       ```bash
-      $ curl -X POST \
+      $ curl \
           -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-          -H "Content-Type: application/json" \
-          -d '{"gcsDestinationLocation":{"gcsUri":"gs://'${PROJECT_ID?}'/export"}}' \
+          -H "Content-Type: application/json; charset=utf-8" \
+          -d '{"gcsDestination":{"uriPrefix":"gs://'${PROJECT_ID?}'/export"}}' \
           "https://healthcare.googleapis.com/${API_VERSION?}/projects/${PROJECT_ID?}/locations/${REGION?}/datasets/${DATASET_ID?}/fhirStores/${FHIR_STORE_ID?}:export"
       ```
 
@@ -613,9 +611,8 @@ you to query the data interactively using SQL.
        -H "Authorization: Bearer $(gcloud auth print-access-token)" \
        -H "Content-Type: application/json" \
        -d '{
-         "bigqueryDestinationLocation": {
-           "projectId":"'${BIGQUERY_PROJECT_ID?}'",
-           "datasetId":"'${BIGQUERY_DATASET_ID?}'"
+         "bigqueryDestination": {
+           "datasetUri":"bq://'${BIGQUERY_PROJECT_ID?}'.'${BIGQUERY_DATASET_ID?}'"
          }
        }' "https://healthcare.googleapis.com/${API_VERSION?}/projects/${PROJECT_ID?}/locations/${REGION?}/datasets/${DATASET_ID?}/fhirStores/${FHIR_STORE_ID?}:export"
    ```
