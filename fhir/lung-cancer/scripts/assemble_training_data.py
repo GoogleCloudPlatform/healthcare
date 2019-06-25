@@ -118,13 +118,13 @@ def _save_examples(examples):
 
   training_folder_path = FLAGS.dst_folder + '/training.tfrecord' if FLAGS.dst_folder is not None else 'training.tfrecord'
   record_path = 'gs://{}/{}'.format(FLAGS.dst_bucket, training_folder_path)
-  with tf.python_io.TFRecordWriter(record_path) as w:
+  with tf.io.TFRecordWriter(record_path) as w:
     for example in examples[:idx]:
       w.write(example.SerializeToString())
 
   eval_folder_path = FLAGS.dst_folder + '/eval.tfrecord' if FLAGS.dst_folder is not None else 'eval.tfrecord'
   record_path = 'gs://{}/{}'.format(FLAGS.dst_bucket, eval_folder_path)
-  with tf.python_io.TFRecordWriter(record_path) as w:
+  with tf.io.TFRecordWriter(record_path) as w:
     for example in examples[idx + 1:]:
       w.write(example.SerializeToString())
 
