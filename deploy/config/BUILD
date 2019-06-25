@@ -32,7 +32,6 @@ go_library(
     deps = [
         "@com_github_imdario_mergo//:go_default_library",
         "@com_github_mitchellh_homedir//:go_default_library",
-        "@in_ghodss_yaml//:go_default_library",
     ],
 )
 
@@ -55,7 +54,6 @@ go_test(
     ],
     data = [
         "//deploy/samples:configs",
-        "//deploy/testconf:test_multiple_yaml",
     ],
     # Override default run dir to make it easier to find test files.
     rundir = ".",

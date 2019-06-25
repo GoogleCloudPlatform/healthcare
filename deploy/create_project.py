@@ -67,9 +67,8 @@ flags.DEFINE_string('output_rules_path', None,
                     ('Path to local directory or GCS bucket to output rules '
                      'files. If unset, directly writes to the Forseti server '
                      'bucket.'))
-flags.DEFINE_boolean(
-    'enable_new_style_resources', True,
-    'Enable new style configs. Only set to false if old configs are a must.')
+flags.DEFINE_boolean('enable_new_style_resources', None, 'Enable new style '
+                     'resources. Developer only.')
 flags.DEFINE_string('apply_binary', None,
                     'Path to CFT binary. Set automatically by the Bazel rule.')
 flags.DEFINE_string('rule_generator_binary', None,

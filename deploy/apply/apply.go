@@ -97,10 +97,9 @@ func Apply(conf *config.Config, project *config.Project) error {
 		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, config.Access{
 			Role: "WRITER", UserByEmail: sinkSA,
 		})
-    // TODO Enable DPT to update audit log buckets and datasets
-		if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
-			return fmt.Errorf("failed to deploy audit resources: %v", err)
-		}
+	}
+	if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
+		return fmt.Errorf("failed to deploy audit resources: %v", err)
 	}
 
 	if err := deployGKEWorkloads(project); err != nil {

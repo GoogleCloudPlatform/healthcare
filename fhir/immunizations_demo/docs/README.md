@@ -33,9 +33,23 @@ a project and configure the Cloud Healtcare API. However, instead of creating a
 service account, follow the instructions on the [OAuth
 quickstart](https://cloud.google.com/docs/authentication/end-user). You
 will only need the client ID, the client secret (API key) is not required for
-this use case. You will also need to register
+this use case.
+
+You will also need to register
 `http://localhost:4200/oauth-callback` as an authorized redirect URI on the
-OAuth configuration page. Change `localhost:4200` if you plan to develop on a
+OAuth configuration page. Follow these steps:
+
+1. Go to the **APIs & Services** page using the left-hand menu of the Google Cloud Platform dashboard.
+
+2. Select **Credentials**. You will see a list of your registered clients under **Your OAuth 2.0 client IDs**. Click on the name of your client:
+
+![Selecting a client](FHIR_Credentials.png)
+
+3. Under **Restrictions**, find the field titled **Authorized redirect URIs** and enter your URI:
+
+![Registering authorized redirect URIs](FHIR_Authorized_Redirect_URI.png)
+
+Note: Change `localhost:4200` if you plan to develop on a
 host or port that is different from Angular CLI's default.
 
 ### Setting up the frontend application

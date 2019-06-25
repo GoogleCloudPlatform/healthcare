@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestNormalizePath(t *testing.T) {
@@ -32,21 +31,5 @@ func TestNormalizePath(t *testing.T) {
 	}
 	if _, err = os.Stat(path); err != nil {
 		t.Fatalf("cannot find project_with_remote_audit_logs.yaml: %q", path)
-	}
-}
-
-func TestReadConfig(t *testing.T) {
-	confPath, err := config.NormalizePath("deploy/testconf/test_multiple_yaml/conf.yaml")
-	if err != nil {
-		t.Fatalf("NormalizePath error: %v", err)
-	}
-	conf, _ := config.ReadConfig(confPath)
-	expectedPath, _ := config.NormalizePath("deploy/testconf/test_multiple_yaml/expected.yaml")
-	if err != nil {
-		t.Fatalf("NormalizePath error: %v", err)
-	}
-	expectedConf, _ := config.ReadConfig(expectedPath)
-	if diff := cmp.Diff(conf.Projects, expectedConf.Projects); diff != "" {
-		t.Fatalf("yaml differs (-got +want):\n%v", diff)
 	}
 }
