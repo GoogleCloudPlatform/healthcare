@@ -10,17 +10,18 @@ import (
 func TestGKEClusterRegion(t *testing.T) {
 	resYAML := `
 properties:
-  name: foo-cluser
   clusterLocationType: Regional
   region: somewhere1
+  cluster:
+    name: foo-cluser
 `
 
 	cluser := new(config.GKECluster)
 	if err := yaml.Unmarshal([]byte(resYAML), cluser); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
-	if cluser.ResourceName != "foo-cluser" {
-		t.Fatalf("cluster name error: %v", cluser.ResourceName)
+	if cluser.Name() != "foo-cluser" {
+		t.Fatalf("cluster name error: %v", cluser.Name())
 	}
 	if cluser.ClusterLocationType != "Regional" {
 		t.Fatalf("cluster location type error: %v", cluser.ClusterLocationType)
@@ -33,17 +34,18 @@ properties:
 func TestGKEClusterZone(t *testing.T) {
 	resYAML := `
 properties:
-  name: foo-cluser
   clusterLocationType: Zonal
   zone: somewhere2-c
+  cluster:
+    name: foo-cluser
 `
 
 	cluser := new(config.GKECluster)
 	if err := yaml.Unmarshal([]byte(resYAML), cluser); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
-	if cluser.ResourceName != "foo-cluser" {
-		t.Fatalf("cluster name error: %v", cluser.ResourceName)
+	if cluser.Name() != "foo-cluser" {
+		t.Fatalf("cluster name error: %v", cluser.Name())
 	}
 	if cluser.ClusterLocationType != "Zonal" {
 		t.Fatalf("cluster location type error: %v", cluser.ClusterLocationType)

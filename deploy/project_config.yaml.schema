@@ -284,6 +284,17 @@ definitions:
           unexpected GCS bucket access. If not set, a Stackdriver account will
           not be created for this project. While this field can be set after the
           project has been deployed, it cannot be changed afterwards.
+      violation_exceptions:
+        type: object
+        patternProperties:
+          "^[\\w_\\-.,+!*'()%][\\w_\\-.,+!*'()%\\/]{0,99}$":
+            type: array
+            description: |
+              The service account(s) listed here are "privileged" or "trusted" in
+              the project. The DPT set the service accounts as exceptions when
+              setting up logs-based metrics.
+            items:
+              $ref: '#/definitions/email_address'
 
       bigquery_datasets:
         type: array

@@ -1,0 +1,15 @@
+overall:
+  organization_id: '0123456'
+
+audit_logs_project:
+  project_id: some-audit-logs
+
+forseti:
+  project:
+    project_id: some-forseti
+
+projects:
+- project_id: some-project-1a
+- project_id: some-project-1b
+- project_id: some-project-2a
+- project_id: some-project-2b

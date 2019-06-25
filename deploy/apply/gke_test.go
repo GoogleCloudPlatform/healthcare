@@ -54,18 +54,18 @@ func TestLocationTypeAndValue(t *testing.T) {
 	}{
 		{
 			in: config.GKECluster{config.GKEClusterProperties{
-				ResourceName:        "cluster_with_region",
 				ClusterLocationType: "Regional",
 				Region:              "some_region",
+				Cluster:             config.GKEClusterSettings{"cluster_with_region"},
 			}},
 			locationType:  "--region",
 			locationValue: "some_region",
 		},
 		{
 			in: config.GKECluster{config.GKEClusterProperties{
-				ResourceName:        "cluster_with_zone",
 				ClusterLocationType: "Zonal",
 				Zone:                "some_zone",
+				Cluster:             config.GKEClusterSettings{"cluster_with_zone"},
 			}},
 			locationType:  "--zone",
 			locationValue: "some_zone",
@@ -75,13 +75,13 @@ func TestLocationTypeAndValue(t *testing.T) {
 	for _, tc := range testcases {
 		locationType, locationValue, err := getLocationTypeAndValue(&tc.in)
 		if err != nil {
-			t.Errorf("getLocationTypeAndValue error at cluster %q", tc.in.ResourceName)
+			t.Errorf("getLocationTypeAndValue error at cluster %q", tc.in.Name())
 		}
 		if locationType != tc.locationType {
-			t.Errorf("getLocationTypeAndValue locationType error at cluster %q: %q", tc.in.ResourceName, locationType)
+			t.Errorf("getLocationTypeAndValue locationType error at cluster %q: %q", tc.in.Name(), locationType)
 		}
 		if locationValue != tc.locationValue {
-			t.Errorf("getLocationTypeAndValue locationValue error at cluster %q: %q", tc.in.ResourceName, locationValue)
+			t.Errorf("getLocationTypeAndValue locationValue error at cluster %q: %q", tc.in.Name(), locationValue)
 		}
 	}
 }
@@ -135,27 +135,27 @@ func TestLocationTypeAndValueError(t *testing.T) {
 	}{
 		{
 			in: config.GKECluster{config.GKEClusterProperties{
-				ResourceName:        "cluster_zonal_error",
 				ClusterLocationType: "Zonal",
 				Region:              "some_region",
 				Zone:                "",
+				Cluster:             config.GKEClusterSettings{"cluster_zonal_error"},
 			}},
 			err: "failed to get cluster's zone: cluster_zonal_error",
 		},
 		{
 			in: config.GKECluster{config.GKEClusterProperties{
-				ResourceName:        "cluster_regional_error",
 				ClusterLocationType: "Regional",
 				Zone:                "some_zone",
+				Cluster:             config.GKEClusterSettings{"cluster_regional_error"},
 			}},
 			err: "failed to get cluster's region: cluster_regional_error",
 		},
 		{
 			in: config.GKECluster{config.GKEClusterProperties{
-				ResourceName:        "cluster_wrong_type",
 				ClusterLocationType: "Location",
 				Region:              "some_region",
 				Zone:                "some_zone",
+				Cluster:             config.GKEClusterSettings{"cluster_wrong_type"},
 			}},
 			err: "failed to get cluster's location: cluster_wrong_type",
 		},
@@ -164,7 +164,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 	for _, tc := range testcases {
 		_, _, err := getLocationTypeAndValue(&tc.in)
 		if err == nil || !strings.Contains(err.Error(), tc.err) {
-			t.Errorf("getLocationTypeAndValue for cluster %q: got %q, want error with substring %q", tc.in.ResourceName, err, tc.err)
+			t.Errorf("getLocationTypeAndValue for cluster %q: got %q, want error with substring %q", tc.in.Name(), err, tc.err)
 		}
 	}
 }

@@ -1,0 +1,11 @@
+overall:
+  organization_id: '0123456'
+
+audit_logs_project:
+  project_id: some-audit-logs
+
+forseti:
+  project:
+    project_id: some-forseti
+
+imports: ["./project*.yaml"]

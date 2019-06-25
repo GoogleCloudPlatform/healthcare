@@ -88,8 +88,8 @@ type ConfigData struct {
 	ExtraProjectConfig string
 }
 
-// ConfigAndProject gets a test config and project.
-func ConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.Project) {
+// ConfigBeforeInit gets config that did not call the init() function.
+func ConfigBeforeInit(t *testing.T, data *ConfigData) *config.Config {
 	t.Helper()
 	if data == nil {
 		data = &ConfigData{}
@@ -108,6 +108,12 @@ func ConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.P
 	if err := yaml.Unmarshal(buf.Bytes(), conf); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
 	}
+	return conf
+}
+
+// ConfigAndProject gets a test config and project.
+func ConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.Project) {
+	conf := ConfigBeforeInit(t, data)
 	if err := conf.Init(); err != nil {
 		t.Fatalf("conf.Init = %v", err)
 	}

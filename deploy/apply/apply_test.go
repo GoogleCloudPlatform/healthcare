@@ -453,7 +453,6 @@ resources:
 
 			want := []upsertCall{
 				{"data-protect-toolkit-resources", wantResourceDeployment(t, tc.want), project.ID},
-				{"data-protect-toolkit-audit-my-project", parseTemplateToDeployment(t, auditDeploymentYAML), project.ID},
 			}
 
 			// allow imports and resources to be in any order
@@ -468,6 +467,44 @@ resources:
 			// TODO: validate against schema file too
 		})
 	}
+}
+
+func TestDeployAudit(t *testing.T) {
+	configData := &testconf.ConfigData{``,
+	}
+
+	conf, project := testconf.ConfigAndProject(t, configData)
+
+	type upsertCall struct {
+		Name       string
+		Deployment *deploymentmanager.Deployment
+		ProjectID  string
+	}
+
+	var got []upsertCall
+	upsertDeployment = func(name string, deployment *deploymentmanager.Deployment, projectID string) error {
+		got = append(got, upsertCall{name, deployment, projectID})
+		return nil
+	}
+
+	if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
+		t.Fatalf("failed to deploy audit resources: %v", err)
+	}
+
+	want := []upsertCall{
+		{"data-protect-toolkit-audit-my-project", parseTemplateToDeployment(t, auditDeploymentYAML), project.ID},
+	}
+
+	// allow imports and resources to be in any order
+	opts := []cmp.Option{
+		cmpopts.SortSlices(func(a, b *deploymentmanager.Resource) bool { return a.Name < b.Name }),
+		cmpopts.SortSlices(func(a, b *deploymentmanager.Import) bool { return a.Path < b.Path }),
+	}
+	if diff := cmp.Diff(got, want, opts...); diff != "" {
+		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
+	}
+
+	// TODO: validate against schema file too
 }
 
 func TestGetLogSinkServiceAccount(t *testing.T) {

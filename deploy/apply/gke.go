@@ -79,16 +79,16 @@ func getLocationTypeAndValue(cluster *config.GKECluster) (string, string, error)
 	switch cluster.ClusterLocationType {
 	case "Regional":
 		if cluster.Region == "" {
-			return "", "", fmt.Errorf("failed to get cluster's region: %v", cluster.ResourceName)
+			return "", "", fmt.Errorf("failed to get cluster's region: %v", cluster.Name())
 		}
 		return "--region", cluster.Region, nil
 	case "Zonal":
 		if cluster.Zone == "" {
-			return "", "", fmt.Errorf("failed to get cluster's zone: %v", cluster.ResourceName)
+			return "", "", fmt.Errorf("failed to get cluster's zone: %v", cluster.Name())
 		}
 		return "--zone", cluster.Zone, nil
 	default:
-		return "", "", fmt.Errorf("failed to get cluster's location: %v", cluster.ResourceName)
+		return "", "", fmt.Errorf("failed to get cluster's location: %v", cluster.Name())
 	}
 }
 

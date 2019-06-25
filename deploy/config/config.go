@@ -29,18 +29,20 @@ type Config struct {
 	} `json:"forseti"`
 	Projects           []*Project         `json:"projects"`
 	AllGeneratedFields AllGeneratedFields `json:"generated_fields"`
+	Imports            []string           `json:"imports"`
 }
 
 // Project defines a single project's configuration.
 type Project struct {
-	ID                  string   `json:"project_id"`
-	BillingAccount      string   `json:"billing_account"`
-	FolderID            string   `json:"folder_id"`
-	OwnersGroup         string   `json:"owners_group"`
-	AuditorsGroup       string   `json:"auditors_group"`
-	DataReadWriteGroups []string `json:"data_readwrite_groups"`
-	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
-	EnabledAPIs         []string `json:"enabled_apis"`
+	ID                  string              `json:"project_id"`
+	BillingAccount      string              `json:"billing_account"`
+	FolderID            string              `json:"folder_id"`
+	OwnersGroup         string              `json:"owners_group"`
+	AuditorsGroup       string              `json:"auditors_group"`
+	DataReadWriteGroups []string            `json:"data_readwrite_groups"`
+	DataReadOnlyGroups  []string            `json:"data_readonly_groups"`
+	EnabledAPIs         []string            `json:"enabled_apis"`
+	ViolationExceptions map[string][]string `json:"violation_exceptions"`
 
 	Resources struct {
 		// Deployment manager resources
@@ -249,7 +251,7 @@ func (p *Project) addBaseResources() error {
 				{Role: "roles/iam.securityReviewer", Members: []string{"group:" + p.AuditorsGroup}},
 			}}},
 	})
-	p.Metrics = append(p.Metrics,
+	defaultMetrics := []*Metric{
 		&Metric{
 			MetricProperties: MetricProperties{
 				MetricName:      "bigquery-settings-change-count",
@@ -277,7 +279,28 @@ func (p *Project) addBaseResources() error {
 				Descriptor:      unexpectedUserDescriptor,
 				LabelExtractors: principalEmailLabelExtractor,
 			},
-		})
+		},
+	}
+	excludeMetricPrincipleEmails, err := template.New("excludeEmails").Parse(` AND
+protoPayload.authenticationInfo.principalEmail!=({{.ExpectedAccounts}})`)
+	if err != nil {
+		return err
+	}
+	for index, dm := range defaultMetrics {
+		if violationExceptions, ok := p.ViolationExceptions[dm.MetricProperties.MetricName]; ok {
+			var buf bytes.Buffer
+			data := struct {
+				ExpectedAccounts string
+			}{
+				strings.Join(violationExceptions, " AND "),
+			}
+			if err := excludeMetricPrincipleEmails.Execute(&buf, data); err != nil {
+				return fmt.Errorf("failed to execute filter template: %v", err)
+			}
+			defaultMetrics[index].MetricProperties.Filter = dm.MetricProperties.Filter + buf.String()
+		}
+	}
+	p.Metrics = append(p.Metrics, defaultMetrics...)
 
 	metricFilterTemplate, err := template.New("metricFilter").Parse(`resource.type=gcs_bucket AND
 logName=projects/{{.Project.ID}}/logs/cloudaudit.googleapis.com%2Fdata_access AND
