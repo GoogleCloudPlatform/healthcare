@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//deploy/config:go_default_library",
         "//deploy/rulegen:go_default_library",
-        "@in_ghodss_yaml//:go_default_library",
     ],
 )
 

@@ -17,15 +17,16 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/imdario/mergo"
 	"github.com/mitchellh/go-homedir"
 )
 
@@ -51,19 +52,71 @@ func NormalizePath(path string) (string, error) {
 	return filepath.Abs(filepath.Join(cwd, path))
 }
 
-// ReadConfig read a project YAML and imports other specified files.
-// projectYAMLPath should be an absolute path.
-func ReadConfig(projectYAMLPath string) (*Config, map[string]*Config) {
-	importedConfigPathMap := make(map[string]*Config)
-	conf := readSingleConfigFile(projectYAMLPath)
-	importedYAMLPaths := allImportsPaths(projectYAMLPath, conf.Imports)
-	for _, importedYAMLPath := range importedYAMLPaths {
-		conf := readSingleConfigFile(importedYAMLPath)
-		importedConfigPathMap[importedYAMLPath] = conf
+// Load loads a config from the given path.
+func Load(path string) (*Config, error) {
+	m, err := loadMap(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config to map: %v", err)
 	}
-	// We support projects in the imported YAMLs only.
-	mergeProjects(projectYAMLPath, conf, importedConfigPathMap)
-	return conf, importedConfigPathMap
+
+	b, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal config map: %v", err)
+	}
+
+	conf := new(Config)
+	if err := json.Unmarshal(b, conf); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+	}
+	log.Printf("loaded config: %v", string(b))
+
+	if err := conf.Init(); err != nil {
+		return nil, fmt.Errorf("failed to initialize config: %v", err)
+	}
+	return conf, nil
+}
+
+// loadMap loads the config at path into a map. It will also merge all imported configs.
+func loadMap(path string) (map[string]interface{}, error) {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file at path %q: %v", path, err)
+	}
+
+	var raw json.RawMessage
+	if err := yaml.Unmarshal(b, &raw); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+	}
+
+	root := make(map[string]interface{})
+	if err := json.Unmarshal(raw, &root); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal raw config to map: %v", err)
+	}
+
+	type config struct {
+		Imports []string `json:"imports"`
+	}
+	conf := new(config)
+	if err := json.Unmarshal(raw, conf); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal raw config to struct with imports: %v", err)
+	}
+
+	impPaths, err := allImportsPaths(path, conf.Imports)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range impPaths {
+		impMap, err := loadMap(p)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load %q to map: %v", p, err)
+		}
+		if err := mergo.Merge(&root, impMap, mergo.WithAppendSlice); err != nil {
+			return nil, fmt.Errorf("failed to merge imported file %q: %v", p, err)
+		}
+	}
+
+	return root, nil
 }
 
 // allImportsPaths returns all files matching the patterns defined
@@ -75,7 +128,7 @@ func ReadConfig(projectYAMLPath string) (*Config, map[string]*Config) {
 // For example, if "./*.yaml" is an entry of "imports", the project YAML itself
 // would match the pattern. We should exclude that path because we do not want to
 // include the content of that YAML twice.
-func allImportsPaths(projectYAMLPath string, importsList []string) []string {
+func allImportsPaths(projectYAMLPath string, importsList []string) ([]string, error) {
 	allMatches := make(map[string]bool)
 	projectYamlFolder := filepath.Dir(projectYAMLPath)
 	for _, importPath := range importsList {
@@ -86,7 +139,7 @@ func allImportsPaths(projectYAMLPath string, importsList []string) []string {
 		}
 		matches, err := filepath.Glob(joinedPath)
 		if err != nil {
-			log.Fatalf("Pattern \"%v\" is malformed", importPath)
+			return nil, fmt.Errorf("pattern %q is malformed", importPath)
 		}
 		for _, match := range matches {
 			if match == projectYAMLPath {
@@ -99,56 +152,5 @@ func allImportsPaths(projectYAMLPath string, importsList []string) []string {
 	for path := range allMatches {
 		filePathList = append(filePathList, path)
 	}
-	sort.Strings(filePathList)
-	return filePathList
-}
-
-// readSingleConfigFile read the YAML to get its Config.
-func readSingleConfigFile(absYAMLPath string) *Config {
-	b, err := ioutil.ReadFile(absYAMLPath)
-	if err != nil {
-		log.Fatalf("failed to read input projects yaml file at path %q: %v", absYAMLPath, err)
-	}
-
-	conf := new(Config)
-	if err := yaml.Unmarshal(b, conf); err != nil {
-		log.Fatalf("failed to unmarshal config: %v", err)
-	}
-
-	if conf.Projects == nil {
-		conf.Projects = []*Project{}
-	}
-	return conf
-}
-
-// recordProjectsPaths build the map from the project ID to the path where the project is defined.
-func recordProjectsPaths(importedProjects map[string]([]string), confPath string, Projects []*Project) {
-	for _, projects := range Projects {
-		if paths, ok := importedProjects[projects.ID]; ok {
-			importedProjects[projects.ID] = append(paths, confPath)
-		} else {
-			importedProjects[projects.ID] = []string{confPath}
-		}
-	}
-}
-
-// mergeProjects merges all YAMLs into a single "dest" YAML.
-func mergeProjects(projectYAMLPath string, dest *Config, importedConfigPathMap map[string]*Config) {
-	importedProjects := make(map[string]([]string))
-	recordProjectsPaths(importedProjects, projectYAMLPath, dest.Projects)
-	for path, pathConfPair := range importedConfigPathMap {
-		recordProjectsPaths(importedProjects, path, pathConfPair.Projects)
-		dest.Projects = append(dest.Projects, pathConfPair.Projects...)
-	}
-	// Check duplicate projects
-	duplicateProjects := false
-	for projectID, pathList := range importedProjects {
-		if len(pathList) > 1 {
-			duplicateProjects = true
-			fmt.Printf("%q appears in multiple YAMLs: %v\n", projectID, pathList)
-		}
-	}
-	if duplicateProjects {
-		log.Fatal("Projects defined in multiple YAMLs.")
-	}
+	return filePathList, nil
 }

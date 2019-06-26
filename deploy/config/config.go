@@ -29,7 +29,6 @@ type Config struct {
 	} `json:"forseti"`
 	Projects           []*Project         `json:"projects"`
 	AllGeneratedFields AllGeneratedFields `json:"generated_fields"`
-	Imports            []string           `json:"imports"`
 }
 
 // Project defines a single project's configuration.
@@ -131,7 +130,12 @@ type VPCNetworkPair struct {
 
 // Init initializes the config and all its projects.
 func (c *Config) Init() error {
+	ids := make(map[string]bool)
 	for _, p := range c.AllProjects() {
+		if ids[p.ID] {
+			return fmt.Errorf("project %q defined more than once", p.ID)
+		}
+		ids[p.ID] = true
 		p.GeneratedFields = c.AllGeneratedFields.Projects[p.ID]
 		if err := p.Init(c.AuditLogsProject); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)

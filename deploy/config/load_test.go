@@ -35,18 +35,26 @@ func TestNormalizePath(t *testing.T) {
 	}
 }
 
-func TestReadConfig(t *testing.T) {
+func TestLoad(t *testing.T) {
 	confPath, err := config.NormalizePath("deploy/testconf/test_multiple_yaml/conf.yaml")
 	if err != nil {
 		t.Fatalf("NormalizePath error: %v", err)
 	}
-	conf, _ := config.ReadConfig(confPath)
-	expectedPath, _ := config.NormalizePath("deploy/testconf/test_multiple_yaml/expected.yaml")
+	conf, err := config.Load(confPath)
+	if err != nil {
+		t.Fatalf("config.Load = %v", err)
+	}
+	expectedPath, err := config.NormalizePath("deploy/testconf/test_multiple_yaml/expected.yaml")
 	if err != nil {
 		t.Fatalf("NormalizePath error: %v", err)
 	}
-	expectedConf, _ := config.ReadConfig(expectedPath)
-	if diff := cmp.Diff(conf.Projects, expectedConf.Projects); diff != "" {
+	expectedConf, err := config.Load(expectedPath)
+	if err != nil {
+		t.Fatalf("config.Load = %v", err)
+	}
+
+	opt := cmp.AllowUnexported(config.BigqueryDataset{}, config.DefaultResource{}, config.Metric{})
+	if diff := cmp.Diff(conf.Projects, expectedConf.Projects, opt); diff != "" {
 		t.Fatalf("yaml differs (-got +want):\n%v", diff)
 	}
 }

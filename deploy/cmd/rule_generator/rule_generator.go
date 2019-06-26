@@ -5,14 +5,12 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 
 	"flag"
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/rulegen"
-	"github.com/ghodss/yaml"
 )
 
 var (
@@ -29,18 +27,9 @@ func main() {
 		log.Fatal("--project_yaml_path must be set")
 	}
 
-	b, err := ioutil.ReadFile(*projectYAMLPath)
+	conf, err := config.Load(*projectYAMLPath)
 	if err != nil {
-		log.Fatalf("failed to read input projects yaml file at path %q: %v", *projectYAMLPath, err)
-	}
-
-	conf := new(config.Config)
-	if err := yaml.Unmarshal(b, conf); err != nil {
-		log.Fatalf("failed to unmarshal config: %v", err)
-	}
-
-	if err := conf.Init(); err != nil {
-		log.Fatalf("failed to init config: %v", err)
+		log.Fatalf("failed to load config: %v", err)
 	}
 
 	if err := rulegen.Run(conf, *outputPath); err != nil {
