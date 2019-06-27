@@ -89,6 +89,11 @@ _IAM_PROPAGATAION_WAIT_TIME_SECS = 60
 # Restriction for project lien.
 _LIEN_RESTRICTION = 'resourcemanager.projects.delete'
 
+# CHC resource types
+_SUPPORT_CHC_RESOURCE_TYPES = [
+    'chc_datasets', 'chc_hl7v2_stores', 'chc_fhir_stores', 'chc_dicom_stores'
+]
+
 # Configuration for deploying a single project.
 ProjectConfig = collections.namedtuple(
     'ProjectConfig',
@@ -170,9 +175,16 @@ def enable_services_apis(config):
   want_apis.add('deploymentmanager.googleapis.com')
   # For project level iam policy updates.
   want_apis.add('cloudresourcemanager.googleapis.com')
+
+  # TODO  long term solution for updating APIs.
   resources = config.project.get('resources', {})
   if 'iam_custom_roles' in resources:
     want_apis.add('iam.googleapis.com')
+  for chc_resource_type in _SUPPORT_CHC_RESOURCE_TYPES:
+    if chc_resource_type in resources:
+      want_apis.add('healthcare.googleapis.com')
+      break
+
   want_apis = list(want_apis)
 
   # Send in batches to avoid hitting quota limits.
