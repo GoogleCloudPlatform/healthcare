@@ -9,6 +9,7 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
@@ -463,6 +464,9 @@ resources:
 				got = append(got, upsertCall{name, deployment, projectID})
 				return nil
 			}
+			upsertDeploymentFromFile = func(string, string, string) error {
+				return nil
+			}
 
 			if err := Apply(conf, project); err != nil {
 				t.Fatalf("Deploy: %v", err)
@@ -483,6 +487,31 @@ resources:
 
 			// TODO: validate against schema file too
 		})
+	}
+}
+
+func TestDeployTypeProvider(t *testing.T) {
+	project := config.Project{}
+	project.ID = "foo"
+	type upsertFromFileCall struct {
+		Name      string
+		Config    string
+		ProjectID string
+	}
+
+	var got []upsertFromFileCall
+	upsertDeploymentFromFile = func(name string, config string, projectID string) error {
+		got = append(got, upsertFromFileCall{name, config, projectID})
+		return nil
+	}
+	if err := deployCHCTypeProvider(&project); err != nil {
+		t.Fatalf("Deploy CHC Type Provider: %v", err)
+	}
+	want := []upsertFromFileCall{
+		{"data-protect-toolkit-setup-prerequisite", "deploy/config/templates/chc_resource/chc_res_type_provider.yaml", project.ID},
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
 	}
 }
 

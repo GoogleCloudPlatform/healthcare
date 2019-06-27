@@ -4,5 +4,5 @@ licenses(["notice"])  # Apache 2.0
 
 filegroup(
     name = "templates",
-    srcs = glob(["**/*.py"]) + glob(["**/*.schema"]),
+    srcs = glob(["**/*.py"]) + glob(["**/*.schema"]) + glob(["**/*.yaml"]),
 )

@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	deploymentNamePrefix   = "data-protect-toolkit"
-	auditDeploymentName    = deploymentNamePrefix + "-audit"
-	resourceDeploymentName = deploymentNamePrefix + "-resources"
+	deploymentNamePrefix            = "data-protect-toolkit"
+	auditDeploymentName             = deploymentNamePrefix + "-audit"
+	resourceDeploymentName          = deploymentNamePrefix + "-resources"
+	setupPrerequisiteDeploymentName = deploymentNamePrefix + "-setup-prerequisite"
 )
 
 // deploymentManagerRoles are the roles granted to the DM service account.
@@ -39,7 +40,8 @@ var (
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
 	}
-	upsertDeployment = deploymentmanager.Upsert
+	upsertDeployment         = deploymentmanager.Upsert
+	upsertDeploymentFromFile = deploymentmanager.UpsertFromFile
 )
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.
@@ -73,6 +75,10 @@ func Apply(conf *config.Config, project *config.Project) error {
 		return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
 	}
 
+	if err := deployCHCTypeProvider(project); err != nil {
+		return fmt.Errorf("failed to deploy CHC Type Provider: %v", err)
+	}
+
 	// TODO: stop retrying once
 	// https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/issues/17
 	// is fixed.
@@ -97,7 +103,7 @@ func Apply(conf *config.Config, project *config.Project) error {
 		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, config.Access{
 			Role: "WRITER", UserByEmail: sinkSA,
 		})
-    // TODO Enable DPT to update audit log buckets and datasets
+		// TODO Enable DPT to update audit log buckets and datasets
 		if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
 			return fmt.Errorf("failed to deploy audit resources: %v", err)
 		}
@@ -301,4 +307,12 @@ func hasBinding(project *config.Project, role string, member string) (has bool, 
 	}
 
 	return false, nil
+}
+
+// DeployCHCTypeProvider deploys the CHC resources in the project.
+func deployCHCTypeProvider(project *config.Project) error {
+	if err := upsertDeploymentFromFile(setupPrerequisiteDeploymentName, "deploy/config/templates/chc_resource/chc_res_type_provider.yaml", project.ID); err != nil {
+		return fmt.Errorf("failed to deploy CHC type provider: %v", err)
+	}
+	return nil
 }

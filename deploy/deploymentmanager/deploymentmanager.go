@@ -63,7 +63,12 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("failed to close temp file: %v", err)
 	}
+	return UpsertFromFile(name, tmp.Name(), projectID)
+}
 
+// UpsertFromFile creates the deployment from a YAML file if the deployment does not exist, else
+// updates it.
+func UpsertFromFile(name, fileName string, projectID string) error {
 	exists, err := checkDeploymentExists(name, projectID)
 	if err != nil {
 		return fmt.Errorf("failed to check if deployment exists: %v", err)
@@ -78,7 +83,7 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 	} else {
 		args = append(args, "create", name)
 	}
-	args = append(args, "--project", projectID, "--config", tmp.Name())
+	args = append(args, "--project", projectID, "--config", fileName)
 
 	log.Printf("Running gcloud command with args: %v", args)
 
