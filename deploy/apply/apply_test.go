@@ -401,6 +401,23 @@ resources:
         - 'user:extra-reader@google.com'`,
 		},
 		{
+			name: "service_accounts",
+			configData: &testconf.ConfigData{`
+resources:
+  service_accounts:
+  - properties:
+      accountId: some-service-account
+      displayName: somesa`},
+			want: `
+
+resources:
+- name: some-service-account
+  type: iam.v1.serviceAccount
+  properties:
+    accountId: some-service-account
+    displayName: somesa`,
+		},
+		{
 			name: "vpc_networks",
 			configData: &testconf.ConfigData{`
 resources:
@@ -470,8 +487,7 @@ resources:
 }
 
 func TestDeployAudit(t *testing.T) {
-	configData := &testconf.ConfigData{``,
-	}
+	configData := &testconf.ConfigData{""}
 
 	conf, project := testconf.ConfigAndProject(t, configData)
 

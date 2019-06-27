@@ -45,15 +45,16 @@ type Project struct {
 
 	Resources struct {
 		// Deployment manager resources
-		BQDatasets     []*BigqueryDatasetPair `json:"bq_datasets"`
-		GCEFirewalls   []*GCEFirewallPair     `json:"gce_firewalls"`
-		GCEInstances   []*GCEInstancePair     `json:"gce_instances"`
-		GCSBuckets     []*GCSBucketPair       `json:"gcs_buckets"`
-		GKEClusters    []*GKEClusterPair      `json:"gke_clusters"`
-		IAMCustomRoles []*IAMCustomRolePair   `json:"iam_custom_roles"`
-		IAMPolicies    []*IAMPolicyPair       `json:"iam_policies"`
-		Pubsubs        []*PubsubPair          `json:"pubsubs"`
-		VPCNetworks    []*VPCNetworkPair      `json:"vpc_networks"`
+		BQDatasets      []*BigqueryDatasetPair `json:"bq_datasets"`
+		GCEFirewalls    []*GCEFirewallPair     `json:"gce_firewalls"`
+		GCEInstances    []*GCEInstancePair     `json:"gce_instances"`
+		GCSBuckets      []*GCSBucketPair       `json:"gcs_buckets"`
+		GKEClusters     []*GKEClusterPair      `json:"gke_clusters"`
+		IAMCustomRoles  []*IAMCustomRolePair   `json:"iam_custom_roles"`
+		IAMPolicies     []*IAMPolicyPair       `json:"iam_policies"`
+		Pubsubs         []*PubsubPair          `json:"pubsubs"`
+		ServiceAccounts []*ServiceAccountPair  `json:"service_accounts"`
+		VPCNetworks     []*VPCNetworkPair      `json:"vpc_networks"`
 
 		// Kubectl resources
 		GKEWorkloads []*GKEWorkload `json:"gke_workloads"`
@@ -120,6 +121,12 @@ type IAMPolicyPair struct {
 type PubsubPair struct {
 	json.RawMessage
 	Parsed Pubsub
+}
+
+// ServiceAccountPair pairs a raw service account with its parsed version.
+type ServiceAccountPair struct {
+	json.RawMessage
+	Parsed ServiceAccount
 }
 
 // VPCNetworkPair pairs a raw VPC network with its parsed version.
@@ -397,6 +404,9 @@ func (p *Project) ResourcePairs() []ResourcePair {
 		appendPair(r.RawMessage, &r.Parsed)
 	}
 	for _, r := range rs.IAMPolicies {
+		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.ServiceAccounts {
 		appendPair(r.RawMessage, &r.Parsed)
 	}
 	for _, r := range rs.Pubsubs {

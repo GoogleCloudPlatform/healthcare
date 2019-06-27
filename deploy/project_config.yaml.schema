@@ -709,6 +709,28 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template pubsub.py.
+          service_accounts:
+            type: array
+            description: Provides support for service accounts.
+            items:
+              type: object
+              description: |
+                Wraps the parameters for a service account.
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  accountId:
+                    type: string
+                    description: |
+                      The accountId is used to generate the service account
+                      email address and a stable unique id.
+                    pattern: ^[a-z]([-a-z0-9]*[a-z0-9])$
+                  serviceAccount:
+                    type: string
+                    description: |
+                      A user-specified name for the service account.
           vpc_networks:
             type: array
             description: Provides support for VPC networks.
