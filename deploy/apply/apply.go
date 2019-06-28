@@ -170,9 +170,9 @@ func getLogSinkServiceAccount(project *config.Project) (string, error) {
 }
 
 func deployAudit(project, auditProject *config.Project) error {
-	pairs := []config.ResourcePair{
-		{Parsed: &project.AuditLogs.LogsBQDataset},
-		{Parsed: project.AuditLogs.LogsGCSBucket},
+	pairs := []config.ResourcePair{{Parsed: &project.AuditLogs.LogsBQDataset}}
+	if project.AuditLogs.LogsGCSBucket != nil {
+		pairs = append(pairs, config.ResourcePair{Parsed: project.AuditLogs.LogsGCSBucket})
 	}
 	deployment, err := getDeployment(project, pairs)
 	if err != nil {
