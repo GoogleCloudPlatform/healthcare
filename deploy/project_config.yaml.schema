@@ -559,6 +559,20 @@ definitions:
                     Wraps the CFT template bigquery_dataset.py.
                     In addition, location must be set and setDefaultOwner must
                     not be set to true.
+          chc_datasets:
+            type: array
+            description: Provides support for CHC datasets (alpha).
+            items:
+              type: object
+              description: |
+                Wraps the parameters for a CHC dataset.
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the template chc_dataset.py.
           gce_firewalls:
             type: array
             description: Provides support for firewalls.

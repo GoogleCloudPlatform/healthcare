@@ -9,6 +9,7 @@ go_library(
     srcs = [
         "bigquery_dataset.go",
         "binding.go",
+        "chc_dataset.go",
         "config.go",
         "default_resource.go",
         "gce_instance.go",
@@ -41,6 +42,7 @@ go_test(
     name = "go_default_test",
     srcs = [
         "bigquery_dataset_test.go",
+        "chc_dataset_test.go",
         "default_resource_test.go",
         "gce_instance_test.go",
         "gcs_bucket_test.go",

@@ -248,21 +248,22 @@ properties. See
 https://cloud.google.com/deployment-manager/docs/step-by-step-guide/using-references.
 Dependencies are only supported between deployment manager resources.
 
-Resource        | Deployment Tool
---------------- | ---------------
-bq_dataset      | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery)
-enabled_api     | [Gcloud](https://cloud.google.com/sdk/gcloud/reference/services/enable)
-forseti         | [Forseti Installer](https://github.com/forseti-security/forseti-security/tree/dev/install)
-gce_firewall    | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall)
-gce_instance    | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance)
-gcs_bucket      | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket)
-gke_cluster     | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke)
-gke_workload    | [Kubectl](https://kubernetes.io/docs/tutorials/configuration)
-iam_custom_role | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role)
-iam_policie     | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member)
-pubsub          | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
-vpc_network     | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/network)
-service_account | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)
+Resource                | Deployment Tool
+----------------------- | ---------------
+bq_dataset              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery)
+chc_datasets (ALPHA)    | [Deployment Manager](https://cloud.google.com/healthcare/docs/)
+enabled_api             | [Gcloud](https://cloud.google.com/sdk/gcloud/reference/services/enable)
+forseti                 | [Forseti Installer](https://github.com/forseti-security/forseti-security/tree/dev/install)
+gce_firewall            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall)
+gce_instance            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance)
+gcs_bucket              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket)
+gke_cluster             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke)
+gke_workload            | [Kubectl](https://kubernetes.io/docs/tutorials/configuration)
+iam_custom_role         | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role)
+iam_policie             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member)
+pubsub                  | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
+vpc_network             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/network)
+service_account (ALPHA) | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)
 
 ## Debug
 

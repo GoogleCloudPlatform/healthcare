@@ -46,6 +46,7 @@ type Project struct {
 	Resources struct {
 		// Deployment manager resources
 		BQDatasets      []*BigqueryDatasetPair `json:"bq_datasets"`
+		CHCDatasets     []*CHCDatasetPair      `json:"chc_datasets"`
 		GCEFirewalls    []*GCEFirewallPair     `json:"gce_firewalls"`
 		GCEInstances    []*GCEInstancePair     `json:"gce_instances"`
 		GCSBuckets      []*GCSBucketPair       `json:"gcs_buckets"`
@@ -79,6 +80,12 @@ type Project struct {
 type BigqueryDatasetPair struct {
 	json.RawMessage
 	Parsed BigqueryDataset
+}
+
+// CHCDatasetPair pairs a raw CHC dataset with its parsed version.
+type CHCDatasetPair struct {
+	json.RawMessage
+	Parsed CHCDataset
 }
 
 // GCEFirewallPair pairs a raw firewall with its parsed version.
@@ -386,6 +393,9 @@ func (p *Project) ResourcePairs() []ResourcePair {
 	rs := p.Resources
 
 	for _, r := range rs.BQDatasets {
+		appendPair(r.RawMessage, &r.Parsed)
+	}
+	for _, r := range rs.CHCDatasets {
 		appendPair(r.RawMessage, &r.Parsed)
 	}
 	for _, r := range rs.GCEFirewalls {

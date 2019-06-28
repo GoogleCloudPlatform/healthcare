@@ -504,11 +504,11 @@ func TestDeployTypeProvider(t *testing.T) {
 		got = append(got, upsertFromFileCall{name, config, projectID})
 		return nil
 	}
-	if err := deployCHCTypeProvider(&project); err != nil {
+	if err := deployPrerequisite(&project); err != nil {
 		t.Fatalf("Deploy CHC Type Provider: %v", err)
 	}
 	want := []upsertFromFileCall{
-		{"data-protect-toolkit-setup-prerequisite", "deploy/config/templates/chc_resource/chc_res_type_provider.yaml", project.ID},
+		{"data-protect-toolkit-prerequisites", "deploy/config/templates/chc_resource/chc_res_type_provider.yaml", project.ID},
 	}
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
