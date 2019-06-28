@@ -122,6 +122,11 @@ func Apply(conf *config.Config, project *config.Project) error {
 	return nil
 }
 
+// Validate checks the errors that cannot be coverd by the schema.
+func Validate(project *config.Project) error {
+	return CheckGKEConfigs(project)
+}
+
 // grantDeploymentManagerAccess grants the necessary permissions to the DM service account to perform its actions.
 // Note: we don't revoke deployment manager's access because permissions can take up to 7 minutes
 // to propagate through the system, which can cause permission denied issues when doing updates.

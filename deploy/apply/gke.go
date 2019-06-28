@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
@@ -108,4 +109,77 @@ func applyClusterWorkload(containerYamlPath string) error {
 		return fmt.Errorf("failed to apply workloads with kubectl: %s", err)
 	}
 	return nil
+}
+
+// askForConfirm asks users to confirm
+func askForConfirm() (bool, error) {
+	fmt.Print("To continue press \"Y\", or \"n\" to exit. (Y/n)")
+	var input string
+	if _, err := fmt.Scan(&input); err != nil {
+		return false, fmt.Errorf("failed to get user confirm: %s", err)
+	}
+	if input == "Y" {
+		return true, nil
+	}
+	return false, nil
+}
+
+// CheckGKEConfigs check if the settings of a GKE cluster has errors that schema cannot tell.
+func CheckGKEConfigs(project *config.Project) error {
+	prompt, err := validateGKEConfigs(project)
+	if err != nil {
+		return fmt.Errorf("failed when checking GKE configs: %s", err)
+	}
+	if prompt != "" {
+		log.Print("The initClusterVersion of the following cluster(s) might not be set correctly:\n" + prompt)
+		confirm, err := askForConfirm()
+		if err != nil {
+			return fmt.Errorf("failed when checking GKE configs: %s", err)
+		}
+		if !confirm {
+			return fmt.Errorf("user chooses to exit to correct YAML")
+		}
+	}
+	return nil
+}
+
+// validateGKEConfigs gets a string that describe if there are clusters with wrong initClusterVersion
+func validateGKEConfigs(project *config.Project) (string, error) {
+	defaultVersions := make(map[string]string)
+	violationClusterVersions := make(map[string]string)
+	prompt := ""
+	for _, cluster := range project.Resources.GKEClusters {
+		locationType, locationValue, err := getLocationTypeAndValue(&cluster.Parsed)
+		if err != nil {
+			return "", fmt.Errorf("failed when validating GKE configs: %s", err)
+		}
+		var defaultVersion string
+		var ok bool
+		if defaultVersion, ok = defaultVersions[locationValue]; !ok {
+			var err error
+			defaultVersion, err = defaultGKEClusterVersion(locationType, locationValue)
+			if err != nil {
+				return "", fmt.Errorf("failed when validating GKE configs: %s", err)
+			}
+		}
+		// prompt := "The initClusterVersion of the following cluster(s) might not be set correctly:\n"
+		if defaultVersion != cluster.Parsed.Cluster.InitClusterVersion {
+			violationClusterVersions[cluster.Parsed.Cluster.Name] = fmt.Sprintf("get: %q; expect %q", cluster.Parsed.Cluster.InitClusterVersion, defaultVersion)
+			prompt = prompt + fmt.Sprintf("cluster %q; get: %q; expect %q\n", cluster.Parsed.Cluster.Name, cluster.Parsed.Cluster.InitClusterVersion, defaultVersion)
+		}
+	}
+	return prompt, nil
+}
+
+// defaultGKEClusterVersion get the current default master version in a location.
+func defaultGKEClusterVersion(locationType, locationValue string) (string, error) {
+	// gcloud container get-server-config --zone us-central1-a --format="value(defaultClusterVersion)"
+	cmd := exec.Command("gcloud", "container", "get-server-config", locationType, locationValue, "--format", "value(defaultClusterVersion)")
+
+	out, err := cmdOutput(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to query default GKE cluster version from gcloud: %v", err)
+	}
+
+	return strings.TrimSuffix(string(out), "\n"), nil
 }

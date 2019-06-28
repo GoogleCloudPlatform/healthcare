@@ -15,7 +15,8 @@ type GKEClusterProperties struct {
 
 // GKEClusterSettings the cluster settings in a GKE cluster.
 type GKEClusterSettings struct {
-	Name string `json:"name"`
+	Name               string `json:"name"`
+	InitClusterVersion string `json:"initialClusterVersion"`
 }
 
 // Init initializes a new GKE cluster with the given project.

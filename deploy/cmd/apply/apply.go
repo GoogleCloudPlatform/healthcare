@@ -39,6 +39,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := apply.Validate(proj); err != nil {
+		log.Fatalf("failed when validate project %q: %v", *projectID, err)
+	}
+
 	if err := apply.Apply(conf, proj); err != nil {
 		log.Fatalf("failed to deploy %q resources: %v", *projectID, err)
 	}

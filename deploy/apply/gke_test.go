@@ -56,7 +56,7 @@ func TestLocationTypeAndValue(t *testing.T) {
 			in: config.GKECluster{config.GKEClusterProperties{
 				ClusterLocationType: "Regional",
 				Region:              "some_region",
-				Cluster:             config.GKEClusterSettings{"cluster_with_region"},
+				Cluster:             config.GKEClusterSettings{"cluster_with_region", ""},
 			}},
 			locationType:  "--region",
 			locationValue: "some_region",
@@ -65,7 +65,7 @@ func TestLocationTypeAndValue(t *testing.T) {
 			in: config.GKECluster{config.GKEClusterProperties{
 				ClusterLocationType: "Zonal",
 				Zone:                "some_zone",
-				Cluster:             config.GKEClusterSettings{"cluster_with_zone"},
+				Cluster:             config.GKEClusterSettings{"cluster_with_zone", ""},
 			}},
 			locationType:  "--zone",
 			locationValue: "some_zone",
@@ -138,7 +138,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 				ClusterLocationType: "Zonal",
 				Region:              "some_region",
 				Zone:                "",
-				Cluster:             config.GKEClusterSettings{"cluster_zonal_error"},
+				Cluster:             config.GKEClusterSettings{"cluster_zonal_error", ""},
 			}},
 			err: "failed to get cluster's zone: cluster_zonal_error",
 		},
@@ -146,7 +146,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 			in: config.GKECluster{config.GKEClusterProperties{
 				ClusterLocationType: "Regional",
 				Zone:                "some_zone",
-				Cluster:             config.GKEClusterSettings{"cluster_regional_error"},
+				Cluster:             config.GKEClusterSettings{"cluster_regional_error", ""},
 			}},
 			err: "failed to get cluster's region: cluster_regional_error",
 		},
@@ -155,7 +155,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 				ClusterLocationType: "Location",
 				Region:              "some_region",
 				Zone:                "some_zone",
-				Cluster:             config.GKEClusterSettings{"cluster_wrong_type"},
+				Cluster:             config.GKEClusterSettings{"cluster_wrong_type", ""},
 			}},
 			err: "failed to get cluster's location: cluster_wrong_type",
 		},
@@ -222,5 +222,33 @@ resources:
 		if err == nil || !strings.Contains(err.Error(), tc.err) {
 			t.Errorf("deployGKEWorkloads unexpected error: got %q, want error with substring %q", err, tc.err)
 		}
+	}
+}
+
+func TestDefaultGKEClusterVersionInZone(t *testing.T) {
+	configExtend := &testconf.ConfigData{`
+resources:
+  gke_clusters:
+  - properties:
+      name: cluster1
+      clusterLocationType: Regional
+      region: somewhere1
+      cluster:
+        name: cluster1
+        initialClusterVersion: someVersion`,
+	}
+
+	_, project := testconf.ConfigAndProject(t, configExtend)
+
+	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+		return []byte("1.12.8-gke.10\n"), nil
+	}
+
+	prompt, err := validateGKEConfigs(project)
+	if err != nil {
+		t.Fatalf("validateGKEConfigs error: %v", err)
+	}
+	if diff := cmp.Diff(prompt, "cluster \"cluster1\"; get: \"someVersion\"; expect \"1.12.8-gke.10\"\n"); diff != "" {
+		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
 	}
 }
