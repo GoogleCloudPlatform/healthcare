@@ -26,6 +26,7 @@ go_library(
     ],
     data = [
         "//deploy/config/templates",
+        "//deploy/config/templates/chc_resource:chc_dataset_files",
         "//deploy/templates",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/config",
