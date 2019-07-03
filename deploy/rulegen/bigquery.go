@@ -117,7 +117,7 @@ func getProjectDatasetsRules(project *config.Project) ([]BigqueryRule, error) {
 // accessToBindings converts a list of access to bindings.
 // Note that due to the way forseti scanner works, all valid roles must be present.
 // Missing roles will allow any member for the role.
-func accessesToBindings(accesses []config.Access) ([]bigqueryBinding, error) {
+func accessesToBindings(accesses []*config.Access) ([]bigqueryBinding, error) {
 	roles := []string{"OWNER", "WRITER", "READER"}
 	roleToMembers := map[string][]bigqueryMember{
 		"OWNER":  nil,

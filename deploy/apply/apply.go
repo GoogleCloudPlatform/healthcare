@@ -92,21 +92,25 @@ func Apply(conf *config.Config, project *config.Project) error {
 		time.Sleep(deploymentRetryWaitTime)
 	}
 
-	// If this is the initial deployment then there won't be a log sink service account
-	// in the generated fields as it is deployed through the data-protect-toolkit-resources deployment.
-	if project.GeneratedFields.LogSinkServiceAccount == "" {
-		sinkSA, err := getLogSinkServiceAccount(project)
-		if err != nil {
-			return fmt.Errorf("failed to get log sink service account: %v", err)
-		}
+	// Always get the latest log sink writer as when the sink is moved between deployments it may
+	// create a new sink writer.
+	sinkSA, err := getLogSinkServiceAccount(project)
+	if err != nil {
+		return fmt.Errorf("failed to get log sink service account: %v", err)
+	}
+
+	if currSA := project.GeneratedFields.LogSinkServiceAccount; currSA != sinkSA {
 		project.GeneratedFields.LogSinkServiceAccount = sinkSA
-		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, config.Access{
-			Role: "WRITER", UserByEmail: sinkSA,
-		})
-		// TODO Enable DPT to update audit log buckets and datasets
-		if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
-			return fmt.Errorf("failed to deploy audit resources: %v", err)
+		// Replace all instances of old writer SA with new.
+		for _, a := range project.AuditLogs.LogsBQDataset.Accesses {
+			if a.UserByEmail == currSA {
+				a.UserByEmail = sinkSA
+			}
 		}
+	}
+
+	if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
+		return fmt.Errorf("failed to deploy audit resources: %v", err)
 	}
 
 	if err := deployGKEWorkloads(project); err != nil {

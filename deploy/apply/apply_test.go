@@ -3,6 +3,7 @@ package apply
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -33,7 +34,7 @@ resources:
       role: OWNER
     - groupByEmail: my-project-auditors@my-domain.com
       role: READER
-    - userByEmail: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+    - userByEmail: p12345-999999@gcp-sa-logging.iam.gserviceaccount.com
       role: WRITER
     setDefaultOwner: false
 - name: my-project-logs
@@ -146,6 +147,7 @@ resources:
 
 func TestDeploy(t *testing.T) {
 	cmdRun = func(cmd *exec.Cmd) error { return nil }
+	origCmdOutput := cmdOutput
 	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		args := strings.Join(cmd.Args, " ")
 		var res string
@@ -155,7 +157,7 @@ func TestDeploy(t *testing.T) {
 		case strings.HasPrefix(args, "gcloud projects get-iam-policy"):
 			res = "{}"
 		default:
-			return nil, fmt.Errorf("unexpected args: %v", args)
+			return origCmdOutput(cmd)
 		}
 		return []byte(res), nil
 	}
@@ -474,6 +476,7 @@ resources:
 
 			want := []upsertCall{
 				{"data-protect-toolkit-resources", wantResourceDeployment(t, tc.want), project.ID},
+				{"data-protect-toolkit-audit-my-project", parseTemplateToDeployment(t, auditDeploymentYAML), project.ID},
 			}
 
 			// allow imports and resources to be in any order
@@ -515,62 +518,7 @@ func TestDeployTypeProvider(t *testing.T) {
 	}
 }
 
-func TestDeployAudit(t *testing.T) {
-	configData := &testconf.ConfigData{""}
-
-	conf, project := testconf.ConfigAndProject(t, configData)
-
-	type upsertCall struct {
-		Name       string
-		Deployment *deploymentmanager.Deployment
-		ProjectID  string
-	}
-
-	var got []upsertCall
-	upsertDeployment = func(name string, deployment *deploymentmanager.Deployment, projectID string) error {
-		got = append(got, upsertCall{name, deployment, projectID})
-		return nil
-	}
-
-	if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
-		t.Fatalf("failed to deploy audit resources: %v", err)
-	}
-
-	want := []upsertCall{
-		{"data-protect-toolkit-audit-my-project", parseTemplateToDeployment(t, auditDeploymentYAML), project.ID},
-	}
-
-	// allow imports and resources to be in any order
-	opts := []cmp.Option{
-		cmpopts.SortSlices(func(a, b *deploymentmanager.Resource) bool { return a.Name < b.Name }),
-		cmpopts.SortSlices(func(a, b *deploymentmanager.Import) bool { return a.Path < b.Path }),
-	}
-	if diff := cmp.Diff(got, want, opts...); diff != "" {
-		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
-	}
-
-	// TODO: validate against schema file too
-}
-
 func TestGetLogSinkServiceAccount(t *testing.T) {
-	const logSinkJSON = `{
-		"createTime": "2019-04-15T20:00:16.734389353Z",
-		"destination": "bigquery.googleapis.com/projects/my-project/datasets/audit_logs",
-		"filter": "logName:\"logs/cloudaudit.googleapis.com\"",
-		"name": "audit-logs-to-bigquery",
-		"outputVersionFormat": "V2",
-		"updateTime": "2019-04-15T20:00:16.734389353Z",
-		"writerIdentity": "serviceAccount:p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
-	}`
-
-	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		args := []string{"gcloud", "logging", "sinks", "describe"}
-		if cmp.Equal(cmd.Args[:len(args)], args) {
-			return []byte(logSinkJSON), nil
-		}
-		return nil, fmt.Errorf("unexpected args: %v", cmd.Args)
-	}
-
 	_, project := testconf.ConfigAndProject(t, nil)
 	got, err := getLogSinkServiceAccount(project)
 	if err != nil {
@@ -619,4 +567,26 @@ func abs(p string) string {
 		panic(err)
 	}
 	return a
+}
+
+func TestMain(m *testing.M) {
+	const logSinkJSON = `{
+		"createTime": "2019-04-15T20:00:16.734389353Z",
+		"destination": "bigquery.googleapis.com/projects/my-project/datasets/audit_logs",
+		"filter": "logName:\"logs/cloudaudit.googleapis.com\"",
+		"name": "audit-logs-to-bigquery",
+		"outputVersionFormat": "V2",
+		"updateTime": "2019-04-15T20:00:16.734389353Z",
+		"writerIdentity": "serviceAccount:p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
+	}`
+
+	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+		args := []string{"gcloud", "logging", "sinks", "describe"}
+		if cmp.Equal(cmd.Args[:len(args)], args) {
+			return []byte(logSinkJSON), nil
+		}
+		return nil, fmt.Errorf("unexpected args: %v", cmd.Args)
+	}
+
+	os.Exit(m.Run())
 }

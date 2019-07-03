@@ -227,13 +227,13 @@ func (p *Project) initAuditResources(auditProject *Project) error {
 		return fmt.Errorf("failed to init logs bq dataset: %v", err)
 	}
 
-	accesses := []Access{
+	accesses := []*Access{
 		{Role: "OWNER", GroupByEmail: auditProject.OwnersGroup},
 		{Role: "READER", GroupByEmail: p.AuditorsGroup},
 	}
 
 	if p.GeneratedFields.LogSinkServiceAccount != "" {
-		accesses = append(accesses, Access{Role: "WRITER", UserByEmail: p.GeneratedFields.LogSinkServiceAccount})
+		accesses = append(accesses, &Access{Role: "WRITER", UserByEmail: p.GeneratedFields.LogSinkServiceAccount})
 	}
 	p.AuditLogs.LogsBQDataset.Accesses = accesses
 
