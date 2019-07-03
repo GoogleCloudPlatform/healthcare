@@ -174,11 +174,11 @@ func getLogSinkServiceAccount(project *config.Project) (string, error) {
 }
 
 func deployAudit(project, auditProject *config.Project) error {
-	pairs := []config.ResourcePair{{Parsed: &project.AuditLogs.LogsBQDataset}}
+	rs := []config.Resource{&project.AuditLogs.LogsBQDataset}
 	if project.AuditLogs.LogsGCSBucket != nil {
-		pairs = append(pairs, config.ResourcePair{Parsed: project.AuditLogs.LogsGCSBucket})
+		rs = append(rs, project.AuditLogs.LogsGCSBucket)
 	}
-	deployment, err := getDeployment(project, pairs)
+	deployment, err := getDeployment(project, rs)
 	if err != nil {
 		return err
 	}
@@ -193,12 +193,12 @@ func deployAudit(project, auditProject *config.Project) error {
 }
 
 func deployResources(project *config.Project) error {
-	pairs := project.ResourcePairs()
-	if len(pairs) == 0 {
+	rs := project.DeploymentManagerResources()
+	if len(rs) == 0 {
 		log.Println("No resources to deploy.")
 		return nil
 	}
-	deployment, err := getDeployment(project, pairs)
+	deployment, err := getDeployment(project, rs)
 	if err != nil {
 		return err
 	}
@@ -208,16 +208,16 @@ func deployResources(project *config.Project) error {
 	return nil
 }
 
-func getDeployment(project *config.Project, pairs []config.ResourcePair) (*deploymentmanager.Deployment, error) {
+func getDeployment(project *config.Project, resources []config.Resource) (*deploymentmanager.Deployment, error) {
 	deployment := &deploymentmanager.Deployment{}
 
 	importSet := make(map[string]bool)
 
-	for _, pair := range pairs {
+	for _, r := range resources {
 		var typ string
-		if typer, ok := pair.Parsed.(deploymentManagerTyper); ok {
+		if typer, ok := r.(deploymentManagerTyper); ok {
 			typ = typer.DeploymentManagerType()
-		} else if pather, ok := pair.Parsed.(deploymentManagerPather); ok {
+		} else if pather, ok := r.(deploymentManagerPather); ok {
 			var err error
 			typ, err = filepath.Abs(pather.TemplatePath())
 			if err != nil {
@@ -228,21 +228,29 @@ func getDeployment(project *config.Project, pairs []config.ResourcePair) (*deplo
 				importSet[typ] = true
 			}
 		} else {
-			return nil, fmt.Errorf("failed to get type of %+v", pair.Parsed)
+			return nil, fmt.Errorf("failed to get type of %+v", r)
 		}
 
-		merged, err := pair.MergedPropertiesMap()
+		b, err := json.Marshal(r)
 		if err != nil {
-			return nil, fmt.Errorf("failed to merge raw map with parsed: %v", err)
+			return nil, fmt.Errorf("failed to marshal resource: %v", err)
+		}
+
+		type resourceProperties struct {
+			Properties map[string]interface{} `json:"properties"`
+		}
+		rp := new(resourceProperties)
+		if err := json.Unmarshal(b, &rp); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal resource: %v", err)
 		}
 
 		res := &deploymentmanager.Resource{
-			Name:       pair.Parsed.Name(),
+			Name:       r.Name(),
 			Type:       typ,
-			Properties: merged,
+			Properties: rp.Properties,
 		}
 
-		if dr, ok := pair.Parsed.(depender); ok && len(dr.Dependencies()) > 0 {
+		if dr, ok := r.(depender); ok && len(dr.Dependencies()) > 0 {
 			res.Metadata = &deploymentmanager.Metadata{DependsOn: dr.Dependencies()}
 		}
 

@@ -43,19 +43,19 @@ func ResourceRules(conf *config.Config) ([]ResourceRule, error) {
 		for _, b := range project.Resources.GCSBuckets {
 			pt.Children = append(pt.Children, resourceTree{
 				Type:       "bucket",
-				ResourceID: b.Parsed.Name(),
+				ResourceID: b.Name(),
 			})
 		}
 
 		for _, d := range project.Resources.BQDatasets {
 			pt.Children = append(pt.Children, resourceTree{
 				Type:       "dataset",
-				ResourceID: fmt.Sprintf("%s:%s", project.ID, d.Parsed.Name()),
+				ResourceID: fmt.Sprintf("%s:%s", project.ID, d.Name()),
 			})
 		}
 
 		for _, i := range project.Resources.GCEInstances {
-			id, err := project.GeneratedFields.InstanceID(i.Parsed.Name())
+			id, err := project.GeneratedFields.InstanceID(i.Name())
 			if err != nil {
 				return nil, err
 			}

@@ -68,8 +68,8 @@ func installClusterWorkloadFromFile(clusterName, containerYamlPath string, proje
 // getClusterByName get a cluster that has the given cluster name in a project.
 func getClusterByName(project *config.Project, clusterName string) *config.GKECluster {
 	for _, c := range project.Resources.GKEClusters {
-		if c.Parsed.Name() == clusterName {
-			return &c.Parsed
+		if c.Name() == clusterName {
+			return c
 		}
 	}
 	return nil

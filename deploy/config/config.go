@@ -3,7 +3,6 @@ package config
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"text/template"
@@ -15,7 +14,6 @@ const accessLogsWriter = "group:cloud-storage-analytics@google.com"
 
 // Config represents a (partial)f representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
-// TODO: support new generated_fields
 type Config struct {
 	Overall struct {
 		Domain         string   `json:"domain"`
@@ -45,17 +43,17 @@ type Project struct {
 
 	Resources struct {
 		// Deployment manager resources
-		BQDatasets      []*BigqueryDatasetPair `json:"bq_datasets"`
-		CHCDatasets     []*CHCDatasetPair      `json:"chc_datasets"`
-		GCEFirewalls    []*GCEFirewallPair     `json:"gce_firewalls"`
-		GCEInstances    []*GCEInstancePair     `json:"gce_instances"`
-		GCSBuckets      []*GCSBucketPair       `json:"gcs_buckets"`
-		GKEClusters     []*GKEClusterPair      `json:"gke_clusters"`
-		IAMCustomRoles  []*IAMCustomRolePair   `json:"iam_custom_roles"`
-		IAMPolicies     []*IAMPolicyPair       `json:"iam_policies"`
-		Pubsubs         []*PubsubPair          `json:"pubsubs"`
-		ServiceAccounts []*ServiceAccountPair  `json:"service_accounts"`
-		VPCNetworks     []*VPCNetworkPair      `json:"vpc_networks"`
+		BQDatasets      []*BigqueryDataset `json:"bq_datasets"`
+		CHCDatasets     []*CHCDataset      `json:"chc_datasets"`
+		GCEFirewalls    []*DefaultResource `json:"gce_firewalls"`
+		GCEInstances    []*GCEInstance     `json:"gce_instances"`
+		GCSBuckets      []*GCSBucket       `json:"gcs_buckets"`
+		GKEClusters     []*GKECluster      `json:"gke_clusters"`
+		IAMCustomRoles  []*IAMCustomRole   `json:"iam_custom_roles"`
+		IAMPolicies     []*IAMPolicy       `json:"iam_policies"`
+		Pubsubs         []*Pubsub          `json:"pubsubs"`
+		ServiceAccounts []*ServiceAccount  `json:"service_accounts"`
+		VPCNetworks     []*DefaultResource `json:"vpc_networks"`
 
 		// Kubectl resources
 		GKEWorkloads []*GKEWorkload `json:"gke_workloads"`
@@ -74,72 +72,6 @@ type Project struct {
 	BQLogSink        *LogSink           `json:"-"`
 	DefaultResources []*DefaultResource `json:"-"`
 	Metrics          []*Metric          `json:"-"`
-}
-
-// BigqueryDatasetPair pairs a raw dataset with its parsed version.
-type BigqueryDatasetPair struct {
-	json.RawMessage
-	Parsed BigqueryDataset
-}
-
-// CHCDatasetPair pairs a raw CHC dataset with its parsed version.
-type CHCDatasetPair struct {
-	json.RawMessage
-	Parsed CHCDataset
-}
-
-// GCEFirewallPair pairs a raw firewall with its parsed version.
-type GCEFirewallPair struct {
-	json.RawMessage
-	Parsed DefaultResource
-}
-
-// GCEInstancePair pairs a raw instance with its parsed version.
-type GCEInstancePair struct {
-	json.RawMessage
-	Parsed GCEInstance
-}
-
-// GCSBucketPair pairs a raw bucket with its parsed version.
-type GCSBucketPair struct {
-	json.RawMessage
-	Parsed GCSBucket
-}
-
-// GKEClusterPair pairs a raw cluster with its parsed version.
-type GKEClusterPair struct {
-	json.RawMessage
-	Parsed GKECluster `json:"-"`
-}
-
-// IAMCustomRolePair pairs a raw custom role with its parsed version.
-type IAMCustomRolePair struct {
-	json.RawMessage
-	Parsed IAMCustomRole
-}
-
-// IAMPolicyPair pairs a raw iam policy with its parsed version.
-type IAMPolicyPair struct {
-	json.RawMessage
-	Parsed IAMPolicy
-}
-
-// PubsubPair pairs a raw pubsub with its parsed version.
-type PubsubPair struct {
-	json.RawMessage
-	Parsed Pubsub
-}
-
-// ServiceAccountPair pairs a raw service account with its parsed version.
-type ServiceAccountPair struct {
-	json.RawMessage
-	Parsed ServiceAccount
-}
-
-// VPCNetworkPair pairs a raw VPC network with its parsed version.
-type VPCNetworkPair struct {
-	json.RawMessage
-	Parsed DefaultResource
 }
 
 // Init initializes the config and all its projects.
@@ -192,14 +124,9 @@ func (p *Project) Init(auditLogsProject *Project) error {
 		return fmt.Errorf("failed to init audit resources: %v", err)
 	}
 
-	for _, pair := range p.ResourcePairs() {
-		if len(pair.Raw) > 0 {
-			if err := json.Unmarshal(pair.Raw, pair.Parsed); err != nil {
-				return err
-			}
-		}
-		if err := pair.Parsed.Init(p); err != nil {
-			return fmt.Errorf("failed to init: %v, %+v", err, pair.Parsed)
+	for _, r := range p.DeploymentManagerResources() {
+		if err := r.Init(p); err != nil {
+			return fmt.Errorf("failed to init: %v, %+v", err, r)
 		}
 	}
 
@@ -261,13 +188,12 @@ func (p *Project) addBaseResources() error {
 		templatePath:              "deploy/templates/audit_log_config.py",
 	})
 
-	p.Resources.IAMPolicies = append(p.Resources.IAMPolicies, &IAMPolicyPair{
-		Parsed: IAMPolicy{
-			IAMPolicyName: "required-project-bindings",
-			IAMPolicyProperties: IAMPolicyProperties{Bindings: []Binding{
-				{Role: "roles/owner", Members: []string{"group:" + p.OwnersGroup}},
-				{Role: "roles/iam.securityReviewer", Members: []string{"group:" + p.AuditorsGroup}},
-			}}},
+	p.Resources.IAMPolicies = append(p.Resources.IAMPolicies, &IAMPolicy{
+		IAMPolicyName: "required-project-bindings",
+		IAMPolicyProperties: IAMPolicyProperties{Bindings: []Binding{
+			{Role: "roles/owner", Members: []string{"group:" + p.OwnersGroup}},
+			{Role: "roles/iam.securityReviewer", Members: []string{"group:" + p.AuditorsGroup}},
+		}},
 	})
 	defaultMetrics := []*Metric{
 		&Metric{
@@ -329,8 +255,7 @@ protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})`)
 		return err
 	}
 
-	for _, pair := range p.Resources.GCSBuckets {
-		b := pair.Parsed
+	for _, b := range p.Resources.GCSBuckets {
 		if len(b.ExpectedUsers) == 0 {
 			continue
 		}
@@ -342,7 +267,7 @@ protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})`)
 			ExpectedUsers string
 		}{
 			p,
-			&b,
+			b,
 			strings.Join(b.ExpectedUsers, " AND "),
 		}
 		if err := metricFilterTemplate.Execute(&buf, data); err != nil {
@@ -363,67 +288,59 @@ protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})`)
 	return nil
 }
 
-// parsedResource is an interface that must be implemented by all concrete resource implementations.
-type parsedResource interface {
+// Resource is an interface that must be implemented by all concrete resource implementations.
+type Resource interface {
 	Init(*Project) error
 	Name() string
 }
 
-// ResourcePairs gets all deployment manager data resources in this project.
-// The raw field will be set for resources that retain their original raw user input.
-// This raw form should be merged with the parsed form before being deployed.
-func (p *Project) ResourcePairs() []ResourcePair {
-	pairs := []ResourcePair{{Parsed: p.BQLogSink}}
+// DeploymentManagerResources gets all deployment manager data resources in this project.
+func (p *Project) DeploymentManagerResources() []Resource {
+	rs := []Resource{p.BQLogSink}
 
 	for _, r := range p.DefaultResources {
-		pairs = append(pairs, ResourcePair{Parsed: r})
+		rs = append(rs, r)
 	}
 	for _, r := range p.Metrics {
-		pairs = append(pairs, ResourcePair{Parsed: r})
+		rs = append(rs, r)
 	}
 
-	appendPair := func(raw json.RawMessage, parsed parsedResource) {
-		pairs = append(pairs, ResourcePair{raw, parsed})
-	}
-	appendDefaultResPair := func(raw json.RawMessage, parsed *DefaultResource, path string) {
-		parsed.templatePath = path
-		appendPair(raw, parsed)
-	}
+	prs := p.Resources
 
-	rs := p.Resources
-
-	for _, r := range rs.BQDatasets {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.BQDatasets {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.CHCDatasets {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.CHCDatasets {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.GCEFirewalls {
-		appendDefaultResPair(r.RawMessage, &r.Parsed, "deploy/config/templates/firewall/firewall.py")
+	for _, r := range prs.GCEFirewalls {
+		r.templatePath = "deploy/config/templates/firewall/firewall.py"
+		rs = append(rs, r)
 	}
-	for _, r := range rs.GCEInstances {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.GCEInstances {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.GCSBuckets {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.GCSBuckets {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.GKEClusters {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.GKEClusters {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.IAMCustomRoles {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.IAMCustomRoles {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.IAMPolicies {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.IAMPolicies {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.ServiceAccounts {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.ServiceAccounts {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.Pubsubs {
-		appendPair(r.RawMessage, &r.Parsed)
+	for _, r := range prs.Pubsubs {
+		rs = append(rs, r)
 	}
-	for _, r := range rs.VPCNetworks {
-		appendDefaultResPair(r.RawMessage, &r.Parsed, "deploy/config/templates/network/network.py")
+	for _, r := range prs.VPCNetworks {
+		r.templatePath = "deploy/config/templates/network/network.py"
+		rs = append(rs, r)
 	}
-	return pairs
+	return rs
 }

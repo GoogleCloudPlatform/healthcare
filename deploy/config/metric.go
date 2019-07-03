@@ -21,6 +21,7 @@ var (
 )
 
 // Metric wraps a logging metric.
+// Note: metrics cannot be created by users, so do not implement custom json marshallers.
 type Metric struct {
 	MetricProperties `json:"properties"`
 	dependencies     []string

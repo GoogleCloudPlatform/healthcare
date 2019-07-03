@@ -11,6 +11,7 @@ type GCSBucket struct {
 	GCSBucketProperties `json:"properties"`
 	TTLDays             int      `json:"ttl_days,omitempty"`
 	ExpectedUsers       []string `json:"expected_users,omitempty"`
+	raw                 json.RawMessage
 }
 
 // GCSBucketProperties  represents a partial CFT bucket implementation.
@@ -144,4 +145,26 @@ func (b *GCSBucket) Name() string {
 // TemplatePath returns the name of the template to use for the bucket.
 func (b *GCSBucket) TemplatePath() string {
 	return "deploy/config/templates/gcs_bucket/gcs_bucket.py"
+}
+
+// aliasGCSBucket is used to prevent infinite recursion when dealing with json marshaling.
+// https://stackoverflow.com/q/52433467
+type aliasGCSBucket GCSBucket
+
+// UnmarshalJSON provides a custom JSON unmarshaller.
+// It is used to store the original (raw) user JSON definition,
+// which can have more fields than what is defined in this struct.
+func (b *GCSBucket) UnmarshalJSON(data []byte) error {
+	var alias aliasGCSBucket
+	if err := unmarshalJSONMany(data, &alias, &alias.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal to parsed alias: %v", err)
+	}
+	*b = GCSBucket(alias)
+	return nil
+}
+
+// MarshalJSON provides a custom JSON marshaller.
+// It is used to merge the original (raw) user JSON definition with the struct.
+func (b *GCSBucket) MarshalJSON() ([]byte, error) {
+	return interfacePair{b.raw, aliasGCSBucket(*b)}.MarshalJSON()
 }

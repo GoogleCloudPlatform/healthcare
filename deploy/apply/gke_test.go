@@ -53,7 +53,7 @@ func TestLocationTypeAndValue(t *testing.T) {
 		locationValue string
 	}{
 		{
-			in: config.GKECluster{config.GKEClusterProperties{
+			in: config.GKECluster{GKEClusterProperties: config.GKEClusterProperties{
 				ClusterLocationType: "Regional",
 				Region:              "some_region",
 				Cluster:             config.GKEClusterSettings{"cluster_with_region"},
@@ -62,7 +62,7 @@ func TestLocationTypeAndValue(t *testing.T) {
 			locationValue: "some_region",
 		},
 		{
-			in: config.GKECluster{config.GKEClusterProperties{
+			in: config.GKECluster{GKEClusterProperties: config.GKEClusterProperties{
 				ClusterLocationType: "Zonal",
 				Zone:                "some_zone",
 				Cluster:             config.GKEClusterSettings{"cluster_with_zone"},
@@ -134,7 +134,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 		err string
 	}{
 		{
-			in: config.GKECluster{config.GKEClusterProperties{
+			in: config.GKECluster{GKEClusterProperties: config.GKEClusterProperties{
 				ClusterLocationType: "Zonal",
 				Region:              "some_region",
 				Zone:                "",
@@ -143,7 +143,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 			err: "failed to get cluster's zone: cluster_zonal_error",
 		},
 		{
-			in: config.GKECluster{config.GKEClusterProperties{
+			in: config.GKECluster{GKEClusterProperties: config.GKEClusterProperties{
 				ClusterLocationType: "Regional",
 				Zone:                "some_zone",
 				Cluster:             config.GKEClusterSettings{"cluster_regional_error"},
@@ -151,7 +151,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 			err: "failed to get cluster's region: cluster_regional_error",
 		},
 		{
-			in: config.GKECluster{config.GKEClusterProperties{
+			in: config.GKECluster{GKEClusterProperties: config.GKEClusterProperties{
 				ClusterLocationType: "Location",
 				Region:              "some_region",
 				Zone:                "some_zone",

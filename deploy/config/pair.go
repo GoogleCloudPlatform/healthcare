@@ -8,37 +8,8 @@ import (
 	"github.com/imdario/mergo"
 )
 
-// ResourcePair groups the raw resource with its parsed version.
-type ResourcePair struct {
-	Raw    json.RawMessage
-	Parsed parsedResource
-}
-
-// MergedPropertiesMap merges the raw and parsed resources and extracts their properties map.
-// See interfacePair.MergedMap for specifics on the merging.
-func (p ResourcePair) MergedPropertiesMap() (map[string]interface{}, error) {
-	merged, err := interfacePair{p.Raw, p.Parsed}.MergedMap()
-	if err != nil {
-		return nil, err
-	}
-
-	props, ok := merged["properties"]
-	if !ok {
-		return nil, fmt.Errorf("merged map is missing properties field: %v", merged)
-	}
-
-	m, ok := props.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("properties is not a map: %v", props)
-	}
-
-	return m, nil
-}
-
-// interfacePair should be used by lists of resources that are part of another resource's deployment.
-// A concrete example of this is the pubsub resource. The resource defines a topic at the top level as well as a list of subscriptions.
-// The subscriptions use interfacePair to merge the raw and parsed subscriptions together before mergo.Merge is called.
-// This is required because mergo.Merge can only override or append slices, not merge them.
+// interfacePair should be used by resources that need to preserve the original user config input.
+// It provides functionality to merge the original user input (raw) with the parsed when the struct is marshalled.
 type interfacePair struct {
 	// raw stores the original user input. Its purpose is to preserve fields not handled by parsed.
 	// It can be empty if there is no user input to save.
@@ -97,4 +68,14 @@ func convertJSON(in interface{}, out interface{}) error {
 		return fmt.Errorf("failed to unmarshal %v: %v", string(b), err)
 	}
 	return nil
+}
+
+func unmarshalJSONMany(data []byte, vs ...interface{}) error {
+	for _, v := range vs {
+		if err := json.Unmarshal(data, v); err != nil {
+			return err
+		}
+	}
+	return nil
+
 }

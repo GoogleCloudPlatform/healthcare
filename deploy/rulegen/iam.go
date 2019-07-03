@@ -161,7 +161,7 @@ func getProjectRules(conf *config.Config, project *config.Project) ([]IAMRule, e
 func getProjectBindings(conf *config.Config, project *config.Project) ([]config.Binding, error) {
 	var bs []config.Binding
 	for _, policy := range project.Resources.IAMPolicies {
-		bs = append(bs, policy.Parsed.Bindings...)
+		bs = append(bs, policy.Bindings...)
 	}
 
 	// We can assume Forseti config exists if the rule generator is being called
@@ -209,11 +209,10 @@ func getDataBucketRules(project *config.Project) ([]IAMRule, error) {
 	var rules []IAMRule
 
 	// group rules that have the same bindings together to reduce duplicated rules
-	bindingsHashToBuckets := make(map[uint64][]config.GCSBucket)
+	bindingsHashToBuckets := make(map[uint64][]*config.GCSBucket)
 	// TODO: this pattern is repeated several times and could benefit from a helper struct once generics are supported.
 	var hashes []uint64 // for stable ordering
-	for _, pair := range project.Resources.GCSBuckets {
-		bucket := pair.Parsed
+	for _, bucket := range project.Resources.GCSBuckets {
 		h, err := hashstructure.Hash(bucket.Bindings, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to hash access %v: %v", bucket.Bindings, err)

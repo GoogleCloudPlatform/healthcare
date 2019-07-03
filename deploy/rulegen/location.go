@@ -110,18 +110,18 @@ func (m locationToResources) locations() []string {
 
 func (m locationToResources) addResources(project *config.Project) error {
 	for _, bucket := range project.Resources.GCSBuckets {
-		m.add(bucket.Parsed.Location, "bucket", bucket.Parsed.Name())
+		m.add(bucket.Location, "bucket", bucket.Name())
 	}
 	for _, dataset := range project.Resources.BQDatasets {
-		id := fmt.Sprintf("%s:%s", project.ID, dataset.Parsed.Name())
-		m.add(dataset.Parsed.Location, "dataset", id)
+		id := fmt.Sprintf("%s:%s", project.ID, dataset.Name())
+		m.add(dataset.Location, "dataset", id)
 	}
 	for _, instance := range project.Resources.GCEInstances {
-		id, err := project.GeneratedFields.InstanceID(instance.Parsed.Name())
+		id, err := project.GeneratedFields.InstanceID(instance.Name())
 		if err != nil {
 			return err
 		}
-		m.add(instance.Parsed.Zone, "instance", id)
+		m.add(instance.Zone, "instance", id)
 	}
 	return nil
 }

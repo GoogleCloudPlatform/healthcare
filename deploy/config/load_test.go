@@ -22,6 +22,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestNormalizePath(t *testing.T) {
@@ -53,8 +54,11 @@ func TestLoad(t *testing.T) {
 		t.Fatalf("config.Load = %v", err)
 	}
 
-	opt := cmp.AllowUnexported(config.BigqueryDataset{}, config.DefaultResource{}, config.Metric{})
-	if diff := cmp.Diff(conf.Projects, expectedConf.Projects, opt); diff != "" {
+	opts := []cmp.Option{
+		cmp.AllowUnexported(config.BigqueryDataset{}, config.DefaultResource{}, config.IAMPolicy{}, config.Metric{}),
+		cmpopts.SortSlices(func(a, b *config.Project) bool { return a.ID < b.ID }),
+	}
+	if diff := cmp.Diff(conf.Projects, expectedConf.Projects, opts...); diff != "" {
 		t.Fatalf("yaml differs (-got +want):\n%v", diff)
 	}
 }

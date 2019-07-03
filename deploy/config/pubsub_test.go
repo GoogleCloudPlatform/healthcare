@@ -30,6 +30,10 @@ properties:
 	wantPubsubYAML := `
 properties:
   topic: foo-topic
+  accessControl:
+  - role: roles/pubsub.publisher
+    members:
+    - 'user:foo@user.com'
   subscriptions:
   - name: foo-subscription
     accessControl:

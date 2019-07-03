@@ -21,8 +21,8 @@ go_library(
         "load.go",
         "logsink.go",
         "metric.go",
+        "pair.go",
         "pubsub.go",
-        "resourcepair.go",
         "service_account.go",
     ],
     data = [
@@ -53,7 +53,6 @@ go_test(
         "logsink_test.go",
         "metric_test.go",
         "pubsub_test.go",
-        "resourcepair_test.go",
         "service_account_test.go",
     ],
     data = [
@@ -66,6 +65,7 @@ go_test(
         ":go_default_library",
         "//deploy/testconf:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
+        "@com_github_google_cmp//cmp/cmpopts:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],
 )

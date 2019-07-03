@@ -1,6 +1,7 @@
 package config
 
 // LogSink wraps a deployment manager Log Sink.
+// Note: log sinks cannot be created by users, so do not implement custom json marshallers.
 // TODO: see if we can use the CFT log sink template.
 type LogSink struct {
 	LogSinkProperties `json:"properties"`

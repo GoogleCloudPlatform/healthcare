@@ -42,7 +42,14 @@ properties:
 
 	wantdatasetYAML := `
 properties:
+  location: us-central1
   datasetId: test_chc_dataset
+  dicomStores:
+  - dicomStoreId: test_chc_dicom_store
+  fhirStores:
+  - fhirStoreId: test_chc_fhir_store
+  hl7V2Stores:
+  - hl7V2StoreId: test_chc_hl7v2_store
 `
 
 	d := new(config.CHCDataset)
