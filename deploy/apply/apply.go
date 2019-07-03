@@ -103,10 +103,21 @@ func Apply(conf *config.Config, project *config.Project) error {
 		project.GeneratedFields.LogSinkServiceAccount = sinkSA
 		// Replace all instances of old writer SA with new.
 		for _, a := range project.AuditLogs.LogsBQDataset.Accesses {
-			if a.UserByEmail == currSA {
+			if a.UserByEmail == currSA && currSA != "" {
 				a.UserByEmail = sinkSA
 			}
 		}
+	}
+	isSinkWriterExist := false
+	for _, a := range project.AuditLogs.LogsBQDataset.Accesses {
+		if a.UserByEmail == sinkSA && a.Role == "WRITER" {
+			isSinkWriterExist = true
+		}
+	}
+	if !isSinkWriterExist {
+		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, &config.Access{
+			Role: "WRITER", UserByEmail: sinkSA,
+		})
 	}
 
 	if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
