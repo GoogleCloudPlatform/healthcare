@@ -353,7 +353,7 @@ def deploy_project_resources(config):
 def create_deletion_lien(config):
   """Create the project deletion lien, if specified."""
   # Create project liens if requested.
-  if 'create_deletion_lien' not in config.project:
+  if not config.project.get('create_deletion_lien'):
     return
   project_id = config.project['project_id']
   existing_restrictions = runner.run_gcloud_command(
