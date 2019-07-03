@@ -702,11 +702,9 @@ def add_project_generated_fields(config):
   project_id = config.project['project_id']
   generated_fields = field_generation.get_generated_fields_ref(
       project_id, config.root)
-
-  if 'log_sink_service_account' not in generated_fields:
-    generated_fields[
-        'log_sink_service_account'] = utils.get_log_sink_service_account(
-            _LOG_SINK_NAME, project_id)
+  generated_fields[
+      'log_sink_service_account'] = utils.get_log_sink_service_account(
+          _LOG_SINK_NAME, project_id)
 
   gce_instance_info = utils.get_gce_instance_info(project_id)
   if gce_instance_info:
