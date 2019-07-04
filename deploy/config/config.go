@@ -159,6 +159,8 @@ func (p *Project) initAuditResources(auditProject *Project) error {
 		{Role: "READER", GroupByEmail: p.AuditorsGroup},
 	}
 
+	// Note: if there is no log sink SA it means the project hasn't been deployed.
+	// The SA will be set once the project gets deployed (apply.Apply).
 	if p.GeneratedFields.LogSinkServiceAccount != "" {
 		accesses = append(accesses, &Access{Role: "WRITER", UserByEmail: p.GeneratedFields.LogSinkServiceAccount})
 	}
