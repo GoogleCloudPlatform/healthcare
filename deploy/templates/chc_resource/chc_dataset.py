@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """This template creates Healthcare dataset."""
 
 
@@ -45,7 +44,7 @@ def generate_config(context):
   for res_type, id_tag in supported_types.items():
     stores = properties.get(res_type, [])
     for store in stores:
-      resources.append({
+      resource = {
           'name':
               dataset_id + '_' + store[id_tag],
           'type':
@@ -53,8 +52,13 @@ def generate_config(context):
               ':projects.locations.datasets.' + res_type,
           'properties': {
               'parent': '$(ref.' + dataset_id + '.name)',
-              id_tag: store[id_tag]
+              id_tag: store[id_tag],
           }
-      })
+      }
+      notification_config_tag = 'notificationConfig'
+      notification_config = store.get(notification_config_tag)
+      if notification_config:
+        resource['properties'][notification_config_tag] = notification_config
+      resources.append(resource)
 
   return {'resources': resources}

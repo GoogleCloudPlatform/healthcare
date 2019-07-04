@@ -46,6 +46,14 @@ properties:
         dicomStoreId:
           type: string
           description: The ID of the DICOM store.
+        notificationConfig:
+          type: object
+          required:
+            - pubsubTopic
+          properties:
+            pubsubTopic:
+              type: string
+              description: The Cloud Pub/Sub topic that notifications of changes are published on.
   fhirStores:
     type: array
     description: FHIR stores in the dataset.
@@ -57,6 +65,14 @@ properties:
         fhirStoreId:
           type: string
           description: The ID of the FHIR store.
+        notificationConfig:
+          type: object
+          required:
+            - pubsubTopic
+          properties:
+            pubsubTopic:
+              type: string
+              description: The Cloud Pub/Sub topic that notifications of changes are published on.
   hl7V2Stores:
     type: array
     description: HL7v2 stores in the dataset.
@@ -68,6 +84,14 @@ properties:
         hl7V2StoreId:
           type: string
           description: The ID of the HL7v2 store.
+        notificationConfig:
+          type: object
+          required:
+            - pubsubTopic
+          properties:
+            pubsubTopic:
+              type: string
+              description: The Cloud Pub/Sub topic that notifications of changes are published on.
 
 examples:
   - chc_dataset.yaml

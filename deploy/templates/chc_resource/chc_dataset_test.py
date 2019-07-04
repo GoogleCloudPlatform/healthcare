@@ -19,7 +19,7 @@ the expected resources.
 
 from absl.testing import absltest
 
-from deploy.config.templates.chc_resource import chc_dataset
+from deploy.templates.chc_resource import chc_dataset
 
 
 class TestCHCDataset(absltest.TestCase):

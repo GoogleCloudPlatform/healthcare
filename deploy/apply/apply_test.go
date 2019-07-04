@@ -511,7 +511,7 @@ func TestDeployTypeProvider(t *testing.T) {
 		t.Fatalf("Deploy CHC Type Provider: %v", err)
 	}
 	want := []upsertFromFileCall{
-		{"data-protect-toolkit-prerequisites", "deploy/config/templates/chc_resource/chc_res_type_provider.yaml", project.ID},
+		{"data-protect-toolkit-prerequisites", "deploy/templates/chc_resource/chc_res_type_provider.yaml", project.ID},
 	}
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)

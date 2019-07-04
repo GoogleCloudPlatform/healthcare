@@ -329,7 +329,7 @@ func hasBinding(project *config.Project, role string, member string) (has bool, 
 
 // deployPrerequisite deploys the CHC resources in the project.
 func deployPrerequisite(project *config.Project) error {
-	if err := upsertDeploymentFromFile(setupPrerequisiteDeploymentName, "deploy/config/templates/chc_resource/chc_res_type_provider.yaml", project.ID); err != nil {
+	if err := upsertDeploymentFromFile(setupPrerequisiteDeploymentName, "deploy/templates/chc_resource/chc_res_type_provider.yaml", project.ID); err != nil {
 		return fmt.Errorf("failed to deploy CHC type provider: %v", err)
 	}
 	return nil
