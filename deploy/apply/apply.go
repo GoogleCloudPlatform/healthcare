@@ -32,11 +32,13 @@ const deploymentRetryWaitTime = time.Minute
 var (
 	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		log.Printf("Running: %v", cmd.Args)
+    cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Output()
 	}
 	cmdRun = func(cmd *exec.Cmd) error {
 		log.Printf("Running: %v", cmd.Args)
+    cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
 	}
