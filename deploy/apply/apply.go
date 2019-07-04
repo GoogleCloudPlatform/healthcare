@@ -99,7 +99,12 @@ func Apply(conf *config.Config, project *config.Project) error {
 		return fmt.Errorf("failed to get log sink service account: %v", err)
 	}
 
-	if currSA := project.GeneratedFields.LogSinkServiceAccount; currSA != sinkSA {
+	// Note: if the project was deployed the project Init will already have added the log sink service account permission on the dataset.
+	if currSA := project.GeneratedFields.LogSinkServiceAccount; currSA == "" {
+		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, &config.Access{
+			Role: "WRITER", UserByEmail: sinkSA,
+		})
+	} else if currSA != sinkSA {
 		project.GeneratedFields.LogSinkServiceAccount = sinkSA
 		// Replace all instances of old writer SA with new.
 		for _, a := range project.AuditLogs.LogsBQDataset.Accesses {
