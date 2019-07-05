@@ -402,9 +402,9 @@ def expand_imports(overall, overall_path):
   """
   imports_patterns = overall.get(IMPORT_PATTERN_TAG, [])
   all_files = set()
-  for pattern in imports_patterns:
+  for imports_item in imports_patterns:
     absolute_pattern = os.path.normpath(
-        os.path.join(os.path.dirname(overall_path), pattern))
+        os.path.join(os.path.dirname(overall_path), imports_item['pattern']))
     for path in glob.glob(absolute_pattern):
       if path != overall_path:
         all_files.add(path)

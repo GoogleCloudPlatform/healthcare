@@ -2,4 +2,5 @@ overall:
   organization_id: '0123456'
   domain: foo.com
 
-imports: ["./project*.yaml"]
+imports:
+- pattern: "./project*.yaml"

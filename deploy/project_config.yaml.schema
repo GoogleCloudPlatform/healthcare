@@ -847,10 +847,17 @@ properties:
       the fields in overall block can't be overwritten in multiple places.
       We recommend keeping your split configs and import paths simple.
     items:
-      type: string
-      description: |
-        The path to import. Glob supported as defined in
-        https://godoc.org/path/filepath#Glob.
+      type: object
+      description: An imported item that must contain a pattern.
+      additionalProperties: false
+      required:
+      - pattern
+      properties:
+        pattern:
+          type: string
+          description: |
+            The path to import. Glob supported as defined in
+            https://godoc.org/path/filepath#Glob.
 
   generated_fields:
     type: object

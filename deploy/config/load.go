@@ -76,6 +76,10 @@ func Load(path string) (*Config, error) {
 	return conf, nil
 }
 
+type importsItem struct {
+	Pattern string `json:"pattern"`
+}
+
 // loadMap loads the config at path into a map. It will also merge all imported configs.
 func loadMap(path string) (map[string]interface{}, error) {
 	b, err := ioutil.ReadFile(path)
@@ -94,7 +98,7 @@ func loadMap(path string) (map[string]interface{}, error) {
 	}
 
 	type config struct {
-		Imports []string `json:"imports"`
+		Imports []*importsItem `json:"imports"`
 	}
 	conf := new(config)
 	if err := json.Unmarshal(raw, conf); err != nil {
@@ -128,18 +132,18 @@ func loadMap(path string) (map[string]interface{}, error) {
 // For example, if "./*.yaml" is an entry of "imports", the project YAML itself
 // would match the pattern. We should exclude that path because we do not want to
 // include the content of that YAML twice.
-func allImportsPaths(projectYAMLPath string, importsList []string) ([]string, error) {
+func allImportsPaths(projectYAMLPath string, importsList []*importsItem) ([]string, error) {
 	allMatches := make(map[string]bool)
 	projectYamlFolder := filepath.Dir(projectYAMLPath)
-	for _, importPath := range importsList {
+	for _, importItem := range importsList {
 		// joinedPath would be always an absolute path (pattern).
-		joinedPath := importPath
+		joinedPath := importItem.Pattern
 		if !filepath.IsAbs(joinedPath) {
-			joinedPath = filepath.Join(projectYamlFolder, importPath)
+			joinedPath = filepath.Join(projectYamlFolder, importItem.Pattern)
 		}
 		matches, err := filepath.Glob(joinedPath)
 		if err != nil {
-			return nil, fmt.Errorf("pattern %q is malformed", importPath)
+			return nil, fmt.Errorf("pattern %q is malformed", importItem.Pattern)
 		}
 		for _, match := range matches {
 			if match == projectYAMLPath {
