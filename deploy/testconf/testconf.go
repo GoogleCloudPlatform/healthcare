@@ -39,6 +39,8 @@ forseti:
           name: my-forseti-project-logs
           location: US
           storageClass: MULTI_REGIONAL
+  properties:
+    storage_bucket_location: us-east1
 
 projects:
 - project_id: my-project

@@ -12,6 +12,7 @@ go_library(
         "chc_dataset.go",
         "config.go",
         "default_resource.go",
+        "forseti.go",
         "gce_instance.go",
         "gcs_bucket.go",
         "generated_fields.go",
@@ -24,6 +25,7 @@ go_library(
         "pair.go",
         "pubsub.go",
         "service_account.go",
+        "terraform.go",
     ],
     data = [
         "//deploy/config/templates",
@@ -44,6 +46,7 @@ go_test(
         "bigquery_dataset_test.go",
         "chc_dataset_test.go",
         "default_resource_test.go",
+        "forseti_test.go",
         "gce_instance_test.go",
         "gcs_bucket_test.go",
         "generated_fields_test.go",
@@ -54,6 +57,7 @@ go_test(
         "metric_test.go",
         "pubsub_test.go",
         "service_account_test.go",
+        "terraform_test.go",
     ],
     data = [
         "//deploy/samples:configs",

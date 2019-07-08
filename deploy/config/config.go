@@ -21,10 +21,8 @@ type Config struct {
 		FolderID       string   `json:"folder_id"`
 		AllowedAPIs    []string `json:"allowed_apis"`
 	} `json:"overall"`
-	AuditLogsProject *Project `json:"audit_logs_project"`
-	Forseti          *struct {
-		Project *Project `json:"project"`
-	} `json:"forseti"`
+	AuditLogsProject   *Project           `json:"audit_logs_project"`
+	Forseti            *Forseti           `json:"forseti"`
 	Projects           []*Project         `json:"projects"`
 	AllGeneratedFields AllGeneratedFields `json:"generated_fields"`
 }
@@ -76,6 +74,10 @@ type Project struct {
 
 // Init initializes the config and all its projects.
 func (c *Config) Init() error {
+	if err := c.initForseti(); err != nil {
+		return fmt.Errorf("failed to init forseti: %v", err)
+	}
+
 	ids := make(map[string]bool)
 	for _, p := range c.AllProjects() {
 		if ids[p.ID] {
@@ -88,6 +90,20 @@ func (c *Config) Init() error {
 		}
 	}
 	return nil
+}
+
+// AllFolders returns all folder ids in this config.
+func (c *Config) AllFolders() []string {
+	var ids []string
+	if c.Overall.FolderID != "" {
+		ids = append(ids, c.Overall.FolderID)
+	}
+	for _, p := range c.AllProjects() {
+		if p.FolderID != "" {
+			ids = append(ids, p.FolderID)
+		}
+	}
+	return ids
 }
 
 // AllProjects returns all projects in this config.
@@ -111,6 +127,31 @@ func (c *Config) ProjectForAuditLogs(p *Project) *Project {
 		return c.AuditLogsProject
 	}
 	return p
+}
+
+func (c *Config) initForseti() error {
+	if c.Forseti == nil {
+		return nil
+	}
+	if c.Forseti.Properties == nil {
+		c.Forseti.Properties = new(ForsetiProperties)
+	}
+	if err := c.Forseti.Properties.Init(); err != nil {
+		return fmt.Errorf("failed to init forseti properties: %v", err)
+	}
+	p := c.Forseti.Properties
+	p.ProjectID = c.Forseti.Project.ID
+	p.Domain = c.Overall.Domain
+
+	var resources []string
+	if c.Overall.OrganizationID != "" {
+		resources = append(resources, "organizations/"+c.Overall.OrganizationID)
+	}
+	for _, f := range c.AllFolders() {
+		resources = append(resources, "folders/"+f)
+	}
+	p.CompositeRootResources = resources
+	return nil
 }
 
 // Init initializes a project and all its resources.

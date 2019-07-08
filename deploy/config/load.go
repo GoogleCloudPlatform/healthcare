@@ -54,7 +54,11 @@ func NormalizePath(path string) (string, error) {
 
 // Load loads a config from the given path.
 func Load(path string) (*Config, error) {
-	m, err := loadMap(path)
+	np, err := NormalizePath(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to normalize path: %v", err)
+	}
+	m, err := loadMap(np)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config to map: %v", err)
 	}

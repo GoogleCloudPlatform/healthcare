@@ -16,10 +16,12 @@ py_binary(
     # Pass binary paths as arg due to unstable location in bazel built binaries.
     args = [
         "--apply_binary=$(location //deploy/cmd/apply)",
+        "--apply_forseti_binary=$(location //deploy/cmd/apply_forseti)",
         "--rule_generator_binary=$(location //deploy/cmd/rule_generator)",
     ],
     data = [
         "//deploy/cmd/apply",
+        "//deploy/cmd/apply_forseti",
         "//deploy/cmd/rule_generator",
     ],
     python_version = "PY3",

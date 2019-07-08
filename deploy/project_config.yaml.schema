@@ -825,12 +825,14 @@ properties:
       project:
         $ref: '#/definitions/gcp_project'
         description: The project install the Forseti instance in.
-      installer_flags:
-        type: string
+      properties:
+        type: object
         description: |
-          Flags to pass to the Forseti installer. This field is only used on
-          initial Forseti deployment. Changing or removing it post-deployment is
-          a no-op.
+          Wraps the CFT Forseti Terraform module.
+          In addition, the following fields should be unset:
+            * composite_root_resources
+            * domain
+            * project_id
 
   projects:
     type: array

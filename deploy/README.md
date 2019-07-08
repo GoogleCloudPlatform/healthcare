@@ -36,17 +36,19 @@ beneficial if you have several data projects.
 NOTE: If running through Cloud Shell, all of the following dependencies are
 already available.
 
--   [Go 1.10+](https://golang.org/dl/)
-
--   [Python 3.6+](https://www.python.org/downloads/)
-
 -   [Bazel 0.25+](https://docs.bazel.build/versions/master/install.html)
 
 -   [Gcloud SDK](https://cloud.google.com/sdk/install)
 
 -   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
+-   [Go 1.10+](https://golang.org/dl/)
+
+-   [Terraform 0.11](https://www.terraform.io/downloads.html)
+
 -   [Pip](https://pip.pypa.io/en/stable/installing/)
+
+-   [Python 3.6+](https://www.python.org/downloads/)
 
 ### Python Dependencies
 
@@ -249,7 +251,7 @@ Resource                | Deployment Tool
 bq_dataset              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery)
 chc_datasets (ALPHA)    | [Deployment Manager](https://cloud.google.com/healthcare/docs/)
 enabled_api             | [Gcloud](https://cloud.google.com/sdk/gcloud/reference/services/enable)
-forseti                 | [Forseti Installer](https://github.com/forseti-security/forseti-security/tree/dev/install)
+forseti                 | [Terraform (CFT)](https://github.com/forseti-security/terraform-google-forseti)
 gce_firewall            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall)
 gce_instance            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance)
 gcs_bucket              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket)

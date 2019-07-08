@@ -16,13 +16,7 @@ func globalResource(conf *config.Config) resource {
 	case conf.Overall.OrganizationID != "":
 		return resource{Type: "organization", IDs: []string{conf.Overall.OrganizationID}}
 	case conf.Overall.FolderID != "":
-		ids := []string{conf.Overall.FolderID}
-		for _, p := range conf.AllProjects() {
-			if p.FolderID != "" {
-				ids = append(ids, p.FolderID)
-			}
-		}
-		return resource{Type: "folder", IDs: ids}
+		return resource{Type: "folder", IDs: conf.AllFolders()}
 	default:
 		var ids []string
 		for _, p := range conf.AllProjects() {

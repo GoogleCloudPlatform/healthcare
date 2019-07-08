@@ -70,8 +70,12 @@ flags.DEFINE_string('output_rules_path', None,
 flags.DEFINE_boolean(
     'enable_new_style_resources', True,
     'Enable new style configs. Only set to false if old configs are a must.')
-flags.DEFINE_string('apply_binary', None,
-                    'Path to CFT binary. Set automatically by the Bazel rule.')
+flags.DEFINE_string(
+    'apply_binary', None, 'Path to apply binary. '
+    'Set automatically by the Bazel rule.')
+flags.DEFINE_string(
+    'apply_forseti_binary', None, 'Path to forseti installer. '
+    'Set automatically by the Bazel rule.')
 flags.DEFINE_string('rule_generator_binary', None,
                     ('Path to rule generator binary. '
                      'Set automatically by the Bazel rule.'))
@@ -860,8 +864,13 @@ def setup_project(config, project_yaml, output_yaml_path):
 
 def install_forseti(config):
   """Install forseti based on the given config."""
+  utils.call_go_binary([
+      FLAGS.apply_forseti_binary,
+      '--project_yaml_path',
+      FLAGS.project_yaml,
+  ])
   forseti_config = config.root['forseti']
-  forseti.install(forseti_config)
+
   forseti_project_id = forseti_config['project']['project_id']
   generated_field = {
       'service_account': forseti.get_server_service_account(forseti_project_id),
@@ -1039,5 +1048,6 @@ if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
   flags.mark_flag_as_required('output_yaml_path')
   flags.mark_flag_as_required('apply_binary')
+  flags.mark_flag_as_required('apply_forseti_binary')
   flags.mark_flag_as_required('rule_generator_binary')
   app.run(main)
