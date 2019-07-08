@@ -25,7 +25,6 @@ func Forseti(conf *config.Config) error {
 	}
 	defer os.RemoveAll(dir)
 
-	// TODO: use registry instead of cloning repo
 	runCmd := func(bin string, args ...string) error {
 		cmd := exec.Command(bin, args...)
 		cmd.Dir = dir
@@ -35,6 +34,7 @@ func Forseti(conf *config.Config) error {
 		return cmdRun(cmd)
 	}
 
+	// TODO: use registry instead of cloning repo
 	if err := runCmd("git", "clone", "https://github.com/forseti-security/terraform-google-forseti"); err != nil {
 		return fmt.Errorf("failed to clone forseti module repo: %v", err)
 	}
