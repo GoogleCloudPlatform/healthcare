@@ -51,7 +51,7 @@ export class DebugPanelComponent implements OnInit {
 
   ngOnInit(): void {
     this.requests = this.resourceService.requests$.pipe(
-        scan<FHIRRequest>(
+        scan<FHIRRequest, FHIRRequest[]>(
             (acc, req) => {
               this.formatResponseBody(req);
               acc.unshift(req);

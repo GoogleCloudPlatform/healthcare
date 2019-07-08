@@ -30,7 +30,8 @@ export class ImmunizationItemComponent implements OnInit {
   @Input() immunization!: Immunization;
   @Output() updated = new EventEmitter<void>();
 
-  @ViewChild(ImmunizationFormComponent) immForm!: ImmunizationFormComponent;
+  @ViewChild(ImmunizationFormComponent, {static: true})
+  immForm!: ImmunizationFormComponent;
 
   // TODO: This would be better managed as a contained resource,
   // but the API doesn't support internal references IDs yet.
