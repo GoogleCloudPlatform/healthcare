@@ -55,7 +55,8 @@ forseti:
           name: my_forseti_project
           location: US
     stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
-  installer_flags: --skip-sendgrid-config      # Replace with any flags to pass to the installer.
+  properties: # (OPTIONAL) Any non-default properties to set on the Forseti Terraform module.
+    storage_bucket_location: us-east1
 
 # Multiple dataset projects can be deployed at once with the one YAML file.
 projects:
