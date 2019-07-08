@@ -35,18 +35,15 @@ type versioning struct {
 }
 
 type lifecycle struct {
-	// implement as pair so user-defined rules are not lost
-	Rules []lifecycleRulePair `json:"rule,omitempty"`
+	Rules []*LifecycleRule `json:"rule,omitempty"`
 }
 
-type lifecycleRulePair struct {
-	raw    json.RawMessage
-	parsed lifecycleRule
-}
-
-type lifecycleRule struct {
+// LifecycleRule defines a partial bucket lifecycle rule implementation.
+type LifecycleRule struct {
 	Action    *action    `json:"action,omitempty"`
 	Condition *condition `json:"condition,omitempty"`
+
+	raw json.RawMessage
 }
 
 type action struct {
@@ -58,18 +55,26 @@ type condition struct {
 	IsLive bool `json:"isLive,omitempty"`
 }
 
-func (p *lifecycleRulePair) UnmarshalJSON(data []byte) error {
-	if err := json.Unmarshal(data, &p.raw); err != nil {
-		return fmt.Errorf("failed to unmarshal lifecycle rule into raw form: %v", err)
+// aliasGCSBucket is used to prevent infinite recursion when dealing with json marshaling.
+// https://stackoverflow.com/q/52433467
+type aliasLifecycleRule LifecycleRule
+
+// UnmarshalJSON provides a custom JSON unmarshaller.
+// It is used to store the original (raw) user JSON definition,
+// which can have more fields than what is defined in this struct.
+func (r *LifecycleRule) UnmarshalJSON(data []byte) error {
+	var alias aliasLifecycleRule
+	if err := unmarshalJSONMany(data, &alias, &alias.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal to parsed alias: %v", err)
 	}
-	if err := json.Unmarshal(data, &p.parsed); err != nil {
-		return fmt.Errorf("failed to unmarshal lifecycle rule into parsed form: %v", err)
-	}
+	*r = LifecycleRule(alias)
 	return nil
 }
 
-func (p *lifecycleRulePair) MarshalJSON() ([]byte, error) {
-	return interfacePair{p.raw, p.parsed}.MarshalJSON()
+// MarshalJSON provides a custom JSON marshaller.
+// It is used to merge the original (raw) user JSON definition with the struct.
+func (r *LifecycleRule) MarshalJSON() ([]byte, error) {
+	return interfacePair{r.raw, aliasLifecycleRule(*r)}.MarshalJSON()
 }
 
 // Init initializes the bucket with the given project.
@@ -127,11 +132,9 @@ func (b *GCSBucket) Init(project *Project) error {
 		if b.Lifecycle == nil {
 			b.Lifecycle = &lifecycle{}
 		}
-		b.Lifecycle.Rules = append(b.Lifecycle.Rules, lifecycleRulePair{
-			parsed: lifecycleRule{
-				Action:    &action{Type: "Delete"},
-				Condition: &condition{Age: b.TTLDays, IsLive: true},
-			},
+		b.Lifecycle.Rules = append(b.Lifecycle.Rules, &LifecycleRule{
+			Action:    &action{Type: "Delete"},
+			Condition: &condition{Age: b.TTLDays, IsLive: true},
 		})
 	}
 	return nil
