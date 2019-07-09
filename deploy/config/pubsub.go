@@ -15,10 +15,11 @@ type Pubsub struct {
 // PubsubProperties represents a partial CFT pubsub implementation.
 type PubsubProperties struct {
 	TopicName     string          `json:"topic"`
-	Subscriptions []*subscription `json:"subscriptions"`
+	Subscriptions []*Subscription `json:"subscriptions"`
 }
 
-type subscription struct {
+// Subscription represents a partial subscription impementation.
+type Subscription struct {
 	Bindings []Binding `json:"accessControl,omitempty"`
 	raw      json.RawMessage
 }
@@ -83,17 +84,22 @@ func (p *Pubsub) MarshalJSON() ([]byte, error) {
 
 // aliasSubscription is used to prevent infinite recursion when dealing with json marshaling.
 // https://stackoverflow.com/q/52433467
-type aliasSubscription subscription
+type aliasSubscription Subscription
 
-func (s *subscription) UnmarshalJSON(data []byte) error {
+// UnmarshalJSON provides a custom JSON unmarshaller.
+// It is used to store the original (raw) user JSON definition,
+// which can have more fields than what is defined in this struct.
+func (s *Subscription) UnmarshalJSON(data []byte) error {
 	var alias aliasSubscription
 	if err := unmarshalJSONMany(data, &alias, &alias.raw); err != nil {
 		return fmt.Errorf("failed to unmarshal to parsed alias: %v", err)
 	}
-	*s = subscription(alias)
+	*s = Subscription(alias)
 	return nil
 }
 
-func (s *subscription) MarshalJSON() ([]byte, error) {
+// MarshalJSON provides a custom JSON marshaller.
+// It is used to merge the original (raw) user JSON definition with the struct.
+func (s *Subscription) MarshalJSON() ([]byte, error) {
 	return interfacePair{s.raw, aliasSubscription(*s)}.MarshalJSON()
 }

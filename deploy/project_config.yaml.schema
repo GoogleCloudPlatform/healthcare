@@ -843,23 +843,24 @@ properties:
   imports:
     type: array
     description: |
-      A list of YAML files that are imported to current file.
+      NOTE: This is in ALPHA and can change in backwards incompatible ways.
+      A list of YAML files that are merged into the current file.
       Note: lists will be appended and fields will not be overwritten.
       For example, the list of projects can be spread over multiple files, but
       the fields in overall block can't be overwritten in multiple places.
-      We recommend keeping your split configs and import paths simple.
     items:
       type: object
       description: An imported item that must contain a pattern.
       additionalProperties: false
-      required:
-      - pattern
       properties:
+        path:
+          type: string
+          description: |
+            The path to import. Must be absolute or relative to this file.
         pattern:
           type: string
           description: |
-            The path to import. Glob supported as defined in
-            https://godoc.org/path/filepath#Glob.
+            Glob supported as defined in https://godoc.org/path/filepath#Glob.
 
   generated_fields:
     type: object

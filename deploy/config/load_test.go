@@ -17,7 +17,9 @@
 package config_test
 
 import (
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
@@ -37,28 +39,60 @@ func TestNormalizePath(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	confPath, err := config.NormalizePath("deploy/testconf/test_multiple_yaml/conf.yaml")
-	if err != nil {
-		t.Fatalf("NormalizePath error: %v", err)
-	}
-	conf, err := config.Load(confPath)
+	conf, err := config.Load("deploy/samples/spanned_configs/root.yaml")
 	if err != nil {
 		t.Fatalf("config.Load = %v", err)
 	}
-	expectedPath, err := config.NormalizePath("deploy/testconf/test_multiple_yaml/expected.yaml")
-	if err != nil {
-		t.Fatalf("NormalizePath error: %v", err)
-	}
-	expectedConf, err := config.Load(expectedPath)
+	expectedConf, err := config.Load("deploy/samples/project_with_remote_audit_logs.yaml")
 	if err != nil {
 		t.Fatalf("config.Load = %v", err)
 	}
 
+	allowUnexported := cmp.AllowUnexported(
+		config.BigqueryDataset{}, config.DefaultResource{}, config.GCSBucket{},
+		config.LifecycleRule{}, config.IAMPolicy{}, config.Metric{},
+		config.Pubsub{}, config.Subscription{},
+	)
 	opts := []cmp.Option{
-		cmp.AllowUnexported(config.BigqueryDataset{}, config.DefaultResource{}, config.IAMPolicy{}, config.Metric{}),
+		allowUnexported,
 		cmpopts.SortSlices(func(a, b *config.Project) bool { return a.ID < b.ID }),
 	}
 	if diff := cmp.Diff(conf.Projects, expectedConf.Projects, opts...); diff != "" {
 		t.Fatalf("yaml differs (-got +want):\n%v", diff)
+	}
+}
+
+func TestPattern(t *testing.T) {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	afn := filepath.Join(dir, "a.yaml")
+	ac := []byte("imports: [{pattern: '*.yaml'}]")
+	if err := ioutil.WriteFile(afn, ac, 0664); err != nil {
+		t.Fatalf("ioutil.WriteFile = %v", err)
+	}
+
+	bfn := filepath.Join(dir, "b.yaml")
+	bc := []byte(`
+overall:
+ organization_id: '123'
+ domain: foo.com
+`)
+	if err := ioutil.WriteFile(bfn, bc, 0664); err != nil {
+		t.Fatalf("ioutil.WriteFile = %v", err)
+	}
+	got, err := config.Load(afn)
+	if err != nil {
+		t.Fatalf("config.Load = %v", err)
+	}
+	want, err := config.Load(bfn)
+	if err != nil {
+		t.Fatalf("config.Load = %v", err)
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("config differs (-got +want):\n%v", diff)
 	}
 }

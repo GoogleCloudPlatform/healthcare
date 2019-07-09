@@ -25,10 +25,8 @@ FLAGS = flags.FLAGS
 _PROJECT_CONFIG_SCHEMA = os.path.join(
     os.path.dirname(__file__), '../project_config.yaml.schema')
 
-# Retrieve all files matching the pattern and add them into import_files.
-IMPORT_PATTERN_TAG = 'imports'
-# Merge the files in import_files into the dict where it is declared.
-IMPORT_FILES_TAG = 'import_files'
+# Field to list imports.
+IMPORTS_TAG = 'imports'
 
 
 def normalize_path(path):
@@ -368,30 +366,8 @@ def merge_dicts(dst, src):
       dst[key] = val
 
 
-def get_import_files(overall, overall_path):
-  """Get all imported file normalized paths.
-
-  Args:
-    overall: dictionary or list from a parsed YAML file.
-    overall_path: The path of the overall YAML file.
-
-  Returns:
-    A list holding all the imported file normalized paths.
-  """
-  import_list = overall.get(IMPORT_FILES_TAG, [])
-  import_files = set()
-  for file_path in import_list:
-    import_files.add(
-        os.path.normpath(
-            os.path.join(os.path.dirname(overall_path), file_path)))
-  ret_list = list(
-      import_files.union(set(expand_imports(overall, overall_path))))
-  ret_list.sort()
-  return ret_list
-
-
 def expand_imports(overall, overall_path):
-  """Find all to be imported files to extend import_files.
+  """Find all to be imported files to extend imported files.
 
   Args:
     overall: dictionary or list from a parsed YAML file.
@@ -400,16 +376,28 @@ def expand_imports(overall, overall_path):
   Returns:
     A list holding all the imported file paths.
   """
-  imports_patterns = overall.get(IMPORT_PATTERN_TAG, [])
+  imports = overall.get(IMPORTS_TAG, [])
+  paths = set()
+  for imports_item in imports:
+    if 'path' in imports_item:
+      paths.add(
+          os.path.normpath(
+              os.path.join(os.path.dirname(overall_path),
+                           imports_item['path'])))
+
   all_files = set()
-  for imports_item in imports_patterns:
+  for imports_item in imports:
+    if 'pattern' not in imports_item:
+      continue
     absolute_pattern = os.path.normpath(
         os.path.join(os.path.dirname(overall_path), imports_item['pattern']))
     for path in glob.glob(absolute_pattern):
-      if path != overall_path:
+      if path != overall_path and path not in paths:
         all_files.add(path)
 
-  return all_files
+  files_list = list(all_files)
+  files_list.sort()
+  return files_list
 
 
 def load_config(overall_path):
@@ -425,8 +413,17 @@ def load_config(overall_path):
   overall = read_yaml_file(overall_path)
   if not overall:
     return None
-  import_files = get_import_files(overall, overall_path)
-  for inc_file in import_files:
+  for imp in overall.get(IMPORTS_TAG, []):
+    if 'path' not in imp:
+      continue
+    path = os.path.normpath(
+        os.path.join(os.path.dirname(overall_path), imp['path']))
+
+    inc_contents = read_yaml_file(path)
+    merge_dicts(overall, inc_contents)
+
+  pattern_files = expand_imports(overall, overall_path)
+  for inc_file in pattern_files:
     inc_contents = read_yaml_file(inc_file)
     merge_dicts(overall, inc_contents)
 

@@ -44,7 +44,7 @@ func NormalizePath(path string) (string, error) {
 	// When using `bazel run`, the environment variable BUILD_WORKING_DIRECTORY
 	// will be set to the path where the command was run from.
 	cwd := os.Getenv("BUILD_WORKING_DIRECTORY")
-	if len(cwd) == 0 {
+	if cwd == "" {
 		if cwd, err = os.Getwd(); err != nil {
 			return "", err
 		}
@@ -54,11 +54,11 @@ func NormalizePath(path string) (string, error) {
 
 // Load loads a config from the given path.
 func Load(path string) (*Config, error) {
-	np, err := NormalizePath(path)
+	path, err := NormalizePath(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to normalize path: %v", err)
+		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
 	}
-	m, err := loadMap(np)
+	m, err := loadMap(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config to map: %v", err)
 	}
@@ -81,10 +81,12 @@ func Load(path string) (*Config, error) {
 }
 
 type importsItem struct {
+	Path    string `json:"path"`
 	Pattern string `json:"pattern"`
 }
 
 // loadMap loads the config at path into a map. It will also merge all imported configs.
+// The given path should be absolute.
 func loadMap(path string) (map[string]interface{}, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -109,12 +111,38 @@ func loadMap(path string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("failed to unmarshal raw config to struct with imports: %v", err)
 	}
 
-	impPaths, err := allImportsPaths(path, conf.Imports)
+	dir := filepath.Dir(path)
+	pathMap := map[string]bool{
+		path: true,
+	}
+	for _, imp := range conf.Imports {
+		impPath := imp.Path
+		if impPath == "" {
+			continue
+		}
+		if !filepath.IsAbs(impPath) {
+			impPath = filepath.Join(dir, impPath)
+		}
+		pathMap[impPath] = true
+
+		impMap, err := loadMap(impPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load %q to map: %v", impPath, err)
+		}
+		if err := mergo.Merge(&root, impMap, mergo.WithAppendSlice); err != nil {
+			return nil, fmt.Errorf("failed to merge imported file %q: %v", impPath, err)
+		}
+	}
+
+	paths, err := patternPaths(path, conf.Imports)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, p := range impPaths {
+	for _, p := range paths {
+		if pathMap[p] {
+			continue
+		}
 		impMap, err := loadMap(p)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load %q to map: %v", p, err)
@@ -123,11 +151,10 @@ func loadMap(path string) (map[string]interface{}, error) {
 			return nil, fmt.Errorf("failed to merge imported file %q: %v", p, err)
 		}
 	}
-
 	return root, nil
 }
 
-// allImportsPaths returns all files matching the patterns defined
+// patternPaths returns all files matching the patterns defined
 // in importsList.
 // If projectYAMLPath match patterns, the result always ignore it.
 // projectYAMLPath should be an absolute path.
@@ -136,12 +163,15 @@ func loadMap(path string) (map[string]interface{}, error) {
 // For example, if "./*.yaml" is an entry of "imports", the project YAML itself
 // would match the pattern. We should exclude that path because we do not want to
 // include the content of that YAML twice.
-func allImportsPaths(projectYAMLPath string, importsList []*importsItem) ([]string, error) {
+func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string, error) {
 	allMatches := make(map[string]bool)
 	projectYamlFolder := filepath.Dir(projectYAMLPath)
 	for _, importItem := range importsList {
 		// joinedPath would be always an absolute path (pattern).
 		joinedPath := importItem.Pattern
+		if joinedPath == "" {
+			continue
+		}
 		if !filepath.IsAbs(joinedPath) {
 			joinedPath = filepath.Join(projectYamlFolder, importItem.Pattern)
 		}

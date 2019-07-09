@@ -24,11 +24,11 @@
 # use any file as the root to pass in to the script if the "import_files"
 # organises a tree which connects all the files included.
 
-import_files: [
-  'partial_audit.yaml',
-  'partial_projects.yaml',
-  'partial_other_projects.yaml',
-]
+imports:
+- path: 'partial_audit.yaml'
+- path: 'partial_projects.yaml'
+- path: 'partial_other_projects.yaml'
+
 
 overall:
   organization_id: '12345678'           # Replace this with your Organization ID, or remove to setup without an organization.

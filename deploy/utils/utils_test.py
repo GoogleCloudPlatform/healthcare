@@ -43,14 +43,14 @@ def is_expand_config_equal(config_a, config_b):
 
   keys = set()
   for key in config_a:
-    if key != utils.IMPORT_PATTERN_TAG and key != utils.IMPORT_FILES_TAG:
+    if key != utils.IMPORTS_TAG:
       if key in config_b:
         keys.add(key)
       else:
         return False
 
   for key in config_b:
-    if key != utils.IMPORT_PATTERN_TAG and key != utils.IMPORT_FILES_TAG:
+    if key != utils.IMPORTS_TAG:
       if key in config_a:
         keys.add(key)
       else:
