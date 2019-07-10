@@ -17,13 +17,14 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/ghodss/yaml"
 	"github.com/imdario/mergo"
@@ -58,7 +59,7 @@ func Load(path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
 	}
-	m, err := loadMap(path)
+	m, err := loadMap(path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config to map: %v", err)
 	}
@@ -70,9 +71,8 @@ func Load(path string) (*Config, error) {
 
 	conf := new(Config)
 	if err := json.Unmarshal(b, conf); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal config: %v\nmerged config: %v", err, string(b))
 	}
-	log.Printf("loaded config: %v", string(b))
 
 	if err := conf.Init(); err != nil {
 		return nil, fmt.Errorf("failed to initialize config: %v", err)
@@ -81,26 +81,40 @@ func Load(path string) (*Config, error) {
 }
 
 type importsItem struct {
-	Path    string `json:"path"`
+	Path string                 `json:"path"`
+	Data map[string]interface{} `json:"data"`
+
 	Pattern string `json:"pattern"`
 }
 
 // loadMap loads the config at path into a map. It will also merge all imported configs.
 // The given path should be absolute.
-func loadMap(path string) (map[string]interface{}, error) {
+func loadMap(path string, data map[string]interface{}) (map[string]interface{}, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file at path %q: %v", path, err)
 	}
 
+	if len(data) > 0 {
+		tmpl, err := template.New(path).Parse(string(b))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse %q into template: %v", path, err)
+		}
+		var buf bytes.Buffer
+		if err := tmpl.Execute(&buf, data); err != nil {
+			return nil, fmt.Errorf("failed to execute template for %q: %v", path, err)
+		}
+		b = buf.Bytes()
+	}
+
 	var raw json.RawMessage
 	if err := yaml.Unmarshal(b, &raw); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal config at path %q: %v", path, err)
 	}
 
 	root := make(map[string]interface{})
 	if err := json.Unmarshal(raw, &root); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal raw config to map: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal raw config to map at path %q: %v", path, err)
 	}
 
 	type config struct {
@@ -108,7 +122,7 @@ func loadMap(path string) (map[string]interface{}, error) {
 	}
 	conf := new(config)
 	if err := json.Unmarshal(raw, conf); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal raw config to struct with imports: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal raw config to struct with imports at path %q: %v", path, err)
 	}
 
 	dir := filepath.Dir(path)
@@ -125,7 +139,7 @@ func loadMap(path string) (map[string]interface{}, error) {
 		}
 		pathMap[impPath] = true
 
-		impMap, err := loadMap(impPath)
+		impMap, err := loadMap(impPath, imp.Data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load %q to map: %v", impPath, err)
 		}
@@ -143,7 +157,7 @@ func loadMap(path string) (map[string]interface{}, error) {
 		if pathMap[p] {
 			continue
 		}
-		impMap, err := loadMap(p)
+		impMap, err := loadMap(p, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load %q to map: %v", p, err)
 		}
@@ -171,6 +185,9 @@ func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string,
 		joinedPath := importItem.Pattern
 		if joinedPath == "" {
 			continue
+		}
+		if len(importItem.Data) > 0 {
+			return nil, fmt.Errorf("import cannot have both pattern and data set together")
 		}
 		if !filepath.IsAbs(joinedPath) {
 			joinedPath = filepath.Join(projectYamlFolder, importItem.Pattern)

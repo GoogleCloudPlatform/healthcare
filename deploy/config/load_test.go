@@ -39,26 +39,46 @@ func TestNormalizePath(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	conf, err := config.Load("deploy/samples/spanned_configs/root.yaml")
-	if err != nil {
-		t.Fatalf("config.Load = %v", err)
-	}
-	expectedConf, err := config.Load("deploy/samples/project_with_remote_audit_logs.yaml")
-	if err != nil {
-		t.Fatalf("config.Load = %v", err)
+	tests := []struct {
+		name      string
+		inputPath string
+		wantPath  string
+	}{
+		{
+			name:      "spanned_configs",
+			inputPath: "deploy/samples/spanned_configs/root.yaml",
+			wantPath:  "deploy/samples/project_with_remote_audit_logs.yaml",
+		},
+		{
+			name:      "template",
+			inputPath: "deploy/samples/template/input.yaml",
+			wantPath:  "deploy/samples/minimal.yaml",
+		},
 	}
 
-	allowUnexported := cmp.AllowUnexported(
-		config.BigqueryDataset{}, config.DefaultResource{}, config.GCSBucket{},
-		config.LifecycleRule{}, config.IAMPolicy{}, config.Metric{},
-		config.Pubsub{}, config.Subscription{},
-	)
-	opts := []cmp.Option{
-		allowUnexported,
-		cmpopts.SortSlices(func(a, b *config.Project) bool { return a.ID < b.ID }),
-	}
-	if diff := cmp.Diff(conf.Projects, expectedConf.Projects, opts...); diff != "" {
-		t.Fatalf("yaml differs (-got +want):\n%v", diff)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := config.Load(tc.inputPath)
+			if err != nil {
+				t.Fatalf("config.Load = %v", err)
+			}
+			want, err := config.Load(tc.wantPath)
+			if err != nil {
+				t.Fatalf("config.Load = %v", err)
+			}
+			allowUnexported := cmp.AllowUnexported(
+				config.BigqueryDataset{}, config.DefaultResource{}, config.ForsetiProperties{},
+				config.GCSBucket{}, config.LifecycleRule{}, config.IAMPolicy{}, config.Metric{},
+				config.Pubsub{}, config.Subscription{},
+			)
+			opts := []cmp.Option{
+				allowUnexported,
+				cmpopts.SortSlices(func(a, b *config.Project) bool { return a.ID < b.ID }),
+			}
+			if diff := cmp.Diff(got, want, opts...); diff != "" {
+				t.Fatalf("yaml differs (-got +want):\n%v", diff)
+			}
+		})
 	}
 }
 
