@@ -58,9 +58,6 @@ type Project struct {
 	} `json:"resources"`
 
 	AuditLogs *struct {
-		// While audit resources use CFT templates under the hood, we only allow them to set
-		// a controlled subset of fields as these resources are managed more tightly by the DPT scripts.
-		// Thus, don't implement them as a resource pair as we don't need to save the raw form.
 		LogsBQDataset BigqueryDataset `json:"logs_bq_dataset"`
 		LogsGCSBucket *GCSBucket      `json:"logs_gcs_bucket"`
 	} `json:"audit_logs"`
