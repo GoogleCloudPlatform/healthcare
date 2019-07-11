@@ -73,7 +73,9 @@ def fake_run(f, *args, **kwargs):
     return call
 
   cmd = args[0]
-  if cmd[:5] == ['gcloud', 'alpha', 'monitoring', 'channels', 'list']:
+  if cmd[0].endswith('load_config'):
+    return subprocess.check_output(cmd).decode()
+  elif cmd[:5] == ['gcloud', 'alpha', 'monitoring', 'channels', 'list']:
     return '__DRY_RUN_CHANNEL DRY_RUN@domain.com'
   elif cmd[:4] == ['gcloud', 'compute', 'instances', 'list']:
     return '__DRY_RUN_NAME__ __DRY_RUN_ID__'

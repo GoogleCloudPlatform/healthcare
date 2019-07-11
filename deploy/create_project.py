@@ -44,6 +44,7 @@ from absl import flags
 from absl import logging
 
 import jsonschema
+import ruamel
 
 from deploy.rule_generator import rule_generator
 from deploy.utils import field_generation
@@ -78,6 +79,9 @@ flags.DEFINE_string(
     'Set automatically by the Bazel rule.')
 flags.DEFINE_string('rule_generator_binary', None,
                     ('Path to rule generator binary. '
+                     'Set automatically by the Bazel rule.'))
+flags.DEFINE_string('load_config_binary', None,
+                    ('Path to load config binary. '
                      'Set automatically by the Bazel rule.'))
 
 # Name of the Log Sink created in the data_project deployment manager template.
@@ -937,8 +941,18 @@ def main(argv):
         'Use converted generated fields to continue? [y/N]?'):
       return
 
-  # Read and parse the project configuration YAML file.
-  root_config = utils.load_config(FLAGS.project_yaml)
+  if FLAGS.enable_new_style_resources:
+    config_string = runner.run_command([
+        FLAGS.load_config_binary,
+        '--config_path',
+        FLAGS.project_yaml,
+    ],
+                                       get_output=True)
+    yaml = ruamel.yaml.YAML()
+    root_config = yaml.load(config_string)
+  else:
+    root_config = utils.load_config(FLAGS.project_yaml)
+
   if not root_config:
     logging.error('Error loading project YAML.')
     return
@@ -1050,4 +1064,5 @@ if __name__ == '__main__':
   flags.mark_flag_as_required('apply_binary')
   flags.mark_flag_as_required('apply_forseti_binary')
   flags.mark_flag_as_required('rule_generator_binary')
+  flags.mark_flag_as_required('load_config_binary')
   app.run(main)

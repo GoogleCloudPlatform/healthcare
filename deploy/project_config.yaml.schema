@@ -857,6 +857,15 @@ properties:
           type: string
           description: |
             The path to import. Must be absolute or relative to this file.
+            This file must be a (partial) config that can be merged
+            into the root config.
+            It can also be a template, in which case the `data` field will be
+            used to fill it.
+            See https://golang.org/pkg/text/template for syntax.
+        data:
+          type: object
+          description: |
+            Data to pass to a template file defined at path.
         pattern:
           type: string
           description: |

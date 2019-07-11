@@ -80,6 +80,25 @@ func Load(path string) (*Config, error) {
 	return conf, nil
 }
 
+// LoadBytes merges and parses the config at path and returns its bytes.
+// TODO: remove this function once we don't need to support python.
+func LoadBytes(path string) ([]byte, error) {
+	path, err := NormalizePath(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
+	}
+	m, err := loadMap(path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config to map: %v", err)
+	}
+
+	b, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal config map: %v", err)
+	}
+	return b, nil
+}
+
 type importsItem struct {
 	Path string                 `json:"path"`
 	Data map[string]interface{} `json:"data"`
