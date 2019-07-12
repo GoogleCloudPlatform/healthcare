@@ -932,14 +932,6 @@ def main(argv):
     FLAGS.output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
 
   FLAGS.project_yaml = utils.normalize_path(FLAGS.project_yaml)
-  if field_generation.move_generated_fields_out_of_projects(FLAGS.project_yaml):
-    if FLAGS.dry_run:
-      logging.error(
-          'Must convert generated fields in nodry_run before running!')
-      return
-    elif not utils.wait_for_yes_no(
-        'Use converted generated fields to continue? [y/N]?'):
-      return
 
   if FLAGS.enable_new_style_resources:
     config_string = runner.run_command([

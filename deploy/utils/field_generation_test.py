@@ -163,52 +163,6 @@ class FieldGeneratingTest(absltest.TestCase):
                 'gs://forseti-server-6fcf0fc/'
         })
 
-  def test_convert_old_generated_fields_to_new(self):
-    yaml = ruamel.yaml.YAML()
-    overall_root = yaml.load(TEST_OLD_YAML_CONTENT)
-    field_generation.convert_old_generated_fields_to_new(overall_root)
-    overall_root_except = yaml.load(TEST_YAML_CONTENT)
-    for project in overall_root_except[field_generation.GENERATED_FIELDS_NAME][
-        field_generation._PROJECTS_TAG]:
-      self.assertEqual(
-          field_generation.get_generated_fields_copy(project,
-                                                     overall_root_except),
-          field_generation.get_generated_fields_copy(project, overall_root))
-    self.assertEqual(
-        field_generation.get_forseti_service_generated_fields(
-            overall_root_except),
-        field_generation.get_forseti_service_generated_fields(overall_root))
-
-  def test_is_old_generated_fields_format_exist(self):
-    yaml = ruamel.yaml.YAML()
-    overall_root = yaml.load(TEST_YAML_CONTENT)
-    overall_root.pop('generated_fields')
-    self.assertFalse(
-        field_generation.is_old_generated_fields_format_exist(overall_root))
-
-    testcases = [
-        overall_root['audit_logs_project'],
-        overall_root['forseti']['project'],
-        overall_root['forseti'],
-        overall_root['projects'][1],
-    ]
-
-    for tc in testcases:
-      tc['generated_fields'] = {}
-      self.assertTrue(
-          field_generation.is_old_generated_fields_format_exist(overall_root))
-      tc.pop('generated_fields')
-
-  def test_update_generated_fields_empty(self):
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml') as f:
-      f.write(TEST_YAML_CONTENT)
-      f.flush()
-      yaml = ruamel.yaml.YAML()
-      overall_root = yaml.load(TEST_YAML_CONTENT)
-      overall_root.pop('generated_fields')
-      new_root = field_generation.update_generated_fields(f.name, overall_root)
-      self.assertEqual(overall_root, new_root)
-
   def test_update_generated_fields_noempty(self):
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml') as f:
       f.write(TEST_YAML_CONTENT)
