@@ -32,7 +32,7 @@
     "@angular/platform-browser-dynamic": "^8.1.0",
     "@angular/router": "^8.1.0",
     "core-js": "^2.6.9",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.13",
     "moment": "^2.24.0",
     "rxjs": "^6.5.2",
     "zone.js": "^0.9.1"
