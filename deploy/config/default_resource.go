@@ -9,17 +9,22 @@ import (
 // DefaultResource represents a resource supported by CFT
 type DefaultResource struct {
 	DefaultResourceProperties `json:"properties"`
-	templatePath              string
-	raw                       json.RawMessage
+	OuterName                 string `json:"name,omitempty"`
+
+	templatePath string
+	raw          json.RawMessage
 }
 
 // DefaultResourceProperties represents a partial CFT resource implementation.
 type DefaultResourceProperties struct {
-	ResourceName string `json:"name"`
+	InnerName string `json:"name,omitempty"`
 }
 
 // Init initializes a new default resource with the given project.
 func (dr *DefaultResource) Init(*Project) error {
+	if dr.OuterName != "" && dr.InnerName != "" {
+		return fmt.Errorf("name can only be defined once in outer or inner object: got %q, %q", dr.OuterName, dr.InnerName)
+	}
 	if dr.Name() == "" {
 		return errors.New("name must be set")
 	}
@@ -31,7 +36,10 @@ func (dr *DefaultResource) Init(*Project) error {
 
 // Name returns the name of this resource.
 func (dr *DefaultResource) Name() string {
-	return dr.ResourceName
+	if dr.OuterName != "" {
+		return dr.OuterName
+	}
+	return dr.InnerName
 }
 
 // TemplatePath returns the name of the template to use for this resource.

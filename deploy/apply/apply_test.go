@@ -81,8 +81,7 @@ resources:
     uniqueWriterIdentity: true
 - name: enable-all-audit-log-policies
   type: {{abs "deploy/templates/audit_log_config.py"}}
-  properties:
-    name: enable-all-audit-log-policies
+  properties: {}
 - name: bigquery-settings-change-count
   type: logging.v2.metric
   properties:
@@ -200,8 +199,8 @@ resources:
 			configData: &testconf.ConfigData{`
 resources:
   gce_firewalls:
-  - properties:
-      name: foo-firewall-rules
+  - name: foo-firewall-rules
+    properties:
       network: foo-network
       rules:
       - name: allow-proxy-from-inside
@@ -222,7 +221,6 @@ resources:
 - name: foo-firewall-rules
   type: {{abs "deploy/config/templates/firewall/firewall.py"}}
   properties:
-    name: foo-firewall-rules
     network: foo-network
     rules:
     - name: allow-proxy-from-inside

@@ -224,8 +224,8 @@ func (p *Project) initAuditResources(auditProject *Project) error {
 // addBaseResources adds resources not set by the raw yaml config in the project (i.e. not configured by the user).
 func (p *Project) addBaseResources() error {
 	p.DefaultResources = append(p.DefaultResources, &DefaultResource{
-		DefaultResourceProperties: DefaultResourceProperties{ResourceName: "enable-all-audit-log-policies"},
-		templatePath:              "deploy/templates/audit_log_config.py",
+		OuterName:    "enable-all-audit-log-policies",
+		templatePath: "deploy/templates/audit_log_config.py",
 	})
 
 	p.Resources.IAMPolicies = append(p.Resources.IAMPolicies, &IAMPolicy{

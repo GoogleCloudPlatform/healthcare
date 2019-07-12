@@ -580,8 +580,15 @@ definitions:
             items:
               type: object
               required:
+              - name
               - properties
               properties:
+                name:
+                  type: string
+                  description: |
+                    Name of this firewall. Only used forthe  deployment manager
+                    resource name (i.e. does not affect the actual firewall
+                    resource).
                 properties:
                   type: object
                   description: |

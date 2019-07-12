@@ -111,14 +111,18 @@ projects:
         name: my-team-project-shared-files
         storageClass: REGIONAL
     gce_firewalls:
-    - properties:
-        name: allow-rstudio
+    - name: rstudio-firewall-rules
+      properties:
         rules:
-        - IPProtocol: tcp
-          ports:
-          - '8787'
-        sourceRanges:
-        - '0.0.0.0/0'
+        - name: allow-rstudio
+          description: rule to allow rstudio
+          direction: INGRESS
+          sourceRanges:
+          - '0.0.0.0/0'
+          allowed:
+          - IPProtocol: tcp
+            ports:
+            - '8787'
     gce_instances:
     - properties:
         name: work-machine-1
