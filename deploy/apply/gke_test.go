@@ -56,7 +56,7 @@ func TestLocationTypeAndValue(t *testing.T) {
 			in: config.GKECluster{GKEClusterProperties: config.GKEClusterProperties{
 				ClusterLocationType: "Regional",
 				Region:              "some_region",
-				Cluster:             config.GKEClusterSettings{"cluster_with_region"},
+				Cluster:             config.GKEClusterSettings{Name: "cluster_with_region"},
 			}},
 			locationType:  "--region",
 			locationValue: "some_region",
@@ -65,7 +65,7 @@ func TestLocationTypeAndValue(t *testing.T) {
 			in: config.GKECluster{GKEClusterProperties: config.GKEClusterProperties{
 				ClusterLocationType: "Zonal",
 				Zone:                "some_zone",
-				Cluster:             config.GKEClusterSettings{"cluster_with_zone"},
+				Cluster:             config.GKEClusterSettings{Name: "cluster_with_zone"},
 			}},
 			locationType:  "--zone",
 			locationValue: "some_zone",
@@ -138,7 +138,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 				ClusterLocationType: "Zonal",
 				Region:              "some_region",
 				Zone:                "",
-				Cluster:             config.GKEClusterSettings{"cluster_zonal_error"},
+				Cluster:             config.GKEClusterSettings{Name: "cluster_zonal_error"},
 			}},
 			err: "failed to get cluster's zone: cluster_zonal_error",
 		},
@@ -146,7 +146,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 			in: config.GKECluster{GKEClusterProperties: config.GKEClusterProperties{
 				ClusterLocationType: "Regional",
 				Zone:                "some_zone",
-				Cluster:             config.GKEClusterSettings{"cluster_regional_error"},
+				Cluster:             config.GKEClusterSettings{Name: "cluster_regional_error"},
 			}},
 			err: "failed to get cluster's region: cluster_regional_error",
 		},
@@ -155,7 +155,7 @@ func TestLocationTypeAndValueError(t *testing.T) {
 				ClusterLocationType: "Location",
 				Region:              "some_region",
 				Zone:                "some_zone",
-				Cluster:             config.GKEClusterSettings{"cluster_wrong_type"},
+				Cluster:             config.GKEClusterSettings{Name: "cluster_wrong_type"},
 			}},
 			err: "failed to get cluster's location: cluster_wrong_type",
 		},
@@ -222,5 +222,23 @@ resources:
 		if err == nil || !strings.Contains(err.Error(), tc.err) {
 			t.Errorf("deployGKEWorkloads unexpected error: got %q, want error with substring %q", err, tc.err)
 		}
+	}
+}
+
+func TestUpdateMetricsMap(t *testing.T) {
+	quotas := make(map[string](map[string]int))
+	err := updateQuotasMap(&quotas, "some-location1", "type1", "3", 1)
+	if err != nil {
+		t.Errorf("cannot create new item in %v", quotas)
+	}
+	if value, _ := quotas["some-location1"]; value["type1"] != 3 {
+		t.Errorf("number of new item is wrong expect %v get %v", 3, value["type1"])
+	}
+	err = updateQuotasMap(&quotas, "some-location1", "type1", "7", 1)
+	if err != nil {
+		t.Errorf("cannot add to old item in %v", quotas)
+	}
+	if value, _ := quotas["some-location1"]; value["type1"] != 10 {
+		t.Errorf("number of merged item is wrong expect %v get %v", 10, value["type1"])
 	}
 }

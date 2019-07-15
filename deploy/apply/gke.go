@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
@@ -108,4 +109,41 @@ func applyClusterWorkload(containerYamlPath string) error {
 		return fmt.Errorf("failed to apply workloads with kubectl: %s", err)
 	}
 	return nil
+}
+
+// updateQuotasMap update the location metricsType and number to a map.
+func updateQuotasMap(quotas *map[string](map[string]int), location string, metricsType string, number string, initNodeCount int) error {
+	num, err := strconv.Atoi(number)
+	if err != nil {
+		return fmt.Errorf("%q - %q - %q", location, metricsType, number)
+	}
+	num = num * initNodeCount
+	if _, ok := (*quotas)[location]; ok != true {
+		(*quotas)[location] = make(map[string]int)
+	}
+	typeNum, _ := (*quotas)[location]
+	if _, ok := typeNum[metricsType]; ok != true {
+		typeNum[metricsType] = num
+	} else {
+		typeNum[metricsType] = num + typeNum[metricsType]
+	}
+	return nil
+}
+
+// ExpectedGKEQuotas get the expect quotas.
+func ExpectedGKEQuotas(project *config.Project) (map[string]map[string]int, []string) {
+	// location-> "metrics type"-> number
+	metrics := make(map[string]map[string]int)
+	unidentified := []string{}
+	clusters := project.Resources.GKEClusters
+	for _, cluster := range clusters {
+		region, err := cluster.RegionString()
+		if err != nil {
+			unidentified = append(unidentified, cluster.Name())
+		}
+		for _, accelerator := range cluster.Cluster.NodeConfig.Accelerators {
+			updateQuotasMap(&metrics, region, accelerator.AcceleratorType, accelerator.AcceleratorCount, cluster.Cluster.InitialNodeCount)
+		}
+	}
+	return metrics, unidentified
 }

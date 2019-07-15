@@ -26,7 +26,7 @@ const (
 var deploymentManagerRoles = []string{"roles/owner", "roles/storage.admin"}
 
 // deploymentRetryWaitTime is the time to wait between retrying a deployment to allow for concurrent operations to finish.
-const deploymentRetryWaitTime = time.Minute
+const deploymentRetryWaitTime = time.Minute / 3
 
 // The following vars are stubbed in tests.
 var (
@@ -74,6 +74,10 @@ type depender interface {
 func Apply(conf *config.Config, project *config.Project) error {
 	if err := grantDeploymentManagerAccess(project); err != nil {
 		return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
+	}
+
+	if err := askForEditQuotas(project); err != nil {
+		return fmt.Errorf("failed to edit quotas: %v", err)
 	}
 
 	if err := deployPrerequisite(project); err != nil {
@@ -331,6 +335,30 @@ func hasBinding(project *config.Project, role string, member string) (has bool, 
 func deployPrerequisite(project *config.Project) error {
 	if err := upsertDeploymentFromFile(setupPrerequisiteDeploymentName, "deploy/templates/chc_resource/chc_res_type_provider.yaml", project.ID); err != nil {
 		return fmt.Errorf("failed to deploy CHC type provider: %v", err)
+	}
+	return nil
+}
+
+// askForEditQuotas asks users to edit quotas.
+func askForEditQuotas(project *config.Project) error {
+	metrics, unidentified := ExpectedGKEQuotas(project)
+	if len(metrics) == 0 && len(unidentified) == 0 {
+		return nil
+	}
+	fmt.Printf("Please check the following quotas:\n%v\n%v\n", metrics, unidentified)
+	fmt.Printf("Click the following link to edit quotas: \nhttps://pantheon.corp.google.com/iam-admin/quotas?project=%v&service=compute.googleapis.com\n", project.ID)
+	fmt.Printf("Please wait until your quota request has been approved, then press \"Y\" to continue, or \"n\" to exit. (Y/n)")
+	for true {
+		var input string
+		if _, err := fmt.Scan(&input); err != nil {
+			return fmt.Errorf("failed to get user confirm: %s", err)
+		}
+		if input == "Y" || input == "y" {
+			return nil
+		}
+		if input == "N" || input == "n" {
+			return fmt.Errorf("user chooses to exist")
+		}
 	}
 	return nil
 }
