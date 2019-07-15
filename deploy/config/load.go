@@ -92,7 +92,7 @@ func LoadBytes(path string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to load config to map: %v", err)
 	}
 
-	b, err := json.MarshalIndent(m, "", "  ")
+	b, err := yaml.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal config map: %v", err)
 	}
