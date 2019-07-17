@@ -104,7 +104,7 @@ func ConfigBeforeInit(t *testing.T, data *ConfigData) *config.Config {
 		t.Fatalf("template Execute: %v", err)
 	}
 
-	if err := config.ValidateConfig(buf.Bytes()); err != nil {
+	if err := config.Validate(buf.Bytes()); err != nil {
 		t.Fatalf("validate config: %v", err)
 	}
 

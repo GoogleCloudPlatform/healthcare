@@ -19,6 +19,7 @@ package config
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,9 +28,9 @@ import (
 	"text/template"
 
 	"github.com/ghodss/yaml"
+	"github.com/xeipuuv/gojsonschema"
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/go-homedir"
-	"github.com/xeipuuv/gojsonschema"
 )
 
 // projectConfigSchema is the path of the project config schema template relative to the repo root.
@@ -91,15 +92,15 @@ func LoadBytes(path string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal config map: %v", err)
 	}
 
-	if err := ValidateConfig(b); err != nil {
-		return nil, fmt.Errorf("failed to validate config: %v", err)
+	if err := Validate(b); err != nil {
+		return nil, err
 	}
 
 	return b, nil
 }
 
-// ValidateConfig validates the input project config against the default schema template.
-func ValidateConfig(confYAML []byte) error {
+// Validate validates the input project config against the default schema template.
+func Validate(confYAML []byte) error {
 	schemaYAML, err := ioutil.ReadFile(projectConfigSchema)
 	if err != nil {
 		return fmt.Errorf("failed to read schema file at path %q: %v", projectConfigSchema, err)
@@ -113,19 +114,21 @@ func ValidateConfig(confYAML []byte) error {
 		return fmt.Errorf("failed to convert config file bytes from yaml to json: %v", err)
 	}
 
-	result, err := gojsonschema.Validate(
-		gojsonschema.NewBytesLoader(schemaJSON),
-		gojsonschema.NewBytesLoader(confJSON),
-	)
-
+	result, err := gojsonschema.Validate(gojsonschema.NewBytesLoader(schemaJSON), gojsonschema.NewBytesLoader(confJSON))
 	if err != nil {
 		return fmt.Errorf("failed to validate config: %v", err)
 	}
 
-	if len(result.Errors()) > 0 {
-		return fmt.Errorf("failed to validate config: %v", result.Errors())
+	if len(result.Errors()) == 0 {
+		return nil
 	}
-	return nil
+
+	var sb strings.Builder
+	sb.WriteString("config has validation errors:")
+	for _, err := range result.Errors() {
+		sb.WriteString(fmt.Sprintf("\n- %v", err))
+	}
+	return errors.New(sb.String())
 }
 
 type importsItem struct {
