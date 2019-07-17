@@ -36,6 +36,7 @@ go_library(
     deps = [
         "@com_github_imdario_mergo//:go_default_library",
         "@com_github_mitchellh_homedir//:go_default_library",
+        "@com_github_xeipuuv_gojsonschema//:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],
 )

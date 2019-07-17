@@ -949,12 +949,15 @@ def main(argv):
     logging.error('Error loading project YAML.')
     return
 
-  logging.info('Validating project YAML against schema.')
-  try:
-    utils.validate_config_yaml(root_config)
-  except jsonschema.exceptions.ValidationError as e:
-    logging.error('Error in YAML config: %s', e)
-    return
+  # When enable_new_style_resources is true, config validation is done as part
+  # of the loading phase.
+  if not FLAGS.enable_new_style_resources:
+    logging.info('Validating project YAML against schema.')
+    try:
+      utils.validate_config_yaml(root_config)
+    except jsonschema.exceptions.ValidationError as e:
+      logging.error('Error in YAML config: %s', e)
+      return
 
   want_projects = set(FLAGS.projects)
 

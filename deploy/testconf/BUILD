@@ -16,7 +16,6 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/testconf",
     deps = [
         "//deploy/config:go_default_library",
-        "@com_github_xeipuuv_gojsonschema//:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],
 )

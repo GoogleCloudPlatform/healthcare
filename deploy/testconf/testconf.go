@@ -3,14 +3,12 @@ package testconf
 
 import (
 	"bytes"
-	"io/ioutil"
 	"strings"
 	"testing"
 	"text/template"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/ghodss/yaml"
-	"github.com/xeipuuv/gojsonschema"
 )
 
 const configYAML = `
@@ -105,7 +103,11 @@ func ConfigBeforeInit(t *testing.T, data *ConfigData) *config.Config {
 	if err := tmpl.Execute(&buf, data); err != nil {
 		t.Fatalf("template Execute: %v", err)
 	}
-	validateConfig(t, buf.Bytes())
+
+	if err := config.ValidateConfig(buf.Bytes()); err != nil {
+		t.Fatalf("validate config: %v", err)
+	}
+
 	conf := new(config.Config)
 	if err := yaml.Unmarshal(buf.Bytes(), conf); err != nil {
 		t.Fatalf("unmarshal config: %v", err)
@@ -124,34 +126,6 @@ func ConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.P
 	}
 	proj := conf.Projects[0]
 	return conf, proj
-}
-
-func validateConfig(t *testing.T, confYAML []byte) {
-	schemaYAML, err := ioutil.ReadFile("deploy/project_config.yaml.schema")
-	if err != nil {
-		t.Fatalf("ioutil.ReadFile schema file: %v", err)
-	}
-	schemaJSON, err := yaml.YAMLToJSON(schemaYAML)
-	if err != nil {
-		t.Fatalf("yaml.YAMLToJSON schema: %v", err)
-	}
-	confJSON, err := yaml.YAMLToJSON(confYAML)
-	if err != nil {
-		t.Fatalf("yaml.YAMLToJSON config: %v", err)
-	}
-
-	result, err := gojsonschema.Validate(
-		gojsonschema.NewBytesLoader(schemaJSON),
-		gojsonschema.NewBytesLoader(confJSON),
-	)
-
-	if err != nil {
-		t.Fatalf("jsonschema.Validate: %v", err)
-	}
-
-	if len(result.Errors()) > 0 {
-		t.Fatalf("jsonschema Validate result errors: %v", result.Errors())
-	}
 }
 
 func lpad(s string, n int) string {

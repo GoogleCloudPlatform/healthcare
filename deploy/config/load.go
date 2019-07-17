@@ -29,7 +29,11 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/go-homedir"
+	"github.com/xeipuuv/gojsonschema"
 )
+
+// projectConfigSchema is the path of the project config schema template relative to the repo root.
+const projectConfigSchema = "deploy/project_config.yaml.schema"
 
 // NormalizePath normalizes paths specified through a local run or Bazel invocation.
 func NormalizePath(path string) (string, error) {
@@ -55,22 +59,13 @@ func NormalizePath(path string) (string, error) {
 
 // Load loads a config from the given path.
 func Load(path string) (*Config, error) {
-	path, err := NormalizePath(path)
+	b, err := LoadBytes(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
-	}
-	m, err := loadMap(path, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config to map: %v", err)
-	}
-
-	b, err := json.MarshalIndent(m, "", "  ")
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal config map: %v", err)
+		return nil, fmt.Errorf("failed to load config to bytes: %v", err)
 	}
 
 	conf := new(Config)
-	if err := json.Unmarshal(b, conf); err != nil {
+	if err := yaml.Unmarshal(b, conf); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %v\nmerged config: %v", err, string(b))
 	}
 
@@ -80,8 +75,7 @@ func Load(path string) (*Config, error) {
 	return conf, nil
 }
 
-// LoadBytes merges and parses the config at path and returns its bytes.
-// TODO: remove this function once we don't need to support python.
+// LoadBytes merges, parses and validates the config at path and returns its bytes.
 func LoadBytes(path string) ([]byte, error) {
 	path, err := NormalizePath(path)
 	if err != nil {
@@ -96,7 +90,42 @@ func LoadBytes(path string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal config map: %v", err)
 	}
+
+	if err := ValidateConfig(b); err != nil {
+		return nil, fmt.Errorf("failed to validate config: %v", err)
+	}
+
 	return b, nil
+}
+
+// ValidateConfig validates the input project config against the default schema template.
+func ValidateConfig(confYAML []byte) error {
+	schemaYAML, err := ioutil.ReadFile(projectConfigSchema)
+	if err != nil {
+		return fmt.Errorf("failed to read schema file at path %q: %v", projectConfigSchema, err)
+	}
+	schemaJSON, err := yaml.YAMLToJSON(schemaYAML)
+	if err != nil {
+		return fmt.Errorf("failed to convert schema file at path %q from yaml to json: %v", projectConfigSchema, err)
+	}
+	confJSON, err := yaml.YAMLToJSON(confYAML)
+	if err != nil {
+		return fmt.Errorf("failed to convert config file bytes from yaml to json: %v", err)
+	}
+
+	result, err := gojsonschema.Validate(
+		gojsonschema.NewBytesLoader(schemaJSON),
+		gojsonschema.NewBytesLoader(confJSON),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to validate config: %v", err)
+	}
+
+	if len(result.Errors()) > 0 {
+		return fmt.Errorf("failed to validate config: %v", result.Errors())
+	}
+	return nil
 }
 
 type importsItem struct {

@@ -1,5 +1,4 @@
-// Load_config prints the merged and parse config to stdout.
-// TODO: delete this binary.
+// Load_config prints the merged, parsed and validated config to stdout.
 package main
 
 import (
@@ -18,7 +17,8 @@ func main() {
 
 	b, err := config.LoadBytes(*path)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to load config to bytes: %v", err)
 	}
+
 	fmt.Println(string(b))
 }

@@ -98,8 +98,10 @@ func TestPattern(t *testing.T) {
 	bfn := filepath.Join(dir, "b.yaml")
 	bc := []byte(`
 overall:
- organization_id: '123'
+ billing_account: 000000-000000-000000
+ organization_id: '12345678'
  domain: foo.com
+projects: []
 `)
 	if err := ioutil.WriteFile(bfn, bc, 0664); err != nil {
 		t.Fatalf("ioutil.WriteFile = %v", err)
