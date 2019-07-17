@@ -41,8 +41,7 @@ class CreateProjectTest(absltest.TestCase):
     utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = []
     with tempfile.TemporaryDirectory() as tmp_dir:
-      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'conf.yaml')
-      FLAGS.project_yaml = FLAGS.output_yaml_path
+      FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
         yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
@@ -64,8 +63,7 @@ class CreateProjectTest(absltest.TestCase):
     ]
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'conf.yaml')
-      FLAGS.project_yaml = FLAGS.output_yaml_path
+      FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
         yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
@@ -76,9 +74,7 @@ class CreateProjectTest(absltest.TestCase):
     FLAGS.project_yaml = (
         'deploy/samples/spanned_configs/root.yaml')
     FLAGS.projects = ['*']
-    with tempfile.TemporaryDirectory() as tmp_dir:
-      FLAGS.output_yaml_path = os.path.join(tmp_dir, 'out.yaml')
-      create_project.main([])
+    create_project.main([])
 
   def test_get_data_bucket_name(self):
     data_bucket = {
@@ -115,9 +111,7 @@ def _deploy(config_filename):
   FLAGS.project_yaml = os.path.join(
       'deploy/samples/', config_filename)
   FLAGS.projects = ['*']
-  with tempfile.TemporaryDirectory() as tmp_dir:
-    FLAGS.output_yaml_path = os.path.join(tmp_dir, 'out.yaml')
-    create_project.main([])
+  create_project.main([])
 
 
 if __name__ == '__main__':

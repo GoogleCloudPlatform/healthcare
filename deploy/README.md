@@ -123,16 +123,9 @@ remote audit logs) and one or more data hosting projects.
     WARNING: deploying a project that was previously deployed will trigger an
     update.
 
-1.  If the projects were deployed successfully, the script will write a YAML
-    file at `--output_yaml_path`, containing a `generated_fields` block for each
-    newly-created project. These fields are used to generate monitoring rules.
-    Update the original YAML config to include this block for the new
-    project(s). We recommend setting `--output_yaml_path` to match
-    `--project_yaml`, unless your input YAML is a template with environment
-    variables that you intend to re-use.
-
-    WARNING: if the script failed at any step, please sync `--output_yaml_path`
-    (if it exists) with the input file before trying again.
+1.  If the projects were deployed successfully, the script will write a YAML add
+    a `generated_fields` block in --project_yaml. These fields are used to
+    generate monitoring rules.
 
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare

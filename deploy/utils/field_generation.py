@@ -104,7 +104,7 @@ def update_generated_fields(input_yaml_path, new_config):
   return cfg_content
 
 
-def rewrite_generated_fields_back(project_yaml, output_yaml_path, new_config):
+def rewrite_generated_fields_back(project_yaml, new_config):
   """Write config file to output_yaml_path with new generated_fields."""
   cfg_content = update_generated_fields(project_yaml, new_config)
-  utils.write_yaml_file(cfg_content, output_yaml_path)
+  utils.write_yaml_file(cfg_content, project_yaml)

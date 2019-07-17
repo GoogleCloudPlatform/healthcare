@@ -18,14 +18,10 @@ script with:
   bazel run :create_project -- \
     --project_yaml=my_project_config.yaml \
     --projects='*' \
-    --output_yaml_path=/tmp/output.yaml \ \
     --nodry_run \
     --alsologtostderr
 
 To preview the commands that will run, use `--dry_run`.
-
-After the script has finished executing (success or failure), be sure to sync
---output_yaml_path with --project_yaml.
 """
 
 from __future__ import absolute_import
@@ -60,10 +56,9 @@ flags.DEFINE_list('projects', ['*'],
                   ('Project IDs within --project_yaml to deploy, '
                    'or "*" to deploy all projects.'))
 flags.DEFINE_string('output_yaml_path', None,
-                    ('Path to save a new YAML file with any '
-                     'environment variables substituted and generated '
-                     'fields populated. This can be the same as project_yaml '
-                     'to overwrite the original.'))
+                    ('This field will soon be deprecated and can be unset. '
+                     'It supports the value being the same as --project_yaml '
+                     'to support compatibility with the common use case.'))
 flags.DEFINE_string('output_rules_path', None,
                     ('Path to local directory or GCS bucket to output rules '
                      'files. If unset, directly writes to the Forseti server '
@@ -795,7 +790,7 @@ _SETUP_STEPS = [
 ]
 
 
-def setup_project(config, project_yaml, output_yaml_path):
+def setup_project(config, project_yaml):
   """Run the full process for initalizing a single new project.
 
   Note: for projects that have already been deployed, only the updatable steps
@@ -804,7 +799,6 @@ def setup_project(config, project_yaml, output_yaml_path):
   Args:
     config (ProjectConfig): The config of a single project to setup.
     project_yaml (str): Path of the project config YAML.
-    output_yaml_path (str): Path to output resulting root config in JSON.
 
   Returns:
     A boolean, true if the project was deployed successfully, false otherwise.
@@ -833,11 +827,7 @@ def setup_project(config, project_yaml, output_yaml_path):
     except Exception as e:  # pylint: disable=broad-except
       traceback.print_exc()
       logging.error('%s: setup failed on step %s: %s', project_id, step_num, e)
-      logging.error(
-          'Failure information has been written to --output_yaml_path. '
-          'Please ensure the config at --project_yaml is updated with any '
-          'changes from the config at --output_yaml_path and re-run the script'
-          '(Note: only applicable if --output_yaml_path != --project_yaml)')
+      logging.error('Failure information has been written to --project_yaml.')
 
       # only record failed step if project was undeployed, an update can always
       # start from the beginning
@@ -845,13 +835,11 @@ def setup_project(config, project_yaml, output_yaml_path):
         field_generation.get_generated_fields_ref(
             project_id, config.root)['failed_step'] = step_num
         field_generation.rewrite_generated_fields_back(project_yaml,
-                                                       output_yaml_path,
                                                        config.root)
 
       return False
 
     field_generation.rewrite_generated_fields_back(project_yaml,
-                                                   output_yaml_path,
                                                    config.root)
 
   # if this deployment was resuming from a previous failure, remove the
@@ -859,8 +847,7 @@ def setup_project(config, project_yaml, output_yaml_path):
   if field_generation.is_generated_fields_exist(project_id, config.root):
     field_generation.get_generated_fields_ref(project_id, config.root,
                                               False).pop('failed_step', None)
-  field_generation.rewrite_generated_fields_back(project_yaml, output_yaml_path,
-                                                 config.root)
+  field_generation.rewrite_generated_fields_back(project_yaml, config.root)
   logging.info('Setup completed successfully.')
 
   return True
@@ -924,10 +911,13 @@ def validate_project_configs(overall, projects):
 def main(argv):
   del argv  # Unused.
 
+  if FLAGS.output_yaml_path and FLAGS.output_yaml_path != FLAGS.project_yaml:
+    raise Exception(
+        '--output_yaml_path must be unset or set to --project_yaml.')
+
   if FLAGS.enable_new_style_resources:
     logging.info('--enable_new_style_resources is true.')
 
-  FLAGS.output_yaml_path = utils.normalize_path(FLAGS.output_yaml_path)
   if FLAGS.output_rules_path:
     FLAGS.output_rules_path = utils.normalize_path(FLAGS.output_rules_path)
 
@@ -1028,7 +1018,7 @@ def main(argv):
   for config in projects:
     logging.info('Setting up project %s', config.project['project_id'])
 
-    if not setup_project(config, FLAGS.project_yaml, FLAGS.output_yaml_path):
+    if not setup_project(config, FLAGS.project_yaml):
       # Don't attempt to deploy additional projects if one project failed.
       return
 
@@ -1046,16 +1036,11 @@ def main(argv):
     else:
       rule_generator.run(root_config, output_path=FLAGS.output_rules_path)
 
-  logging.info(
-      'All projects successfully deployed. Please remember to sync '
-      'any changes written to the config at --output_yaml_path with '
-      '--project_yaml before running the script again (Note: only applicable '
-      'if --output_yaml_path != --project_yaml)')
+  logging.info('All projects successfully deployed.')
 
 
 if __name__ == '__main__':
   flags.mark_flag_as_required('project_yaml')
-  flags.mark_flag_as_required('output_yaml_path')
   flags.mark_flag_as_required('apply_binary')
   flags.mark_flag_as_required('apply_forseti_binary')
   flags.mark_flag_as_required('rule_generator_binary')
