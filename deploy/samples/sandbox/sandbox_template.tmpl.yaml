@@ -12,28 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Usage:
-# 1) Replace all fields with relevant values in (a copy of) this file.
-# 2) The copy must be imported by a config file which has overall field.
-
 projects:
-- project_id: ${CLOUDSANDBOX_PROJECT_ID}
-  owners_group: ${USER}_owner@${DOMAIN}.com
-  auditors_group: ${USER}_audit@${DOMAIN}.com
-  stackdriver_alert_email: ${USER}@${DOMAIN}.com
+- project_id: {{.CLOUDSANDBOX_PROJECT_ID}}
+  owners_group: {{.USER}}_owner@{{.DOMAIN}}.com
+  auditors_group: {{.USER}}_audit@{{.DOMAIN}}.com
+  stackdriver_alert_email: {{.USER}}@{{.DOMAIN}}.com
   audit_logs:
     logs_gcs_bucket:
       properties:
         # The bucket name should be global unique, check the best practices:
         # https://cloud.google.com/storage/docs/best-practices#naming
-        name: ${CLOUD_SANDBOX_LOGS_BUCKET_ID}
+        name: {{.CLOUD_SANDBOX_LOGS_BUCKET_ID}}
         location: US
         storageClass: MULTI_REGIONAL
       ttl_days: 365
     logs_bq_dataset:
       properties:
         # The bigquery dataset name does not allow any '-'.
-        name: ${CLOUD_SANDBOX_LOGS_DATASET_ID}
+        name: {{.CLOUD_SANDBOX_LOGS_DATASET_ID}}
         location: US
   enabled_apis:
   - bigquery-json.googleapis.com
@@ -53,67 +49,67 @@ projects:
   resources:
     service_accounts:
     - properties:
-        accountId: ${USER}-dataflow
+        accountId: {{.USER}}-dataflow
     iam_policies:
     - name: some_iam_policy
       properties:
-        projectId: ${CLOUDSANDBOX_PROJECT_ID}
+        projectId: {{.CLOUDSANDBOX_PROJECT_ID}}
         roles:
         - role: "roles/bigquery.dataEditor"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/bigquery.jobUser"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/bigquery.user"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/cloudfunctions.developer"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/compute.viewer"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/dataflow.developer"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/dataflow.worker"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/iam.serviceAccountUser"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/storage.objectCreator"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
         - role: "roles/storage.objectViewer"
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
     gcs_buckets:
     - properties:
         location: US
-        name: chc-${CHS_NAME}-fhir
+        name: chc-{{.CHS_NAME}}-fhir
         bindings:
         - role: roles/storage.objectAdmin
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
     - properties:
         location: US
-        name: chc-${CHS_NAME}-raw
+        name: chc-{{.CHS_NAME}}-raw
         bindings:
         - role: roles/storage.objectViewer
-          members: ["serviceAccount:$(ref.${USER}-dataflow.email)"]
+          members: ["serviceAccount:$(ref.{{.USER}}-dataflow.email)"]
     bq_datasets:
     - properties:
-        name: chc_${CHS_NAME}_fhir
+        name: chc_{{.CHS_NAME_UNDERSCORES}}_fhir
         location: US
         access:
         - role: WRITER
-          userByEmail: $(ref.${USER}-dataflow.email)
+          userByEmail: $(ref.{{.USER}}-dataflow.email)
     pubsubs:
     - properties:
-        topic: ${CHS_NAME}-hl7v2-topic
+        topic: {{.CHS_NAME}}-hl7v2-topic
         subscriptions:
-        - name: "${CHS_NAME}-hl7v2-sub"
+        - name: "{{.CHS_NAME}}-hl7v2-sub"
     chc_datasets:
     - properties:
-        location: ${DATASET_LOCATION}
-        datasetId: ${CHS_NAME}-health-ds
+        location: {{.DATASET_LOCATION}}
+        datasetId: {{.CHS_NAME}}-health-ds
         hl7V2Stores:
-        - hl7V2StoreId: ${CHS_NAME}-hl7v2-sub
+        - hl7V2StoreId: {{.CHS_NAME}}-hl7v2-sub
           notificationConfig:
-            pubsubTopic: $(ref.${CHS_NAME}-hl7v2-topic.topicName)
+            pubsubTopic: $(ref.{{.CHS_NAME}}-hl7v2-topic.topicName)
         fhirStores:
-        - fhirStoreId: ${CHS_NAME}-fhir-sub
+        - fhirStoreId: {{.CHS_NAME}}-fhir-sub
     vpc_networks:
     - properties:
         name: data-harmonization-private
@@ -124,10 +120,10 @@ projects:
             ipCidrRange: "172.16.0.0/24"
             privateIpGoogleAccess: false
             enableFlowLogs: true
-    gce_firewall_rules:
-    - properties:
-        name: ${CLOUDSANDBOX_PROJECT_ID}-allow-ssh-access
-        network: '$(ref.data-harmonization-private.name)'
+    gce_firewalls:
+    - name: {{.CLOUDSANDBOX_PROJECT_ID}}-allow-ssh-access
+      properties:
+        network: '$(ref.data-harmonization-private.selfLink)'
         rules:
         - name: allow-tcp22
           allowed:
@@ -188,10 +184,10 @@ projects:
                   command:
                     - "/usr/mllp_adapter/mllp_adapter"
                     - "--port=2575"
-                    - "--hl7_v2_project_id=${CLOUDSANDBOX_PROJECT_ID}"
-                    - "--hl7_v2_location_id=${DATASET_LOCATION}"
-                    - "--hl7_v2_dataset_id=${CHS_NAME}-health-ds"
-                    - "--hl7_v2_store_id=${CHS_NAME}-hl7v2-sub"
+                    - "--hl7_v2_project_id={{.CLOUDSANDBOX_PROJECT_ID}}"
+                    - "--hl7_v2_location_id={{.DATASET_LOCATION}}"
+                    - "--hl7_v2_dataset_id={{.CHS_NAME}}-health-ds"
+                    - "--hl7_v2_store_id={{.CHS_NAME}}-hl7v2-sub"
                     - "--api_addr_prefix=https://healthcare.googleapis.com/v1beta1"
                     - "--receiver_ip=0.0.0.0"
                     - "--logtostderr"
