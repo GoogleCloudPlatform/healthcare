@@ -28,6 +28,7 @@ go_library(
         "terraform.go",
     ],
     data = [
+        "//deploy:project_config.yaml.schema",
         "//deploy/config/templates",
         "//deploy/templates",
         "//deploy/templates/chc_resource:chc_dataset_files",
