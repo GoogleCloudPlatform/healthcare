@@ -10,9 +10,6 @@ go_library(
     srcs = [
         "testconf.go",
     ],
-    data = [
-        "//deploy:project_config.yaml.schema",
-    ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/testconf",
     deps = [
         "//deploy/config:go_default_library",
