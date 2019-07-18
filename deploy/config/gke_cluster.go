@@ -14,8 +14,8 @@ type GKECluster struct {
 // GKEClusterProperties represents a partial GKE cluster implementation.
 type GKEClusterProperties struct {
 	ClusterLocationType string             `json:"clusterLocationType"`
-	Region              string             `json:"region"`
-	Zone                string             `json:"zone"`
+	Region              string             `json:"region,omitempty"`
+	Zone                string             `json:"zone,omitempty"`
 	Cluster             GKEClusterSettings `json:"cluster"`
 }
 
