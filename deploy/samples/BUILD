@@ -12,16 +12,16 @@ filegroup(
 )
 
 config_test(
-    name = "test_sample_minimal",
+    name = "sample_minimal_config_test",
     config = "//deploy/samples:minimal.yaml",
 )
 
 config_test(
-    name = "test_sample_project_with_local_audit_logs",
+    name = "sample_project_with_local_audit_logs_config_test",
     config = "//deploy/samples:project_with_local_audit_logs.yaml",
 )
 
 config_test(
-    name = "test_sample_project_with_remote_audit_logs",
+    name = "sample_project_with_remote_audit_logs_config_test",
     config = "//deploy/samples:project_with_remote_audit_logs.yaml",
 )
