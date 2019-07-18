@@ -17,7 +17,7 @@ func main() {
 
 	b, err := config.LoadBytes(*path)
 	if err != nil {
-		log.Fatalf("failed to load config to bytes: %v", err)
+		log.Fatalf("failed to load cosnfig to bytes: %v", err)
 	}
 
 	fmt.Println(string(b))
