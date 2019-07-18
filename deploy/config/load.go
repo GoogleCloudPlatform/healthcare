@@ -147,7 +147,7 @@ func loadMap(path string, data map[string]interface{}) (map[string]interface{}, 
 	}
 
 	if len(data) > 0 {
-		tmpl, err := template.New(path).Parse(string(b))
+		tmpl, err := template.New(path).Option("missingkey=error").Parse(string(b))
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse %q into template: %v", path, err)
 		}

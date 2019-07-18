@@ -13,7 +13,7 @@
 # limitations under the License.
 
 overall:
-  {{if .ORGANIZATION_ID}}
+  {{if index . "ORGANIZATION_ID"}}
   # Encapsulate org id in quotes so it isn't interpreted as an int.
   organization_id: {{printf "%q" .ORGANIZATION_ID}}
   {{end}}
