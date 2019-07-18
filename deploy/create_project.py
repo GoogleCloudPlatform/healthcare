@@ -176,7 +176,9 @@ def enable_services_apis(config):
 
   # TODO  long term solution for updating APIs.
   resources = config.project.get('resources', {})
-  if 'iam_custom_roles' in resources:
+  if 'gce_instances' in resources:
+    want_apis.add('compute.googleapis.com')
+  if 'iam_policies' in resources or 'iam_custom_roles' in resources:
     want_apis.add('iam.googleapis.com')
   if 'chc_datasets' in resources:
     want_apis.add('healthcare.googleapis.com')
@@ -708,6 +710,10 @@ def add_project_generated_fields(config):
   generated_fields[
       'log_sink_service_account'] = utils.get_log_sink_service_account(
           _LOG_SINK_NAME, project_id)
+
+  if 'gce_instances' not in config.project.get('resources', {}):
+    generated_fields.pop('gce_instance_info', None)
+    return
 
   gce_instance_info = utils.get_gce_instance_info(project_id)
   if gce_instance_info:
