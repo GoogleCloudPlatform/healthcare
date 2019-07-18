@@ -23,9 +23,6 @@ FLAGS = flags.FLAGS
 
 class CreateProjectTest(absltest.TestCase):
 
-  def test_create_project_datathon(self):
-    _deploy('datathon_team_project.yaml')
-
   def test_create_project_local_audit_logs(self):
     _deploy('project_with_local_audit_logs.yaml')
 
@@ -34,12 +31,13 @@ class CreateProjectTest(absltest.TestCase):
 
   def test_project_config_validate_check_raise(self):
     FLAGS.projects = ['*']
-    datathon_path = (
-        'deploy/samples/datathon_team_project.yaml'
+    path = (
+        'deploy/samples/project_with_local_audit_logs.yaml'
     )
-    root_config = utils.read_yaml_file(datathon_path)
+    root_config = utils.read_yaml_file(path)
     utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = []
+    root_config['projects'][0]['enabled_apis'] = ['foo.googleapis.com']
     with tempfile.TemporaryDirectory() as tmp_dir:
       FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
@@ -51,10 +49,10 @@ class CreateProjectTest(absltest.TestCase):
 
   def test_project_config_validate_check_correct(self):
     FLAGS.projects = ['*']
-    datathon_path = (
-        'deploy/samples/datathon_team_project.yaml'
+    path = (
+        'deploy/samples/project_with_local_audit_logs.yaml'
     )
-    root_config = utils.read_yaml_file(datathon_path)
+    root_config = utils.read_yaml_file(path)
     utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = [
         'bigquery-json.googleapis.com',
