@@ -8,7 +8,9 @@ licenses(["notice"])  # Apache 2.0
 
 filegroup(
     name = "configs",
-    srcs = glob(["**/*.yaml"]),
+    srcs = glob(["**/*.yaml"]) + [
+        "//deploy/samples/template:configs",
+    ],
 )
 
 config_test(

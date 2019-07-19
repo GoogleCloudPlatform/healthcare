@@ -11,7 +11,11 @@ def _impl(ctx):
         is_executable = True,
     )
 
-    runfiles = ctx.runfiles(files = [ctx.file._config_loader, ctx.file.config, ctx.file._schema])
+    runfiles = ctx.runfiles(files = [
+        ctx.file._config_loader,
+        ctx.file._schema,
+        ctx.file.config,
+    ] + ctx.files.imports)
     return [DefaultInfo(runfiles = runfiles)]
 
 config_test = rule(
@@ -20,6 +24,11 @@ config_test = rule(
             mandatory = True,
             doc = "The project config to validate.",
             allow_single_file = True,
+        ),
+        "imports": attr.label_list(
+            allow_files = True,
+            allow_empty = True,
+            doc = "Additional configs or templates to import.",
         ),
         "_config_loader": attr.label(
             default = Label("//deploy/cmd/load_config"),
