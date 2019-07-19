@@ -63,24 +63,25 @@ projects:
         location: US
         storageClass: MULTI_REGIONAL
 {{lpad .ExtraProjectConfig 2}}
+`
 
-generated_fields:
-  projects:
-    my-project:
-      project_number: '1111'
-      log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
-      gce_instance_info:
-      - name: foo-instance
-        id: '123'
-    my-forseti-project:
-      project_number: '2222'
-      log_sink_service_account: audit-logs-bq@logging-2222.iam.gserviceaccount.com
-      gce_instance_info:
-      - name: foo-instance
-        id: '123'
-  forseti:
-    service_account: forseti@my-forseti-project.iam.gserviceaccount.com
-    server_bucket: gs://my-forseti-project-server/
+const generatedFieldsYAML = `
+projects:
+  my-project:
+    project_number: '1111'
+    log_sink_service_account: audit-logs-bq@logging-1111.iam.gserviceaccount.com
+    gce_instance_info:
+    - name: foo-instance
+      id: '123'
+  my-forseti-project:
+    project_number: '2222'
+    log_sink_service_account: audit-logs-bq@logging-2222.iam.gserviceaccount.com
+    gce_instance_info:
+    - name: foo-instance
+      id: '123'
+forseti:
+  service_account: forseti@my-forseti-project.iam.gserviceaccount.com
+  server_bucket: gs://my-forseti-project-server/
 `
 
 // ConfigData configures a config.
@@ -117,8 +118,12 @@ func ConfigBeforeInit(t *testing.T, data *ConfigData) *config.Config {
 
 // ConfigAndProject gets a test config and project.
 func ConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.Project) {
+	genFields := new(config.AllGeneratedFields)
+	if err := yaml.Unmarshal([]byte(generatedFieldsYAML), genFields); err != nil {
+		t.Fatalf("unmarshal generated fields: %v", err)
+	}
 	conf := ConfigBeforeInit(t, data)
-	if err := conf.Init(); err != nil {
+	if err := conf.Init(genFields); err != nil {
 		t.Fatalf("conf.Init = %v", err)
 	}
 	if len(conf.Projects) != 1 {

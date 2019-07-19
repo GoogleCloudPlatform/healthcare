@@ -21,10 +21,12 @@ type Config struct {
 		FolderID       string   `json:"folder_id"`
 		AllowedAPIs    []string `json:"allowed_apis"`
 	} `json:"overall"`
-	AuditLogsProject   *Project           `json:"audit_logs_project"`
-	Forseti            *Forseti           `json:"forseti"`
-	Projects           []*Project         `json:"projects"`
-	AllGeneratedFields AllGeneratedFields `json:"generated_fields"`
+	AuditLogsProject *Project   `json:"audit_logs_project"`
+	Forseti          *Forseti   `json:"forseti"`
+	Projects         []*Project `json:"projects"`
+
+	// Set by helper and not directly through user defined config.
+	AllGeneratedFields *AllGeneratedFields `json:"-"`
 }
 
 // Project defines a single project's configuration.
@@ -70,7 +72,14 @@ type Project struct {
 }
 
 // Init initializes the config and all its projects.
-func (c *Config) Init() error {
+func (c *Config) Init(genFields *AllGeneratedFields) error {
+	if genFields == nil {
+		genFields = &AllGeneratedFields{}
+	}
+	if genFields.Projects == nil {
+		genFields.Projects = make(map[string]*GeneratedFields)
+	}
+	c.AllGeneratedFields = genFields
 	if err := c.initForseti(); err != nil {
 		return fmt.Errorf("failed to init forseti: %v", err)
 	}

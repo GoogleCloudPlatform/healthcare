@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	projectYAMLPath = flag.String("project_yaml_path", "", "Path to project yaml file")
-	projectID       = flag.String("project", "", "Project within the project yaml file to deploy config resources for")
+	projectYAMLPath     = flag.String("project_yaml_path", "", "Path to project yaml file")
+	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
+	projectID           = flag.String("project", "", "Project within the project yaml file to deploy config resources for")
 )
 
 func main() {
@@ -29,7 +30,7 @@ func main() {
 		log.Fatal("--project must be set")
 	}
 
-	conf, err := config.Load(*projectYAMLPath)
+	conf, err := config.Load(*projectYAMLPath, *generatedFieldsPath)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}

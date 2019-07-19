@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	projectYAMLPath = flag.String("project_yaml_path", "", "Path to projects yaml file")
-	outputPath      = flag.String("output_path", "",
+	projectYAMLPath     = flag.String("project_yaml_path", "", "Path to projects yaml file")
+	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
+	outputPath          = flag.String("output_path", "",
 		"Path to local directory or GCS bucket to write forseti rules. "+
 			"If unset, directly writes to the Forseti server bucket")
 )
@@ -26,8 +27,11 @@ func main() {
 	if *projectYAMLPath == "" {
 		log.Fatal("--project_yaml_path must be set")
 	}
+	if *generatedFieldsPath == "" {
+		log.Fatal("--generated_fields_path must be set")
+	}
 
-	conf, err := config.Load(*projectYAMLPath)
+	conf, err := config.Load(*projectYAMLPath, *generatedFieldsPath)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}

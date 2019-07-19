@@ -56,13 +56,27 @@ func TestLoad(t *testing.T) {
 		},
 	}
 
+	// Just make sure generated fields are parsed correctly.
+	genFieldsFile, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempFile: %v", err)
+	}
+	defer func() {
+		os.Remove(genFieldsFile.Name())
+	}()
+	genFieldsFile.Write([]byte(`
+projects:
+  foo-project:
+    log_sink_service_account: some-sa@gcp-sa-logging.iam.gserviceaccount.com
+    project_number: '123'`))
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := config.Load(tc.inputPath)
+			got, err := config.Load(tc.inputPath, genFieldsFile.Name())
 			if err != nil {
 				t.Fatalf("config.Load = %v", err)
 			}
-			want, err := config.Load(tc.wantPath)
+			want, err := config.Load(tc.wantPath, genFieldsFile.Name())
 			if err != nil {
 				t.Fatalf("config.Load = %v", err)
 			}
@@ -106,13 +120,19 @@ projects: []
 	if err := ioutil.WriteFile(bfn, bc, 0664); err != nil {
 		t.Fatalf("ioutil.WriteFile = %v", err)
 	}
-	got, err := config.Load(afn)
-	if err != nil {
-		t.Fatalf("config.Load = %v", err)
+
+	// use different file extension so pattern doesn't parse it
+	gfn := filepath.Join(dir, "generated_fields.txt")
+	if _, err := os.Create(gfn); err != nil {
+		t.Fatalf("os.Create: %v", err)
 	}
-	want, err := config.Load(bfn)
+	got, err := config.Load(afn, gfn)
 	if err != nil {
-		t.Fatalf("config.Load = %v", err)
+		t.Fatalf("config.Load a.yaml = %v", err)
+	}
+	want, err := config.Load(bfn, gfn)
+	if err != nil {
+		t.Fatalf("config.Load b.yaml = %v", err)
 	}
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("config differs (-got +want):\n%v", diff)

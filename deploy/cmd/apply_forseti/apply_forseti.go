@@ -11,7 +11,10 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
 
-var projectYAMLPath = flag.String("project_yaml_path", "", "Path to project yaml file")
+var (
+	projectYAMLPath     = flag.String("project_yaml_path", "", "Path to project yaml file")
+	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
+)
 
 func main() {
 	flag.Parse()
@@ -20,7 +23,7 @@ func main() {
 		log.Fatal("--project_yaml_path must be set")
 	}
 
-	conf, err := config.Load(*projectYAMLPath)
+	conf, err := config.Load(*projectYAMLPath, *generatedFieldsPath)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}

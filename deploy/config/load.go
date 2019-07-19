@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,8 +60,8 @@ func NormalizePath(path string) (string, error) {
 }
 
 // Load loads a config from the given path.
-func Load(path string) (*Config, error) {
-	b, err := LoadBytes(path)
+func Load(confPath, genFieldsPath string) (*Config, error) {
+	b, err := LoadBytes(confPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config to bytes: %v", err)
 	}
@@ -70,7 +71,11 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %v\nmerged config: %v", err, string(b))
 	}
 
-	if err := conf.Init(); err != nil {
+	genFields, err := loadGeneratedFields(genFieldsPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load generated fields: %v", err)
+	}
+	if err := conf.Init(genFields); err != nil {
 		return nil, fmt.Errorf("failed to initialize config: %v", err)
 	}
 	return conf, nil
@@ -259,4 +264,34 @@ func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string,
 		filePathList = append(filePathList, path)
 	}
 	return filePathList, nil
+}
+
+func loadGeneratedFields(path string) (*AllGeneratedFields, error) {
+	path, err := NormalizePath(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
+	}
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file at path %q: %v", path, err)
+	}
+	if len(b) == 0 {
+		return nil, nil
+	}
+	genFields := new(AllGeneratedFields)
+	if err := yaml.UnmarshalStrict(b, genFields, yaml.DisallowUnknownFields); err != nil {
+		// TODO: remove this once we no longer need to support generated fields being in the input file.
+		log.Printf("failed to unmarshal generated fields at path %q: %v, trying old format...", path, err)
+
+		type oldFormat struct {
+			GeneratedFields *AllGeneratedFields `json:"generated_fields"`
+		}
+
+		of := new(oldFormat)
+		if err := yaml.Unmarshal(b, of); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal generated fields at path %q: %v", path, err)
+		}
+		genFields = of.GeneratedFields
+	}
+	return genFields, nil
 }
