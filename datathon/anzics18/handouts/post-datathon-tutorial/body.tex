@@ -1,0 +1,67 @@
+\begin{center}
+
+\begin{huge}
+\textsc{Working After the Datathon with Google Cloud}
+\end{huge}
+
+\vspace{3mm}
+
+\begin{Large}
+ANZICS Core Critical Care Datathon
+\end{Large}
+\end{center}
+
+\section*{Creating Google Cloud Project}
+Google Cloud Platform Console: https://console.cloud.google.com/
+\begin{itemize}
+\item Sign up for a free one-year trial, with \$300 credit.
+\item We offer datathon participants an additional \$200 credit coupon in the
+  box below.
+  \begin{center}
+    \fbox{\hspace{1cm} COUPON-CODE \hspace{1cm}}
+  \end{center}
+  This coupon can be redeemed at https://console.cloud.google.com/billing/redeem
+  by July 31, 2018. The coupon is valid for 90 days after redemption.
+\item To estimate cloud usage costs, use Google Cloud Platform Pricing
+  Calculator at
+  \begin{center}
+    https://cloud.google.com/products/calculator/
+  \end{center}
+\end{itemize}
+For more details, please visit Google Cloud Platform Documentation at
+https://cloud.google.com/docs/
+
+\section*{Importing Data to BigQuery}
+To access BigQuery Web UI, click on the ``BigQuery'' link on the left panel, or
+navigate to https://bigquery.cloud.google.com
+\begin{itemize}
+\item To create a new dataset, click the down arrow icon
+  \includegraphics{../arrow.png} next to your project name,
+  then click ``Create new dataset''.
+\item To load data to a new table, hover on the dataset name, and click on the
+  plus icon \includegraphics{../plus.png}.
+  \begin{itemize}
+  \item Select ``Create from source'' option.
+  \item Select ``File upload'' for location, and click ``Choose file'' button to
+    select the file(s) to import. Make sure the ``File format'' field matches
+    your file(s) to import.
+  \item Choose a table name.
+  \item Select ``Automatically detect'' for schema.
+  \item Leave the default value for all other options.
+  \end{itemize}
+  The newly created table can be queried as
+  \begin{center}
+    $<$project\_id$>$:$<$dataset\_name$>$.$<$table\_name$>$
+  \end{center}
+\end{itemize}
+\section*{Exporting Data from Google Cloud (Docs)}
+\begin{itemize}
+\item Colab notebook: \texttt{File} $\Rightarrow$ \texttt{Download .ipynb}
+\item RStudio code and data: select file(s) to download in the file browser
+  at bottom-right corner, then click \texttt{More} $\Rightarrow$
+  \texttt{Export...}.
+
+  You may consider compressing all files before export.
+\end{itemize}
+
+\newpage

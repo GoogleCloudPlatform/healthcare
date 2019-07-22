@@ -78,8 +78,8 @@ and needed for the project setup below.
 export BILLING_ACCOUNT=01ABCD-234E56-F7890G1
 ```
 
-Finally, you need to clone (the `datathon` directory of) the open source toolkit
-from [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare)
+Finally, you need to clone the open source toolkit from
+[GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare)
 and install Python dependencies.
 
 ```shell
@@ -96,32 +96,7 @@ If you own a GSuite domain or have opted your domain into
 [instructions](domain_management.md)), you can create a cloud project within the
 domain; otherwise, you can use a default google groups domain. For the projects
 that we will be creating, you can choose a common prefix and the individual
-projects will be named with the prefix you set. For example,
-
-```shell
-export DOMAIN=googlegroups.com
-export PROJECT_PREFIX=my-datathon
-```
-
-We also need to choose a few locations where the project components are hosted.
-
-```shell
-# Replace this location with the closest region for BigQuery data storage.
-# See https://cloud.google.com/bigquery/docs/dataset-locations for all options.
-# Currently, only the following regions are supported:
-#   - asia-northeast1 (Tokyo, regional)
-#   - US (United States, multi-regional)
-#   - EU (European Union, multi-regional)
-export BIGQUERY_LOCATION=US
-
-# Replace this location with the closest region for Google Cloud Storage.
-# See https://cloud.google.com/storage/docs/bucket-locations for all options.
-export GCS_LOCATION=US
-
-# Replace this location with the closest zone with Google Compute Engine.
-# See https://cloud.google.com/compute/docs/regions-zones/ for all options.
-export GCE_ZONE=europe-west1-b  # St. Ghislain, Belgium
-```
+projects will be named with the prefix you set.
 
 ## Permission Control Group Setup
 
@@ -134,35 +109,32 @@ the following groups, and add more as necessary. Please remember to set the
 "Join the Group" config to allow only invited users and restrict the "View
 Topics" permission to members of the group.
 
-First, a list of organizer groups, meant for datathon organizers (for datathons)
-and course administrators and lectures (for courses) to join.
+Note: the recommended naming convention for groups is
+{PROJECT_PREFIX}-{ROLE}@{DOMAIN}
 
-```shell
-# Project owners group, has full permission to the projects, only used for
-# initial project setup and infrequent management.
-export OWNERS_GROUP=${PROJECT_PREFIX}-owners@${DOMAIN}
+e.g. `foo-project-owners@googlegroups.com` for PROJECT_PREFIX=foo-project,
+ROLE=owners, domain=googlegroups.com.
 
-# Project auditors who has the permission to view audit logs.
-export AUDITORS_GROUP=${PROJECT_PREFIX}-auditors@${DOMAIN}
+You will need to create the following groups:
 
-# Members who have read-write access to the data hosted in the projects.
-export EDITORS_GROUP=${PROJECT_PREFIX}-readwrite@${DOMAIN}
-```
+Two organizer groups, meant for datathon organizers (for datathons) and course
+administrators and lecturers (for courses) to join.
 
-Then, two user groups, meant for datathon participants (for datathons) and
-students (for courses) to join. Note that if the dataset in the data-hosting
-project is only meant to be used during the event, and it is the same group of
-people as the participants list that has access the data, then you can assign
-the same group to both environment variables.
+-   `OWNERS_GROUP`: Project owners group, has full permission to the projects,
+    only used for initial project setup and infrequent management.
+-   `AUDITORS_GROUP`: Project auditors who have the permission to view audit
+    logs.
+-   `DATA_EDITORS_GROUP`: Resource editors who can modify and delete data within
+    data holding resources.
 
-```shell
-# Data users who have read-only access to the data hosted in the data-hosting
-# project.
-export DATA_READERS_GROUP=${PROJECT_PREFIX}-data-readers@${DOMAIN}
+Two user groups, meant for datathon participants (for datathons) and students
+(for courses) to join. Note that if the dataset in the data-hosting project is
+only meant to be used during the event, and it is the same group of people as
+the participants list that has access the data, then you can assign the same
+group to both environment variables.
 
-# Work project users who have granted access to the work project environments.
-export PROJECT_USERS_GROUP=${PROJECT_PREFIX}-participants@${DOMAIN}
-```
+-   `DATA_READERS_GROUP`
+-   `PROJECT_USERS_GROUP`
 
 ### G Suite or Cloud Identity
 If you own a GSuite domain or a Cloud Identity-enabled domain, you may set up
@@ -176,7 +148,13 @@ set the permissions as listed below in the public groups section.
 # If you are using public Google Groups you will have to manually create and
 # configure the groups using the Google Groups UI.
 # This assumes you generated the access token in the domain management guide.
-GROUP_LIST=(${OWNERS_GROUP} ${AUDITORS_GROUP} ${EDITORS_GROUP} ${DATA_READERS_GROUP} ${PROJECT_USERS_GROUP})
+OWNERS_GROUP=<NAME_OF_YOUR_OWNERS_GROUP>
+AUDITORS_GROUP=<NAME_OF_YOUR_AUDITORS_GROUP>
+DATA_EDITORS_GROUP=<NAME_OF_YOUR_EDITORS_GROUP>
+DATA_READERS_GROUP=<NAME_OF_YOUR_READERS_GROUP>
+PROJECT_USERS_GROUP=<NAME_OF_YOUR_PROJET_USERS_GROUP>
+
+GROUP_LIST=(${OWNERS_GROUP} ${AUDITORS_GROUP} ${DATA_EDITORS_GROUP} ${DATA_READERS_GROUP} ${PROJECT_USERS_GROUP})
 
 for group_email in "${GROUP_LIST[@]}"
 do
@@ -223,31 +201,27 @@ you used public Google Groups, use the [Google Groups UI](https://groups.google.
 ## Project Skeleton Setup
 
 Once the groups are created, check out the deployment configuration file
-`datathon_projects.yaml`, confirm all the environment variables mentioned in the
-YAML file have been set, and make necessary updates to the config. In particular
-
-*   uncomment and update the organization ID if applicable, and
-*   update other necessary configurations, e.g. compute engine machine type,
-    add or delete team user roles, etc.
+`datathon_projects.tmpl.yaml` and its input `input.yaml`. Update the values in
+`input.yaml` with your own fields.
 
 Once the YAML config is updated and verified, please run the following command
 to create the Google Cloud projects, including
 
-* An audit project
+*   An audit project
     *   named `${PROJECT_PREFIX}-auditing`, whose owner is set to
-    `${OWNERS_GROUP}` if your domain has an organization configured;
-    otherwise the owner will be the active Google account in the Google
-    Cloud SDK config,
+        `${OWNERS_GROUP}` if your domain has an organization configured;
+        otherwise the owner will be the active Google account in the Google
+        Cloud SDK config,
     *   with a BigQuery dataset for audit logs analysis, with read and job
         running permission granted to `${AUDITORS_GROUP}`.
-* A data-hosting project
+*   A data-hosting project
     *   named `${PROJECT_PREFIX}-data`,
     *   whose project-level owner is set to `${OWNERS_GROUP}` if your domain has
         an organization configured; otherwise the owner will be the active
         Google account in the Google Cloud SDK config.
-    *   Set the read-write editors of the project to `${EDITORS_GROUP}`.
+    *   Set the read-write editors of resources to `${DATA_EDITORS_GROUP}`.
     *   Direct audit logs to the auditing project `${PROJECT_PREFIX}-auditing`.
-* A team project
+*   A team project
     *   named `${PROJECT_PREFIX}-team,
     *   whose permission group and auditing are set up in the same way as the
         data-hosting project.
@@ -255,11 +229,11 @@ to create the Google Cloud projects, including
         store shared files.
     *   Grant limited preset roles (project viewer, and BigQuery and Storage
         user, etc) to `${PROJECT_USERS_GROUP}`.
-    *   Set up a Compute Engine VM with the free version of RStudio server,
-        (in turned-off state) and opens up port 8787 for incoming connections.
+    *   Set up a Compute Engine VM with the free version of RStudio server, (in
+        turned-off state) and opens up port 8787 for incoming connections.
 
 ```shell
-bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/datathon_projects.yaml --output_yaml_path=datathon/organizer/datathon_projects_output.yaml --dry_run
+bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/input.yaml --dry_run
 ```
 
 Note that the `--dry_run` flag enables dry run mode, which only prints the
@@ -269,17 +243,11 @@ defined in the `--output_yaml_path` flag, will store the exact configuration
 used for creating the projects after environment variable substitution.
 
 ```shell
-bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/datathon_projects.yaml --output_yaml_path=datathon/organizer/datathon_projects_output.yaml --nodry_run
+bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/input.yaml --nodry_run
 ```
 
 In case the deployment fails, please examine the error messages and make
-appropriate changes. To resume run the above command, but use the output file
-in place of the project file. You can repeat this to continue resuming at the
-last completed step. For example:
-
-```shell
-bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/datathon_projects_output.yaml --output_yaml_path=datathon/organizer/datathon_projects_output.2.yaml --nodry_run
-```
+appropriate changes and re-run the command.
 
 ### Data Importing
 
@@ -304,20 +272,23 @@ If you do need to generate BigQuery schemas yourself, then you need to install
 
 ```shell
 # Set environment variables for parameter.
+OWNERS_GROUP=<NAME_OF_YOUR_OWNERS_GROUP>
+DATA_EDITORS_GROUP=<NAME_OF_YOUR_EDITORS_GROUP>
+DATA_READERS_GROUP=<NAME_OF_YOUR_READERS_GROUP>
+PROJECT_PREFIX=<ID_PREFIX_OF_YOUR_PROJECTS>
 DATASET_NAME=<NAME_OF_YOUR_DATASET>
 INPUT_DIR=<DIRECTORY_PATH_FOR_YOUR_GCS_GZ_FILES>
 SCHEMA_DIR=[OPTIONAL_DIRECTORY_PATH_FOR_YOUR_SCHEMA_FILES]
 
 scripts/upload_data.sh \
-  --owners_group ${OWNERS_GROUP} \
-  --editors_group ${EDITORS_GROUP} \
-  --readers_group ${DATA_READERS_GROUP} \
-  --project_id ${PROJECT_PREFIX}-datasets \
-  --dataset_name ${DATASET_NAME} \
-  --input_dir ${INPUT_DIR} \
-  --schema_dir ${SCHEMA_DIR}
+  --owners_group ${OWNERS_GROUP?} \
+  --editors_group ${DATA_EDITORS_GROUP?} \
+  --readers_group ${DATA_READERS_GROUP?} \
+  --project_id ${PROJECT_PREFIX?}-datasets \
+  --dataset_name ${DATASET_NAME?} \
+  --input_dir ${INPUT_DIR?} \
+  --schema_dir ${SCHEMA_DIR?}
 ```
-
 
 ## Summary
 

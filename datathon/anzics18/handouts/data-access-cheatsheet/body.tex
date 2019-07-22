@@ -1,0 +1,71 @@
+\begin{center}
+
+\begin{huge}
+\textsc{Data Access Cheatsheet}
+\end{huge}
+
+\vspace{3mm}
+
+\begin{Large}
+ANZICS Core Critical Care Datathon
+\end{Large}
+\end{center}
+
+\section*{Data Hosting}
+
+ANZICS, eICU and MIMIC datasets are all hosted in Google Cloud BigQuery
+
+\begin{itemize}
+\item ANZICS: https://bigquery.cloud.google.com/dataset/datathon-datasets:anzics
+\item eICU: https://bigquery.cloud.google.com/dataset/datathon-datasets:eicu
+\item MIMIC-III: https://bigquery.cloud.google.com/dataset/datathon-datasets:mimic
+\end{itemize}
+
+\noindent
+For ANZICS dataset, the variable list documentation is available in storage
+bucket https://storage.cloud.google.com/datathon-datasets-anzics
+\begin{itemize}
+\item PDF format: ANZICS\_datathon\_2018\_variable\_list.pdf
+\item Excel format: ANZICS\_datathon\_2018\_variable\_list.xlsx
+\end{itemize}
+
+\section*{Data Access Tutorials}
+
+BigQuery Standard SQL reference: https://cloud.google.com/bigquery/docs/reference/standard-sql/
+
+\begin{itemize}
+\item Colab tutorial notebook: https://goo.gl/XJp9jb
+\item  R tutorial notebook: `tutorial.Rmd' available in RStudio home directory.
+  \begin{itemize}
+  \item Shared RStudio environment
+    \begin{itemize}
+        \item Server IP found at "External IP" field of Google Compute Engine instances:\\
+          https://console.cloud.google.com/compute/instances?project=datathon-client-00
+        \item RStudio port: 8787
+        \item Example RStudio server link: http://35.189.15.126:8787
+        \item Username: \texttt{R-USER}
+        \item Password: \texttt{R-PASSWORD}
+    \end{itemize}
+  \item Private (team) RStudio environment
+    \begin{itemize}
+      \item Ask for a team cloud project instance `datathon-client-XX', where `XX' is between 01 and 20
+      \item Server IP found at "External IP" field of Google Compute Engine instances:\\
+        https://console.cloud.google.com/compute/instances?project=datathon-client-XX
+      \item RStudio port: 8787
+      \item Username: Distributed by organizers to participants
+      \item Password: Distributed by organizers to participants
+    \end{itemize}
+  \end{itemize}
+\item BigQuery Console Access: https://bigquery.cloud.google.com/welcome/datathon-datasets
+\item JDBC/ODBC BigQuery access
+  \begin{itemize}
+    \item Driver download: https://cloud.google.com/bigquery/partners/simba-drivers/
+    \item JDBC Access URL:\\
+      https://www.simba.com/products/BigQuery/doc/JDBC\_InstallGuide/content/jdbc/bq/using/connectionurl.htm
+    \item ODBC connection guide: https://www.simba.com/docs/ODBC\_QuickstartGuide/content/quick\_start/intro.htm
+    \item Matlab example using JDBC:\\
+      https://github.com/GoogleCloudPlatform/healthcare/blob/master/datathon/anzics18/tutorial.matlab
+  \end{itemize}
+\end{itemize}
+
+\newpage

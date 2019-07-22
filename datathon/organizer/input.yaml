@@ -1,0 +1,32 @@
+imports:
+- path: datathon_projects.tmpl.yaml
+  data:
+    # The followng fields are optional. Uncomment to set them in the config.
+    # ORGANIZATION_ID: '123' # To find your organization ID, run `gcloud organizations list`.
+    # FOLDER_ID: '456'
+    # DOMAIN: googlegroups.com
+
+    # The following fields are mandatory.
+    BILLING_ACCOUNT: '000000-000000-000000'
+    PROJECT_PREFIX: foo-project
+    OWNERS_GROUP: foo-project-owners@googlegroups.com
+    AUDITORS_GROUP: foo-project-auditors@googlegroups.com
+    DATA_EDITORS_GROUP: foo-project-editors@googlegroups.com
+    DATA_READERS_GROUP: foo-project-readers@googlegroups.com
+    PROJECT_USERS_GROUP: foo-project-users@googlegroups.com
+
+    # Replace this location with the closest region for BigQuery data storage.
+    # See https://cloud.google.com/bigquery/docs/dataset-locations for all options.
+    # Currently, only the following regions are supported:
+    #   - asia-northeast1 (Tokyo, regional)
+    #   - US (United States, multi-regional)
+    #   - EU (European Union, multi-regional)
+    BIGQUERY_LOCATION: US
+
+    # Replace this location with the closest region for Google Cloud Storage.
+    # See https://cloud.google.com/storage/docs/bucket-locations for all options.
+    GCS_LOCATION: US
+
+    # Replace this location with the closest zone with Google Compute Engine.
+    # See https://cloud.google.com/compute/docs/regions-zones/ for all options.
+    GCE_ZONE: europe-west1-b  # St. Ghislain, Belgium
