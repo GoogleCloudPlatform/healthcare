@@ -252,6 +252,9 @@ func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string,
 		if err != nil {
 			return nil, fmt.Errorf("pattern %q is malformed", importItem.Pattern)
 		}
+    if len(matches) == 0 {
+    	return nil, fmt.Errorf("pattern %q matched no files", importItem.Pattern)
+    }
 		for _, match := range matches {
 			if match == projectYAMLPath {
 				continue
