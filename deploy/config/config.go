@@ -4,6 +4,7 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 )
@@ -123,6 +124,9 @@ func (c *Config) AllProjects() []*Project {
 		ps = append(ps, c.Forseti.Project)
 	}
 	ps = append(ps, c.Projects...)
+	sort.Slice(ps, func(i, j int) bool {
+		return ps[i].ID < ps[j].ID
+	})
 	return ps
 }
 
