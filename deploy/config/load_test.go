@@ -38,6 +38,44 @@ func TestNormalizePath(t *testing.T) {
 	}
 }
 
+func TestValidate(t *testing.T) {
+	tests := []struct {
+		name      string
+		inputConf []byte
+		ok        bool
+	}{
+		{
+			name: "valid_config",
+			inputConf: []byte(`
+overall:
+  billing_account: 000000-000000-000000
+  organization_id: '12345678'
+  domain: foo.com
+projects: []
+`),
+			ok: true,
+		},
+		{
+			name: "invalid_config",
+			inputConf: []byte(`
+overall:
+  billing_account: 000000-000000-000000
+  organization_id: '12345678'
+  domain: foo.com
+`),
+			ok: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := config.Validate(tc.inputConf); (err == nil) != tc.ok {
+				t.Fatalf("config.Validate = %t, want %t", err == nil, tc.ok)
+			}
+		})
+	}
+}
+
 func TestLoad(t *testing.T) {
 	tests := []struct {
 		name      string
