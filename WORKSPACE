@@ -64,7 +64,7 @@ go_repository(
 go_repository(
     name = "in_ghodss_yaml",
     importpath = "github.com/ghodss/yaml",
-    tag = "v1.0.0",
+    commit = "25d852aebe32c875e9c044af3eef9c7dc6bc777f",
 )
 
 go_repository(

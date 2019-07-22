@@ -63,7 +63,6 @@ go_test(
     ],
     data = [
         "//deploy/samples:configs",
-        "//deploy/testconf:test_multiple_yaml",
     ],
     # Override default run dir to make it easier to find test files.
     rundir = ".",
