@@ -1,7 +1,7 @@
 """Test rule that fails if a project config is not valid."""
 
 def _impl(ctx):
-    """Core implementation of config_test rule."""
+    """Core implementation of _config_test rule."""
     ctx.actions.write(
         content = "{config_loader} --config_path {path}".format(
             config_loader = ctx.executable._config_loader.short_path,
@@ -18,7 +18,7 @@ def _impl(ctx):
     ] + ctx.files.imports)
     return [DefaultInfo(runfiles = runfiles)]
 
-config_test = rule(
+_config_test = rule(
     attrs = {
         "config": attr.label(
             mandatory = True,
@@ -27,7 +27,6 @@ config_test = rule(
         ),
         "imports": attr.label_list(
             allow_files = True,
-            allow_empty = True,
             doc = "Additional configs or templates to import.",
         ),
         "_config_loader": attr.label(
@@ -49,3 +48,9 @@ config_test = rule(
     test = True,
     implementation = _impl,
 )
+
+def config_test(**kwargs):
+    if "imports" in kwargs and kwargs["imports"] == []:
+        fail("`imports` is specified but resolved to no file. It might be because your glob() pattern contains typos.")
+
+    _config_test(**kwargs)
