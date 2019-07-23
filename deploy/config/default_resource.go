@@ -11,8 +11,8 @@ type DefaultResource struct {
 	DefaultResourceProperties `json:"properties"`
 	OuterName                 string `json:"name,omitempty"`
 
-	templatePath string
-	raw          json.RawMessage
+	TmplPath string `json:"-"` // must be set in code
+	raw      json.RawMessage
 }
 
 // DefaultResourceProperties represents a partial CFT resource implementation.
@@ -28,7 +28,7 @@ func (dr *DefaultResource) Init(*Project) error {
 	if dr.Name() == "" {
 		return errors.New("name must be set")
 	}
-	if dr.templatePath == "" {
+	if dr.TmplPath == "" {
 		return errors.New("templatePath must be set")
 	}
 	return nil
@@ -44,7 +44,7 @@ func (dr *DefaultResource) Name() string {
 
 // TemplatePath returns the name of the template to use for this resource.
 func (dr *DefaultResource) TemplatePath() string {
-	return dr.templatePath
+	return dr.TmplPath
 }
 
 // aliasDefaultResource is used to prevent infinite recursion when dealing with json marshaling.

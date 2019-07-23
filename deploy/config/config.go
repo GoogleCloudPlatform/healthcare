@@ -66,10 +66,9 @@ type Project struct {
 	} `json:"audit_logs"`
 
 	// The following vars are set through helpers and not directly through the user defined config.
-	GeneratedFields  *GeneratedFields   `json:"-"`
-	BQLogSink        *LogSink           `json:"-"`
-	DefaultResources []*DefaultResource `json:"-"`
-	Metrics          []*Metric          `json:"-"`
+	GeneratedFields *GeneratedFields `json:"-"`
+	BQLogSink       *LogSink         `json:"-"`
+	Metrics         []*Metric        `json:"-"`
 }
 
 // Init initializes the config and all its projects.
@@ -236,11 +235,6 @@ func (p *Project) initAuditResources(auditProject *Project) error {
 
 // addBaseResources adds resources not set by the raw yaml config in the project (i.e. not configured by the user).
 func (p *Project) addBaseResources() error {
-	p.DefaultResources = append(p.DefaultResources, &DefaultResource{
-		OuterName:    "enable-all-audit-log-policies",
-		templatePath: "deploy/templates/audit_log_config.py",
-	})
-
 	p.Resources.IAMPolicies = append(p.Resources.IAMPolicies, &IAMPolicy{
 		IAMPolicyName: "required-project-bindings",
 		IAMPolicyProperties: IAMPolicyProperties{Bindings: []Binding{
@@ -351,9 +345,6 @@ type Resource interface {
 func (p *Project) DeploymentManagerResources() []Resource {
 	rs := []Resource{p.BQLogSink}
 
-	for _, r := range p.DefaultResources {
-		rs = append(rs, r)
-	}
 	for _, r := range p.Metrics {
 		rs = append(rs, r)
 	}
@@ -367,7 +358,7 @@ func (p *Project) DeploymentManagerResources() []Resource {
 		rs = append(rs, r)
 	}
 	for _, r := range prs.GCEFirewalls {
-		r.templatePath = "deploy/config/templates/firewall/firewall.py"
+		r.TmplPath = "deploy/config/templates/firewall/firewall.py"
 		rs = append(rs, r)
 	}
 	for _, r := range prs.GCEInstances {
@@ -392,7 +383,7 @@ func (p *Project) DeploymentManagerResources() []Resource {
 		rs = append(rs, r)
 	}
 	for _, r := range prs.VPCNetworks {
-		r.templatePath = "deploy/config/templates/network/network.py"
+		r.TmplPath = "deploy/config/templates/network/network.py"
 		rs = append(rs, r)
 	}
 	return rs

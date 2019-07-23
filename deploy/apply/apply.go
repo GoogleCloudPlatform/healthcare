@@ -41,8 +41,7 @@ var (
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
 	}
-	upsertDeployment         = deploymentmanager.Upsert
-	upsertDeploymentFromFile = deploymentmanager.UpsertFromFile
+	upsertDeployment = deploymentmanager.Upsert
 )
 
 // parsedResource is an interface that must be implemented by all concrete resource implementations.
@@ -77,20 +76,11 @@ func Apply(conf *config.Config, project *config.Project) error {
 	}
 
 	if err := deployPrerequisite(project); err != nil {
-		return fmt.Errorf("failed to deploy CHC Type Provider: %v", err)
+		return fmt.Errorf("failed to deploy pre-requisites: %v", err)
 	}
 
-	// TODO: stop retrying once
-	// https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/issues/17
-	// is fixed.
-	for i := 0; i < 2; i++ {
-		if err := deployResources(project); err == nil {
-			break
-		} else if i == 1 {
-			return fmt.Errorf("failed to deploy resources: %v", err)
-		}
-		log.Printf("Sleeping for %v and retrying in case failure was due to concurrent IAM policy update", deploymentRetryWaitTime)
-		time.Sleep(deploymentRetryWaitTime)
+	if err := deployResources(project); err != nil {
+		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
 
 	// Always get the latest log sink writer as when the sink is moved between deployments it may
@@ -100,7 +90,8 @@ func Apply(conf *config.Config, project *config.Project) error {
 		return fmt.Errorf("failed to get log sink service account: %v", err)
 	}
 
-	// Note: if the project was deployed the project Init will already have added the log sink service account permission on the dataset.
+	// Note: if the project was previously deployed, project.Init will already have set the log sink service account permission on the dataset.
+	// An empty currSA implies this is the first time the sink was deployed.
 	if currSA := project.GeneratedFields.LogSinkServiceAccount; currSA == "" {
 		project.AuditLogs.LogsBQDataset.Accesses = append(project.AuditLogs.LogsBQDataset.Accesses, &config.Access{
 			Role: "WRITER", UserByEmail: sinkSA,
@@ -329,8 +320,19 @@ func hasBinding(project *config.Project, role string, member string) (has bool, 
 
 // deployPrerequisite deploys the CHC resources in the project.
 func deployPrerequisite(project *config.Project) error {
-	if err := upsertDeploymentFromFile(setupPrerequisiteDeploymentName, "deploy/templates/chc_resource/chc_res_type_provider.yaml", project.ID); err != nil {
-		return fmt.Errorf("failed to deploy CHC type provider: %v", err)
+	resources := []config.Resource{
+		&config.DefaultResource{
+			OuterName: "enable-all-audit-log-policies",
+			TmplPath:  "deploy/templates/audit_log_config.py",
+		},
+		&config.DefaultResource{
+			OuterName: "chc-type-provider",
+			TmplPath:  "deploy/templates/chc_resource/chc_res_type_provider.jinja",
+		},
 	}
-	return nil
+	deployment, err := getDeployment(project, resources)
+	if err != nil {
+		return fmt.Errorf("failed to get deployment for pre-requisites: %v", err)
+	}
+	return upsertDeployment(setupPrerequisiteDeploymentName, deployment, project.ID)
 }

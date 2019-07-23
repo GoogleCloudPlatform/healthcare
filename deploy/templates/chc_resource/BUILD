@@ -18,5 +18,5 @@ py_test(
 
 filegroup(
     name = "chc_dataset_files",
-    srcs = glob(["*.py"]) + glob(["*.schema"]) + glob(["*.yaml"]),
+    srcs = glob(["*.py"]) + glob(["*.schema"]) + glob(["*.jinja"]),
 )

@@ -10,7 +10,6 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
@@ -18,7 +17,21 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-const auditDeploymentYAML = `
+const wantPreRequisiteDeploymentYAML = `
+imports:
+- path: {{abs "deploy/templates/audit_log_config.py"}}
+- path: {{abs "deploy/templates/chc_resource/chc_res_type_provider.jinja"}}
+
+resources:
+- name: enable-all-audit-log-policies
+  type: {{abs "deploy/templates/audit_log_config.py"}}
+  properties: {}
+- name: chc-type-provider
+  type: {{abs "deploy/templates/chc_resource/chc_res_type_provider.jinja"}}
+  properties: {}
+`
+
+const wantAuditDeploymentYAML = `
 imports:
 - path: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
 - path: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
@@ -68,7 +81,6 @@ resources:
 
 const wantDefaultResourceDeploymentYAML = `
 imports:
-- path: {{abs "deploy/templates/audit_log_config.py"}}
 - path: {{abs "deploy/config/templates/iam_member/iam_member.py"}}
 
 resources:
@@ -79,9 +91,6 @@ resources:
     destination: bigquery.googleapis.com/projects/my-project/datasets/audit_logs
     filter: 'logName:"logs/cloudaudit.googleapis.com"'
     uniqueWriterIdentity: true
-- name: enable-all-audit-log-policies
-  type: {{abs "deploy/templates/audit_log_config.py"}}
-  properties: {}
 - name: bigquery-settings-change-count
   type: logging.v2.metric
   properties:
@@ -464,17 +473,15 @@ resources:
 				got = append(got, upsertCall{name, deployment, projectID})
 				return nil
 			}
-			upsertDeploymentFromFile = func(string, string, string) error {
-				return nil
-			}
 
 			if err := Apply(conf, project); err != nil {
 				t.Fatalf("Deploy: %v", err)
 			}
 
 			want := []upsertCall{
+				{"data-protect-toolkit-prerequisites", parseTemplateToDeployment(t, wantPreRequisiteDeploymentYAML), project.ID},
 				{"data-protect-toolkit-resources", wantResourceDeployment(t, tc.want), project.ID},
-				{"data-protect-toolkit-audit-my-project", parseTemplateToDeployment(t, auditDeploymentYAML), project.ID},
+				{"data-protect-toolkit-audit-my-project", parseTemplateToDeployment(t, wantAuditDeploymentYAML), project.ID},
 			}
 
 			// allow imports and resources to be in any order
@@ -488,31 +495,6 @@ resources:
 
 			// TODO: validate against schema file too
 		})
-	}
-}
-
-func TestDeployTypeProvider(t *testing.T) {
-	project := config.Project{}
-	project.ID = "foo"
-	type upsertFromFileCall struct {
-		Name      string
-		Config    string
-		ProjectID string
-	}
-
-	var got []upsertFromFileCall
-	upsertDeploymentFromFile = func(name string, config string, projectID string) error {
-		got = append(got, upsertFromFileCall{name, config, projectID})
-		return nil
-	}
-	if err := deployPrerequisite(&project); err != nil {
-		t.Fatalf("Deploy CHC Type Provider: %v", err)
-	}
-	want := []upsertFromFileCall{
-		{"data-protect-toolkit-prerequisites", "deploy/templates/chc_resource/chc_res_type_provider.yaml", project.ID},
-	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("deployment yaml differs (-got +want):\n%v", diff)
 	}
 }
 

@@ -11,6 +11,10 @@ go_library(
         "forseti.go",
         "gke.go",
     ],
+    data = [
+        "//deploy/templates",
+        "//deploy/templates/chc_resource:chc_dataset_files",
+    ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/apply",
     deps = [
         "//deploy/config:go_default_library",
