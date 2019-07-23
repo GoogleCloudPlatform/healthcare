@@ -124,25 +124,41 @@ Step = collections.namedtuple(
     ])
 
 
-def create_new_project(config):
-  """Creates the new GCP project."""
+def get_or_create_new_project(config):
+  """Creates the new GCP project if it does not exist."""
   project_id = config.project['project_id']
 
-  overall_config = config.root['overall']
-  org_id = overall_config.get('organization_id')
-  folder_id = config.project.get('folder_id', overall_config.get('folder_id'))
+  # Attempt to get the project number first and fall back to creating the
+  # project.
+  # Note that it is possible that the `gcloud projects describe` command fails
+  # due to reasons other than project does not exist (e.g. caller does not have
+  # sufficient permission). In that case, project could exist and the code will
+  # still attempt to create the project and fail if the project already exists.
+  #
+  # In the case where project exists, the organization_id / billing_account /
+  # folder_id could be different from those specified in the config.
+  # TODO: add check to enforce the metadata set in the config on the
+  # existing project.
+  try:
+    config.generated_fields['projects'][project_id]['project_number'] = (
+        utils.get_project_number(project_id))
+    logging.info('Project %s exists, skip creating project.', project_id)
+  except subprocess.CalledProcessError:
+    overall_config = config.root['overall']
+    org_id = overall_config.get('organization_id')
+    folder_id = config.project.get('folder_id', overall_config.get('folder_id'))
 
-  create_project_command = ['projects', 'create', project_id]
-  if folder_id:
-    create_project_command.extend(['--folder', folder_id])
-  elif org_id:
-    create_project_command.extend(['--organization', org_id])
-  else:
-    logging.info('Deploying without a parent organization or folder.')
-  # Create the new project.
-  runner.run_gcloud_command(create_project_command, project_id=None)
-  config.generated_fields['projects'][project_id]['project_number'] = (
-      utils.get_project_number(project_id))
+    create_project_command = ['projects', 'create', project_id]
+    if folder_id:
+      create_project_command.extend(['--folder', folder_id])
+    elif org_id:
+      create_project_command.extend(['--organization', org_id])
+    else:
+      logging.info('Deploying without a parent organization or folder.')
+    # Create the new project.
+    runner.run_gcloud_command(create_project_command, project_id=None)
+    config.generated_fields['projects'][project_id]['project_number'] = (
+        utils.get_project_number(project_id))
 
 
 def setup_billing(config):
@@ -729,8 +745,8 @@ def add_project_generated_fields(config):
 # on error. Each func takes a config dictionary.
 _SETUP_STEPS = [
     Step(
-        func=create_new_project,
-        description='Create project',
+        func=get_or_create_new_project,
+        description='Get or create project',
         updatable=False,
     ),
     Step(
