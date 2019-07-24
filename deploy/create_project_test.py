@@ -35,7 +35,6 @@ class CreateProjectTest(absltest.TestCase):
         'deploy/samples/project_with_local_audit_logs.yaml'
     )
     root_config = utils.read_yaml_file(path)
-    utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = []
     root_config['projects'][0]['enabled_apis'] = ['foo.googleapis.com']
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -53,7 +52,6 @@ class CreateProjectTest(absltest.TestCase):
         'deploy/samples/project_with_local_audit_logs.yaml'
     )
     root_config = utils.read_yaml_file(path)
-    utils.resolve_env_vars(root_config)
     root_config['overall']['allowed_apis'] = [
         'bigquery-json.googleapis.com',
         'compute.googleapis.com',

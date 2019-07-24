@@ -4,16 +4,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import glob
 import os
-import string
 import subprocess
 import sys
 import tempfile
 
 from absl import flags
 
-import jsonschema
 import ruamel.yaml
 
 from deploy.utils import runner
@@ -96,21 +93,6 @@ def write_yaml_file(contents, path):
     return
   with open(path, 'w') as outfile:
     yaml.dump(contents, outfile)
-
-
-def validate_config_yaml(config):
-  """Validates a Project config YAML against the schema.
-
-  Args:
-    config (dict): The parsed contents of the project config YAML file.
-
-  Raises:
-    jsonschema.exceptions.ValidationError: if the YAML contents do not match the
-      schema.
-  """
-  schema = read_yaml_file(_PROJECT_CONFIG_SCHEMA)
-
-  jsonschema.validate(config, schema)
 
 
 def create_notification_channel(alert_email, project_id):
@@ -251,118 +233,6 @@ def get_gce_instance_info(project_id):
     name, instance_id = line.split()
     instance_info.append({'name': name, 'id': instance_id})
   return instance_info
-
-
-def resolve_env_vars(config):
-  """Recursively resolves (in place) environment variables in config strings.
-
-  Args:
-    config: dictionary or list from a parsed YAML file.
-  """
-  keys = []
-  if isinstance(config, dict):
-    keys = config.keys()
-  elif isinstance(config, list):
-    keys = range(len(config))
-  else:
-    return
-
-  for k in keys:
-    # Only do substitutions on strings.
-    v = config[k]
-    if isinstance(v, str):
-      config[k] = string.Template(v).safe_substitute(os.environ)
-    else:
-      # Recursively handle lists and dictionaries.
-      resolve_env_vars(v)
-
-
-def merge_dicts(dst, src):
-  """Merge src into dst.
-
-  Args:
-    dst: Dictionary for all configs.
-    src: Dictionary to be merged.
-
-  Raises:
-    TypeError: If two dictionaries have the same key and different value types.
-  """
-  for key, val in src.items():
-    if key in dst:
-      root_value = dst[key]
-      if isinstance(val, list) and isinstance(root_value, list):
-        root_value.extend(val)
-      elif isinstance(val, dict) and isinstance(root_value, dict):
-        merge_dicts(root_value, val)
-      else:
-        raise TypeError('Conflict key %s in config files.' % key)
-    else:
-      dst[key] = val
-
-
-def expand_imports(overall, overall_path):
-  """Find all to be imported files to extend imported files.
-
-  Args:
-    overall: dictionary or list from a parsed YAML file.
-    overall_path: The path of the overall YAML file.
-
-  Returns:
-    A list holding all the imported file paths.
-  """
-  imports = overall.get(IMPORTS_TAG, [])
-  paths = set()
-  for imports_item in imports:
-    if 'path' in imports_item:
-      paths.add(
-          os.path.normpath(
-              os.path.join(os.path.dirname(overall_path),
-                           imports_item['path'])))
-
-  all_files = set()
-  for imports_item in imports:
-    if 'pattern' not in imports_item:
-      continue
-    absolute_pattern = os.path.normpath(
-        os.path.join(os.path.dirname(overall_path), imports_item['pattern']))
-    for path in glob.glob(absolute_pattern):
-      if path != overall_path and path not in paths:
-        all_files.add(path)
-
-  files_list = list(all_files)
-  files_list.sort()
-  return files_list
-
-
-def load_config(overall_path):
-  """Reads and parses a YAML file.
-
-  Args:
-    overall_path (string): The path to the YAML file.
-
-  Returns:
-    A dict holding the parsed contents of the YAML file, or None if the file
-    could not be read or parsed.
-  """
-  overall = read_yaml_file(overall_path)
-  if not overall:
-    return None
-  for imp in overall.get(IMPORTS_TAG, []):
-    if 'path' not in imp:
-      continue
-    path = os.path.normpath(
-        os.path.join(os.path.dirname(overall_path), imp['path']))
-
-    inc_contents = read_yaml_file(path)
-    merge_dicts(overall, inc_contents)
-
-  pattern_files = expand_imports(overall, overall_path)
-  for inc_file in pattern_files:
-    inc_contents = read_yaml_file(inc_file)
-    merge_dicts(overall, inc_contents)
-
-  resolve_env_vars(overall)
-  return overall
 
 
 def call_go_binary(parameter_list):

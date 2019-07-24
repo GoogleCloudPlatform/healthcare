@@ -5,63 +5,13 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
-import os
 import re
-import shlex
-import shutil
-import tempfile
-
-from absl import flags
 
 from deploy.utils import runner
 
-FLAGS = flags.FLAGS
 
-_FORSETI_REPO = 'https://github.com/GoogleCloudPlatform/forseti-security.git'
-_DEFAULT_BRANCH = 'dev'
 _FORSETI_SERVER_SERVICE_ACCOUNT_FILTER = 'email:forseti-server-gcp-*'
 _FORSETI_SERVER_BUCKET_RE = re.compile(r'gs://forseti-server-.*')
-
-
-def install(config):
-  """Install a Forseti instance in the given project config.
-
-  Args:
-    config (dict): Forseti config dict of the Forseti instance to deploy.
-  """
-
-  tmp_dir = tempfile.mkdtemp()
-  try:
-    # clone repo
-    runner.run_command(['git', 'clone', _FORSETI_REPO, tmp_dir])
-
-    # make sure we're running from the default branch
-    runner.run_command(['git', '-C', tmp_dir, 'checkout', _DEFAULT_BRANCH])
-
-    # TODO: Pass in a project_id flag once
-    # https://github.com/GoogleCloudPlatform/forseti-security/issues/2182
-    # is closed.
-    runner.run_command([
-        'gcloud', 'config', 'set', 'project', config['project']['project_id'],
-    ])
-
-    # run forseti installer
-    # TODO: switch to terraform or DM template
-    install_cmd = [
-        'python3',
-        os.path.join(tmp_dir, 'install/gcp_installer.py'),
-        '--no-cloudshell',
-    ]
-    if 'installer_flags' in config:
-      install_cmd.extend(shlex.split(config['installer_flags']))
-
-    # Run installer in the temp dir in case cwd is readonly.
-    cwd = os.getcwd()
-    os.chdir(tmp_dir)
-    runner.run_command(install_cmd)
-    os.chdir(cwd)
-  finally:
-    shutil.rmtree(tmp_dir)
 
 
 def get_server_service_account(forseti_project_id):

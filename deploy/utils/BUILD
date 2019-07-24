@@ -31,16 +31,6 @@ py_library(
     deps = [":runner"],
 )
 
-py_test(
-    name = "utils_test",
-    srcs = ["utils_test.py"],
-    data = [
-        "//deploy/samples:configs",
-    ],
-    python_version = "PY3",
-    deps = [":utils"],
-)
-
 py_library(
     name = "field_generation",
     srcs = ["field_generation.py"],
@@ -51,8 +41,5 @@ py_test(
     name = "field_generation_test",
     srcs = ["field_generation_test.py"],
     python_version = "PY3",
-    deps = [
-        ":field_generation",
-        ":utils",
-    ],
+    deps = [":field_generation"],
 )
