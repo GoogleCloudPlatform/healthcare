@@ -224,3 +224,36 @@ resources:
 		}
 	}
 }
+
+func TestImportBinaryAuthorizationPolicy(t *testing.T) {
+	configExtend := &testconf.ConfigData{`
+binauthz:
+  properties: {}`}
+
+	wantArgs := [][]string{
+		{"gcloud", "beta", "container", "binauthz", "policy", "import", "foo.json", "--project", "my-project"},
+	}
+
+	_, project := testconf.ConfigAndProject(t, configExtend)
+	var gotArgs [][]string
+	cmdRun = func(cmd *exec.Cmd) error {
+		gotArgs = append(gotArgs, cmd.Args)
+		return nil
+	}
+	if project.BinauthzPolicy == nil {
+		return
+	}
+
+	if err := importBinauthz(project.ID, project.BinauthzPolicy); err != nil {
+		t.Fatalf("importBinauthz error: %v", err)
+	}
+	if len(gotArgs) != 1 {
+		t.Fatalf("importBinauthz does not run correct number of commands: %d", len(gotArgs))
+	}
+	if diff := cmp.Diff(gotArgs[0][:6], wantArgs[0][:6]); diff != "" {
+		t.Fatalf("binauthz cmd error between index 0 and 5: %v", gotArgs[0])
+	}
+	if diff := cmp.Diff(gotArgs[0][7:9], wantArgs[0][7:9]); diff != "" {
+		t.Fatalf("binauthz cmd error between index 7 and 8: %v", gotArgs[0])
+	}
+}

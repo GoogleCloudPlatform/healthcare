@@ -8,6 +8,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "bigquery_dataset.go",
+        "binary_authorization.go",
         "binding.go",
         "chc_dataset.go",
         "config.go",

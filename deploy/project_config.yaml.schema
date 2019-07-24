@@ -267,6 +267,16 @@ definitions:
           type: string
           minLength: 2
 
+      binauthz:
+        type: object
+        description: Binary authorization on the project.
+        required:
+        - properties
+        properties:
+          properties:
+            type: object
+            description: Binary authorization policy.
+
       resources:
         type: object
         description: |

@@ -21,28 +21,55 @@ func deployGKEWorkloads(project *config.Project) error {
 	return nil
 }
 
+// interfaceToJSONFile writes data to a json file f.
+func interfaceToJSONFile(f *os.File, data interface{}) error {
+	b, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to marshal data : %v", err)
+	}
+	log.Printf("Creating data:\n%v", string(b))
+
+	if _, err := f.Write(b); err != nil {
+		return fmt.Errorf("failed to write deployment to file: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %v", err)
+	}
+	return nil
+}
+
 // installClusterWorkload creates and updates (when it exists) not only workloads
 // but also all resources supported by "kubectl apply -f". Data comes from a GKEWorkload struct.
 func installClusterWorkload(clusterName string, project *config.Project, workload interface{}) error {
-	b, err := json.Marshal(workload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal workload : %v", err)
-	}
-	log.Printf("Creating workload:\n%v", string(b))
-
 	tmp, err := ioutil.TempFile("", "")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %v", err)
 	}
 	defer os.Remove(tmp.Name())
 
-	if _, err := tmp.Write(b); err != nil {
-		return fmt.Errorf("failed to write deployment to file: %v", err)
+	if err := interfaceToJSONFile(tmp, workload); err != nil {
+		return fmt.Errorf("failed to create write workload file: %v", err)
 	}
-	if err := tmp.Close(); err != nil {
-		return fmt.Errorf("failed to close temp file: %v", err)
-	}
+
 	return installClusterWorkloadFromFile(clusterName, tmp.Name(), project)
+}
+
+func importBinauthz(projectID string, binauthz *config.BinAuthz) error {
+	if binauthz == nil {
+		return nil
+	}
+	tmp, err := ioutil.TempFile("", "*.json")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmp.Name())
+
+	err = interfaceToJSONFile(tmp, binauthz.Properties)
+	if err != nil {
+		return fmt.Errorf("failed to create write policy file: %v", err)
+	}
+
+	return configBinauthzPolicy(tmp.Name(), projectID)
 }
 
 // installClusterWorkloadFromFile creates and updates (when it exists) not only workloads
@@ -106,6 +133,16 @@ func applyClusterWorkload(containerYamlPath string) error {
 	cmd := exec.Command("kubectl", "apply", "-f", containerYamlPath)
 	if err := cmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to apply workloads with kubectl: %s", err)
+	}
+	return nil
+}
+
+func configBinauthzPolicy(policyYamlPath, projectID string) error {
+	// binaryauthorization.googleapis.com must be enabled
+	// https://cloud.google.com/binary-authorization/docs/quickstart
+	cmd := exec.Command("gcloud", "beta", "container", "binauthz", "policy", "import", policyYamlPath, "--project", projectID)
+	if err := cmdRun(cmd); err != nil {
+		return fmt.Errorf("failed to import policy for %q: %v", projectID, err)
 	}
 	return nil
 }

@@ -59,6 +59,7 @@ type Project struct {
 		// Kubectl resources
 		GKEWorkloads []*GKEWorkload `json:"gke_workloads"`
 	} `json:"resources"`
+	BinauthzPolicy *BinAuthz `json:"binauthz"`
 
 	AuditLogs *struct {
 		LogsBQDataset BigqueryDataset `json:"logs_bq_dataset"`

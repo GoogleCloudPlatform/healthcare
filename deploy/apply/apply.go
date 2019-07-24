@@ -79,6 +79,10 @@ func Apply(conf *config.Config, project *config.Project) error {
 		return fmt.Errorf("failed to deploy pre-requisites: %v", err)
 	}
 
+	if err := importBinauthz(project.ID, project.BinauthzPolicy); err != nil {
+		return fmt.Errorf("failed to import binary authorization policy: %v", err)
+	}
+
 	if err := deployResources(project); err != nil {
 		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
