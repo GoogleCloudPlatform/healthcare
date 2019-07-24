@@ -29,20 +29,15 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
-import copy
-import os
 import subprocess
-import time
 import traceback
 
 from absl import app
 from absl import flags
 from absl import logging
 
-import jsonschema
 import ruamel
 
-from deploy.rule_generator import rule_generator
 from deploy.utils import field_generation
 from deploy.utils import forseti
 from deploy.utils import runner
@@ -66,9 +61,6 @@ flags.DEFINE_string('output_rules_path', None,
                     ('Path to local directory or GCS bucket to output rules '
                      'files. If unset, directly writes to the Forseti server '
                      'bucket.'))
-flags.DEFINE_boolean(
-    'enable_new_style_resources', True,
-    'Enable new style configs. Only set to false if old configs are a must.')
 flags.DEFINE_string(
     'apply_binary', None, 'Path to apply binary. '
     'Set automatically by the Bazel rule.')
@@ -213,69 +205,6 @@ def enable_services_apis(config):
         ['services', 'enable'] + want_apis[i:i + 10], project_id=project_id)
 
 
-def grant_deployment_manager_access(config):
-  """Grants Deployment manager service account administration roles."""
-  if FLAGS.enable_new_style_resources:
-    logging.info('DM service account will be granted access through CFT.')
-    return
-
-  project_id = config.project['project_id']
-
-  # Grant deployment manager service account (temporary) owners access.
-  dm_service_account = utils.get_deployment_manager_service_account(project_id)
-  for role in _DEPLOYMENT_MANAGER_ROLES:
-    runner.run_gcloud_command([
-        'projects', 'add-iam-policy-binding', project_id, '--member',
-        dm_service_account, '--role', role
-    ],
-                              project_id=None)
-
-  logging.info('Sleeping for %d seconds to let IAM updates propagate.',
-               _IAM_PROPAGATAION_WAIT_TIME_SECS)
-  runner.run(time.sleep, _IAM_PROPAGATAION_WAIT_TIME_SECS)
-
-
-def deploy_gcs_audit_logs(config):
-  """Deploys the GCS logs bucket to the remote audit logs project, if used."""
-  if FLAGS.enable_new_style_resources:
-    logging.info('GCS audit logs will be deployed through CFT.')
-    return
-
-  # The GCS logs bucket must be created before the data buckets.
-  if not config.audit_logs_project:
-    logging.info('Using local GCS audit logs.')
-    return
-  logs_gcs_bucket = config.project['audit_logs'].get('logs_gcs_bucket')
-  if not logs_gcs_bucket:
-    logging.info('No remote GCS logs bucket required.')
-    return
-
-  logging.info('Creating remote GCS logs bucket.')
-  data_project_id = config.project['project_id']
-  logs_project = config.audit_logs_project
-  audit_project_id = logs_project['project_id']
-
-  deployment_name = 'audit-logs-{}-gcs'.format(
-      data_project_id.replace('_', '-'))
-  path = os.path.join(
-      os.path.dirname(__file__), 'templates/remote_audit_logs.py')
-  dm_template_dict = {
-      'imports': [{
-          'path': path
-      }],
-      'resources': [{
-          'type': path,
-          'name': deployment_name,
-          'properties': {
-              'owners_group': logs_project['owners_group'],
-              'auditors_group': config.project['auditors_group'],
-              'logs_gcs_bucket': logs_gcs_bucket,
-          },
-      }]
-  }
-  utils.run_deployment(dm_template_dict, deployment_name, audit_project_id)
-
-
 def _is_service_enabled(service_name, project_id):
   """Check if the service_name is already enabled."""
   enabled_services = runner.run_gcloud_command(
@@ -296,83 +225,6 @@ def get_data_bucket_name(data_bucket, project_id):
       raise utils.InvalidConfigError(
           'Data buckets must not contains both name and name_suffix')
     return data_bucket['name']
-
-
-def deploy_project_resources(config):
-  """Deploys resources into the new data project."""
-  if FLAGS.enable_new_style_resources:
-    logging.info('Project resources will be deployed through CFT.')
-    return
-
-  setup_account = utils.get_gcloud_user()
-  has_organization = bool(config.root['overall'].get('organization_id'))
-  project_id = config.project['project_id']
-  dm_service_account = utils.get_deployment_manager_service_account(project_id)
-
-  # Build a deployment config for the data_project.py deployment manager
-  # template.
-  properties = copy.deepcopy(config.project)
-  # Remove the current user as an owner of the project if project is part of an
-  # organization.
-  properties['has_organization'] = has_organization
-  if has_organization:
-    properties['remove_owner_user'] = setup_account
-
-  # Change audit_logs to either local_audit_logs or remote_audit_logs in the
-  # deployment manager template properties.
-  audit_logs = properties.pop('audit_logs')
-  if config.audit_logs_project:
-    properties['remote_audit_logs'] = {
-        'audit_logs_project_id': config.audit_logs_project['project_id'],
-        'logs_bigquery_dataset_id': audit_logs['logs_bigquery_dataset']['name'],
-    }
-    # Logs GCS bucket is not required for projects without data GCS buckets.
-    if 'logs_gcs_bucket' in audit_logs:
-      properties['remote_audit_logs']['logs_gcs_bucket_name'] = (
-          audit_logs['logs_gcs_bucket']['name'])
-  else:
-    properties['local_audit_logs'] = audit_logs
-
-  # Set data buckets' names.
-  for data_bucket in properties.get('data_buckets', []):
-    data_bucket['name'] = get_data_bucket_name(data_bucket, project_id)
-    data_bucket.pop('name_suffix', '')
-
-  path = os.path.join(os.path.dirname(__file__), 'templates/data_project.py')
-  dm_template_dict = {
-      'imports': [{
-          'path': path
-      }],
-      'resources': [{
-          'type': path,
-          'name': 'data_project_deployment',
-          'properties': properties,
-      }]
-  }
-
-  # API iam.googleapis.com is necessary when using custom roles
-  iam_api_disable = False
-  if not _is_service_enabled('iam.googleapis.com', project_id):
-    runner.run_gcloud_command(['services', 'enable', 'iam.googleapis.com'],
-                              project_id=project_id)
-    iam_api_disable = True
-  try:
-    # Create the deployment.
-    utils.run_deployment(dm_template_dict, 'data-project-deployment',
-                         project_id)
-
-    for role in _DEPLOYMENT_MANAGER_ROLES:
-      runner.run_gcloud_command([
-          'projects', 'remove-iam-policy-binding', project_id, '--member',
-          dm_service_account, '--role', role
-      ],
-                                project_id=None)
-
-  finally:
-    # Disable iam.googleapis.com if it is enabled in this function
-    if iam_api_disable:
-      runner.run_gcloud_command(['services', 'disable', 'iam.googleapis.com'],
-                                project_id=project_id)
 
 
 def create_deletion_lien(config):
@@ -397,8 +249,8 @@ def create_deletion_lien(config):
                               project_id=project_id)
 
 
-def deploy_new_style_resources(config):
-  """Deploy new style resources."""
+def deploy_resources(config):
+  """Deploy resources."""
   utils.call_go_binary([
       FLAGS.apply_binary,
       '--project_yaml_path',
@@ -415,49 +267,6 @@ def _get_role_to_members(bindings):
   for binding in bindings:
     res[binding['role']].update(set(binding['members']))
   return res
-
-
-def deploy_bigquery_audit_logs(config):
-  """Deploys the BigQuery audit logs dataset, if used."""
-  if FLAGS.enable_new_style_resources:
-    logging.info('BQ audit logs will be deployed through CFT.')
-    return
-
-  data_project_id = config.project['project_id']
-  logs_dataset = copy.deepcopy(
-      config.project['audit_logs']['logs_bigquery_dataset'])
-  if config.audit_logs_project:
-    logging.info('Creating remote BigQuery logs dataset.')
-    audit_project_id = config.audit_logs_project['project_id']
-    owners_group = config.audit_logs_project['owners_group']
-  else:
-    logging.info('Creating local BigQuery logs dataset.')
-    audit_project_id = data_project_id
-    logs_dataset['name'] = 'audit_logs'
-    owners_group = config.project['owners_group']
-
-  # Get the service account for the newly-created log sink.
-  logs_dataset['log_sink_service_account'] = utils.get_log_sink_service_account(
-      _LOG_SINK_NAME, data_project_id)
-
-  deployment_name = 'audit-logs-{}-bq'.format(data_project_id.replace('_', '-'))
-  path = os.path.join(
-      os.path.dirname(__file__), 'templates/remote_audit_logs.py')
-  dm_template_dict = {
-      'imports': [{
-          'path': path
-      }],
-      'resources': [{
-          'type': path,
-          'name': deployment_name,
-          'properties': {
-              'owners_group': owners_group,
-              'auditors_group': config.project['auditors_group'],
-              'logs_bigquery_dataset': logs_dataset,
-          },
-      }]
-  }
-  utils.run_deployment(dm_template_dict, deployment_name, audit_project_id)
 
 
 def create_compute_images(config):
@@ -502,89 +311,6 @@ def create_compute_images(config):
         '--source-uri', image_uri
     ],
                               project_id=project_id)
-
-
-def create_compute_vms(config):
-  """Creates new GCE VMs and firewall rules if specified in config."""
-  if FLAGS.enable_new_style_resources:
-    logging.info('VMs will be deployed through CFT.')
-    return
-
-  if 'gce_instances' not in config.project:
-    logging.info('No GCS VMs required.')
-    return
-  project_id = config.project['project_id']
-  logging.info('Creating GCS VMs.')
-
-  # Enable OS Login for VM SSH access.
-  runner.run_gcloud_command([
-      'compute', 'project-info', 'add-metadata', '--metadata',
-      'enable-oslogin=TRUE'
-  ],
-                            project_id=project_id)
-
-  gce_instances = []
-  for instance in config.project['gce_instances']:
-    if 'existing_boot_image' in instance:
-      image_name = instance['existing_boot_image']
-    else:
-      image_name = ('global/images/' +
-                    instance['custom_boot_image']['image_name'])
-
-    gce_template_dict = {
-        'name': instance['name'],
-        'zone': instance['zone'],
-        'machine_type': instance['machine_type'],
-        'boot_image_name': image_name,
-        'start_vm': instance['start_vm']
-    }
-    startup_script_str = instance.get('startup_script')
-    if startup_script_str:
-      gce_template_dict['metadata'] = {
-          'items': [{
-              'key': 'startup-script',
-              'value': startup_script_str
-          }]
-      }
-    gce_instances.append(gce_template_dict)
-
-  deployment_name = 'gce-vms'
-  path = os.path.join(os.path.dirname(__file__), 'templates/gce_vms.py')
-
-  resource = {
-      'type': path,
-      'name': deployment_name,
-      'properties': {
-          'gce_instances': gce_instances,
-          'firewall_rules': config.project.get('gce_firewall_rules', []),
-      }
-  }
-  dm_template_dict = {
-      'imports': [{
-          'path': path
-      }],
-      'resources': [resource],
-  }
-
-  deployed = utils.deployment_exists(deployment_name, project_id)
-  try:
-    utils.run_deployment(dm_template_dict, deployment_name, project_id)
-  except subprocess.CalledProcessError:
-    # Only retry vm deployment for updates
-    if not deployed:
-      raise
-
-    # TODO: check error message for whether failure was specifically
-    # due to vm running
-    logging.info(('Potential failure due to updating a running vm. '
-                  'Retrying with vm shutdown.'))
-
-    vm_names_to_shutdown = [
-        instance['name']
-        for instance in config.project.get('gce_instances', [])
-    ]
-    resource['properties']['vm_names_to_shutdown'] = vm_names_to_shutdown
-    utils.run_deployment(dm_template_dict, deployment_name, project_id)
 
 
 def create_stackdriver_account(config):
@@ -760,33 +486,8 @@ _SETUP_STEPS = [
         updatable=True,
     ),
     Step(
-        func=grant_deployment_manager_access,
-        description='Enable deployment manager',
-        updatable=True,
-    ),
-    Step(
-        func=deploy_gcs_audit_logs,
-        description='Deploy GCS audit logs',
-        updatable=False,
-    ),
-    Step(
-        func=deploy_project_resources,
-        description='Deploy project resources',
-        updatable=True,
-    ),
-    Step(
-        func=deploy_bigquery_audit_logs,
-        description='Deploy BigQuery audit logs',
-        updatable=False,
-    ),
-    Step(
         func=create_compute_images,
         description='Deploy compute images',
-        updatable=True,
-    ),
-    Step(
-        func=create_compute_vms,
-        description='Deploy GCE VMs',
         updatable=True,
     ),
     Step(
@@ -795,8 +496,8 @@ _SETUP_STEPS = [
         updatable=True,
     ),
     Step(
-        func=deploy_new_style_resources,
-        description='Deploy new style resources',
+        func=deploy_resources,
+        description='Deploy resources',
         updatable=True,
     ),
     Step(
@@ -953,9 +654,6 @@ def main(argv):
     raise Exception(
         '--output_yaml_path must be unset or set to --project_yaml.')
 
-  if FLAGS.enable_new_style_resources:
-    logging.info('--enable_new_style_resources is true.')
-
   if FLAGS.generated_fields_path:
     FLAGS.generated_fields_path = utils.normalize_path(
         FLAGS.generated_fields_path)
@@ -964,31 +662,18 @@ def main(argv):
 
   FLAGS.project_yaml = utils.normalize_path(FLAGS.project_yaml)
 
-  if FLAGS.enable_new_style_resources:
-    config_string = runner.run_command([
-        FLAGS.load_config_binary,
-        '--config_path',
-        FLAGS.project_yaml,
-    ],
-                                       get_output=True)
-    yaml = ruamel.yaml.YAML()
-    root_config = yaml.load(config_string)
-  else:
-    root_config = utils.load_config(FLAGS.project_yaml)
+  config_string = runner.run_command([
+      FLAGS.load_config_binary,
+      '--config_path',
+      FLAGS.project_yaml,
+  ],
+                                     get_output=True)
+  yaml = ruamel.yaml.YAML()
+  root_config = yaml.load(config_string)
 
   if not root_config:
     logging.error('Error loading project YAML.')
     return
-
-  # When enable_new_style_resources is true, config validation is done as part
-  # of the loading phase.
-  if not FLAGS.enable_new_style_resources:
-    logging.info('Validating project YAML against schema.')
-    try:
-      utils.validate_config_yaml(root_config)
-    except jsonschema.exceptions.ValidationError as e:
-      logging.error('Error in YAML config: %s', e)
-      return
 
   if FLAGS.generated_fields_path:
     # touch file if it has not been created yet
@@ -1077,21 +762,17 @@ def main(argv):
       return
 
   if forseti_config:
-    if FLAGS.enable_new_style_resources:
-      call = [
-          FLAGS.rule_generator_binary,
-          '--project_yaml_path',
-          FLAGS.project_yaml,
-          '--generated_fields_path',
-          FLAGS.generated_fields_path or FLAGS.project_yaml,
-          '--output_path',
-          FLAGS.output_rules_path or '',
-      ]
-      logging.info('Running rule generator: %s', call)
-      utils.call_go_binary(call)
-    else:
-      root_config['generated_fields'] = generated_fields
-      rule_generator.run(root_config, output_path=FLAGS.output_rules_path)
+    call = [
+        FLAGS.rule_generator_binary,
+        '--project_yaml_path',
+        FLAGS.project_yaml,
+        '--generated_fields_path',
+        FLAGS.generated_fields_path or FLAGS.project_yaml,
+        '--output_path',
+        FLAGS.output_rules_path or '',
+    ]
+    logging.info('Running rule generator: %s', call)
+    utils.call_go_binary(call)
 
   logging.info('All projects successfully deployed.')
 

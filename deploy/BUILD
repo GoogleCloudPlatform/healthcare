@@ -35,7 +35,6 @@ py_library(
     srcs = ["create_project.py"],
     data = ["//deploy/templates"],
     deps = [
-        "//deploy/rule_generator:rule_generator_lib",
         "//deploy/utils",
         "//deploy/utils:field_generation",
         "//deploy/utils:forseti",
@@ -72,14 +71,4 @@ py_binary(
     srcs = ["grant_forseti_access.py"],
     python_version = "PY3",
     deps = ["//deploy/utils:forseti"],
-)
-
-py_binary(
-    name = "generate_rules",
-    srcs = ["generate_rules.py"],
-    python_version = "PY3",
-    deps = [
-        "//deploy/rule_generator:rule_generator_lib",
-        "//deploy/utils",
-    ],
 )

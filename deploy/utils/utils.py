@@ -5,7 +5,6 @@ from __future__ import division
 from __future__ import print_function
 
 import glob
-import json
 import os
 import string
 import subprocess
@@ -112,71 +111,6 @@ def validate_config_yaml(config):
   schema = read_yaml_file(_PROJECT_CONFIG_SCHEMA)
 
   jsonschema.validate(config, schema)
-
-
-def run_deployment(deployment_template, deployment_name, project_id):
-  """Creates a new Deployment Manager deployment from a template.
-
-  Args:
-    deployment_template (dict): The dictionary representation of a deployment
-      manager YAML template.
-    deployment_name (string): The name for the deployment.
-    project_id (string): The project under which to create the deployment.
-  """
-  # Save the deployment manager template to a temporary file in the same
-  # directory as the deployment manager templates.
-  dm_template_file = tempfile.NamedTemporaryFile(suffix='.yaml')
-  write_yaml_file(deployment_template, dm_template_file.name)
-
-  if deployment_exists(deployment_name, project_id):
-    gcloud_cmd = [
-        'deployment-manager',
-        'deployments',
-        'update',
-        deployment_name,
-        '--config',
-        dm_template_file.name,
-        '--delete-policy',
-        'ABANDON',
-    ]
-  else:
-    gcloud_cmd = [
-        'deployment-manager',
-        'deployments',
-        'create',
-        deployment_name,
-        '--config',
-        dm_template_file.name,
-        '--automatic-rollback-on-error',
-    ]
-
-  # Create the deployment.
-  runner.run_gcloud_command(gcloud_cmd, project_id=project_id)
-
-  # Check deployment exists (and wasn't automcatically rolled back)
-  runner.run_gcloud_command(
-      ['deployment-manager', 'deployments', 'describe', deployment_name],
-      project_id=project_id)
-
-
-def deployment_exists(deployment_name, project_id):
-  """Determine whether the deployment exists.
-
-  Args:
-    deployment_name (string): name of deployment.
-    project_id: ID of project.
-
-  Returns:
-    bool: True if deployment exists in the projet.
-  """
-  out = runner.run_gcloud_command(
-      ['deployment-manager', 'deployments', 'list', '--format', 'json'],
-      project_id=project_id)
-
-  for info in json.loads(out):
-    if deployment_name == info['name']:
-      return True
-  return False
 
 
 def create_notification_channel(alert_email, project_id):
@@ -435,8 +369,7 @@ def call_go_binary(parameter_list):
   """Call Golang binary."""
   if FLAGS.dry_run:
     return
-  if FLAGS.enable_new_style_resources:
-    subprocess.check_call(parameter_list)
+  subprocess.check_call(parameter_list)
 
 
 class InvalidConfigError(Exception):

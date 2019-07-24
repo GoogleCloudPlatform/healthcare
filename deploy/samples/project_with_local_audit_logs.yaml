@@ -54,11 +54,6 @@ projects:
   - some-readonly-group@my-domain.com
   - another-readonly-group@googlegroups.com
   create_deletion_lien: true
-  pubsub:
-    topic: test-topic
-    subscription: test-subscription
-    publisher_account: cloud-healthcare-eng@system.gserviceaccount.com
-    ack_deadline_sec: 100
   # If alert email is present, create StackDriver alerts.
   stackdriver_alert_email: some-alerts-group@my-domain.com
   # These audit logs will be saved to this project.
