@@ -73,6 +73,9 @@ flags.DEFINE_string('rule_generator_binary', None,
 flags.DEFINE_string('load_config_binary', None,
                     ('Path to load config binary. '
                      'Set automatically by the Bazel rule.'))
+flags.DEFINE_string('grant_forseti_access_binary', None,
+                    ('Path to the binary that grants forseti access. '
+                     'Set automatically by the Bazel rule.'))
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
@@ -605,8 +608,13 @@ def get_forseti_access_granter_step(project_id):
   """Get step to grant access to the forseti instance for the project."""
 
   def grant_access(config):
-    service_account = config.generated_fields['forseti']['service_account']
-    forseti.grant_access(project_id, service_account)
+    utils.call_go_binary([
+        FLAGS.grant_forseti_access_binary,
+        '--project_id',
+        project_id,
+        '--forseti_service_account',
+        config.generated_fields['forseti']['service_account'],
+    ])
 
   return Step(
       func=grant_access,
@@ -783,4 +791,5 @@ if __name__ == '__main__':
   flags.mark_flag_as_required('apply_forseti_binary')
   flags.mark_flag_as_required('rule_generator_binary')
   flags.mark_flag_as_required('load_config_binary')
+  flags.mark_flag_as_required('grant_forseti_access_binary')
   app.run(main)

@@ -10,13 +10,6 @@ py_library(
     deps = [":runner"],
 )
 
-py_test(
-    name = "forseti_test",
-    srcs = ["forseti_test.py"],
-    python_version = "PY3",
-    deps = [":forseti"],
-)
-
 py_library(
     name = "runner",
     srcs = ["runner.py"],

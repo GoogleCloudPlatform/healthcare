@@ -12,6 +12,22 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
 
+// Standard (built in) roles required by the Forseti service account on projects to be monitored.
+// This list includes project level roles from
+// https://github.com/forseti-security/terraform-google-forseti/blob/master/modules/server/main.tf#L63
+// In the future, have a deeper integration with Forseti module and reuse the role list.
+var forsetiStandardRoles = [...]string{
+	"appengine.appViewer",
+	"bigquery.metadataViewer",
+	"browser",
+	"cloudasset.viewer",
+	"cloudsql.viewer",
+	"compute.networkViewer",
+	"iam.securityReviewer",
+	"servicemanagement.quotaViewer",
+	"serviceusage.serviceUsageConsumer",
+}
+
 // Forseti applies the forseti config, if it exists.
 func Forseti(conf *config.Config) error {
 	if conf.Forseti == nil {
@@ -72,6 +88,31 @@ func Forseti(conf *config.Config) error {
 	}
 	if err := runTerraformCommand("apply", "tfplan"); err != nil {
 		return fmt.Errorf("failed to apply plan: %v", err)
+	}
+	return nil
+}
+
+// GrantForsetiPermissions grants all necessary permissions to the given Forseti service account in the project.
+// TODO Use Terraform to deploy these.
+func GrantForsetiPermissions(projectID, serviceAccount string) error {
+	for _, r := range forsetiStandardRoles {
+		if err := addBinding(projectID, serviceAccount, fmt.Sprintf("roles/%s", r)); err != nil {
+			return fmt.Errorf("failed to grant all necessary permissions to Forseti service account %q in project %q: %v", serviceAccount, projectID, err)
+		}
+	}
+	return nil
+}
+
+// addBinding adds an IAM policy binding for the given service account for the given role.
+func addBinding(projectID, serviceAccount, role string) error {
+	cmd := exec.Command(
+		"gcloud", "projects", "add-iam-policy-binding",
+		projectID,
+		"--member", fmt.Sprintf("serviceAccount:%s", serviceAccount),
+		"--role", role,
+	)
+	if err := cmdRun(cmd); err != nil {
+		return fmt.Errorf("failed to add iam policy binding for service account %q for role %q: %v", serviceAccount, role, err)
 	}
 	return nil
 }

@@ -190,25 +190,12 @@ def create_alert_policy(
       project_id=project_id)
 
 
-def get_gcloud_user():
-  """Returns the active authenticated gcloud account."""
-  return runner.run_gcloud_command(
-      ['config', 'list', 'account', '--format', 'value(core.account)'],
-      project_id=None).strip()
-
-
 def get_project_number(project_id):
   """Returns the project number the given project."""
   return runner.run_gcloud_command(
       ['projects', 'describe', project_id,
        '--format', 'value(projectNumber)'],
       project_id=None).strip()
-
-
-def get_deployment_manager_service_account(project_id):
-  """Returns the deployment manager service account for the given project."""
-  return 'serviceAccount:{}@cloudservices.gserviceaccount.com'.format(
-      get_project_number(project_id))
 
 
 def get_log_sink_service_account(log_sink_name, project_id):

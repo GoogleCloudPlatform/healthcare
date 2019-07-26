@@ -19,10 +19,12 @@ py_binary(
         "--apply_forseti_binary=$(location //deploy/cmd/apply_forseti)",
         "--rule_generator_binary=$(location //deploy/cmd/rule_generator)",
         "--load_config_binary=$(location //deploy/cmd/load_config)",
+        "--grant_forseti_access_binary=$(location //deploy/cmd/grant_forseti_access)",
     ],
     data = [
         "//deploy/cmd/apply",
         "//deploy/cmd/apply_forseti",
+        "//deploy/cmd/grant_forseti_access",
         "//deploy/cmd/load_config",
         "//deploy/cmd/rule_generator",
     ],
@@ -51,10 +53,12 @@ py_test(
         "--apply_forseti_binary=$(location //deploy/cmd/apply_forseti)",
         "--rule_generator_binary=$(location //deploy/cmd/rule_generator)",
         "--load_config_binary=$(location //deploy/cmd/load_config)",
+        "--grant_forseti_access_binary=$(location //deploy/cmd/grant_forseti_access)",
     ],
     data = [
         "//deploy/cmd/apply",
         "//deploy/cmd/apply_forseti",
+        "//deploy/cmd/grant_forseti_access",
         "//deploy/cmd/load_config",
         "//deploy/cmd/rule_generator",
         "//deploy/samples:configs",
@@ -64,11 +68,4 @@ py_test(
         ":create_project_lib",
         "//deploy/utils",
     ],
-)
-
-py_binary(
-    name = "grant_forseti_access",
-    srcs = ["grant_forseti_access.py"],
-    python_version = "PY3",
-    deps = ["//deploy/utils:forseti"],
 )

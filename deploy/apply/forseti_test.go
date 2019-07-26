@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
@@ -49,5 +50,26 @@ func TestForseti(t *testing.T) {
 	}
 	if err := json.Unmarshal([]byte(wantConfig), &want); err != nil {
 		t.Fatalf("json.Unmarshal = %v", err)
+	}
+}
+
+func TestGrantForsetiPermissions(t *testing.T) {
+	wantCmdCnt := 9
+	wantCmdPrefix := "gcloud projects add-iam-policy-binding project1 --member serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com --role roles/"
+	var got []string
+	cmdRun = func(cmd *exec.Cmd) error {
+		got = append(got, strings.Join(cmd.Args, " "))
+		return nil
+	}
+	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com"); err != nil {
+		t.Fatalf("GrantForsetiPermissions = %v", err)
+	}
+	if len(got) != wantCmdCnt {
+		t.Fatalf("number of permissions granted differ: got %d, want %d", len(got), wantCmdCnt)
+	}
+	for _, cmd := range got {
+		if !strings.HasPrefix(cmd, wantCmdPrefix) {
+			t.Fatalf("command %q does not contain expected prefix %q", cmd, wantCmdPrefix)
+		}
 	}
 }
