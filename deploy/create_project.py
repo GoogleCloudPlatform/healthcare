@@ -17,6 +17,7 @@ Create a project config YAML file (see README.md for details) then run the
 script with:
   bazel run :create_project -- \
     --project_yaml=my_project_config.yaml \
+    --generated_fields_path=my_generated_fields.yaml \
     --projects='*' \
     --nodry_run \
     --alsologtostderr
