@@ -89,35 +89,6 @@ definitions:
         items:
           $ref: '#/definitions/email_address'
 
-      custom_roles:
-        type: array
-        description: |
-          Optional list of custom roles to be created in this project.
-          items:
-            type: object
-            additionalProperties: false
-            required:
-            - name
-            - permissions
-            properties:
-              name:
-                type: string
-                description: Name of the custom role.
-              permissions:
-                type: array
-                description: A list of permissions granted to the role.
-                items:
-                  type: string
-                  description: A service name.
-              title:
-                type: string
-                description: |
-                  Optional title of the role. If unset, defaults to the name.
-              description:
-                type: string
-                description: |
-                  Optional description of the role. If unset, defaults to
-                  the name.
 
       create_deletion_lien:
         type: boolean
@@ -126,40 +97,6 @@ definitions:
           This can be set to true after the project has been deployed.
           However, setting it to false if it was previously true will not remove
           the lien.
-
-      additional_project_permissions:
-        type: array
-        description: |
-          Additional project-level roles to grant to members, not covered by the
-          groups above. These are required in special cases but generally not
-          recommended.
-        items:
-          type: object
-          additionalProperties: false
-          required:
-          - roles
-          - members
-          properties:
-            roles:
-              type: array
-              description: |
-                A list of roles to grant to each of the listed members. Use the
-                full role name, e.g. roles/bigquery.jobUser or
-                projects/my-project/roles/my-custom-role.
-              minItems: 1
-              items:
-                type: string
-                pattern: roles\/
-            members:
-              type: array
-              description: |
-                A list of members to be granted each of the listed roles.
-                Include the member type prefix (user, group, domain, or
-                serviceAccount).
-              minItems: 1
-              items:
-                type: string
-                pattern: ^(user|group|domain|serviceAccount):.+$
 
       audit_logs:
         type: object
