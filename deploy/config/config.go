@@ -52,6 +52,7 @@ type Project struct {
 		GKEClusters     []*GKECluster      `json:"gke_clusters"`
 		IAMCustomRoles  []*IAMCustomRole   `json:"iam_custom_roles"`
 		IAMPolicies     []*IAMPolicy       `json:"iam_policies"`
+		IPAddresses     []*DefaultResource `json:"ip_addresses"`
 		Pubsubs         []*Pubsub          `json:"pubsubs"`
 		ServiceAccounts []*ServiceAccount  `json:"service_accounts"`
 		VPCNetworks     []*DefaultResource `json:"vpc_networks"`
@@ -375,6 +376,10 @@ func (p *Project) DeploymentManagerResources() []Resource {
 		rs = append(rs, r)
 	}
 	for _, r := range prs.IAMPolicies {
+		rs = append(rs, r)
+	}
+	for _, r := range prs.IPAddresses {
+		r.TmplPath = "deploy/config/templates/ip_reservation/ip_address.py"
 		rs = append(rs, r)
 	}
 	for _, r := range prs.ServiceAccounts {

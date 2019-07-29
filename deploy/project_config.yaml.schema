@@ -458,6 +458,19 @@ definitions:
                   type: object
                   description: |
                     Wraps the CFT template iam_member.py.
+          ip_addresses:
+            type: array
+            description: Provides support for IP addresses.
+            additionalProperties: false
+            items:
+              type: object
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template ip_address.py.
           pubsubs:
             type: array
             description: Provides support for Pubsub channels.

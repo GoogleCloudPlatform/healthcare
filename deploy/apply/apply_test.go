@@ -369,6 +369,29 @@ resources:
      - group:foo-owner@my-domain.com`,
 		},
 		{
+			name: "ip_address",
+			configData: &testconf.ConfigData{`
+resources:
+  ip_addresses:
+  - properties:
+      name: mybarip
+      region: us-central1
+      ipType: REGIONAL
+      description: 'my bar ip'`},
+			want: `
+imports:
+- path: {{abs "deploy/config/templates/ip_reservation/ip_address.py"}}
+
+resources:
+- name: mybarip
+  type: {{abs "deploy/config/templates/ip_reservation/ip_address.py"}}
+  properties:
+    name: mybarip
+    region: us-central1
+    ipType: REGIONAL
+    description: 'my bar ip'`,
+		},
+		{
 			name: "pubsub",
 			configData: &testconf.ConfigData{`
 resources:
