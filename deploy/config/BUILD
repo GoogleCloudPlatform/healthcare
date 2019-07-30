@@ -29,6 +29,7 @@ go_library(
         "terraform.go",
     ],
     data = [
+        "//deploy:generated_fields.yaml.schema",
         "//deploy:project_config.yaml.schema",
         "//deploy/config/templates",
         "//deploy/templates",

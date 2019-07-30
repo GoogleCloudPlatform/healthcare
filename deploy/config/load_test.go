@@ -69,7 +69,7 @@ overall:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := config.Validate(tc.inputConf); (err == nil) != tc.ok {
+			if err := config.ValidateConf(tc.inputConf); (err == nil) != tc.ok {
 				t.Fatalf("config.Validate = %t, want %t", err == nil, tc.ok)
 			}
 		})

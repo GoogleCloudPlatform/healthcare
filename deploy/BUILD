@@ -8,7 +8,10 @@ load("@bazel_gazelle//:def.bzl", "gazelle")
 # gazelle:prefix github.com/GoogleCloudPlatform/healthcare/deploy
 gazelle(name = "gazelle")
 
-exports_files(["project_config.yaml.schema"])
+exports_files([
+    "project_config.yaml.schema",
+    "generated_fields.yaml.schema",
+])
 
 py_binary(
     name = "create_project",

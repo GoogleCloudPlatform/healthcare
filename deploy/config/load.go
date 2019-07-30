@@ -37,6 +37,9 @@ import (
 // projectConfigSchema is the path of the project config schema template relative to the repo root.
 const projectConfigSchema = "deploy/project_config.yaml.schema"
 
+// generatedFieldsSchema is the path of the generated fields schema template relative to the repo root.
+const generatedFieldsSchema = "deploy/generated_fields.yaml.schema"
+
 // NormalizePath normalizes paths specified through a local run or Bazel invocation.
 func NormalizePath(path string) (string, error) {
 	path, err := homedir.Expand(path)
@@ -71,7 +74,7 @@ func Load(confPath, genFieldsPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %v\nmerged config: %v", err, string(b))
 	}
 
-	genFields, err := loadGeneratedFields(genFieldsPath)
+	genFields, err := LoadGeneratedFields(genFieldsPath, confPath == genFieldsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load generated fields: %v", err)
 	}
@@ -97,24 +100,34 @@ func LoadBytes(path string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal config map: %v", err)
 	}
 
-	if err := Validate(b); err != nil {
+	if err := ValidateConf(b); err != nil {
 		return nil, err
 	}
 
 	return b, nil
 }
 
-// Validate validates the input project config against the default schema template.
-func Validate(confYAML []byte) error {
-	schemaYAML, err := ioutil.ReadFile(projectConfigSchema)
+// ValidateConf validates the input project config against the default schema template.
+func ValidateConf(confYAML []byte) error {
+	return validate(confYAML, projectConfigSchema)
+}
+
+// validateGenFields validates the generated fields config against the default schema template.
+func validateGenFields(genFieldsYAML []byte) error {
+	return validate(genFieldsYAML, generatedFieldsSchema)
+}
+
+// validate validates the input yaml against the given schema template.
+func validate(inputYAML []byte, schemaPath string) error {
+	schemaYAML, err := ioutil.ReadFile(schemaPath)
 	if err != nil {
-		return fmt.Errorf("failed to read schema file at path %q: %v", projectConfigSchema, err)
+		return fmt.Errorf("failed to read schema file at path %q: %v", schemaPath, err)
 	}
 	schemaJSON, err := yaml.YAMLToJSON(schemaYAML)
 	if err != nil {
-		return fmt.Errorf("failed to convert schema file at path %q from yaml to json: %v", projectConfigSchema, err)
+		return fmt.Errorf("failed to convert schema file at path %q from yaml to json: %v", schemaPath, err)
 	}
-	confJSON, err := yaml.YAMLToJSON(confYAML)
+	confJSON, err := yaml.YAMLToJSON(inputYAML)
 	if err != nil {
 		return fmt.Errorf("failed to convert config file bytes from yaml to json: %v", err)
 	}
@@ -252,9 +265,9 @@ func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string,
 		if err != nil {
 			return nil, fmt.Errorf("pattern %q is malformed", importItem.Pattern)
 		}
-    if len(matches) == 0 {
-    	return nil, fmt.Errorf("pattern %q matched no files", importItem.Pattern)
-    }
+		if len(matches) == 0 {
+			return nil, fmt.Errorf("pattern %q matched no files", importItem.Pattern)
+		}
 		for _, match := range matches {
 			if match == projectYAMLPath {
 				continue
@@ -269,7 +282,8 @@ func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string,
 	return filePathList, nil
 }
 
-func loadGeneratedFields(path string) (*AllGeneratedFields, error) {
+// LoadGeneratedFields loads and validates generated fields from yaml file at path.
+func LoadGeneratedFields(path string, legacy bool) (*AllGeneratedFields, error) {
 	path, err := NormalizePath(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
@@ -282,9 +296,9 @@ func loadGeneratedFields(path string) (*AllGeneratedFields, error) {
 		return nil, nil
 	}
 	genFields := new(AllGeneratedFields)
-	if err := yaml.UnmarshalStrict(b, genFields, yaml.DisallowUnknownFields); err != nil {
+	if legacy {
 		// TODO: remove this once we no longer need to support generated fields being in the input file.
-		log.Printf("failed to unmarshal generated fields at path %q: %v, trying old format...", path, err)
+		log.Printf("parsing generated fields in old format at path %q", path)
 
 		type oldFormat struct {
 			GeneratedFields *AllGeneratedFields `json:"generated_fields"`
@@ -295,6 +309,13 @@ func loadGeneratedFields(path string) (*AllGeneratedFields, error) {
 			return nil, fmt.Errorf("failed to unmarshal generated fields at path %q: %v", path, err)
 		}
 		genFields = of.GeneratedFields
+	} else {
+		if err := validateGenFields(b); err != nil {
+			return nil, fmt.Errorf("failed to validate generated fields at path %q: %v", path, err)
+		}
+		if err := yaml.UnmarshalStrict(b, genFields, yaml.DisallowUnknownFields); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal generated fields at path %q: %v", path, err)
+		}
 	}
 	return genFields, nil
 }

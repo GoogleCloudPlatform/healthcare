@@ -673,8 +673,10 @@ def main(argv):
 
   config_string = runner.run_command([
       FLAGS.load_config_binary,
-      '--config_path',
+      '--project_yaml_path',
       FLAGS.project_yaml,
+      '--generated_fields_path',
+      FLAGS.generated_fields_path or FLAGS.project_yaml,
   ],
                                      get_output=True)
   yaml = ruamel.yaml.YAML()
