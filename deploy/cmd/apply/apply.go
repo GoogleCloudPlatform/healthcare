@@ -1,3 +1,19 @@
+/*
+ * Copyright 2019 Google LLC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 // Apply provides a CLI to deploy a project config to GCP.
 //
 // Usage:
@@ -18,6 +34,7 @@ var (
 	projectYAMLPath     = flag.String("project_yaml_path", "", "Path to project yaml file")
 	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
 	projectID           = flag.String("project", "", "Project within the project yaml file to deploy config resources for")
+	enableTerraform     = flag.Bool("enable_terraform", false, "DEV ONLY. Whether terraform is preferred over deployment manager.")
 )
 
 func main() {
@@ -40,7 +57,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := apply.Apply(conf, proj); err != nil {
+	opts := &apply.Options{EnableTerraform: *enableTerraform}
+	if err := apply.Apply(conf, proj, opts); err != nil {
 		log.Fatalf("failed to deploy %q resources: %v", *projectID, err)
 	}
 
