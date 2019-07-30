@@ -204,6 +204,29 @@ resources:
     setDefaultOwner: false`,
 		},
 		{
+			name: "cloud_router",
+			configData: &testconf.ConfigData{`
+resources:
+  cloud_routers:
+  - properties:
+      name: bar-cloud-router
+      network: default
+      region: us-central1
+      asn: 65002`},
+			want: `
+imports:
+- path: {{abs "deploy/config/templates/cloud_router/cloud_router.py"}}
+
+resources:
+- name: bar-cloud-router
+  type: {{abs "deploy/config/templates/cloud_router/cloud_router.py"}}
+  properties:
+      name: bar-cloud-router
+      network: default
+      region: us-central1
+      asn: 65002`,
+		},
+		{
 			name: "gce_firewall",
 			configData: &testconf.ConfigData{`
 resources:

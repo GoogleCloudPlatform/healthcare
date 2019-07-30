@@ -46,6 +46,7 @@ type Project struct {
 		// Deployment manager resources
 		BQDatasets      []*BigqueryDataset `json:"bq_datasets"`
 		CHCDatasets     []*CHCDataset      `json:"chc_datasets"`
+		CloudRouter     []*DefaultResource `json:"cloud_routers"`
 		GCEFirewalls    []*DefaultResource `json:"gce_firewalls"`
 		GCEInstances    []*GCEInstance     `json:"gce_instances"`
 		GCSBuckets      []*GCSBucket       `json:"gcs_buckets"`
@@ -357,6 +358,10 @@ func (p *Project) DeploymentManagerResources() []Resource {
 		rs = append(rs, r)
 	}
 	for _, r := range prs.CHCDatasets {
+		rs = append(rs, r)
+	}
+	for _, r := range prs.CloudRouter {
+		r.TmplPath = "deploy/config/templates/cloud_router/cloud_router.py"
 		rs = append(rs, r)
 	}
 	for _, r := range prs.GCEFirewalls {
