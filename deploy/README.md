@@ -123,20 +123,24 @@ remote audit logs) and one or more data hosting projects.
     WARNING: deploying a project that was previously deployed will trigger an
     update.
 
-1.  If the projects were deployed successfully, the script will write a YAML add
-    a `generated_fields` block in --project_yaml. These fields are used to
-    generate monitoring rules.
+1.  If the projects were deployed successfully, the script will write a YAML
+    with all generated fields in --generated_fields_path. These fields are used
+    to generate monitoring rules.
 
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare
 # Note: --incompatible_use_python_toolchains is not needed after Bazel 0.27
 # See https://github.com/bazelbuild/bazel/issues/7899.
-$ bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=${PROJECT_CONFIG?} --projects=${PROJECTS?} --output_yaml_path=${PROJECT_CONFIG?} --nodry_run
+$ bazel run --incompatible_use_python_toolchains deploy:create_project -- \
+  --project_yaml=${PROJECT_CONFIG?} \
+  --generated_fields_path=${GENERATED_FIELDS?} \
+  --projects=${PROJECTS?} \
+  --nodry_run
 ```
 
-If the script fails at any point, try to correct the error, sync the output yaml
-file with the input and try again.
+If the script fails at any point, try to correct the error in the input yaml
+file and try again.
 
 ### Disabled Unneeded APIs
 
