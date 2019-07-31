@@ -26,7 +26,6 @@ go_library(
         "pair.go",
         "pubsub.go",
         "service_account.go",
-        "terraform.go",
     ],
     data = [
         "//deploy:generated_fields.yaml.schema",
@@ -61,7 +60,6 @@ go_test(
         "metric_test.go",
         "pubsub_test.go",
         "service_account_test.go",
-        "terraform_test.go",
     ],
     data = [
         "//deploy/samples:configs",

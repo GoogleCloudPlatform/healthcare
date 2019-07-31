@@ -2,27 +2,21 @@ package apply
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestForseti(t *testing.T) {
 	conf, _ := testconf.ConfigAndProject(t, nil)
 
-	var b []byte
-	cmdRun = func(cmd *exec.Cmd) error {
-		if cmd.Args[0] == "terraform" && len(b) == 0 {
-			var err error
-			b, err = ioutil.ReadFile(filepath.Join(cmd.Dir, "main.tf.json"))
-			if err != nil {
-				t.Fatalf("ioutil.ReadFile = %v", err)
-			}
-		}
+	var gotTFConf *terraform.Config
+	terraformApply = func(config *terraform.Config, dir string) error {
+		gotTFConf = config
 		return nil
 	}
 
@@ -33,23 +27,31 @@ func TestForseti(t *testing.T) {
 	wantConfig := `{
 	"module": {
 		"forseti": {
+			"source": "./terraform-google-forseti",
 			"composite_root_resources": [
 			  "organizations/12345678",
 				"folders/98765321"
 			 ],
 			 "domain": "my-domain.com",
-			 "project_id": "my-project",
-			 "source": "./terraform-google-forseti"
+			 "project_id": "my-forseti-project",
+			 "storage_bucket_location": "us-east1"
 		}
 	}
 }`
 
 	var got, want interface{}
+	b, err := json.Marshal(gotTFConf)
+	if err != nil {
+		t.Fatalf("json.Marshal gotTFConf: %v", err)
+	}
 	if err := json.Unmarshal(b, &got); err != nil {
-		t.Fatalf("json.Unmarshal = %v", err)
+		t.Fatalf("json.Unmarshal got = %v", err)
 	}
 	if err := json.Unmarshal([]byte(wantConfig), &want); err != nil {
-		t.Fatalf("json.Unmarshal = %v", err)
+		t.Fatalf("json.Unmarshal want = %v", err)
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("terraform config differs (-got, +want):\n%v", diff)
 	}
 }
 

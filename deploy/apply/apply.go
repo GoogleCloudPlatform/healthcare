@@ -29,6 +29,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
 
 const (
@@ -58,6 +59,7 @@ var (
 		return cmd.Run()
 	}
 	upsertDeployment = deploymentmanager.Upsert
+	terraformApply   = terraform.Apply
 )
 
 // deploymentManagerTyper should be implemented by resources that are natively supported by the deployment manager service.
