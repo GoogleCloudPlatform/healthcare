@@ -25,7 +25,7 @@ type GKEClusterSettings struct {
 }
 
 // Init initializes a new GKE cluster with the given project.
-func (*GKECluster) Init(proj *Project) error {
+func (*GKECluster) Init() error {
 	return nil
 }
 

@@ -65,7 +65,6 @@ resources:
       role: READER
     - userByEmail: p12345-999999@gcp-sa-logging.iam.gserviceaccount.com
       role: WRITER
-    setDefaultOwner: false
 - name: my-project-logs
   type: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
   properties:
@@ -84,8 +83,6 @@ resources:
       - group:my-project-auditors@my-domain.com
     versioning:
       enabled: true
-    logging:
-      logBucket: my-project-logs
     lifecycle:
       rule:
       - action:
@@ -216,8 +213,7 @@ resources:
     - groupByEmail: my-project-readonly@my-domain.com
       role: READER
     - groupByEmail: another-readonly-group@googlegroups.com
-      role: READER
-    setDefaultOwner: false`,
+      role: READER`,
 		},
 		{
 			name: "cloud_router",

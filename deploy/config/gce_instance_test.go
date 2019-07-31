@@ -4,14 +4,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestGCEInstance(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	instanceYAML := `
 properties:
   name: foo-instance
@@ -23,7 +20,7 @@ properties:
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := ins.Init(project); err != nil {
+	if err := ins.Init(); err != nil {
 		t.Fatalf("ins.Init: %v", err)
 	}
 
@@ -50,8 +47,6 @@ properties:
 }
 
 func TestGCEInstance_CustomBootImage(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	instanceYAML := `
 properties:
   name: foo-instance
@@ -66,7 +61,7 @@ custom_boot_image:
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := ins.Init(project); err != nil {
+	if err := ins.Init(); err != nil {
 		t.Fatalf("ins.Init: %v", err)
 	}
 

@@ -5,14 +5,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestDataset(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	datasetYAML := `
 properties:
   name: foo-dataset
@@ -22,30 +19,12 @@ properties:
     role: OWNER
 `
 
-	wantdatasetYAML := `
-properties:
-  name: foo-dataset
-  location: US
-  access:
-  - userByEmail: some-admin@domain.com
-    role: OWNER
-  - groupByEmail: my-project-owners@my-domain.com
-    role: OWNER
-  - groupByEmail: my-project-readwrite@my-domain.com
-    role: WRITER
-  - groupByEmail: my-project-readonly@my-domain.com
-    role: READER
-  - groupByEmail: another-readonly-group@googlegroups.com
-    role: READER
-  setDefaultOwner: false
-`
-
 	d := new(config.BigqueryDataset)
 	if err := yaml.Unmarshal([]byte(datasetYAML), d); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := d.Init(project); err != nil {
+	if err := d.Init(); err != nil {
 		t.Fatalf("d.Init: %v", err)
 	}
 
@@ -58,7 +37,7 @@ properties:
 	if err := yaml.Unmarshal(b, &got); err != nil {
 		t.Fatalf("yaml.Unmarshal got config: %v", err)
 	}
-	if err := yaml.Unmarshal([]byte(wantdatasetYAML), &want); err != nil {
+	if err := yaml.Unmarshal([]byte(datasetYAML), &want); err != nil {
 		t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
 	}
 
@@ -72,8 +51,6 @@ properties:
 }
 
 func TestDatasetErrors(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	tests := []struct {
 		name string
 		yaml string
@@ -102,7 +79,7 @@ func TestDatasetErrors(t *testing.T) {
 			if err := yaml.Unmarshal([]byte(tc.yaml), d); err != nil {
 				t.Fatalf("yaml unmarshal: %v", err)
 			}
-			if err := d.Init(project); err == nil {
+			if err := d.Init(); err == nil {
 				t.Fatalf("d.Init error: got nil, want %v", tc.err)
 			} else if !strings.Contains(err.Error(), tc.err) {
 				t.Fatalf("d.Init: got error %q, want error with substring %q", err, tc.err)

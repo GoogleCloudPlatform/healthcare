@@ -36,7 +36,7 @@ type ServiceAccountProperties struct {
 }
 
 // Init initializes the instance.
-func (sa *ServiceAccount) Init(p *Project) error {
+func (sa *ServiceAccount) Init() error {
 	return nil
 }
 

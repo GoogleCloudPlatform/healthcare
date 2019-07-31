@@ -24,14 +24,16 @@ type GCSBucketProperties struct {
 	Lifecycle                  *lifecycle `json:"lifecycle,omitempty"`
 	PredefinedACL              string     `json:"predefinedAcl,omitempty"`
 	PredefinedDefaultObjectACL string     `json:"predefinedDefaultObjectAcl,omitempty"`
-	Logging                    struct {
-		LogBucket string `json:"logBucket"`
-	} `json:"logging"`
+	Logging                    *logging   `json:"logging,omitempty"`
 }
 
 type versioning struct {
 	// Use pointer to differentiate between zero value and intentionally being set to false.
 	Enabled *bool `json:"enabled"`
+}
+
+type logging struct {
+	LogBucket string `json:"logBucket"`
 }
 
 type lifecycle struct {
@@ -78,7 +80,7 @@ func (r *LifecycleRule) MarshalJSON() ([]byte, error) {
 }
 
 // Init initializes the bucket with the given project.
-func (b *GCSBucket) Init(project *Project) error {
+func (b *GCSBucket) Init() error {
 	if b.GCSBucketName == "" {
 		return errors.New("name must be set")
 	}
@@ -94,39 +96,6 @@ func (b *GCSBucket) Init(project *Project) error {
 
 	t := true
 	b.Versioning.Enabled = &t
-
-	appendGroupPrefix := func(ss ...string) []string {
-		res := make([]string, 0, len(ss))
-		for _, s := range ss {
-			res = append(res, "group:"+s)
-		}
-		return res
-	}
-
-	// Note: duplicate bindings are de-duplicated by deployment manager.
-	bindings := []Binding{
-		{Role: "roles/storage.admin", Members: appendGroupPrefix(project.OwnersGroup)},
-	}
-	if len(project.DataReadWriteGroups) > 0 {
-		bindings = append(bindings, Binding{
-			Role: "roles/storage.objectAdmin", Members: appendGroupPrefix(project.DataReadWriteGroups...),
-		})
-	}
-	if len(project.DataReadOnlyGroups) > 0 {
-		bindings = append(bindings, Binding{
-			Role: "roles/storage.objectViewer", Members: appendGroupPrefix(project.DataReadOnlyGroups...),
-		})
-	}
-
-	b.Bindings = MergeBindings(append(bindings, b.Bindings...)...)
-
-	// TODO: this shouldn't be possible (data buckets should imply log bucket exists).
-	if project.AuditLogs.LogsGCSBucket == nil {
-		return nil
-	}
-	if project.AuditLogs.LogsGCSBucket != nil {
-		b.Logging.LogBucket = project.AuditLogs.LogsGCSBucket.Name()
-	}
 
 	if b.TTLDays > 0 {
 		if b.Lifecycle == nil {

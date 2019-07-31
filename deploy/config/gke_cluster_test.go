@@ -16,18 +16,21 @@ properties:
     name: foo-cluser
 `
 
-	cluser := new(config.GKECluster)
-	if err := yaml.Unmarshal([]byte(resYAML), cluser); err != nil {
+	cluster := new(config.GKECluster)
+	if err := yaml.Unmarshal([]byte(resYAML), cluster); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
-	if cluser.Name() != "foo-cluser" {
-		t.Fatalf("cluster name error: %v", cluser.Name())
+	if err := cluster.Init(); err != nil {
+		t.Fatalf("cluster.Init = %v", err)
 	}
-	if cluser.ClusterLocationType != "Regional" {
-		t.Fatalf("cluster location type error: %v", cluser.ClusterLocationType)
+	if cluster.Name() != "foo-cluser" {
+		t.Fatalf("cluster name error: %v", cluster.Name())
 	}
-	if cluser.Region != "somewhere1" {
-		t.Fatalf("cluster region error: %v", cluser.ClusterLocationType)
+	if cluster.ClusterLocationType != "Regional" {
+		t.Fatalf("cluster location type error: %v", cluster.ClusterLocationType)
+	}
+	if cluster.Region != "somewhere1" {
+		t.Fatalf("cluster region error: %v", cluster.ClusterLocationType)
 	}
 }
 
@@ -40,17 +43,20 @@ properties:
     name: foo-cluser
 `
 
-	cluser := new(config.GKECluster)
-	if err := yaml.Unmarshal([]byte(resYAML), cluser); err != nil {
+	cluster := new(config.GKECluster)
+	if err := yaml.Unmarshal([]byte(resYAML), cluster); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
-	if cluser.Name() != "foo-cluser" {
-		t.Fatalf("cluster name error: %v", cluser.Name())
+	if err := cluster.Init(); err != nil {
+		t.Fatalf("cluster.Init = %v", err)
 	}
-	if cluser.ClusterLocationType != "Zonal" {
-		t.Fatalf("cluster location type error: %v", cluser.ClusterLocationType)
+	if cluster.Name() != "foo-cluser" {
+		t.Fatalf("cluster name error: %v", cluster.Name())
 	}
-	if cluser.Zone != "somewhere2-c" {
-		t.Fatalf("cluster zone error: %v", cluser.Zone)
+	if cluster.ClusterLocationType != "Zonal" {
+		t.Fatalf("cluster location type error: %v", cluster.ClusterLocationType)
+	}
+	if cluster.Zone != "somewhere2-c" {
+		t.Fatalf("cluster zone error: %v", cluster.Zone)
 	}
 }

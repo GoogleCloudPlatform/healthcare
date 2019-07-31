@@ -10,8 +10,6 @@ import (
 )
 
 func TestMetric(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	metricYAML := `
 properties:
   metric: access-buckets-failures
@@ -33,7 +31,7 @@ properties:
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := m.Init(project); err != nil {
+	if err := m.Init(); err != nil {
 		t.Fatalf("m.Init: %v", err)
 	}
 

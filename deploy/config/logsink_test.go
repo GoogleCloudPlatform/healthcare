@@ -4,14 +4,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestLogSink(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	sinkYAML := `
 properties:
   sink: foo-sink
@@ -24,7 +21,7 @@ properties:
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := s.Init(project); err != nil {
+	if err := s.Init(); err != nil {
 		t.Fatalf("m.Init: %v", err)
 	}
 

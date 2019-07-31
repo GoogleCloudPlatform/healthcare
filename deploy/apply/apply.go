@@ -60,12 +60,6 @@ var (
 	upsertDeployment = deploymentmanager.Upsert
 )
 
-// parsedResource is an interface that must be implemented by all concrete resource implementations.
-type parsedResource interface {
-	Init(*config.Project) error
-	Name() string
-}
-
 // deploymentManagerTyper should be implemented by resources that are natively supported by the deployment manager service.
 // Use this if there is no suitable CFT template for a resource and a custom template is not needed.
 // See https://cloud.google.com/deployment-manager/docs/configuration/supported-resource-types for valid types.

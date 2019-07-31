@@ -17,6 +17,10 @@ properties:
 	if err := yaml.Unmarshal([]byte(resYAML), d); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
+	d.TmplPath = "foo"
+	if err := d.Init(); err != nil {
+		t.Fatalf("d.Init = %v", err)
+	}
 	if d.Name() != "foo-resource" {
 		t.Fatalf("default resource name error: %v", d.Name())
 	}

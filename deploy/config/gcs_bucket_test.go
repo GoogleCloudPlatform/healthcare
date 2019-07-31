@@ -5,14 +5,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestGCSBucket(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	bucketYAML := `
 ttl_days: 7
 properties:
@@ -44,21 +41,11 @@ properties:
   name: foo-bucket
   location: us-east1
   bindings:
-  - role: roles/storage.admin
-    members:
-    - 'group:my-project-owners@my-domain.com'
-  - role: roles/storage.objectAdmin
-    members:
-    - 'group:my-project-readwrite@my-domain.com'
   - role: roles/storage.objectViewer
     members:
-    - 'group:my-project-readonly@my-domain.com'
-    - 'group:another-readonly-group@googlegroups.com'
     - 'user:extra-reader@google.com'
   versioning:
     enabled: True
-  logging:
-    logBucket: my-project-logs
   lifecycle:
     rule:
     - action:
@@ -85,7 +72,7 @@ properties:
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := b.Init(project); err != nil {
+	if err := b.Init(); err != nil {
 		t.Fatalf("d.Init: %v", err)
 	}
 
@@ -112,8 +99,6 @@ properties:
 }
 
 func TestGCSBucketErrors(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	tests := []struct {
 		name string
 		yaml string
@@ -147,7 +132,7 @@ func TestGCSBucketErrors(t *testing.T) {
 			if err := yaml.Unmarshal([]byte(tc.yaml), b); err != nil {
 				t.Fatalf("yaml unmarshal: %v", err)
 			}
-			if err := b.Init(project); err == nil {
+			if err := b.Init(); err == nil {
 				t.Fatalf("b.Init error: got nil, want %v", tc.err)
 			} else if !strings.Contains(err.Error(), tc.err) {
 				t.Fatalf("b.Init: got error %q, want error with substring %q", err, tc.err)

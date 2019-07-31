@@ -16,7 +16,7 @@ type LogSinkProperties struct {
 }
 
 // Init initializes the instance.
-func (l *LogSink) Init(p *Project) error {
+func (l *LogSink) Init() error {
 	return nil
 }
 

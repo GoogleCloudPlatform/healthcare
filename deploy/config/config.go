@@ -178,9 +178,13 @@ func (p *Project) Init(auditLogsProject *Project) error {
 	}
 
 	for _, r := range p.DeploymentManagerResources() {
-		if err := r.Init(p); err != nil {
+		if err := r.Init(); err != nil {
 			return fmt.Errorf("failed to init: %v, %+v", err, r)
 		}
+	}
+
+	if err := p.initDataResources(); err != nil {
+		return fmt.Errorf("failed to init data resources: %v", err)
 	}
 
 	if err := p.addBaseResources(); err != nil {
@@ -203,7 +207,7 @@ func (p *Project) initAuditResources(auditProject *Project) error {
 		},
 	}
 
-	if err := p.AuditLogs.LogsBQDataset.Init(p); err != nil {
+	if err := p.AuditLogs.LogsBQDataset.Init(); err != nil {
 		return fmt.Errorf("failed to init logs bq dataset: %v", err)
 	}
 
@@ -223,7 +227,7 @@ func (p *Project) initAuditResources(auditProject *Project) error {
 		return nil
 	}
 
-	if err := p.AuditLogs.LogsGCSBucket.Init(p); err != nil {
+	if err := p.AuditLogs.LogsGCSBucket.Init(); err != nil {
 		return fmt.Errorf("faild to init logs gcs bucket: %v", err)
 	}
 
@@ -231,6 +235,76 @@ func (p *Project) initAuditResources(auditProject *Project) error {
 		{Role: "roles/storage.admin", Members: []string{"group:" + auditProject.OwnersGroup}},
 		{Role: "roles/storage.objectCreator", Members: []string{accessLogsWriter}},
 		{Role: "roles/storage.objectViewer", Members: []string{"group:" + p.AuditorsGroup}},
+	}
+
+	return nil
+}
+
+func (p *Project) initDataResources() error {
+	for _, d := range p.Resources.BQDatasets {
+		// Note: duplicate accesses are de-duplicated by deployment manager.
+		roleAndGroups := []struct {
+			Role   string
+			Groups []string
+		}{
+			{"OWNER", []string{p.OwnersGroup}},
+			{"WRITER", p.DataReadWriteGroups},
+			{"READER", p.DataReadOnlyGroups},
+		}
+
+		for _, rg := range roleAndGroups {
+			for _, g := range rg.Groups {
+				d.Accesses = append(d.Accesses, &Access{
+					Role:         rg.Role,
+					GroupByEmail: g,
+				})
+			}
+		}
+	}
+
+	appendGroupPrefix := func(ss ...string) []string {
+		res := make([]string, 0, len(ss))
+		for _, s := range ss {
+			res = append(res, "group:"+s)
+		}
+		return res
+	}
+
+	for _, b := range p.Resources.GCSBuckets {
+		// Note: duplicate bindings are de-duplicated by deployment manager.
+		bindings := []Binding{
+			{Role: "roles/storage.admin", Members: appendGroupPrefix(p.OwnersGroup)},
+		}
+		if len(p.DataReadWriteGroups) > 0 {
+			bindings = append(bindings, Binding{
+				Role: "roles/storage.objectAdmin", Members: appendGroupPrefix(p.DataReadWriteGroups...),
+			})
+		}
+		if len(p.DataReadOnlyGroups) > 0 {
+			bindings = append(bindings, Binding{
+				Role: "roles/storage.objectViewer", Members: appendGroupPrefix(p.DataReadOnlyGroups...),
+			})
+		}
+		b.Bindings = MergeBindings(append(bindings, b.Bindings...)...)
+
+		// TODO: this should always be true (data buckets should imply log bucket exists).
+		if p.AuditLogs.LogsGCSBucket != nil {
+			if b.Logging == nil {
+				b.Logging = new(logging)
+			}
+			b.Logging.LogBucket = p.AuditLogs.LogsGCSBucket.Name()
+		}
+	}
+
+	for _, ps := range p.Resources.Pubsubs {
+		defaultBindings := []Binding{
+			{"roles/pubsub.editor", appendGroupPrefix(p.DataReadWriteGroups...)},
+			{"roles/pubsub.viewer", appendGroupPrefix(p.DataReadOnlyGroups...)},
+		}
+
+		for _, s := range ps.Subscriptions {
+			s.Bindings = MergeBindings(append(defaultBindings, s.Bindings...)...)
+		}
 	}
 
 	return nil
@@ -340,7 +414,7 @@ protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})`)
 
 // Resource is an interface that must be implemented by all concrete resource implementations.
 type Resource interface {
-	Init(*Project) error
+	Init() error
 	Name() string
 }
 

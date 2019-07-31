@@ -21,7 +21,7 @@ type DefaultResourceProperties struct {
 }
 
 // Init initializes a new default resource with the given project.
-func (dr *DefaultResource) Init(*Project) error {
+func (dr *DefaultResource) Init() error {
 	if dr.OuterName != "" && dr.InnerName != "" {
 		return fmt.Errorf("name can only be defined once in outer or inner object: got %q, %q", dr.OuterName, dr.InnerName)
 	}

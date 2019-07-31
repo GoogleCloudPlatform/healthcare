@@ -4,14 +4,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestPubsub(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	pubsubYAML := `
 properties:
   topic: foo-topic
@@ -24,35 +21,14 @@ properties:
     accessControl:
     - role: roles/pubsub.viewer
       members:
-      - 'user:extra-reader@google.com'
-`
-
-	wantPubsubYAML := `
-properties:
-  topic: foo-topic
-  accessControl:
-  - role: roles/pubsub.publisher
-    members:
-    - 'user:foo@user.com'
-  subscriptions:
-  - name: foo-subscription
-    accessControl:
-    - role: roles/pubsub.editor
-      members:
-      - 'group:my-project-readwrite@my-domain.com'
-    - role: roles/pubsub.viewer
-      members:
-      - 'group:my-project-readonly@my-domain.com'
-      - 'group:another-readonly-group@googlegroups.com'
-      - 'user:extra-reader@google.com'
-`
+      - 'user:extra-reader@google.com'`
 
 	p := &config.Pubsub{}
 	if err := yaml.Unmarshal([]byte(pubsubYAML), p); err != nil {
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := p.Init(project); err != nil {
+	if err := p.Init(); err != nil {
 		t.Fatalf("d.Init: %v", err)
 	}
 
@@ -65,7 +41,7 @@ properties:
 	if err := yaml.Unmarshal(byt, &got); err != nil {
 		t.Fatalf("yaml.Unmarshal got config: %v", err)
 	}
-	if err := yaml.Unmarshal([]byte(wantPubsubYAML), &want); err != nil {
+	if err := yaml.Unmarshal([]byte(pubsubYAML), &want); err != nil {
 		t.Fatalf("yaml.Unmarshal want deployment config: %v", err)
 	}
 

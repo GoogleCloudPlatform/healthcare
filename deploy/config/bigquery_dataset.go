@@ -16,8 +16,8 @@ type BigqueryDataset struct {
 type BigqueryDatasetProperties struct {
 	BigqueryDatasetName string    `json:"name"`
 	Location            string    `json:"location"`
-	Accesses            []*Access `json:"access"`
-	SetDefaultOwner     bool      `json:"setDefaultOwner"`
+	Accesses            []*Access `json:"access,omitempty"`
+	SetDefaultOwner     bool      `json:"setDefaultOwner,omitempty"`
 }
 
 // Access defines a dataset access. Only one non-role field should be set.
@@ -32,7 +32,7 @@ type Access struct {
 }
 
 // Init initializes a new dataset with the given project.
-func (d *BigqueryDataset) Init(project *Project) error {
+func (d *BigqueryDataset) Init() error {
 	if d.Name() == "" {
 		return errors.New("name must be set")
 	}
@@ -42,26 +42,6 @@ func (d *BigqueryDataset) Init(project *Project) error {
 	if d.SetDefaultOwner {
 		return errors.New("setDefaultOwner must not be true")
 	}
-
-	// Note: duplicate accesses are de-duplicated by deployment manager.
-	roleAndGroups := []struct {
-		Role   string
-		Groups []string
-	}{
-		{"OWNER", []string{project.OwnersGroup}},
-		{"WRITER", project.DataReadWriteGroups},
-		{"READER", project.DataReadOnlyGroups},
-	}
-
-	for _, rg := range roleAndGroups {
-		for _, g := range rg.Groups {
-			d.Accesses = append(d.Accesses, &Access{
-				Role:         rg.Role,
-				GroupByEmail: g,
-			})
-		}
-	}
-
 	return nil
 }
 

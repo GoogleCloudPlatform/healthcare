@@ -50,7 +50,7 @@ type label struct {
 }
 
 // Init initializes the metric.
-func (m *Metric) Init(*Project) error {
+func (m *Metric) Init() error {
 	if m.MetricName == "" {
 		return errors.New("metric name must be set")
 	}

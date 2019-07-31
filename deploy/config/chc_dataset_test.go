@@ -20,14 +20,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestCHCDataset(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	datasetYAML := `
 properties:
   location: us-central1
@@ -57,7 +54,7 @@ properties:
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := d.Init(project); err != nil {
+	if err := d.Init(); err != nil {
 		t.Fatalf("d.Init: %v", err)
 	}
 

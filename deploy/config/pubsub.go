@@ -25,26 +25,9 @@ type Subscription struct {
 }
 
 // Init initializes a new pubsub with the given project.
-func (p *Pubsub) Init(project *Project) error {
+func (p *Pubsub) Init() error {
 	if p.Name() == "" {
 		return errors.New("topic must be set")
-	}
-
-	appendGroupPrefix := func(ss ...string) []string {
-		res := make([]string, 0, len(ss))
-		for _, s := range ss {
-			res = append(res, "group:"+s)
-		}
-		return res
-	}
-
-	defaultBindings := []Binding{
-		{"roles/pubsub.editor", appendGroupPrefix(project.DataReadWriteGroups...)},
-		{"roles/pubsub.viewer", appendGroupPrefix(project.DataReadOnlyGroups...)},
-	}
-
-	for _, s := range p.Subscriptions {
-		s.Bindings = MergeBindings(append(defaultBindings, s.Bindings...)...)
 	}
 
 	return nil

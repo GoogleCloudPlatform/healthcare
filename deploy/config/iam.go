@@ -17,7 +17,7 @@ type IAMCustomRoleProperties struct {
 }
 
 // Init initializes a new custom role with the given project.
-func (i *IAMCustomRole) Init(*Project) error {
+func (i *IAMCustomRole) Init() error {
 	if i.Name() == "" {
 		return errors.New("roleId must be set")
 	}
@@ -69,7 +69,7 @@ type IAMPolicyProperties struct {
 }
 
 // Init initializes a new custom role with the given project.
-func (i *IAMPolicy) Init(*Project) error {
+func (i *IAMPolicy) Init() error {
 	if i.Name() == "" {
 		return errors.New("name must be set")
 	}

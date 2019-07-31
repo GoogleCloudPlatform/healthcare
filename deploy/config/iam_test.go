@@ -4,14 +4,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
 
 func TestIAMCustomRole(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	customRoleYAML := `
 properties:
   roleId: fooCustomRole
@@ -21,7 +18,7 @@ properties:
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := i.Init(project); err != nil {
+	if err := i.Init(); err != nil {
 		t.Fatalf("m.Init: %v", err)
 	}
 
@@ -51,8 +48,6 @@ properties:
 }
 
 func TestIAMPolicy(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
 	customRoleYAML := `
 name: foo-owner-binding
 properties:
@@ -66,7 +61,7 @@ properties:
 		t.Fatalf("yaml unmarshal: %v", err)
 	}
 
-	if err := i.Init(project); err != nil {
+	if err := i.Init(); err != nil {
 		t.Fatalf("m.Init: %v", err)
 	}
 

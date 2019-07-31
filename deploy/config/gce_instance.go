@@ -23,7 +23,7 @@ type GCEInstanceProperties struct {
 }
 
 // Init initializes the instance.
-func (i *GCEInstance) Init(*Project) error {
+func (i *GCEInstance) Init() error {
 	if i.CustomBootImage != nil {
 		if i.DiskImage != "" {
 			return errors.New("custom boot image and disk image cannot both be set")

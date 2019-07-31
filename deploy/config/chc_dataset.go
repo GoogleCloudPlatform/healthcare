@@ -34,7 +34,7 @@ type CHCDatasetProperties struct {
 }
 
 // Init initializes a new dataset with the given project.
-func (d *CHCDataset) Init(project *Project) error {
+func (d *CHCDataset) Init() error {
 	if d.Name() == "" {
 		return errors.New("name must be set")
 	}
