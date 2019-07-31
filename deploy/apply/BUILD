@@ -10,6 +10,7 @@ go_library(
         "apply.go",
         "forseti.go",
         "gke.go",
+        "options.go",
     ],
     data = [
         "//deploy/templates",
