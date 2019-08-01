@@ -233,7 +233,10 @@ to create the Google Cloud projects, including
         turned-off state) and opens up port 8787 for incoming connections.
 
 ```shell
-bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/input.yaml --dry_run
+bazel run --incompatible_use_python_toolchains deploy:create_project -- \
+  --project_yaml=datathon/organizer/input.yaml \
+  --generated_fields_path=datathon/organizer/generated_fields.yaml \
+  --dry_run
 ```
 
 Note that the `--dry_run` flag enables dry run mode, which only prints the
@@ -243,7 +246,10 @@ defined in the `--output_yaml_path` flag, will store the exact configuration
 used for creating the projects after environment variable substitution.
 
 ```shell
-bazel run --incompatible_use_python_toolchains deploy:create_project -- --project_yaml=datathon/organizer/input.yaml --nodry_run
+bazel run --incompatible_use_python_toolchains deploy:create_project -- \
+  --project_yaml=datathon/organizer/input.yaml \
+  --generated_fields_path=datathon/organizer/generated_fields.yaml \
+  --nodry_run
 ```
 
 In case the deployment fails, please examine the error messages and make
