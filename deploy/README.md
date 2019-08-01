@@ -36,7 +36,7 @@ beneficial if you have several data projects.
 NOTE: If running through Cloud Shell, all of the following dependencies are
 already available.
 
--   [Bazel 0.25+](https://docs.bazel.build/versions/master/install.html)
+-   [Bazel 0.27+](https://docs.bazel.build/versions/master/install.html)
 
 -   [Gcloud SDK](https://cloud.google.com/sdk/install)
 
@@ -44,7 +44,7 @@ already available.
 
 -   [Go 1.10+](https://golang.org/dl/)
 
--   [Terraform 0.11](https://www.terraform.io/downloads.html)
+-   [Terraform 0.12](https://www.terraform.io/downloads.html)
 
 -   [Pip](https://pip.pypa.io/en/stable/installing/)
 
@@ -130,9 +130,7 @@ remote audit logs) and one or more data hosting projects.
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare
-# Note: --incompatible_use_python_toolchains is not needed after Bazel 0.27
-# See https://github.com/bazelbuild/bazel/issues/7899.
-$ bazel run --incompatible_use_python_toolchains deploy:create_project -- \
+$ bazel run deploy:create_project -- \
   --project_yaml=${PROJECT_CONFIG?} \
   --generated_fields_path=${GENERATED_FIELDS?} \
   --projects=${PROJECTS?} \
