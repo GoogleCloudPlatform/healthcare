@@ -1,0 +1,114 @@
+/*
+ * Copyright 2019 Google LLC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// apply applies project configurations to GCP projects.
+//
+// Usage:
+//   $ bazel run :apply -- \
+//     --config_path=my_config.yaml \
+//     --output_path=my_output.yaml \
+//
+// To preview the commands that will run, use `--dry_run`.
+package main
+
+import (
+	"errors"
+	"log"
+	"strings"
+
+	"flag"
+	
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+)
+
+var (
+	configPath = flag.String("config_path", "", "Path to project config file")
+	outputPath = flag.String("output_path", "", "Path to output file to write generated fields")
+	rulesPath  = flag.String("rules_path", "", "Path to local directory or GCS bucket to output rules files. If unset, directly writes to the Forseti server bucket.")
+	dryRun     = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
+	projects   arrayFlags
+)
+
+type arrayFlags []string
+
+func (i *arrayFlags) String() string {
+	return strings.Join(*i, ",")
+}
+
+func (i *arrayFlags) Set(value string) error {
+	// Only allow --projects to be specified once.
+	if len(*i) > 0 {
+		return errors.New("--projects flag already set")
+	}
+	for _, v := range strings.Split(value, ",") {
+		*i = append(*i, v)
+	}
+	return nil
+}
+
+func (i *arrayFlags) Get() interface{} {
+	return i
+}
+
+type projectHandle struct {
+	// TODO: Add other attrs needed for project deployment.
+	project *config.Project
+}
+
+func main() {
+	flag.Var(&projects, "projects", "Comma separeted project IDs within --config_path to deploy, or leave unspecified to deploy all projects.")
+	flag.Parse()
+
+	if *configPath == "" {
+		log.Fatal("--config_path must be set")
+	}
+	if *outputPath == "" {
+		log.Fatal("--output_path must be set")
+	}
+
+	conf, err := config.Load(*configPath, *outputPath)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	wantProjects := make(map[string]bool)
+
+	for _, p := range projects {
+		wantProjects[p] = true
+	}
+
+	wantProject := func(project string) bool {
+		if len(wantProjects) == 0 {
+			return true
+		}
+		return wantProjects[project]
+	}
+
+	var projectHandles []projectHandle
+	// Always deploy the remote audit logs project first (if present).
+	if conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID) {
+		projectHandles = append(projectHandles, projectHandle{project: conf.AuditLogsProject})
+	}
+	if conf.Forseti != nil && wantProject(conf.Forseti.Project.ID) {
+		projectHandles = append(projectHandles, projectHandle{project: conf.Forseti.Project})
+	}
+	for _, p := range conf.Projects {
+		if wantProject(p.ID) {
+			projectHandles = append(projectHandles, projectHandle{project: p})
+		}
+	}
+
+}
