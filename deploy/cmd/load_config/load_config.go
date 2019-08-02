@@ -27,7 +27,6 @@ func main() {
 		log.Fatalf("failed to load config to bytes: %v", err)
 	}
 
-	// TODO: remove this check after --generated_fields_path becomes mandatory.
 	if *generatedFieldsPath != "" {
 		if _, err := config.LoadGeneratedFields(*generatedFieldsPath, *generatedFieldsPath == *projectYAMLPath); err != nil {
 			log.Fatalf("failed to validate generated fields yaml: %v", err)
