@@ -81,13 +81,6 @@ flags.DEFINE_string('grant_forseti_access_binary', None,
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
 
-# Roles to temporarily grant the deployment manager service account to function.
-_DEPLOYMENT_MANAGER_ROLES = ['roles/owner', 'roles/storage.admin']
-
-# IAM binding changes can take some time to propagate to child resources, so
-# wait to give it enough time.
-_IAM_PROPAGATAION_WAIT_TIME_SECS = 60
-
 # Restriction for project lien.
 _LIEN_RESTRICTION = 'resourcemanager.projects.delete'
 
@@ -209,14 +202,6 @@ def enable_services_apis(config):
         ['services', 'enable'] + want_apis[i:i + 10], project_id=project_id)
 
 
-def _is_service_enabled(service_name, project_id):
-  """Check if the service_name is already enabled."""
-  enabled_services = runner.run_gcloud_command(
-      ['services', 'list', '--format', 'value(NAME)'], project_id=project_id)
-  services_list = enabled_services.strip().split('\n')
-  return service_name in services_list
-
-
 def get_data_bucket_name(data_bucket, project_id):
   """Get the name of data buckets."""
   if 'name' not in data_bucket:
@@ -264,13 +249,6 @@ def deploy_resources(config):
       '--project',
       config.project['project_id'],
   ])
-
-
-def _get_role_to_members(bindings):
-  res = collections.defaultdict(set)
-  for binding in bindings:
-    res[binding['role']].update(set(binding['members']))
-  return res
 
 
 def create_compute_images(config):

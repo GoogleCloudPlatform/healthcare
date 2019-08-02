@@ -111,5 +111,4 @@ def _deploy(config_filename):
 
 
 if __name__ == '__main__':
-  create_project._IAM_PROPAGATAION_WAIT_TIME_SECS = 0  # don't sleep
   absltest.main()
