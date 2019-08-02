@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-// Apply provides a CLI to deploy a project config to GCP.
+// apply_resources provides a CLI to deploy a project config to GCP.
 //
 // Usage:
-//   $ bazel run :apply -- --project_yaml_path=${PROJECT_YAML_PATH?} --project=${PROJECT_ID?}
+//   $ bazel run :apply_resources -- --project_yaml_path=${PROJECT_YAML_PATH?} --project=${PROJECT_ID?}
 package main
 
 import (
