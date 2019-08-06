@@ -22,4 +22,6 @@ type Options struct {
 	// Note: this does not affect Forseti installation, which is always terraform.
 	// TODO: remove once terraform becomes default.
 	EnableTerraform bool
+	// Toggle whether Forseti is enabled.
+	EnableForseti bool
 }

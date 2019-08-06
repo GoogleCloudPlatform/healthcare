@@ -532,7 +532,7 @@ resources:
 				return nil
 			}
 
-			if err := Apply(conf, project, &Options{EnableTerraform: false}); err != nil {
+			if err := DeployResources(conf, project, &Options{EnableTerraform: false}); err != nil {
 				t.Fatalf("Deploy: %v", err)
 			}
 

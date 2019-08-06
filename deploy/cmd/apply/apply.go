@@ -31,6 +31,7 @@ import (
 
 	"flag"
 	
+	"github.com/GoogleCloudPlatform/healthcare/deploy/apply"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 )
 
@@ -63,11 +64,6 @@ func (i *arrayFlags) Get() interface{} {
 	return i
 }
 
-type projectHandle struct {
-	// TODO: Add other attrs needed for project deployment.
-	project *config.Project
-}
-
 func main() {
 	flag.Var(&projects, "projects", "Comma separeted project IDs within --config_path to deploy, or leave unspecified to deploy all projects.")
 	flag.Parse()
@@ -97,17 +93,35 @@ func main() {
 		return wantProjects[project]
 	}
 
-	var projectHandles []projectHandle
+	enableForseti := conf.Forseti != nil && wantProject(conf.Forseti.Project.ID)
+	enableRemoteAudit := conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID)
+
 	// Always deploy the remote audit logs project first (if present).
-	if conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID) {
-		projectHandles = append(projectHandles, projectHandle{project: conf.AuditLogsProject})
+	if enableRemoteAudit {
+		// Cannot enable Forseti project until Forseti project is deployed.
+		if err := apply.Default(conf, conf.AuditLogsProject, &apply.Options{EnableTerraform: false, EnableForseti: false}); err != nil {
+			log.Fatalf("failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
+		}
 	}
-	if conf.Forseti != nil && wantProject(conf.Forseti.Project.ID) {
-		projectHandles = append(projectHandles, projectHandle{project: conf.Forseti.Project})
+
+	if enableForseti {
+		if err := apply.Forseti(conf, conf.Forseti.Project, &apply.Options{EnableTerraform: false, EnableForseti: enableForseti}); err != nil {
+			log.Fatalf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
+		}
+		if enableRemoteAudit {
+			// TODO: this will fail now as we haven't written the service account to generated fields. TODO in forseti_applier.go.
+			// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
+			if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
+				log.Fatalf("failed to grant Forseti permissions to remote audit logs project: %v", err)
+			}
+		}
 	}
 	for _, p := range conf.Projects {
-		if wantProject(p.ID) {
-			projectHandles = append(projectHandles, projectHandle{project: p})
+		if !wantProject(p.ID) {
+			continue
+		}
+		if err := apply.Default(conf, p, &apply.Options{EnableTerraform: false, EnableForseti: enableForseti}); err != nil {
+			log.Fatalf("failed to apply config for project %q: %v", p.ID, err)
 		}
 	}
 

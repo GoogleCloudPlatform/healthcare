@@ -27,8 +27,24 @@ var forsetiStandardRoles = [...]string{
 	"serviceusage.serviceUsageConsumer",
 }
 
-// Forseti applies the forseti config, if it exists.
-func Forseti(conf *config.Config) error {
+// Forseti applies project configuration to a Forseti project.
+func Forseti(conf *config.Config, project *config.Project, opts *Options) error {
+	if err := Default(conf, project, opts); err != nil {
+		return err
+	}
+	if err := ForsetiConfig(conf); err != nil {
+		return fmt.Errorf("failed to apply forseti config for forseti project %q: %v", conf.Forseti.Project.ID)
+	}
+
+	// TODO: write service account and bucket to generated fields.
+
+	return nil
+}
+
+// ForsetiConfig applies the forseti config, if it exists. It does not configure
+// other settings such as billing account, deletion lien, etc.
+// TODO Make it private or merge it into Forseti() after removing apply_forseti.go.
+func ForsetiConfig(conf *config.Config) error {
 	if conf.Forseti == nil {
 		log.Println("no forseti config, nothing to do")
 		return nil

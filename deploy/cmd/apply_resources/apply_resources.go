@@ -58,7 +58,7 @@ func main() {
 	}
 
 	opts := &apply.Options{EnableTerraform: *enableTerraform}
-	if err := apply.Apply(conf, proj, opts); err != nil {
+	if err := apply.DeployResources(conf, proj, opts); err != nil {
 		log.Fatalf("failed to deploy %q resources: %v", *projectID, err)
 	}
 

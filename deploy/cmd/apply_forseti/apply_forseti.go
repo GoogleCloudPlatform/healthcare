@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	if err := apply.Forseti(conf); err != nil {
+	if err := apply.ForsetiConfig(conf); err != nil {
 		log.Fatalf("failed to apply forseti: %v", err)
 	}
 }

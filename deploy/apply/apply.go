@@ -81,8 +81,54 @@ type depender interface {
 	Dependencies() []string
 }
 
-// Apply deploys the CFT resources in the project.
-func Apply(conf *config.Config, project *config.Project, opts *Options) error {
+// Default applies project configurations to a default project.
+func Default(conf *config.Config, project *config.Project, opts *Options) error {
+	if err := getOrCreateProject(); err != nil {
+		return fmt.Errorf("failed to get or create project %q: %v", project.ID, err)
+	}
+
+	if err := setupBilling(); err != nil {
+		return fmt.Errorf("failed to set up billing for project %q: %v", project.ID, err)
+	}
+
+	if err := enableServiceAPIs(); err != nil {
+		return fmt.Errorf("failed to enable service APIs for project %q: %v", project.ID, err)
+	}
+
+	if err := createComputeImages(); err != nil {
+		return fmt.Errorf("failed to create compute images for project %q: %v", project.ID, err)
+	}
+
+	if err := createDeletionLien(); err != nil {
+		return fmt.Errorf("failed to create deletion lien for project %q: %v", project.ID, err)
+	}
+
+	if err := DeployResources(conf, project, opts); err != nil {
+		return fmt.Errorf("failed to deploy resources for project %q: %v", project.ID, err)
+	}
+
+	if err := createStackdriverAccount(); err != nil {
+		return fmt.Errorf("failed to create stackdriver account for project %q: %v", project.ID, err)
+	}
+
+	if err := createAlerts(); err != nil {
+		return fmt.Errorf("failed to create alerts for project %q: %v", project.ID, err)
+	}
+
+	if opts.EnableForseti {
+		// TODO: this will fail now as we haven't written the service account to generated fields. TODO in forseti_applier.go.
+		if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
+			return err
+		}
+	}
+
+	// TODO: write generated fieids.
+
+	return nil
+}
+
+// DeployResources deploys the CFT resources in the project.
+func DeployResources(conf *config.Config, project *config.Project, opts *Options) error {
 	if err := grantDeploymentManagerAccess(project); err != nil {
 		return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
 	}
@@ -351,4 +397,39 @@ func deployPrerequisite(project *config.Project) error {
 		return fmt.Errorf("failed to get deployment for pre-requisites: %v", err)
 	}
 	return upsertDeployment(setupPrerequisiteDeploymentName, deployment, project.ID)
+}
+
+func getOrCreateProject() error {
+	//TODO add logic.
+	return nil
+}
+
+func setupBilling() error {
+	//TODO add logic.
+	return nil
+}
+
+func enableServiceAPIs() error {
+	//TODO add logic.
+	return nil
+}
+
+func createComputeImages() error {
+	//TODO add logic.
+	return nil
+}
+
+func createDeletionLien() error {
+	//TODO add logic.
+	return nil
+}
+
+func createStackdriverAccount() error {
+	//TODO add logic.
+	return nil
+}
+
+func createAlerts() error {
+	//TODO add logic.
+	return nil
 }

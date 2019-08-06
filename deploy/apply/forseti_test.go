@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestForseti(t *testing.T) {
+func TestForsetiConfig(t *testing.T) {
 	conf, _ := testconf.ConfigAndProject(t, nil)
 
 	var gotTFConf *terraform.Config
@@ -20,7 +20,7 @@ func TestForseti(t *testing.T) {
 		return nil
 	}
 
-	if err := Forseti(conf); err != nil {
+	if err := ForsetiConfig(conf); err != nil {
 		t.Fatalf("Forseti = %v", err)
 	}
 
