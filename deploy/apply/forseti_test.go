@@ -41,7 +41,7 @@ func TestForsetiConfig(t *testing.T) {
 	wantConfig := `{
 	"module": {
 		"forseti": {
-			"source": "./terraform-google-forseti",
+			"source": "./external/terraform_google_forseti",
 			"composite_root_resources": [
 			  "organizations/12345678",
 				"folders/98765321"

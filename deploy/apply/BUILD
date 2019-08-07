@@ -15,6 +15,7 @@ go_library(
     data = [
         "//deploy/templates",
         "//deploy/templates/chc_resource:chc_dataset_files",
+        "@terraform_google_forseti//:all_files",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/apply",
     deps = [

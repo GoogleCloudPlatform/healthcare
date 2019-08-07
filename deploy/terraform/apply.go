@@ -37,6 +37,23 @@ var cmdRun = func(cmd *exec.Cmd) error {
 
 // Apply applies the config. The config will be written as a .tf.json file in the given dir.
 func Apply(config *Config, dir string) error {
+	// Copy modules to the running dir from Bazel cache.
+	// Terraform needs write access to the modules which Bazel's cache does not allow.
+	dstMap := make(map[string]bool)
+	for _, m := range config.Modules {
+		dst := filepath.Join(dir, filepath.Dir(m.Source))
+		if dstMap[dst] {
+			continue
+		}
+		dstMap[dst] = true
+		if err := os.MkdirAll(dst, os.ModePerm); err != nil {
+			return fmt.Errorf("failed to mkdir %q: %v", dst, err)
+		}
+		if err := cmdRun(exec.Command("cp", "-r", m.Source, dst)); err != nil {
+			return fmt.Errorf("failed to copy %q to %q: %v", m.Source, dst, err)
+		}
+	}
+
 	runCmd := func(args ...string) error {
 		cmd := exec.Command("terraform", args...)
 		cmd.Dir = dir
@@ -47,7 +64,7 @@ func Apply(config *Config, dir string) error {
 		return fmt.Errorf("failed to marshal terraform config: %v", err)
 	}
 
-	log.Printf("forseti terraform config:\n%v", string(b))
+	log.Printf("terraform config:\n%v", string(b))
 
 	// drw-r--r--
 	if err := ioutil.WriteFile(filepath.Join(dir, "main.tf.json"), b, 0644); err != nil {

@@ -79,3 +79,16 @@ git_repository(
     remote = "https://github.com/bazelbuild/rules_python.git",
     commit = "fdbb17a4118a1728d19e638a5291b4c4266ea5b8",
 )
+
+http_archive(
+    name = "terraform_google_forseti",
+    urls = ["https://github.com/forseti-security/terraform-google-forseti/archive/v3.0.0.tar.gz"],
+    sha256 = "e9d5d669a395b68d15118d74b96544fca0e5d19aed6aa2362eee4cb9040fba47",
+    strip_prefix = "terraform-google-forseti-3.0.0",
+    build_file_content = """
+filegroup(
+  name = "all_files",
+  srcs = glob(["**/*"]),
+  visibility = ["//visibility:public"],
+)""",
+)

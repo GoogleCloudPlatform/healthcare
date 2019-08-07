@@ -71,4 +71,6 @@ func TestApply(t *testing.T) {
 	if err := json.Unmarshal([]byte(wantConfig), &want); err != nil {
 		t.Fatalf("json.Unmarshal = %v", err)
 	}
+
+	// TODO: test with actual modules
 }

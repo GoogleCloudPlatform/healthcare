@@ -19,7 +19,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
@@ -63,36 +62,26 @@ func ForsetiConfig(conf *config.Config) error {
 		log.Println("no forseti config, nothing to do")
 		return nil
 	}
-
-	// TODO: use registry instead of cloning repo
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(dir)
 
-	runCmd := func(bin string, args ...string) error {
-		cmd := exec.Command(bin, args...)
-		cmd.Dir = dir
-		return cmdRun(cmd)
-	}
-	if err := runCmd("git", "clone", "https://github.com/forseti-security/terraform-google-forseti"); err != nil {
-		return fmt.Errorf("failed to clone forseti module repo: %v", err)
-	}
-
 	tfConf := &terraform.Config{
 		Modules: map[string]*terraform.Module{
 			"forseti": &terraform.Module{
-				Source:     "./terraform-google-forseti",
+				Source:     "./external/terraform_google_forseti",
 				Properties: conf.Forseti.Properties,
 			},
 		},
 	}
+
 	return terraformApply(tfConf, dir)
 }
 
 // GrantForsetiPermissions grants all necessary permissions to the given Forseti service account in the project.
-// TODO Use Terraform to deploy these.
+// TODO: Use Terraform to deploy these.
 func GrantForsetiPermissions(projectID, serviceAccount string) error {
 	for _, r := range forsetiStandardRoles {
 		if err := addBinding(projectID, serviceAccount, r); err != nil {
