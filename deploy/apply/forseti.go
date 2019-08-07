@@ -81,23 +81,9 @@ func ForsetiConfig(conf *config.Config) error {
 // TODO Use Terraform to deploy these.
 func GrantForsetiPermissions(projectID, serviceAccount string) error {
 	for _, r := range forsetiStandardRoles {
-		if err := addBinding(projectID, serviceAccount, fmt.Sprintf("roles/%s", r)); err != nil {
+		if err := addBinding(projectID, serviceAccount, r); err != nil {
 			return fmt.Errorf("failed to grant all necessary permissions to Forseti service account %q in project %q: %v", serviceAccount, projectID, err)
 		}
-	}
-	return nil
-}
-
-// addBinding adds an IAM policy binding for the given service account for the given role.
-func addBinding(projectID, serviceAccount, role string) error {
-	cmd := exec.Command(
-		"gcloud", "projects", "add-iam-policy-binding",
-		projectID,
-		"--member", fmt.Sprintf("serviceAccount:%s", serviceAccount),
-		"--role", role,
-	)
-	if err := cmdRun(cmd); err != nil {
-		return fmt.Errorf("failed to add iam policy binding for service account %q for role %q: %v", serviceAccount, role, err)
 	}
 	return nil
 }

@@ -40,7 +40,7 @@ const (
 )
 
 // deploymentManagerRoles are the roles granted to the DM service account.
-var deploymentManagerRoles = []string{"roles/owner", "roles/storage.admin"}
+var deploymentManagerRoles = []string{"owner", "storage.admin"}
 
 // deploymentRetryWaitTime is the time to wait between retrying a deployment to allow for concurrent operations to finish.
 const deploymentRetryWaitTime = time.Minute
@@ -196,19 +196,27 @@ func grantDeploymentManagerAccess(project *config.Project) error {
 	if pnum == "" {
 		return fmt.Errorf("project number not set in generated fields %+v", project.GeneratedFields)
 	}
-	serviceAcct := fmt.Sprintf("serviceAccount:%s@cloudservices.gserviceaccount.com", pnum)
+	serviceAcct := fmt.Sprintf("%s@cloudservices.gserviceaccount.com", pnum)
 
 	// TODO: account for this in the rule generator.
 	for _, role := range deploymentManagerRoles {
-		cmd := exec.Command(
-			"gcloud", "projects", "add-iam-policy-binding", project.ID,
-			"--role", role,
-			"--member", serviceAcct,
-			"--project", project.ID,
-		)
-		if err := cmdRun(cmd); err != nil {
+		if err := addBinding(project.ID, serviceAcct, role); err != nil {
 			return fmt.Errorf("failed to grant role %q to DM service account %q: %v", role, serviceAcct, err)
 		}
+	}
+	return nil
+}
+
+// addBinding adds an IAM policy binding for the given service account for the given role.
+func addBinding(projectID, serviceAccount, role string) error {
+	cmd := exec.Command(
+		"gcloud", "projects", "add-iam-policy-binding", projectID,
+		"--member", fmt.Sprintf("serviceAccount:%s", serviceAccount),
+		"--role", fmt.Sprintf("roles/%s", role),
+		"--project", projectID,
+	)
+	if err := cmdRun(cmd); err != nil {
+		return fmt.Errorf("failed to add iam policy binding for service account %q for role %q: %v", serviceAccount, role, err)
 	}
 	return nil
 }
