@@ -77,7 +77,7 @@ func main() {
 
 	conf, err := config.Load(*configPath, *outputPath)
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	wantProjects := make(map[string]bool)
@@ -98,21 +98,22 @@ func main() {
 
 	// Always deploy the remote audit logs project first (if present).
 	if enableRemoteAudit {
+		log.Printf("Applying config for remote audit log project %q", conf.AuditLogsProject.ID)
 		// Cannot enable Forseti project until Forseti project is deployed.
 		if err := apply.Default(conf, conf.AuditLogsProject, &apply.Options{EnableTerraform: false, EnableForseti: false}); err != nil {
-			log.Fatalf("failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
+			log.Fatalf("Failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
 		}
 	}
 
 	if enableForseti {
+		log.Printf("Applying config for Forseti project %q", conf.Forseti.Project.ID)
 		if err := apply.Forseti(conf, conf.Forseti.Project, &apply.Options{EnableTerraform: false, EnableForseti: enableForseti}); err != nil {
-			log.Fatalf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
+			log.Fatalf("Failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
 		}
 		if enableRemoteAudit {
-			// TODO: this will fail now as we haven't written the service account to generated fields. TODO in forseti_applier.go.
 			// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
 			if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
-				log.Fatalf("failed to grant Forseti permissions to remote audit logs project: %v", err)
+				log.Fatalf("Failed to grant Forseti permissions to remote audit logs project: %v", err)
 			}
 		}
 	}
@@ -120,8 +121,9 @@ func main() {
 		if !wantProject(p.ID) {
 			continue
 		}
+		log.Printf("Applying config for project %q", p.ID)
 		if err := apply.Default(conf, p, &apply.Options{EnableTerraform: false, EnableForseti: enableForseti}); err != nil {
-			log.Fatalf("failed to apply config for project %q: %v", p.ID, err)
+			log.Fatalf("Failed to apply config for project %q: %v", p.ID, err)
 		}
 	}
 

@@ -15,10 +15,13 @@
 package apply
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
@@ -45,11 +48,22 @@ func Forseti(conf *config.Config, project *config.Project, opts *Options) error 
 	if err := Default(conf, project, opts); err != nil {
 		return err
 	}
+
 	if err := ForsetiConfig(conf); err != nil {
-		return fmt.Errorf("failed to apply forseti config for forseti project %q: %v", conf.Forseti.Project.ID)
+		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
 
-	// TODO: write service account and bucket to generated fields.
+	serviceAccount, err := forsetiServerServiceAccount(conf.Forseti.Project.ID)
+	if err != nil {
+		return fmt.Errorf("failed to set Forseti server service account: %v", err)
+	}
+	conf.AllGeneratedFields.Forseti.ServiceAccount = serviceAccount
+
+	serverBucket, err := forsetiServerBucket(conf.Forseti.Project.ID)
+	if err != nil {
+		return fmt.Errorf("failed to set Forseti server bucket: %v", err)
+	}
+	conf.AllGeneratedFields.Forseti.ServiceBucket = serverBucket
 
 	return nil
 }
@@ -78,6 +92,60 @@ func ForsetiConfig(conf *config.Config) error {
 	}
 
 	return terraformApply(tfConf, dir)
+}
+
+// forsetiServerServiceAccount gets the server instance service account of the give Forseti project.
+// TODO Use Terraform state or output.
+func forsetiServerServiceAccount(projectID string) (string, error) {
+	cmd := exec.Command(
+		"gcloud", "--project", projectID,
+		"iam", "service-accounts", "list", "--format", "json",
+		"--filter", "email:forseti-server-gcp-*",
+	)
+
+	out, err := cmdOutput(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to obtain Forseti server service account: %v", err)
+	}
+
+	type serviceAccount struct {
+		Email string `json:"email"`
+	}
+
+	var serviceAccounts []serviceAccount
+	if err := json.Unmarshal(out, &serviceAccounts); err != nil {
+		return "", fmt.Errorf("failed to unmarshal service accounts output: %v", err)
+	}
+
+	if len(serviceAccounts) != 1 {
+		return "", fmt.Errorf("unexpected number of Forseti server service accounts: got %d, want 1", len(serviceAccounts))
+	}
+
+	return serviceAccounts[0].Email, nil
+}
+
+// forsetiServerBucket gets the bucket holding the Forseti server instance's configuration.
+// TODO Use Terraform state or output.
+func forsetiServerBucket(projectID string) (string, error) {
+	cmd := exec.Command("gsutil", "ls", "-p", projectID)
+
+	out, err := cmdOutput(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to obtain Forseti server bucket: %v", err)
+	}
+
+	var bs []string
+	for _, b := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		if strings.HasPrefix(b, "gs://forseti-server-") {
+			bs = append(bs, b)
+		}
+	}
+
+	if len(bs) != 1 {
+		return "", fmt.Errorf("unexpected number of Forseti server buckets: got %d, want 1", len(bs))
+	}
+
+	return bs[0], nil
 }
 
 // GrantForsetiPermissions grants all necessary permissions to the given Forseti service account in the project.

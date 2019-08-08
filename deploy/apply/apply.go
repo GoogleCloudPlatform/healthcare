@@ -84,39 +84,38 @@ type depender interface {
 // Default applies project configurations to a default project.
 func Default(conf *config.Config, project *config.Project, opts *Options) error {
 	if err := getOrCreateProject(); err != nil {
-		return fmt.Errorf("failed to get or create project %q: %v", project.ID, err)
+		return fmt.Errorf("failed to get or create project: %v", err)
 	}
 
 	if err := setupBilling(); err != nil {
-		return fmt.Errorf("failed to set up billing for project %q: %v", project.ID, err)
+		return fmt.Errorf("failed to set up billing: %v", err)
 	}
 
 	if err := enableServiceAPIs(); err != nil {
-		return fmt.Errorf("failed to enable service APIs for project %q: %v", project.ID, err)
+		return fmt.Errorf("failed to enable service APIs: %v", err)
 	}
 
 	if err := createComputeImages(); err != nil {
-		return fmt.Errorf("failed to create compute images for project %q: %v", project.ID, err)
+		return fmt.Errorf("failed to create compute images: %v", err)
 	}
 
 	if err := createDeletionLien(); err != nil {
-		return fmt.Errorf("failed to create deletion lien for project %q: %v", project.ID, err)
+		return fmt.Errorf("failed to create deletion lien: %v", err)
 	}
 
 	if err := DeployResources(conf, project, opts); err != nil {
-		return fmt.Errorf("failed to deploy resources for project %q: %v", project.ID, err)
+		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
 
 	if err := createStackdriverAccount(); err != nil {
-		return fmt.Errorf("failed to create stackdriver account for project %q: %v", project.ID, err)
+		return fmt.Errorf("failed to create stackdriver account: %v", err)
 	}
 
 	if err := createAlerts(); err != nil {
-		return fmt.Errorf("failed to create alerts for project %q: %v", project.ID, err)
+		return fmt.Errorf("failed to create alerts: %v", err)
 	}
 
 	if opts.EnableForseti {
-		// TODO: this will fail now as we haven't written the service account to generated fields. TODO in forseti_applier.go.
 		if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
 			return err
 		}
