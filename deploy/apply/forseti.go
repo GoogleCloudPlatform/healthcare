@@ -83,12 +83,11 @@ func ForsetiConfig(conf *config.Config) error {
 	defer os.RemoveAll(dir)
 
 	tfConf := &terraform.Config{
-		Modules: map[string]*terraform.Module{
-			"forseti": &terraform.Module{
-				Source:     "./external/terraform_google_forseti",
-				Properties: conf.Forseti.Properties,
-			},
-		},
+		Modules: []*terraform.Module{{
+			Name:       "forseti",
+			Source:     "./external/terraform_google_forseti",
+			Properties: conf.Forseti.Properties,
+		}},
 	}
 
 	return terraformApply(tfConf, dir)

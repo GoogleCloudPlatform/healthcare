@@ -17,7 +17,6 @@ go_test(
     name = "go_default_test",
     srcs = [
         "apply_test.go",
-        "config_test.go",
     ],
     embed = [":go_default_library"],
     # Override default run dir to make it easier to find test files.

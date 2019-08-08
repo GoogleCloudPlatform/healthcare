@@ -39,7 +39,7 @@ func TestForsetiConfig(t *testing.T) {
 	}
 
 	wantConfig := `{
-	"module": {
+	"module": [{
 		"forseti": {
 			"source": "./external/terraform_google_forseti",
 			"composite_root_resources": [
@@ -50,7 +50,7 @@ func TestForsetiConfig(t *testing.T) {
 			 "project_id": "my-forseti-project",
 			 "storage_bucket_location": "us-east1"
 		}
-	}
+	}]
 }`
 
 	var got, want interface{}

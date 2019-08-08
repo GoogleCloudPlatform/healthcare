@@ -25,13 +25,14 @@ import (
 // Config represents a Terraform config.
 // See https://www.terraform.io/docs/configuration/syntax-json.htm for documentation.
 type Config struct {
-	Modules map[string]*Module `json:"module"`
+	Modules []*Module `json:"module"`
 }
 
 // Module provides a terraform module config.
 type Module struct {
+	Name       string      `json:"-"`
 	Source     string      `json:"source"`
-	Properties interface{} `json:"-"` // manually managed in MarshalJSON
+	Properties interface{} `json:"-"`
 }
 
 // MarshalJSON implements a custom marshaller which marshals properties to the top level.
@@ -54,5 +55,7 @@ func (m *Module) MarshalJSON() ([]byte, error) {
 	if err := json.Unmarshal(b, &merged); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal properties: %v", err)
 	}
-	return json.Marshal(merged)
+	return json.Marshal(map[string]interface{}{
+		m.Name: merged,
+	})
 }

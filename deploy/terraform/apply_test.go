@@ -23,6 +23,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestApply(t *testing.T) {
@@ -39,12 +41,11 @@ func TestApply(t *testing.T) {
 	}
 
 	conf := &Config{
-		Modules: map[string]*Module{
-			"foo-module": &Module{
-				Source:     "foo-source",
-				Properties: map[string]interface{}{"foo-prop": "foo-val"},
-			},
-		},
+		Modules: []*Module{{
+			Name:       "foo-module",
+			Source:     "foo-source",
+			Properties: map[string]interface{}{"foo-prop": "foo-val"},
+		}},
 	}
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -56,12 +57,12 @@ func TestApply(t *testing.T) {
 	}
 
 	wantConfig := `{
-	"module": {
+	"module": [{
 		"foo-module": {
 			 "source": "foo-source",
 			 "foo-prop": "foo-val"
 		}
-	}
+	}]
 }`
 
 	var got, want interface{}
@@ -70,6 +71,9 @@ func TestApply(t *testing.T) {
 	}
 	if err := json.Unmarshal([]byte(wantConfig), &want); err != nil {
 		t.Fatalf("json.Unmarshal = %v", err)
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("terraform config differs (-got, +want):\n%v", diff)
 	}
 
 	// TODO: test with actual modules
