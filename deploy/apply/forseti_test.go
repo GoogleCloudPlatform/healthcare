@@ -29,7 +29,7 @@ func TestForsetiConfig(t *testing.T) {
 	conf, _ := testconf.ConfigAndProject(t, nil)
 
 	var gotTFConf *terraform.Config
-	terraformApply = func(config *terraform.Config, dir string) error {
+	terraformApply = func(config *terraform.Config, _ string, _ *terraform.Options) error {
 		gotTFConf = config
 		return nil
 	}

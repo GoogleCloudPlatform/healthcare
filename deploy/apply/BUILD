@@ -11,6 +11,7 @@ go_library(
         "forseti.go",
         "gke.go",
         "options.go",
+        "terraform.go",
     ],
     data = [
         "//deploy/templates",
@@ -31,6 +32,7 @@ go_test(
         "apply_test.go",
         "forseti_test.go",
         "gke_test.go",
+        "terraform_test.go",
     ],
     embed = [":go_default_library"],
     # Override default run dir to make it easier to find test files.

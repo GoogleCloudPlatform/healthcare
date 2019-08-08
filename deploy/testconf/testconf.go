@@ -40,6 +40,11 @@ forseti:
     project_id: my-forseti-project
     owners_group: my-forseti-project-owners@my-domain.com
     auditors_group: my-forseti-project-auditors@my-domain.com
+    terraform:
+      state_storage_bucket:
+        properties:
+          name: my-forseti-project-state
+          location: US
     audit_logs:
       logs_bq_dataset:
         properties:
@@ -63,6 +68,11 @@ projects:
   data_readonly_groups:
   - my-project-readonly@my-domain.com
   - another-readonly-group@googlegroups.com
+  terraform:
+    state_storage_bucket:
+      properties:
+        name: my-project-state
+        location: US
   enabled_apis:
   - foo-api.googleapis.com
   audit_logs:

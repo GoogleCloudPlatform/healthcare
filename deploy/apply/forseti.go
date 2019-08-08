@@ -90,7 +90,7 @@ func ForsetiConfig(conf *config.Config) error {
 		}},
 	}
 
-	return terraformApply(tfConf, dir)
+	return terraformApply(tfConf, dir, nil)
 }
 
 // forsetiServerServiceAccount gets the server instance service account of the give Forseti project.
@@ -115,7 +115,6 @@ func forsetiServerServiceAccount(projectID string) (string, error) {
 	if err := json.Unmarshal(out, &serviceAccounts); err != nil {
 		return "", fmt.Errorf("failed to unmarshal service accounts output: %v", err)
 	}
-
 	if len(serviceAccounts) != 1 {
 		return "", fmt.Errorf("unexpected number of Forseti server service accounts: got %d, want 1", len(serviceAccounts))
 	}

@@ -35,8 +35,17 @@ var cmdRun = func(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
+// Options configure a terraform apply call.
+type Options struct {
+	Imports []Import
+}
+
 // Apply applies the config. The config will be written as a .tf.json file in the given dir.
-func Apply(config *Config, dir string) error {
+func Apply(config *Config, dir string, opts *Options) error {
+	if opts == nil {
+		opts = new(Options)
+	}
+
 	// Copy modules to the running dir from Bazel cache.
 	// Terraform needs write access to the modules which Bazel's cache does not allow.
 	dstMap := make(map[string]bool)
@@ -74,9 +83,17 @@ func Apply(config *Config, dir string) error {
 	if err := runCmd("init"); err != nil {
 		return fmt.Errorf("failed to init terraform dir: %v", err)
 	}
+	for _, imp := range opts.Imports {
+		// TODO: this will fail if the resource does not exist
+		// or is already a part of the state. Avoid this in the long run.
+		// For the time being, ignore the error and just log it.
+		if err := runCmd("import", imp.Address, imp.ID); err != nil {
+			log.Print(err)
+		}
+	}
+
 	if err := runCmd("apply"); err != nil {
 		return fmt.Errorf("failed to apply plan: %v", err)
 	}
 	return nil
-
 }

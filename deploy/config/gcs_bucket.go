@@ -21,6 +21,7 @@ import (
 )
 
 // GCSBucket wraps a CFT Cloud Storage Bucket.
+// TODO: add DM to this and all DM resource names to reduce confusion with TF resources.
 type GCSBucket struct {
 	GCSBucketProperties `json:"properties"`
 	TTLDays             int      `json:"ttl_days,omitempty"`
@@ -153,4 +154,68 @@ func (b *GCSBucket) UnmarshalJSON(data []byte) error {
 // It is used to merge the original (raw) user JSON definition with the struct.
 func (b *GCSBucket) MarshalJSON() ([]byte, error) {
 	return interfacePair{b.raw, aliasGCSBucket(*b)}.MarshalJSON()
+}
+
+// StorageBucket represents a Terraform GCS bucket.
+type StorageBucket struct {
+	StorageBucketProperties `json:"properties"`
+	raw                     json.RawMessage
+}
+
+// StorageBucketProperties ...
+type StorageBucketProperties struct {
+	StorageBucketName string     `json:"name"`
+	Project           string     `json:"project"`
+	Location          string     `json:"location"`
+	Versioning        versioning `json:"versioning,omitempty"`
+}
+
+// Init initializes the bucket.
+func (b *StorageBucket) Init() error {
+	if b.Name() == "" {
+		return errors.New("name must be set")
+	}
+	if b.Project != "" {
+		return fmt.Errorf("project must not be set: %q", b.Project)
+	}
+
+	if b.Versioning.Enabled != nil && !*b.Versioning.Enabled {
+		return errors.New("versioning must not be disabled")
+	}
+	t := true
+	b.Versioning.Enabled = &t
+	return nil
+}
+
+// TerraformResourceName returns the Google provider terraform resource.
+func (b *StorageBucket) TerraformResourceName() string {
+	// TODO: replace this with TF CFT module.
+	return "google_storage_bucket"
+}
+
+// Name returns the name of this bucket.
+func (b *StorageBucket) Name() string {
+	return b.StorageBucketName
+}
+
+// aliasStorageBucket is used to prevent infinite recursion when dealing with json marshaling.
+// https://stackoverflow.com/q/52433467
+type aliasStorageBucket StorageBucket
+
+// UnmarshalJSON provides a custom JSON unmarshaller.
+// It is used to store the original (raw) user JSON definition,
+// which can have more fields than what is defined in this struct.
+func (b *StorageBucket) UnmarshalJSON(data []byte) error {
+	var alias aliasStorageBucket
+	if err := unmarshalJSONMany(data, &alias, &alias.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal to parsed alias: %v", err)
+	}
+	*b = StorageBucket(alias)
+	return nil
+}
+
+// MarshalJSON provides a custom JSON marshaller.
+// It is used to merge the original (raw) user JSON definition with the struct.
+func (b *StorageBucket) MarshalJSON() ([]byte, error) {
+	return interfacePair{b.raw, aliasStorageBucket(*b)}.MarshalJSON()
 }

@@ -77,6 +77,7 @@ flags.DEFINE_string('load_config_binary', None,
 flags.DEFINE_string('grant_forseti_access_binary', None,
                     ('Path to the binary that grants forseti access. '
                      'Set automatically by the Bazel rule.'))
+flags.DEFINE_bool('enable_terraform', False, 'DEV ONLY. Enable terraform.')
 
 # Name of the Log Sink created in the data_project deployment manager template.
 _LOG_SINK_NAME = 'audit-logs-to-bigquery'
@@ -248,6 +249,8 @@ def deploy_resources(config):
       FLAGS.generated_fields_path or FLAGS.project_yaml,
       '--project',
       config.project['project_id'],
+      '--enable_terraform',
+      str(FLAGS.enable_terraform),
   ])
 
 

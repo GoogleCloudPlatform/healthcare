@@ -17,6 +17,7 @@ package config
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -46,13 +47,17 @@ type Config struct {
 
 // Project defines a single project's configuration.
 type Project struct {
-	ID                  string              `json:"project_id"`
-	BillingAccount      string              `json:"billing_account"`
-	FolderID            string              `json:"folder_id"`
-	OwnersGroup         string              `json:"owners_group"`
-	AuditorsGroup       string              `json:"auditors_group"`
-	DataReadWriteGroups []string            `json:"data_readwrite_groups"`
-	DataReadOnlyGroups  []string            `json:"data_readonly_groups"`
+	ID                  string   `json:"project_id"`
+	BillingAccount      string   `json:"billing_account"`
+	FolderID            string   `json:"folder_id"`
+	OwnersGroup         string   `json:"owners_group"`
+	AuditorsGroup       string   `json:"auditors_group"`
+	DataReadWriteGroups []string `json:"data_readwrite_groups"`
+	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
+
+	TerraformConfig *struct {
+		StateBucket *StorageBucket `json:"state_storage_bucket"`
+	} `json:"terraform"`
 	EnabledAPIs         []string            `json:"enabled_apis"`
 	ViolationExceptions map[string][]string `json:"violation_exceptions"`
 
@@ -185,6 +190,17 @@ func (c *Config) initForseti() error {
 func (p *Project) Init(auditLogsProject *Project) error {
 	if p.GeneratedFields == nil {
 		p.GeneratedFields = &GeneratedFields{}
+	}
+
+	if p.TerraformConfig != nil {
+		b := p.TerraformConfig.StateBucket
+		if b == nil {
+			return errors.New("state bucket must not be nil if terraform config is set")
+		}
+		if err := b.Init(); err != nil {
+			return fmt.Errorf("failed to init terraform state bucket: %v", err)
+		}
+		b.Project = p.ID
 	}
 
 	if err := p.initAuditResources(auditLogsProject); err != nil {

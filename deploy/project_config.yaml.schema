@@ -89,6 +89,21 @@ definitions:
         items:
           $ref: '#/definitions/email_address'
 
+      terraform:
+        type: object
+        description: DEV ONLY. Configuration for Terraform.
+        additionalProperties: false
+        properties:
+          state_storage_bucket:
+            type: object
+            description: Bucket for Teraform to store its remote state.
+            additionalProperties: false
+            required:
+            - properties
+            properties:
+              properties:
+                type: object
+                description: Wraps google_storage_bucket.
 
       create_deletion_lien:
         type: boolean

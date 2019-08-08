@@ -25,7 +25,8 @@ import (
 // Config represents a Terraform config.
 // See https://www.terraform.io/docs/configuration/syntax-json.htm for documentation.
 type Config struct {
-	Modules []*Module `json:"module"`
+	Modules   []*Module `json:"module,omitempty"`
+	Resources []*Resource        `json:"resource,omitempty"`
 }
 
 // Module provides a terraform module config.
@@ -58,4 +59,27 @@ func (m *Module) MarshalJSON() ([]byte, error) {
 	return json.Marshal(map[string]interface{}{
 		m.Name: merged,
 	})
+}
+
+// Resource defines a terraform resource config.
+type Resource struct {
+	Name       string
+	Type       string
+	Properties interface{}
+}
+
+// MarshalJSON implements a custom marshaller which marshals properties to the top level.
+func (r *Resource) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		r.Type: map[string]interface{}{
+			r.Name: r.Properties,
+		},
+	})
+}
+
+// Import defines fields used for a terraform import.
+// See https://www.terraform.io/docs/import/usage.html.
+type Import struct {
+	Address string
+	ID      string
 }

@@ -52,7 +52,7 @@ func TestApply(t *testing.T) {
 		t.Fatalf("ioutil.TempDir: %v", err)
 	}
 	defer os.RemoveAll(dir)
-	if err := Apply(conf, dir); err != nil {
+	if err := Apply(conf, dir, nil); err != nil {
 		t.Fatalf("Forseti = %v", err)
 	}
 
