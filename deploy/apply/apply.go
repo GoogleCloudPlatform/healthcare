@@ -83,8 +83,8 @@ type depender interface {
 
 // Default applies project configurations to a default project.
 func Default(conf *config.Config, project *config.Project, opts *Options) error {
-	if err := getOrCreateProject(); err != nil {
-		return fmt.Errorf("failed to get or create project: %v", err)
+	if err := verifyOrCreateProject(conf, project); err != nil {
+		return fmt.Errorf("failed to verify or create project: %v", err)
 	}
 
 	if err := setupBilling(); err != nil {
@@ -409,9 +409,111 @@ func deployPrerequisite(project *config.Project) error {
 	return upsertDeployment(setupPrerequisiteDeploymentName, deployment, project.ID)
 }
 
-func getOrCreateProject() error {
-	//TODO add logic.
+// verifyOrCreateProject verifies the project if exists or creates the project if does not exist.
+//
+// In the case where project exists, it needs to be ACTIVE and has the same organization ID or
+// folder ID as those specified in the project config, if any. If project number is present
+// in the generated fields, it also checks if the project ID corresponds to the project number.
+// In the future, maybe consider changing the folder ID or organization ID of the existing project
+// if different from config.
+func verifyOrCreateProject(conf *config.Config, project *config.Project) error {
+	orgID := conf.Overall.OrganizationID
+	folderID := conf.Overall.FolderID
+	if project.FolderID != "" {
+		folderID = project.FolderID
+	}
+
+	var parentType, parentID string
+	if folderID != "" {
+		parentType = "folder"
+		parentID = folderID
+	} else if orgID != "" {
+		parentType = "organization"
+		parentID = orgID
+	}
+
+	// Enforce a check on the existing project number in the generated fields.
+	pnum, err := verifyProject(project.ID, project.GeneratedFields.ProjectNumber, parentType, parentID)
+	if err != nil {
+		return err
+	}
+	if pnum != "" {
+		project.GeneratedFields.ProjectNumber = pnum
+		log.Printf("Project %q exists, skipping project creation.", project.ID)
+		return nil
+	}
+	args := []string{"projects", "create", project.ID}
+
+	if parentType == "" {
+		log.Println("Creating project without a parent organization or folder.")
+	} else {
+		args = append(args, fmt.Sprintf("--%s", parentType), parentID)
+	}
+
+	cmd := exec.Command("gcloud", args...)
+	if err := cmdRun(cmd); err != nil {
+		return fmt.Errorf("failed to run project creating command: %v", err)
+	}
+	pnum, err = verifyProject(project.ID, "", parentType, parentID)
+	if err != nil {
+		return fmt.Errorf("failed to verify newly created project: %v", err)
+	}
+	project.GeneratedFields.ProjectNumber = pnum
+
 	return nil
+}
+
+// verifyProject checks project existence and enforces project config metadata.
+// It returns the project number if exists and error if any.
+func verifyProject(projectID, projectNumber, parentType, parentID string) (string, error) {
+	cmd := exec.Command("gcloud", "projects", "describe", projectID, "--format", "json")
+	out, err := cmdOutput(cmd)
+	if err != nil {
+		// `gcloud projects describe` command might fail due to reasons other than project does not
+		// exist (e.g. caller does not have sufficient permission). In that case, project could exist
+		// and the code will return project existence as false. The caller might still attempt to create
+		// the project and fail if the project already exists.
+		return "", nil
+	}
+
+	// Project exists.
+	type resourceID struct {
+		ID   string `json:"id"`
+		Type string `json:"type"`
+	}
+	type projectInfo struct {
+		ProjectNumber  string     `json:"projectNumber"`
+		LifecycleState string     `json:"lifecycleState"`
+		Parent         resourceID `json:"parent"`
+	}
+
+	var pi projectInfo
+	if err := json.Unmarshal(out, &pi); err != nil {
+		return "", fmt.Errorf("failed to unmarshal project info output: %v", err)
+	}
+
+	if pi.ProjectNumber == "" {
+		return "", fmt.Errorf("got empty project number: %v", err)
+	}
+
+	// Enforce check on the input project number if not empty.
+	wantProjectNumber := pi.ProjectNumber
+	if projectNumber != "" {
+		wantProjectNumber = projectNumber
+	}
+	wantInfo := projectInfo{
+		ProjectNumber:  wantProjectNumber,
+		LifecycleState: "ACTIVE",
+		Parent: resourceID{
+			Type: parentType,
+			ID:   parentID,
+		},
+	}
+
+	if pi != wantInfo {
+		return "", fmt.Errorf("project exists but has unexpected metadata: got %+v, want %+v", pi, wantInfo)
+	}
+	return pi.ProjectNumber, nil
 }
 
 func setupBilling() error {

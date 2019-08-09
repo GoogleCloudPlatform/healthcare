@@ -18,6 +18,7 @@ package apply
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -552,6 +553,176 @@ resources:
 			}
 
 			// TODO: validate against schema file too
+		})
+	}
+}
+
+func TestVerifyProject(t *testing.T) {
+
+	tests := []struct {
+		name           string
+		projectID      string
+		projectNum     string
+		parentType     string
+		parentID       string
+		resp           string
+		err            error
+		wantProjectNum string
+		wantErr        bool
+	}{
+		{
+			name:       "valid_project",
+			projectID:  "my_project",
+			projectNum: "",
+			parentType: "folder",
+			parentID:   "5678",
+			resp: `{
+  "lifecycleState": "ACTIVE",
+  "name": "my_project",
+  "parent": {
+    "id": "5678",
+    "type": "folder"
+  },
+  "projectNumber": "0000"
+}`,
+			err:            nil,
+			wantProjectNum: "0000",
+			wantErr:        false,
+		},
+		{
+			name:       "valid_project_with_existing_project_number",
+			projectID:  "my_project",
+			projectNum: "0000",
+			parentType: "folder",
+			parentID:   "5678",
+			resp: `{
+  "lifecycleState": "ACTIVE",
+  "name": "my_project",
+  "parent": {
+    "id": "5678",
+    "type": "folder"
+  },
+  "projectNumber": "0000"
+}`,
+			err:            nil,
+			wantProjectNum: "0000",
+			wantErr:        false,
+		},
+		{
+			name:       "invalid_project_number",
+			projectID:  "my_project",
+			projectNum: "wrong_number",
+			parentType: "folder",
+			parentID:   "5678",
+			resp: `{
+  "lifecycleState": "ACTIVE",
+  "name": "my_project",
+  "parent": {
+    "id": "5678",
+    "type": "folder"
+  },
+  "projectNumber": "0000"
+}`,
+			err:            nil,
+			wantProjectNum: "",
+			wantErr:        true,
+		},
+		{
+			name:       "invalid_project_state",
+			projectID:  "my_project",
+			projectNum: "",
+			parentType: "folder",
+			parentID:   "5678",
+			resp: `{
+  "lifecycleState": "DELETE_REQUESTED",
+  "name": "my_project",
+  "parent": {
+    "id": "5678",
+    "type": "folder"
+  },
+  "projectNumber": "0000"
+}`,
+			err:            nil,
+			wantProjectNum: "",
+			wantErr:        true,
+		},
+		{
+			name:       "invalid_project_folder_id",
+			projectID:  "my_project",
+			projectNum: "",
+			parentType: "folder",
+			parentID:   "5678",
+			resp: `{
+  "lifecycleState": "ACTIVE",
+  "name": "my_project",
+  "parent": {
+    "id": "wrong_id",
+    "type": "folder"
+  },
+  "projectNumber": "0000"
+}`,
+			err:            nil,
+			wantProjectNum: "",
+			wantErr:        true,
+		},
+		{
+			name:       "invalid_project_org_id",
+			projectID:  "my_project",
+			projectNum: "",
+			parentType: "organization",
+			parentID:   "5678",
+			resp: `{
+  "lifecycleState": "ACTIVE",
+  "name": "my_project",
+  "parent": {
+    "id": "wrong_id",
+    "type": "organization"
+  },
+  "projectNumber": "0000"
+}`,
+			err:            nil,
+			wantProjectNum: "",
+			wantErr:        true,
+		},
+		{
+			name:           "invalid_response",
+			projectID:      "my_project",
+			projectNum:     "",
+			parentType:     "folder",
+			parentID:       "5678",
+			resp:           `{}`,
+			err:            nil,
+			wantProjectNum: "",
+			wantErr:        true,
+		},
+		{
+			name:           "cmd_failed",
+			projectID:      "my_project",
+			projectNum:     "",
+			parentType:     "",
+			parentID:       "",
+			resp:           ``,
+			err:            errors.New("Project does not exist"),
+			wantProjectNum: "",
+			wantErr:        false,
+		},
+	}
+
+	origCmdOutput := cmdOutput
+	defer func() { cmdOutput = origCmdOutput }()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+				return []byte(tc.resp), tc.err
+			}
+			gotProjectNum, gotErr := verifyProject(tc.projectID, tc.projectNum, tc.parentType, tc.parentID)
+			if (gotErr != nil) != tc.wantErr {
+				t.Fatalf("error differs: want %t, got %t", tc.wantErr, (gotErr != nil))
+			}
+			if gotProjectNum != tc.wantProjectNum {
+				t.Fatalf("project number differs: want %q, got %q", tc.wantProjectNum, gotProjectNum)
+			}
+
 		})
 	}
 }
