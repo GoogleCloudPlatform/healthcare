@@ -249,8 +249,7 @@ def deploy_resources(config):
       FLAGS.generated_fields_path or FLAGS.project_yaml,
       '--project',
       config.project['project_id'],
-      '--enable_terraform',
-      str(FLAGS.enable_terraform),
+      '--enable_terraform=%s' % FLAGS.enable_terraform,
   ])
 
 
