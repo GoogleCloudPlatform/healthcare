@@ -43,6 +43,11 @@ func main() {
 	if *projectYAMLPath == "" {
 		log.Fatal("--project_yaml_path must be set")
 	}
+
+	if *generatedFieldsPath == "" {
+		log.Fatal("--generated_fields_path must be set")
+	}
+
 	if *projectID == "" {
 		log.Fatal("--project must be set")
 	}

@@ -42,7 +42,7 @@ func main() {
 	}
 
 	if *generatedFieldsPath != "" {
-		if _, err := config.LoadGeneratedFields(*generatedFieldsPath, *generatedFieldsPath == *projectYAMLPath); err != nil {
+		if _, err := config.LoadGeneratedFields(*generatedFieldsPath); err != nil {
 			log.Fatalf("failed to validate generated fields yaml: %v", err)
 		}
 	}

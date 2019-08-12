@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,7 +73,7 @@ func Load(confPath, genFieldsPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %v\nmerged config: %v", err, string(b))
 	}
 
-	genFields, err := LoadGeneratedFields(genFieldsPath, confPath == genFieldsPath)
+	genFields, err := LoadGeneratedFields(genFieldsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load generated fields: %v", err)
 	}
@@ -283,7 +282,7 @@ func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string,
 }
 
 // LoadGeneratedFields loads and validates generated fields from yaml file at path.
-func LoadGeneratedFields(path string, legacy bool) (*AllGeneratedFields, error) {
+func LoadGeneratedFields(path string) (*AllGeneratedFields, error) {
 	path, err := NormalizePath(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
@@ -295,27 +294,12 @@ func LoadGeneratedFields(path string, legacy bool) (*AllGeneratedFields, error) 
 	if len(b) == 0 {
 		return nil, nil
 	}
+	if err := validateGenFields(b); err != nil {
+		return nil, fmt.Errorf("failed to validate generated fields at path %q: %v", path, err)
+	}
 	genFields := new(AllGeneratedFields)
-	if legacy {
-		// TODO: remove this once we no longer need to support generated fields being in the input file.
-		log.Printf("parsing generated fields in old format at path %q", path)
-
-		type oldFormat struct {
-			GeneratedFields *AllGeneratedFields `json:"generated_fields"`
-		}
-
-		of := new(oldFormat)
-		if err := yaml.Unmarshal(b, of); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal generated fields at path %q: %v", path, err)
-		}
-		genFields = of.GeneratedFields
-	} else {
-		if err := validateGenFields(b); err != nil {
-			return nil, fmt.Errorf("failed to validate generated fields at path %q: %v", path, err)
-		}
-		if err := yaml.UnmarshalStrict(b, genFields, yaml.DisallowUnknownFields); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal generated fields at path %q: %v", path, err)
-		}
+	if err := yaml.UnmarshalStrict(b, genFields, yaml.DisallowUnknownFields); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal generated fields at path %q: %v", path, err)
 	}
 	return genFields, nil
 }

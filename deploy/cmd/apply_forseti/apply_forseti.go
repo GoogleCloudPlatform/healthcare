@@ -37,6 +37,10 @@ func main() {
 		log.Fatal("--project_yaml_path must be set")
 	}
 
+	if *generatedFieldsPath == "" {
+		log.Fatal("--generated_fields_path must be set")
+	}
+
 	conf, err := config.Load(*projectYAMLPath, *generatedFieldsPath)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)

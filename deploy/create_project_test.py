@@ -42,6 +42,9 @@ class CreateProjectTest(absltest.TestCase):
   def test_create_project_remote_audit_logs(self):
     _deploy('project_with_remote_audit_logs.yaml')
 
+  def test_create_project_with_spanned_configs(self):
+    _deploy('spanned_configs/root.yaml')
+
   def test_project_config_validate_check_raise(self):
     FLAGS.projects = ['*']
     path = (
@@ -52,6 +55,7 @@ class CreateProjectTest(absltest.TestCase):
     root_config['projects'][0]['enabled_apis'] = ['foo.googleapis.com']
     with tempfile.TemporaryDirectory() as tmp_dir:
       FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
+      FLAGS.generated_fields_path = os.path.join(tmp_dir, 'generated.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
         yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
@@ -73,17 +77,12 @@ class CreateProjectTest(absltest.TestCase):
 
     with tempfile.TemporaryDirectory() as tmp_dir:
       FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
+      FLAGS.generated_fields_path = os.path.join(tmp_dir, 'generated.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
         yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
         f.flush()
       create_project.main([])
-
-  def test_create_project_with_spanned_configs(self):
-    FLAGS.project_yaml = (
-        'deploy/samples/spanned_configs/root.yaml')
-    FLAGS.projects = ['*']
-    create_project.main([])
 
   def test_get_data_bucket_name(self):
     data_bucket = {
@@ -120,7 +119,9 @@ def _deploy(config_filename):
   FLAGS.project_yaml = os.path.join(
       'deploy/samples/', config_filename)
   FLAGS.projects = ['*']
-  create_project.main([])
+  with tempfile.TemporaryDirectory() as tmp_dir:
+    FLAGS.generated_fields_path = os.path.join(tmp_dir, 'generated.yaml')
+    create_project.main([])
 
 
 if __name__ == '__main__':

@@ -41,7 +41,6 @@ py_library(
     data = ["//deploy/templates"],
     deps = [
         "//deploy/utils",
-        "//deploy/utils:field_generation",
         "//deploy/utils:forseti",
         "//deploy/utils:runner",
     ],
