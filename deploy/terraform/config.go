@@ -23,13 +23,45 @@ import (
 )
 
 // Config represents a Terraform config.
-// See https://www.terraform.io/docs/configuration/syntax-json.htm for documentation.
+// See https://www.terraform.io/docs/configuration/syntax-json.html for documentation.
 type Config struct {
-	Modules   []*Module `json:"module,omitempty"`
-	Resources []*Resource        `json:"resource,omitempty"`
+	Terraform Terraform   `json:"terraform"`
+	Modules   []*Module   `json:"module,omitempty"`
+	Resources []*Resource `json:"resource,omitempty"`
+}
+
+// NewConfig returns a new terraform config.
+func NewConfig() *Config {
+	c := &Config{
+		Terraform: Terraform{
+			RequiredVersion: ">= 0.12.0",
+		},
+	}
+	return c
+}
+
+// Terraform provides a terraform block config.
+// See https://www.terraform.io/docs/configuration/terraform.html for details.
+type Terraform struct {
+	RequiredVersion string   `json:"required_version,omitempty"`
+	Backend         *Backend `json:"backend,omitempty"`
+}
+
+// Backend provides a terraform backend config.
+// See https://www.terraform.io/docs/backends/types/gcs.html.
+type Backend struct {
+	Bucket string `json:"bucket"`
+	Prefix string `json:"prefix,omitempty"`
+}
+
+// MarshalJSON implements a custom marshaller which marshals the backend under a "gcs" block.
+func (b *Backend) MarshalJSON() ([]byte, error) {
+	type alias Backend // use type alias to avoid infinite recursion
+	return json.Marshal(map[string]interface{}{"gcs": alias(*b)})
 }
 
 // Module provides a terraform module config.
+// See https://www.terraform.io/docs/configuration/modules.html for details.
 type Module struct {
 	Name       string      `json:"-"`
 	Source     string      `json:"source"`

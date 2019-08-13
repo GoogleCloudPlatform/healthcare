@@ -49,7 +49,7 @@ func Forseti(conf *config.Config, project *config.Project, opts *Options) error 
 		return err
 	}
 
-	if err := ForsetiConfig(conf); err != nil {
+	if err := ForsetiConfig(conf, opts.EnableTerraform); err != nil {
 		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
 
@@ -71,7 +71,7 @@ func Forseti(conf *config.Config, project *config.Project, opts *Options) error 
 // ForsetiConfig applies the forseti config, if it exists. It does not configure
 // other settings such as billing account, deletion lien, etc.
 // TODO Make it private or merge it into Forseti() after removing apply_forseti.go.
-func ForsetiConfig(conf *config.Config) error {
+func ForsetiConfig(conf *config.Config, enableRemoteState bool) error {
 	if conf.Forseti == nil {
 		log.Println("no forseti config, nothing to do")
 		return nil
@@ -82,12 +82,18 @@ func ForsetiConfig(conf *config.Config) error {
 	}
 	defer os.RemoveAll(dir)
 
-	tfConf := &terraform.Config{
-		Modules: []*terraform.Module{{
-			Name:       "forseti",
-			Source:     "./external/terraform_google_forseti",
-			Properties: conf.Forseti.Properties,
-		}},
+	tfConf := terraform.NewConfig()
+	tfConf.Modules = []*terraform.Module{{
+		Name:       "forseti",
+		Source:     "./external/terraform_google_forseti",
+		Properties: conf.Forseti.Properties,
+	}}
+
+	if enableRemoteState {
+		tfConf.Terraform.Backend = &terraform.Backend{
+			Bucket: conf.Forseti.Project.TerraformConfig.StateBucket.Name(),
+			Prefix: "forseti",
+		}
 	}
 
 	return terraformApply(tfConf, dir, nil)

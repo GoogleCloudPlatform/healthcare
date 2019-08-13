@@ -40,6 +40,9 @@ func TestDeployTerraform(t *testing.T) {
 	}
 
 	wantConfig := `{
+	"terraform": {
+		"required_version": ">= 0.12.0"
+	},
 	"resource": [{
 		"google_storage_bucket": {
 			"my-project-state": {

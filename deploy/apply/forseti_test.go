@@ -34,11 +34,20 @@ func TestForsetiConfig(t *testing.T) {
 		return nil
 	}
 
-	if err := ForsetiConfig(conf); err != nil {
+	if err := ForsetiConfig(conf, true); err != nil {
 		t.Fatalf("Forseti = %v", err)
 	}
 
 	wantConfig := `{
+	"terraform": {
+		"required_version": ">= 0.12.0",
+		"backend": {
+			"gcs": {
+				"bucket": "my-forseti-project-state",
+				"prefix": "forseti"
+			}
+		}
+	},
 	"module": [{
 		"forseti": {
 			"source": "./external/terraform_google_forseti",

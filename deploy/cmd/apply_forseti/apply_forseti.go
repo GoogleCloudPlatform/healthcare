@@ -28,6 +28,7 @@ import (
 var (
 	projectYAMLPath     = flag.String("project_yaml_path", "", "Path to project yaml file")
 	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
+	enableRemoteState   = flag.Bool("enable_remote_state", false, "DEV ONLY. Enable remote state.")
 )
 
 func main() {
@@ -46,7 +47,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	if err := apply.ForsetiConfig(conf); err != nil {
+	if err := apply.ForsetiConfig(conf, *enableRemoteState); err != nil {
 		log.Fatalf("failed to apply forseti: %v", err)
 	}
 }

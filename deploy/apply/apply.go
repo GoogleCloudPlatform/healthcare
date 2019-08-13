@@ -129,7 +129,10 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 // DeployResources deploys the CFT resources in the project.
 func DeployResources(conf *config.Config, project *config.Project, opts *Options) error {
 	if opts.EnableTerraform {
-		return deployTerraform(conf, project)
+		if err := deployTerraform(conf, project); err != nil {
+			return err
+		}
+		// TODO: return after this once we can deploy all necessary resources like log sinks, etc in terraform.
 	}
 	if err := grantDeploymentManagerAccess(project); err != nil {
 		return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)

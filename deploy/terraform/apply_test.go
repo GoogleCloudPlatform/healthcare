@@ -40,13 +40,21 @@ func TestApply(t *testing.T) {
 		return nil
 	}
 
-	conf := &Config{
-		Modules: []*Module{{
-			Name:       "foo-module",
-			Source:     "foo-source",
-			Properties: map[string]interface{}{"foo-prop": "foo-val"},
-		}},
+	conf := NewConfig()
+	conf.Terraform.Backend = &Backend{
+		Bucket: "foo-state",
+		Prefix: "foo-prefix",
 	}
+	conf.Resources = []*Resource{{
+		Name:       "foo-resource",
+		Type:       "foo-type",
+		Properties: map[string]interface{}{"prop1": "val1"},
+	}}
+	conf.Modules = []*Module{{
+		Name:       "foo-module",
+		Source:     "foo-source",
+		Properties: map[string]interface{}{"prop2": "val2"},
+	}}
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("ioutil.TempDir: %v", err)
@@ -57,10 +65,26 @@ func TestApply(t *testing.T) {
 	}
 
 	wantConfig := `{
+	"terraform": {
+		"required_version": ">= 0.12.0",
+		"backend": {
+			"gcs": {
+				"bucket": "foo-state",
+				"prefix": "foo-prefix"
+			}
+		}
+	},
+	"resource": [{
+		"foo-type": {
+			"foo-resource": {
+				"prop1": "val1"
+			}
+		}
+	}],
 	"module": [{
 		"foo-module": {
 			 "source": "foo-source",
-			 "foo-prop": "foo-val"
+			 "prop2": "val2"
 		}
 	}]
 }`

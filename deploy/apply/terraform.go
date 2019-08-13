@@ -30,13 +30,12 @@ func deployTerraform(config *config.Config, project *config.Project) error {
 	}
 	b := project.TerraformConfig.StateBucket
 
-	tfConf := &terraform.Config{
-		Resources: []*terraform.Resource{{
-			Name:       b.Name(),
-			Type:       b.TerraformResourceName(),
-			Properties: b.StorageBucketProperties,
-		}},
-	}
+	tfConf := terraform.NewConfig()
+	tfConf.Resources = []*terraform.Resource{{
+		Name:       b.Name(),
+		Type:       b.TerraformResourceName(),
+		Properties: b.StorageBucketProperties,
+	}}
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {

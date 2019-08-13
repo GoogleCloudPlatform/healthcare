@@ -570,6 +570,7 @@ def install_forseti(config):
       FLAGS.project_yaml,
       '--generated_fields_path',
       FLAGS.generated_fields_path,
+      '--enable_remote_state=%s' % FLAGS.enable_terraform,
   ])
   forseti_config = config.root['forseti']
   forseti_project_id = forseti_config['project']['project_id']
