@@ -127,6 +127,9 @@ func (c *Config) Init(genFields *AllGeneratedFields) error {
 
 // validate validates the config.
 func (c *Config) validate() error {
+	if len(c.Overall.AllowedAPIs) == 0 {
+		return nil
+	}
 	// Enforce allowed_apis in overall project config.
 	allowedAPIs := make(map[string]bool)
 	for _, a := range c.Overall.AllowedAPIs {
