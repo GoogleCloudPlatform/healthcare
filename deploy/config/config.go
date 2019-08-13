@@ -32,6 +32,7 @@ const accessLogsWriter = "group:cloud-storage-analytics@google.com"
 // Only the required fields are present. See project_config.yaml.schema for details.
 type Config struct {
 	Overall struct {
+		BillingAccount string   `json:"billing_account"`
 		Domain         string   `json:"domain"`
 		OrganizationID string   `json:"organization_id"`
 		FolderID       string   `json:"folder_id"`
@@ -95,6 +96,10 @@ type Project struct {
 
 // Init initializes the config and all its projects.
 func (c *Config) Init(genFields *AllGeneratedFields) error {
+	if err := c.validate(); err != nil {
+		return fmt.Errorf("failed to validate config: %v", err)
+	}
+
 	if genFields == nil {
 		genFields = &AllGeneratedFields{}
 	}
@@ -115,6 +120,23 @@ func (c *Config) Init(genFields *AllGeneratedFields) error {
 		p.GeneratedFields = c.AllGeneratedFields.Projects[p.ID]
 		if err := p.Init(c.AuditLogsProject); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)
+		}
+	}
+	return nil
+}
+
+// validate validates the config.
+func (c *Config) validate() error {
+	// Enforce allowed_apis in overall project config.
+	allowedAPIs := make(map[string]bool)
+	for _, a := range c.Overall.AllowedAPIs {
+		allowedAPIs[a] = true
+	}
+	for _, p := range c.AllProjects() {
+		for _, a := range p.EnabledAPIs {
+			if !allowedAPIs[a] {
+				return fmt.Errorf("project %q wants to enable API %q, which is not in the allowed APIs list", p.ID, a)
+			}
 		}
 	}
 	return nil

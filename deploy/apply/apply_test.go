@@ -27,6 +27,7 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
@@ -722,9 +723,57 @@ func TestVerifyProject(t *testing.T) {
 			if gotProjectNum != tc.wantProjectNum {
 				t.Fatalf("project number differs: want %q, got %q", tc.wantProjectNum, gotProjectNum)
 			}
-
 		})
 	}
+}
+
+func TestSetupBilling(t *testing.T) {
+	tests := []struct {
+		name          string
+		project       *config.Project
+		defaultBA     string
+		wantSubstring string
+	}{
+		{
+			name: "project_with_billing_account",
+			project: &config.Project{
+				ID:             "my_project",
+				BillingAccount: "my_billing_account",
+			},
+			defaultBA:     "default_billing_account",
+			wantSubstring: "--billing-account my_billing_account",
+		},
+		{
+			name: "project_without_billing_account",
+			project: &config.Project{
+				ID: "my_project",
+			},
+			defaultBA:     "default_billing_account",
+			wantSubstring: "--billing-account default_billing_account",
+		},
+	}
+	origCmdRun := cmdRun
+	defer func() { cmdRun = origCmdRun }()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := ""
+			cmdRun = func(cmd *exec.Cmd) error {
+				if got != "" {
+					t.Fatal("cmdRun is called more than once")
+				}
+				got = strings.Join(cmd.Args, " ")
+				return nil
+			}
+			if err := setupBilling(tc.project, tc.defaultBA); err != nil {
+				t.Fatalf("setupBilling = %v", err)
+			}
+			if !strings.Contains(got, tc.wantSubstring) {
+				t.Fatalf("command %q does not contain expected substring %q", got, tc.wantSubstring)
+			}
+		})
+	}
+
 }
 
 func TestGetLogSinkServiceAccount(t *testing.T) {

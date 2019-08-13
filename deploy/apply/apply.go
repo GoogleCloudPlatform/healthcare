@@ -87,11 +87,11 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 		return fmt.Errorf("failed to verify or create project: %v", err)
 	}
 
-	if err := setupBilling(); err != nil {
+	if err := setupBilling(project, conf.Overall.BillingAccount); err != nil {
 		return fmt.Errorf("failed to set up billing: %v", err)
 	}
 
-	if err := enableServiceAPIs(); err != nil {
+	if err := enableServiceAPIs(project); err != nil {
 		return fmt.Errorf("failed to enable service APIs: %v", err)
 	}
 
@@ -516,13 +516,68 @@ func verifyProject(projectID, projectNumber, parentType, parentID string) (strin
 	return pi.ProjectNumber, nil
 }
 
-func setupBilling() error {
-	//TODO add logic.
+// setupBilling sets the billing account for the project.
+func setupBilling(project *config.Project, defaultBillingAccount string) error {
+	ba := defaultBillingAccount
+	if project.BillingAccount != "" {
+		ba = project.BillingAccount
+	}
+
+	cmd := exec.Command("gcloud", "beta", "billing", "projects", "link", project.ID, "--billing-account", ba)
+	if err := cmdRun(cmd); err != nil {
+		return fmt.Errorf("failed to link project to billing account %q: %v", ba, err)
+	}
 	return nil
 }
 
-func enableServiceAPIs() error {
-	//TODO add logic.
+// enableServiceAPIs enables service APIs for this project.
+// Use this function instead of enabling private APIs in deployment manager because deployment
+// management does not have all the APIs' access, which might triger PERMISSION_DENIED errors.
+func enableServiceAPIs(project *config.Project) error {
+	m := make(map[string]bool)
+	for _, a := range project.EnabledAPIs {
+		m[a] = true
+	}
+	m["deploymentmanager.googleapis.com"] = true
+	// For project level iam policy updates.
+	m["cloudresourcemanager.googleapis.com"] = true
+
+	// TODO long term solution for updating APIs.
+	if len(project.Resources.GCEInstances) > 0 {
+		m["compute.googleapis.com"] = true
+	}
+	if len(project.Resources.CHCDatasets) > 0 {
+		m["healthcare.googleapis.com"] = true
+	}
+	if len(project.Resources.GKEClusters) > 0 {
+		m["container.googleapis.com"] = true
+	}
+	if len(project.Resources.IAMPolicies) > 0 || len(project.Resources.IAMCustomRoles) > 0 {
+		m["iam.googleapis.com"] = true
+	}
+
+	var wantAPIs []string
+	for a := range m {
+		wantAPIs = append(wantAPIs, a)
+	}
+
+	min := func(x, y int) int {
+		if x < y {
+			return x
+		}
+		return y
+	}
+
+	// Send in batches to avoid hitting quota limits.
+	batchN := 10
+	for i := 0; i < len(wantAPIs); i += batchN {
+		args := []string{"--project", project.ID, "services", "enable"}
+		args = append(args, wantAPIs[i:min(i+batchN, len(wantAPIs))]...)
+		cmd := exec.Command("gcloud", args...)
+		if err := cmdRun(cmd); err != nil {
+			return fmt.Errorf("failed to enable service APIs: %v", err)
+		}
+	}
 	return nil
 }
 
