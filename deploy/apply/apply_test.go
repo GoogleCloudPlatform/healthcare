@@ -773,7 +773,69 @@ func TestSetupBilling(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestCreateDeletionLien(t *testing.T) {
+	tests := []struct {
+		name            string
+		project         *config.Project
+		cmdOutput       string
+		wantEmptyCmdRun bool
+	}{
+		{
+			name: "lien_not_requested",
+			project: &config.Project{
+				ID:                 "my_project",
+				CreateDeletionLien: false,
+			},
+			cmdOutput:       "",
+			wantEmptyCmdRun: true,
+		},
+		{
+			name: "lien_requested_and_created",
+			project: &config.Project{
+				ID:                 "my_project",
+				CreateDeletionLien: true,
+			},
+			cmdOutput:       "",
+			wantEmptyCmdRun: false,
+		},
+		{
+			name: "lien_requested_and_already_exist",
+			project: &config.Project{
+				ID:                 "my_project",
+				CreateDeletionLien: true,
+			},
+			cmdOutput:       "resourcemanager.projects.delete",
+			wantEmptyCmdRun: true,
+		},
+	}
+	origCmdRun := cmdRun
+	defer func() { cmdRun = origCmdRun }()
+	origCmdOutput := cmdOutput
+	defer func() { cmdOutput = origCmdOutput }()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var got string
+			cmdRun = func(cmd *exec.Cmd) error {
+				if got != "" {
+					t.Fatal("cmdRun is called more than once")
+				}
+				got = strings.Join(cmd.Args, " ")
+				return nil
+			}
+			cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+				return []byte(tc.cmdOutput), nil
+			}
+			if err := createDeletionLien(tc.project); err != nil {
+				t.Fatalf("createDeletionLien = %v", err)
+			}
+			if (len(got) == 0) != tc.wantEmptyCmdRun {
+				t.Fatalf("deletion lien creation cmdRun args differ, want empty is %t, got %t", tc.wantEmptyCmdRun, len(got) == 0)
+			}
+		})
+	}
 }
 
 func TestGetLogSinkServiceAccount(t *testing.T) {

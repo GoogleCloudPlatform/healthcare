@@ -59,6 +59,8 @@ type Project struct {
 	TerraformConfig *struct {
 		StateBucket *StorageBucket `json:"state_storage_bucket"`
 	} `json:"terraform"`
+
+	CreateDeletionLien  bool                `json:"create_deletion_lien"`
 	EnabledAPIs         []string            `json:"enabled_apis"`
 	ViolationExceptions map[string][]string `json:"violation_exceptions"`
 

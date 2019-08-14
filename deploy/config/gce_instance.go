@@ -25,6 +25,7 @@ type GCEInstance struct {
 	GCEInstanceProperties `json:"properties"`
 	CustomBootImage       *struct {
 		ImageName string `json:"image_name"`
+		GCSPath   string `json:"gcs_path"`
 	} `json:"custom_boot_image,omitempty"`
 	raw json.RawMessage
 }

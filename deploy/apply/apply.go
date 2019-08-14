@@ -18,6 +18,7 @@
 package apply
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -95,11 +96,11 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 		return fmt.Errorf("failed to enable service APIs: %v", err)
 	}
 
-	if err := createComputeImages(); err != nil {
+	if err := createCustomComputeImages(project); err != nil {
 		return fmt.Errorf("failed to create compute images: %v", err)
 	}
 
-	if err := createDeletionLien(); err != nil {
+	if err := createDeletionLien(project); err != nil {
 		return fmt.Errorf("failed to create deletion lien: %v", err)
 	}
 
@@ -584,13 +585,63 @@ func enableServiceAPIs(project *config.Project) error {
 	return nil
 }
 
-func createComputeImages() error {
-	//TODO add logic.
+// createComputeImages creates new custom Compute Engine VM images, if specified.
+// Create VM image using gcloud rather than deployment manager so that the deployment manager
+// service account doesn't need to be granted access to the image GCS bucket.
+// Note: for updates, only new images will be created. Existing images will not be modified.
+// TODO no longer need this after migrating to Terraform.
+func createCustomComputeImages(project *config.Project) error {
+	if len(project.Resources.GCEInstances) == 0 {
+		log.Print("No GCE images to create.")
+		return nil
+	}
+	for _, i := range project.Resources.GCEInstances {
+		if i.CustomBootImage == nil {
+			continue
+		}
+		// Check if custom image already exists.
+		cmd := exec.Command("gcloud", "--project", project.ID, "compute", "images", "list",
+			"--no-standard-images", "--filter", fmt.Sprintf("name=%s", i.CustomBootImage.ImageName), "--format", "value(name)")
+		out, err := cmdOutput(cmd)
+		if err != nil {
+			return fmt.Errorf("failed to check the existence of custom image %q: %v", i.CustomBootImage.ImageName, err)
+		}
+		if len(bytes.TrimSpace(out)) != 0 {
+			log.Printf("Custom image %q already exists, skipping image creation.", i.CustomBootImage.ImageName)
+			continue
+		}
+		// Create the image.
+		cmd = exec.Command("gcloud", "--project", project.ID, "compute", "images", "create", i.CustomBootImage.ImageName, "--source-uri", fmt.Sprintf("gs://%s", i.CustomBootImage.GCSPath))
+		if err := cmdRun(cmd); err != nil {
+			return fmt.Errorf("failed to create custom image %q: %v", i.CustomBootImage.ImageName, err)
+		}
+	}
 	return nil
 }
 
-func createDeletionLien() error {
-	//TODO add logic.
+// createDeletionLien create the project deletion lien, if specified.
+func createDeletionLien(project *config.Project) error {
+	if !project.CreateDeletionLien {
+		return nil
+	}
+
+	defaultLien := "resourcemanager.projects.delete"
+	cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "resource-manager", "liens",
+		"list", "--filter", fmt.Sprintf("restrictions=%s", defaultLien), "--format", "value(restrictions)")
+	out, err := cmdOutput(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to check existing deletion liens: %v", err)
+	}
+	if len(bytes.TrimSpace(out)) != 0 {
+		log.Printf("Restriction lien %q already exists, skipping lien creation.", defaultLien)
+		return nil
+	}
+	// Create the lien.
+	cmd = exec.Command("gcloud", "--project", project.ID, "alpha", "resource-manager", "liens",
+		"create", "--restrictions", defaultLien, "--reason", "Automated project deletion lien deployment.")
+	if err := cmdRun(cmd); err != nil {
+		return fmt.Errorf("failed to create restriction lien %q: %v", defaultLien, err)
+	}
 	return nil
 }
 
