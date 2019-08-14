@@ -42,9 +42,8 @@ forseti:
     auditors_group: my-forseti-project-auditors@my-domain.com
     terraform:
       state_storage_bucket:
-        properties:
-          name: my-forseti-project-state
-          location: US
+        name: my-forseti-project-state
+        location: US
     audit_logs:
       logs_bq_dataset:
         properties:
@@ -70,9 +69,8 @@ projects:
   - another-readonly-group@googlegroups.com
   terraform:
     state_storage_bucket:
-      properties:
-        name: my-project-state
-        location: US
+      name: my-project-state
+      location: US
   enabled_apis:
   - foo-api.googleapis.com
   audit_logs:

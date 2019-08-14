@@ -96,14 +96,9 @@ definitions:
         properties:
           state_storage_bucket:
             type: object
-            description: Bucket for Teraform to store its remote state.
-            additionalProperties: false
-            required:
-            - properties
-            properties:
-              properties:
-                type: object
-                description: Wraps google_storage_bucket.
+            description: |
+              Bucket for Teraform to store its remote state.
+              Wraps https://www.terraform.io/docs/providers/google/r/storage_bucket.html.
 
       create_deletion_lien:
         type: boolean

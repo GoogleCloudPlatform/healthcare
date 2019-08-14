@@ -158,16 +158,11 @@ func (b *GCSBucket) MarshalJSON() ([]byte, error) {
 
 // StorageBucket represents a Terraform GCS bucket.
 type StorageBucket struct {
-	StorageBucketProperties `json:"properties"`
-	raw                     json.RawMessage
-}
-
-// StorageBucketProperties ...
-type StorageBucketProperties struct {
 	StorageBucketName string     `json:"name"`
 	Project           string     `json:"project"`
 	Location          string     `json:"location"`
 	Versioning        versioning `json:"versioning,omitempty"`
+	raw               json.RawMessage
 }
 
 // Init initializes the bucket.

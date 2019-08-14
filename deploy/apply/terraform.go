@@ -34,7 +34,7 @@ func deployTerraform(config *config.Config, project *config.Project) error {
 	tfConf.Resources = []*terraform.Resource{{
 		Name:       b.Name(),
 		Type:       b.TerraformResourceName(),
-		Properties: b.StorageBucketProperties,
+		Properties: b,
 	}}
 
 	dir, err := ioutil.TempDir("", "")
