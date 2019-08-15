@@ -18,8 +18,10 @@ from __future__ import division
 from __future__ import print_function
 
 import tempfile
+
 from absl.testing import absltest
-import ruamel.yaml
+import yaml
+
 from deploy.utils import field_generation
 
 TEST_YAML_CONTENT = """
@@ -98,7 +100,6 @@ class FieldGeneratingTest(absltest.TestCase):
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml') as f:
       f.write(TEST_YAML_CONTENT)
       f.flush()
-      yaml = ruamel.yaml.YAML()
       overall_root = yaml.load(TEST_YAML_CONTENT)
       overall_root['generated_fields']['projects']['data-project-03'][
           'failed_step'] = 16

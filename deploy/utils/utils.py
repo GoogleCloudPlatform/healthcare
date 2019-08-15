@@ -24,7 +24,7 @@ import tempfile
 
 from absl import flags
 
-import ruamel.yaml
+import yaml
 
 from deploy.utils import runner
 
@@ -81,7 +81,6 @@ def read_yaml_file(path):
     A dict holding the parsed contents of the YAML file, or None if the file
     could not be read or parsed.
   """
-  yaml = ruamel.yaml.YAML()
   with open(path, 'r') as stream:
     return yaml.load(stream)
 
@@ -93,19 +92,16 @@ def write_yaml_file(contents, path):
     contents (dict): The contents to write to the YAML file.
     path (string): The path to the YAML file.
   """
-  yaml = ruamel.yaml.YAML()
-  yaml.default_flow_style = False
-  yaml.Representer.ignore_aliases = lambda *args: True
-
+  yaml.Dumper.ignore_aliases = lambda *args: True
   if FLAGS.dry_run:
     # If using dry_run mode, don't create the file, just print the contents.
     print('Contents of {}:'.format(path))
     print('===================================================================')
-    yaml.dump(contents, sys.stdout)
+    yaml.dump(contents, sys.stdout, default_flow_style=False)
     print('===================================================================')
     return
   with open(path, 'w') as outfile:
-    yaml.dump(contents, outfile)
+    yaml.dump(contents, outfile, default_flow_style=False)
 
 
 def create_notification_channel(alert_email, project_id):

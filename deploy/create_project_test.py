@@ -26,7 +26,7 @@ import tempfile
 from absl import flags
 from absl.testing import absltest
 
-import ruamel.yaml
+import yaml
 
 from deploy import create_project
 from deploy.utils import utils
@@ -57,7 +57,6 @@ class CreateProjectTest(absltest.TestCase):
       FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
       FLAGS.generated_fields_path = os.path.join(tmp_dir, 'generated.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
-        yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
         f.flush()
       with self.assertRaises(utils.InvalidConfigError):
@@ -79,7 +78,6 @@ class CreateProjectTest(absltest.TestCase):
       FLAGS.project_yaml = os.path.join(tmp_dir, 'conf.yaml')
       FLAGS.generated_fields_path = os.path.join(tmp_dir, 'generated.yaml')
       with open(FLAGS.project_yaml, 'w') as f:
-        yaml = ruamel.yaml.YAML()
         yaml.dump(root_config, f)
         f.flush()
       create_project.main([])

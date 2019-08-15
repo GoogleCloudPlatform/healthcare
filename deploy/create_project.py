@@ -37,7 +37,7 @@ from absl import app
 from absl import flags
 from absl import logging
 
-import ruamel
+import yaml
 
 from deploy.utils import forseti
 from deploy.utils import runner
@@ -653,7 +653,6 @@ def main(argv):
       FLAGS.generated_fields_path,
   ],
                                      get_output=True)
-  yaml = ruamel.yaml.YAML()
   root_config = yaml.load(config_string)
 
   if not root_config:
