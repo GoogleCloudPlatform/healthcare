@@ -22,6 +22,8 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 )
 
 // accessLogsWriter is the access logs writer.
@@ -57,7 +59,7 @@ type Project struct {
 	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
 
 	TerraformConfig *struct {
-		StateBucket *StorageBucket `json:"state_storage_bucket"`
+		StateBucket *tfconfig.StorageBucket `json:"state_storage_bucket"`
 	} `json:"terraform"`
 
 	CreateDeletionLien  bool                `json:"create_deletion_lien"`
@@ -221,7 +223,7 @@ func (p *Project) Init(auditLogsProject *Project) error {
 		if b == nil {
 			return errors.New("state bucket must not be nil if terraform config is set")
 		}
-		if err := b.Init(); err != nil {
+		if err := b.Init(p.ID); err != nil {
 			return fmt.Errorf("failed to init terraform state bucket: %v", err)
 		}
 		b.Project = p.ID

@@ -32,7 +32,7 @@ func deployTerraform(config *config.Config, project *config.Project) error {
 
 	tfConf := terraform.NewConfig()
 	tfConf.Resources = []*terraform.Resource{{
-		Name:       b.Name(),
+		Name:       b.ID(),
 		Type:       b.TerraformResourceName(),
 		Properties: b,
 	}}
@@ -44,8 +44,8 @@ func deployTerraform(config *config.Config, project *config.Project) error {
 	defer os.RemoveAll(dir)
 
 	imports := []terraform.Import{{
-		Address: "google_storage_bucket." + b.Name(),
-		ID:      fmt.Sprintf("%s/%s", project.ID, b.Name()),
+		Address: "google_storage_bucket." + b.ID(),
+		ID:      fmt.Sprintf("%s/%s", project.ID, b.ID()),
 	}}
 	return terraformApply(tfConf, dir, &terraform.Options{Imports: imports})
 }

@@ -36,6 +36,7 @@ go_library(
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/config",
     deps = [
+        "//deploy/config/tfconfig:go_default_library",
         "@com_github_imdario_mergo//:go_default_library",
         "@com_github_mitchellh_homedir//:go_default_library",
         "@com_github_xeipuuv_gojsonschema//:go_default_library",

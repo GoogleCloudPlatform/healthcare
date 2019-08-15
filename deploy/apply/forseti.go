@@ -91,7 +91,7 @@ func ForsetiConfig(conf *config.Config, enableRemoteState bool) error {
 
 	if enableRemoteState {
 		tfConf.Terraform.Backend = &terraform.Backend{
-			Bucket: conf.Forseti.Project.TerraformConfig.StateBucket.Name(),
+			Bucket: conf.Forseti.Project.TerraformConfig.StateBucket.Name,
 			Prefix: "forseti",
 		}
 	}
