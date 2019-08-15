@@ -262,6 +262,23 @@ service_account (ALPHA) | [Deployment Manager (Direct)](https://cloud.google.com
 
 These are solutions to non-typical problems encountered:
 
+#### Log Sink reporting errors on initial deployment
+
+When using the `create_project` script, you may see an error on the log sink
+that exports to the logs dataset or you may have gotten an email with the
+subject "[ACTION REQUIRED] Stackdriver Logging export config error in
+{PROJECT_ID}".
+
+This is due to the log sink being created and given permissions in two separate
+deployments, causing an inevitable delay.
+
+See
+https://cloud.google.com/logging/docs/export/configure_export_v2#authorization_delays.
+
+If you have successfully deployed the entire project then the error should
+disappear on its own. If you continue to see log sink errors please reach out
+for support.
+
 #### Bucket Permission Denied
 
 Typically the error message will contain the following during a failed
