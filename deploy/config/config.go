@@ -62,9 +62,10 @@ type Project struct {
 		StateBucket *tfconfig.StorageBucket `json:"state_storage_bucket"`
 	} `json:"terraform"`
 
-	CreateDeletionLien  bool                `json:"create_deletion_lien"`
-	EnabledAPIs         []string            `json:"enabled_apis"`
-	ViolationExceptions map[string][]string `json:"violation_exceptions"`
+	CreateDeletionLien    bool                `json:"create_deletion_lien"`
+	EnabledAPIs           []string            `json:"enabled_apis"`
+	ViolationExceptions   map[string][]string `json:"violation_exceptions"`
+	StackdriverAlertEmail string              `json:"stackdriver_alert_email"`
 
 	Resources struct {
 		// Deployment manager resources

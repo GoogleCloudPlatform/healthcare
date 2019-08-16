@@ -20,6 +20,7 @@ package apply
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -48,6 +49,10 @@ const deploymentRetryWaitTime = time.Minute
 
 // The following vars are stubbed in tests.
 var (
+	cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
+		log.Printf("Running: %v", cmd.Args)
+		return cmd.CombinedOutput()
+	}
 	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		log.Printf("Running: %v", cmd.Args)
 		cmd.Stderr = os.Stderr
@@ -108,7 +113,7 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
 
-	if err := createStackdriverAccount(); err != nil {
+	if err := createStackdriverAccount(project); err != nil {
 		return fmt.Errorf("failed to create stackdriver account: %v", err)
 	}
 
@@ -592,7 +597,7 @@ func enableServiceAPIs(project *config.Project) error {
 // TODO no longer need this after migrating to Terraform.
 func createCustomComputeImages(project *config.Project) error {
 	if len(project.Resources.GCEInstances) == 0 {
-		log.Print("No GCE images to create.")
+		log.Println("No GCE images to create.")
 		return nil
 	}
 	for _, i := range project.Resources.GCEInstances {
@@ -645,12 +650,101 @@ func createDeletionLien(project *config.Project) error {
 	return nil
 }
 
-func createStackdriverAccount() error {
-	//TODO add logic.
+// TODO use Terraform once https://github.com/terraform-providers/terraform-provider-google/issues/2605 is resolved.
+// createStackdriverAccount prompts the user to create a new Stackdriver Account.
+func createStackdriverAccount(project *config.Project) error {
+	if project.StackdriverAlertEmail == "" {
+		log.Println("No Stackdriver alert email specified, skipping creation of Stackdriver account.")
+		return nil
+	}
+	exist, err := stackdriverAccountExists(project.ID)
+	if err != nil {
+		return err
+	}
+	if exist {
+		log.Println("Stackdriver account already exists.")
+		return nil
+	}
+
+	message := fmt.Sprintf(`
+------------------------------------------------------------------------------
+To create email alerts, this project needs a Stackdriver account.
+Create a new Stackdriver account for this project by visiting:
+    https://console.cloud.google.com/monitoring?project=%s
+
+Only add this project, and skip steps for adding additional GCP or AWS
+projects. You don't need to install Stackdriver Agents.
+
+IMPORTANT: Wait about 5 minutes for the account to be created.
+
+For more information, see: https://cloud.google.com/monitoring/accounts/
+
+After the account is created, enter [yes] to continue, or enter [no] to skip the
+creation of Stackdriver account and terminate the deployment.
+------------------------------------------------------------------------------
+`, project.ID)
+	log.Println(message)
+
+	// Keep trying until Stackdriver account is ready, or user skips.
+	for {
+		ok, err := askForConfirmation()
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return errors.New("user skipped the creation of Stackdriver account")
+		}
+		exist, err := stackdriverAccountExists(project.ID)
+		if err != nil {
+			return err
+		}
+		if exist {
+			log.Println("Stackdriver account has been created.")
+			break
+		}
+		log.Println(`
+------------------------------------------------------------------------------
+The account is not created yet. It can take several minutes for it to be created.
+
+After the account is created, enter [yes] to continue, or enter [no] to skip the
+creation of Stackdriver account and terminate the deployment.
+------------------------------------------------------------------------------
+`)
+	}
 	return nil
+}
+
+// stackdriverAccountExists checks whether a Stackdriver account exists in the project.
+func stackdriverAccountExists(projectID string) (bool, error) {
+	cmd := exec.Command("gcloud", "--project", projectID, "alpha", "monitoring", "policies", "list")
+	out, err := cmdCombinedOutput(cmd)
+	if err != nil {
+		if strings.Contains(string(out), "not a Stackdriver workspace") {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check stackdriver account existence: %v [%s]", err, string(out))
+	}
+	return true, nil
 }
 
 func createAlerts() error {
 	//TODO add logic.
 	return nil
+}
+
+// askForConfirmation prompts the user to answer yes or no for confirmation.
+func askForConfirmation() (bool, error) {
+	var resp string
+	if _, err := fmt.Scan(&resp); err != nil {
+		return false, fmt.Errorf("failed to get user input: %v", err)
+	}
+	switch resp {
+	case "yes":
+		return true, nil
+	case "no":
+		return false, nil
+	default:
+		fmt.Println("Please type [yes] or [no] and then press enter:")
+		return askForConfirmation()
+	}
 }

@@ -574,7 +574,6 @@ func TestVerifyProject(t *testing.T) {
 		{
 			name:       "valid_project",
 			projectID:  "my_project",
-			projectNum: "",
 			parentType: "folder",
 			parentID:   "5678",
 			resp: `{
@@ -586,9 +585,7 @@ func TestVerifyProject(t *testing.T) {
   },
   "projectNumber": "0000"
 }`,
-			err:            nil,
 			wantProjectNum: "0000",
-			wantErr:        false,
 		},
 		{
 			name:       "valid_project_with_existing_project_number",
@@ -605,9 +602,7 @@ func TestVerifyProject(t *testing.T) {
   },
   "projectNumber": "0000"
 }`,
-			err:            nil,
 			wantProjectNum: "0000",
-			wantErr:        false,
 		},
 		{
 			name:       "invalid_project_number",
@@ -624,14 +619,11 @@ func TestVerifyProject(t *testing.T) {
   },
   "projectNumber": "0000"
 }`,
-			err:            nil,
-			wantProjectNum: "",
-			wantErr:        true,
+			wantErr: true,
 		},
 		{
 			name:       "invalid_project_state",
 			projectID:  "my_project",
-			projectNum: "",
 			parentType: "folder",
 			parentID:   "5678",
 			resp: `{
@@ -643,14 +635,11 @@ func TestVerifyProject(t *testing.T) {
   },
   "projectNumber": "0000"
 }`,
-			err:            nil,
-			wantProjectNum: "",
-			wantErr:        true,
+			wantErr: true,
 		},
 		{
 			name:       "invalid_project_folder_id",
 			projectID:  "my_project",
-			projectNum: "",
 			parentType: "folder",
 			parentID:   "5678",
 			resp: `{
@@ -662,14 +651,11 @@ func TestVerifyProject(t *testing.T) {
   },
   "projectNumber": "0000"
 }`,
-			err:            nil,
-			wantProjectNum: "",
-			wantErr:        true,
+			wantErr: true,
 		},
 		{
 			name:       "invalid_project_org_id",
 			projectID:  "my_project",
-			projectNum: "",
 			parentType: "organization",
 			parentID:   "5678",
 			resp: `{
@@ -681,31 +667,20 @@ func TestVerifyProject(t *testing.T) {
   },
   "projectNumber": "0000"
 }`,
-			err:            nil,
-			wantProjectNum: "",
-			wantErr:        true,
+			wantErr: true,
 		},
 		{
-			name:           "invalid_response",
-			projectID:      "my_project",
-			projectNum:     "",
-			parentType:     "folder",
-			parentID:       "5678",
-			resp:           `{}`,
-			err:            nil,
-			wantProjectNum: "",
-			wantErr:        true,
+			name:       "invalid_response",
+			projectID:  "my_project",
+			parentType: "folder",
+			parentID:   "5678",
+			resp:       `{}`,
+			wantErr:    true,
 		},
 		{
-			name:           "cmd_failed",
-			projectID:      "my_project",
-			projectNum:     "",
-			parentType:     "",
-			parentID:       "",
-			resp:           ``,
-			err:            errors.New("Project does not exist"),
-			wantProjectNum: "",
-			wantErr:        false,
+			name:      "cmd_failed",
+			projectID: "my_project",
+			err:       errors.New("Project does not exist"),
 		},
 	}
 
@@ -717,11 +692,8 @@ func TestVerifyProject(t *testing.T) {
 				return []byte(tc.resp), tc.err
 			}
 			gotProjectNum, gotErr := verifyProject(tc.projectID, tc.projectNum, tc.parentType, tc.parentID)
-			if (gotErr != nil) != tc.wantErr {
-				t.Fatalf("error differs: want %t, got %t", tc.wantErr, (gotErr != nil))
-			}
-			if gotProjectNum != tc.wantProjectNum {
-				t.Fatalf("project number differs: want %q, got %q", tc.wantProjectNum, gotProjectNum)
+			if gotProjectNum != tc.wantProjectNum || (gotErr != nil) != tc.wantErr {
+				t.Fatalf("verifyProject(%s, %s, %s, %s) = %q, %v; want %q, error %t", tc.projectID, tc.projectNum, tc.parentType, tc.parentID, gotProjectNum, gotErr, tc.wantProjectNum, tc.wantErr)
 			}
 		})
 	}
@@ -785,10 +757,8 @@ func TestCreateDeletionLien(t *testing.T) {
 		{
 			name: "lien_not_requested",
 			project: &config.Project{
-				ID:                 "my_project",
-				CreateDeletionLien: false,
+				ID: "my_project",
 			},
-			cmdOutput:       "",
 			wantEmptyCmdRun: true,
 		},
 		{
@@ -797,8 +767,6 @@ func TestCreateDeletionLien(t *testing.T) {
 				ID:                 "my_project",
 				CreateDeletionLien: true,
 			},
-			cmdOutput:       "",
-			wantEmptyCmdRun: false,
 		},
 		{
 			name: "lien_requested_and_already_exist",
@@ -832,7 +800,50 @@ func TestCreateDeletionLien(t *testing.T) {
 				t.Fatalf("createDeletionLien = %v", err)
 			}
 			if (len(got) == 0) != tc.wantEmptyCmdRun {
-				t.Fatalf("deletion lien creation cmdRun args differ, want empty is %t, got %t", tc.wantEmptyCmdRun, len(got) == 0)
+				t.Fatalf("createDeletionLien(%v) cmdRun args empty = %t; want %t", tc.project, len(got) == 0, tc.wantEmptyCmdRun)
+			}
+		})
+	}
+}
+
+func TestStackdriverAccountExist(t *testing.T) {
+	projectID := "my_project"
+	tests := []struct {
+		name      string
+		cmdError  error
+		cmdOutput string
+		wantExist bool
+		wantErr   bool
+	}{
+		{
+			name:      "account_exist",
+			cmdOutput: "Listed 0 items.",
+			wantExist: true,
+		},
+		{
+			name:      "account_does_not_exist",
+			cmdError:  errors.New(""),
+			cmdOutput: fmt.Sprintf("INVALID_ARGUMENT: 'projects/%s' is not a Stackdriver workspace.", projectID),
+		},
+		{
+			name:      "unexpected_cmd_error",
+			cmdError:  errors.New(""),
+			cmdOutput: fmt.Sprintf("does not have permission to access project [%s]", projectID),
+			wantErr:   true,
+		},
+	}
+
+	origCmdCombinedOutput := cmdCombinedOutput
+	defer func() { cmdCombinedOutput = origCmdCombinedOutput }()
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
+				return []byte(tc.cmdOutput), tc.cmdError
+			}
+			exist, err := stackdriverAccountExists(projectID)
+			if exist != tc.wantExist || (err != nil) != tc.wantErr {
+				t.Fatalf("stackdriverAccountExists(%s) = %t, %v; want %t, error %t", projectID, exist, err, tc.wantExist, tc.wantErr)
 			}
 		})
 	}
@@ -841,13 +852,9 @@ func TestCreateDeletionLien(t *testing.T) {
 func TestGetLogSinkServiceAccount(t *testing.T) {
 	_, project := testconf.ConfigAndProject(t, nil)
 	got, err := getLogSinkServiceAccount(project)
-	if err != nil {
-		t.Fatalf("getLogSinkServiceAccount: %v", err)
-	}
-
 	want := "p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
-	if got != want {
-		t.Errorf("log sink service account: got %q, want %q", got, want)
+	if got != want || err != nil {
+		t.Errorf("getLogSinkServiceAccount(%v) = %q, %v; want %q, nil", project, got, err, want)
 	}
 }
 
