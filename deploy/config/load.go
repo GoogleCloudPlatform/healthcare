@@ -287,6 +287,10 @@ func LoadGeneratedFields(path string) (*AllGeneratedFields, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
 	}
+	// Create an empty file if not exist.
+	if _, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0666); err != nil {
+		return nil, fmt.Errorf("failed to create an empty output file: %v", err)
+	}
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file at path %q: %v", path, err)
@@ -302,4 +306,22 @@ func LoadGeneratedFields(path string) (*AllGeneratedFields, error) {
 		return nil, fmt.Errorf("failed to unmarshal generated fields at path %q: %v", path, err)
 	}
 	return genFields, nil
+}
+
+// DumpGeneratedFields dumps generated fields to file at path.
+func DumpGeneratedFields(generatedFields *AllGeneratedFields, path string) error {
+	path, err := NormalizePath(path)
+	if err != nil {
+		return fmt.Errorf("failed to normalize path %q: %v", path, err)
+	}
+	b, err := yaml.Marshal(generatedFields)
+	if err != nil {
+		return fmt.Errorf("failed to marshal generated fields: %v", err)
+	}
+	content := []byte("# This is an auto-generated file and should not be modified manually.\n")
+	content = append(content, b...)
+	if err := ioutil.WriteFile(path, content, 0666); err != nil {
+		return fmt.Errorf("failed to write file at path %q: %v", path, err)
+	}
+	return nil
 }

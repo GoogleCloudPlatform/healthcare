@@ -122,6 +122,9 @@ func (c *Config) Init(genFields *AllGeneratedFields) error {
 			return fmt.Errorf("project %q defined more than once", p.ID)
 		}
 		ids[p.ID] = true
+		if c.AllGeneratedFields.Projects[p.ID] == nil {
+			c.AllGeneratedFields.Projects[p.ID] = &GeneratedFields{}
+		}
 		p.GeneratedFields = c.AllGeneratedFields.Projects[p.ID]
 		if err := p.Init(c.AuditLogsProject); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)

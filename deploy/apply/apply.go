@@ -126,9 +126,6 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 			return err
 		}
 	}
-
-	// TODO: write generated fieids.
-
 	return nil
 }
 

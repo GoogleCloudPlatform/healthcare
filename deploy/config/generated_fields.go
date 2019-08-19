@@ -22,28 +22,28 @@ import (
 // AllGeneratedFields contains resource information when the resources are deployed.
 // See field_generation_test for examples.
 type AllGeneratedFields struct {
-	Projects map[string]*GeneratedFields `json:"projects"`
-	Forseti  ForsetiServiceInfo          `json:"forseti"`
+	Projects map[string]*GeneratedFields `json:"projects,omitempty"`
+	Forseti  *ForsetiServiceInfo         `json:"forseti,omitempty"`
 }
 
 // GeneratedFields defines the generated_fields of a single project.
 type GeneratedFields struct {
-	ProjectNumber         string            `json:"project_number"`
-	LogSinkServiceAccount string            `json:"log_sink_service_account"`
-	GCEInstanceInfoList   []GCEInstanceInfo `json:"gce_instance_info"`
-	FailedStep            int               `json:"failed_step"`
+	ProjectNumber         string            `json:"project_number,omitempty"`
+	LogSinkServiceAccount string            `json:"log_sink_service_account,omitempty"`
+	GCEInstanceInfoList   []GCEInstanceInfo `json:"gce_instance_info,omitempty"`
+	FailedStep            int               `json:"failed_step,omitempty"`
 }
 
 // GCEInstanceInfo defines the generated fields for instances in a project.
 type GCEInstanceInfo struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+	ID   string `json:"id,omitempty"`
 }
 
 // ForsetiServiceInfo defines the generated_fields of the forseti service.
 type ForsetiServiceInfo struct {
-	ServiceAccount string `json:"service_account"`
-	ServiceBucket  string `json:"server_bucket"`
+	ServiceAccount string `json:"service_account,omitempty"`
+	ServiceBucket  string `json:"server_bucket,omitempty"`
 }
 
 // InstanceID returns the ID of the instance with the given name.

@@ -54,7 +54,7 @@ forseti:
 				LogSinkServiceAccount: "p456456456456-002222@gcp-sa-logging.iam.gserviceaccount.com",
 				GCEInstanceInfoList:   []config.GCEInstanceInfo{{Name: "foo-instance", ID: "123"}}},
 		},
-		Forseti: config.ForsetiServiceInfo{
+		Forseti: &config.ForsetiServiceInfo{
 			ServiceAccount: "some-forseti-gcp-reader@some-forseti.iam.gserviceaccount.com",
 			ServiceBucket:  "gs://some-forseti-server",
 		},

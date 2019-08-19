@@ -26,6 +26,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 
@@ -75,10 +76,16 @@ func main() {
 	if *outputPath == "" {
 		log.Fatal("--output_path must be set")
 	}
+	if err := run(); err != nil {
+		log.Fatalf("Setup failed: %v", err)
+	}
+	log.Println("Setup completed successfully.")
+}
 
+func run() (err error) {
 	conf, err := config.Load(*configPath, *outputPath)
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		return fmt.Errorf("failed to load config: %v", err)
 	}
 
 	wantProjects := make(map[string]bool)
@@ -94,27 +101,36 @@ func main() {
 		return wantProjects[project]
 	}
 
+	// Write generated fields to the output file at the end.
+	defer func() {
+		if curErr := config.DumpGeneratedFields(conf.AllGeneratedFields, *outputPath); curErr != nil {
+			if err == nil {
+				err = fmt.Errorf("failed to write generated fields to output file: %v", curErr)
+			} else {
+				err = fmt.Errorf("%v; failed to write generated fields to output file: %v", err, curErr)
+			}
+		}
+	}()
+
 	enableForseti := conf.Forseti != nil && wantProject(conf.Forseti.Project.ID)
 	enableRemoteAudit := conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID)
-
 	// Always deploy the remote audit logs project first (if present).
 	if enableRemoteAudit {
 		log.Printf("Applying config for remote audit log project %q", conf.AuditLogsProject.ID)
 		// Cannot enable Forseti project until Forseti project is deployed.
 		if err := apply.Default(conf, conf.AuditLogsProject, &apply.Options{EnableTerraform: *enableTerraform, EnableForseti: false}); err != nil {
-			log.Fatalf("Failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
+			return fmt.Errorf("failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
 		}
 	}
-
 	if enableForseti {
 		log.Printf("Applying config for Forseti project %q", conf.Forseti.Project.ID)
 		if err := apply.Forseti(conf, conf.Forseti.Project, &apply.Options{EnableTerraform: *enableTerraform, EnableForseti: enableForseti}); err != nil {
-			log.Fatalf("Failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
+			return fmt.Errorf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
 		}
 		if enableRemoteAudit {
 			// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
 			if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
-				log.Fatalf("Failed to grant Forseti permissions to remote audit logs project: %v", err)
+				return fmt.Errorf("failed to grant Forseti permissions to remote audit logs project: %v", err)
 			}
 		}
 	}
@@ -124,8 +140,8 @@ func main() {
 		}
 		log.Printf("Applying config for project %q", p.ID)
 		if err := apply.Default(conf, p, &apply.Options{EnableTerraform: *enableTerraform, EnableForseti: enableForseti}); err != nil {
-			log.Fatalf("Failed to apply config for project %q: %v", p.ID, err)
+			return fmt.Errorf("failed to apply config for project %q: %v", p.ID, err)
 		}
 	}
-
+	return nil
 }
