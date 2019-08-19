@@ -52,14 +52,19 @@ func (b *StorageBucket) Init(projectID string) error {
 	return nil
 }
 
-// TerraformResourceName returns the Google provider terraform resource.
-func (b *StorageBucket) TerraformResourceName() string {
-	return "google_storage_bucket"
-}
-
 // ID returns the unique identifier of this bucket.
 func (b *StorageBucket) ID() string {
 	return b.Name
+}
+
+// ResourceType returns the terraform provider type.
+func (b *StorageBucket) ResourceType() string {
+	return "google_storage_bucket"
+}
+
+// ImportID returns the terraform import id for this resource.
+func (b *StorageBucket) ImportID() string {
+	return fmt.Sprintf("%s/%s", b.Project, b.ID())
 }
 
 // aliasStorageBucket is used to prevent infinite recursion when dealing with json marshaling.

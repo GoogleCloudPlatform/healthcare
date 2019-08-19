@@ -26,6 +26,7 @@ go_library(
         "pair.go",
         "pubsub.go",
         "service_account.go",
+        "terraform.go",
     ],
     data = [
         "//deploy:generated_fields.yaml.schema",

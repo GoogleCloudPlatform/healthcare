@@ -21,6 +21,7 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/apply",
     deps = [
         "//deploy/config:go_default_library",
+        "//deploy/config/tfconfig:go_default_library",
         "//deploy/deploymentmanager:go_default_library",
         "//deploy/terraform:go_default_library",
     ],

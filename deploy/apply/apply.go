@@ -132,7 +132,7 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 // DeployResources deploys the CFT resources in the project.
 func DeployResources(conf *config.Config, project *config.Project, opts *Options) error {
 	if opts.EnableTerraform {
-		if err := deployTerraform(conf, project); err != nil {
+		if err := defaultTerraform(conf, project); err != nil {
 			return err
 		}
 		// TODO: return after this once we can deploy all necessary resources like log sinks, etc in terraform.
@@ -591,7 +591,7 @@ func enableServiceAPIs(project *config.Project) error {
 // Create VM image using gcloud rather than deployment manager so that the deployment manager
 // service account doesn't need to be granted access to the image GCS bucket.
 // Note: for updates, only new images will be created. Existing images will not be modified.
-// TODO no longer need this after migrating to Terraform.
+// TODO: no longer need this after migrating to Terraform.
 func createCustomComputeImages(project *config.Project) error {
 	if len(project.Resources.GCEInstances) == 0 {
 		log.Println("No GCE images to create.")
@@ -725,7 +725,7 @@ func stackdriverAccountExists(projectID string) (bool, error) {
 }
 
 func createAlerts() error {
-	//TODO add logic.
+	// TODO: add logic.
 	return nil
 }
 

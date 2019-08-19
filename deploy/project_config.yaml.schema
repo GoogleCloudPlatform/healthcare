@@ -480,6 +480,14 @@ definitions:
                   description: |
                     Wraps the CFT template network.py.
 
+      storage_buckets:
+        type: array
+        description: |
+          DEV ONLY.
+          Wraps https://www.terraform.io/docs/providers/google/r/storage_bucket.html.
+        items:
+          type: object
+
 required:
 - overall
 - projects

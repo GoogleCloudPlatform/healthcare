@@ -17,7 +17,6 @@ package config
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -86,6 +85,10 @@ type Project struct {
 		// Kubectl resources
 		GKEWorkloads []*GKEWorkload `json:"gke_workloads"`
 	} `json:"resources"`
+
+	// Terraform resources
+	StorageBuckets []*tfconfig.StorageBucket `json:"storage_buckets"`
+
 	BinauthzPolicy *BinAuthz `json:"binauthz"`
 
 	AuditLogs *struct {
@@ -223,14 +226,9 @@ func (p *Project) Init(auditLogsProject *Project) error {
 	}
 
 	if p.TerraformConfig != nil {
-		b := p.TerraformConfig.StateBucket
-		if b == nil {
-			return errors.New("state bucket must not be nil if terraform config is set")
+		if err := p.initTerraform(); err != nil {
+			return err
 		}
-		if err := b.Init(p.ID); err != nil {
-			return fmt.Errorf("failed to init terraform state bucket: %v", err)
-		}
-		b.Project = p.ID
 	}
 
 	if err := p.initAuditResources(auditLogsProject); err != nil {

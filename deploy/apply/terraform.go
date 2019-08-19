@@ -21,21 +21,28 @@ import (
 	"os"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
 
-func deployTerraform(config *config.Config, project *config.Project) error {
+func defaultTerraform(config *config.Config, project *config.Project) error {
+	if err := stateBucket(config, project); err != nil {
+		return fmt.Errorf("failed to deploy terraform state: %v", err)
+	}
+	if err := dataResources(config, project, project.TerraformConfig.StateBucket); err != nil {
+		return fmt.Errorf("failed to deploy terraform data resources: %v", err)
+	}
+	return nil
+}
+
+func stateBucket(config *config.Config, project *config.Project) error {
 	if project.TerraformConfig == nil {
 		return errors.New("terraform block in project must be set when terraform is enabled")
 	}
-	b := project.TerraformConfig.StateBucket
 
 	tfConf := terraform.NewConfig()
-	tfConf.Resources = []*terraform.Resource{{
-		Name:       b.ID(),
-		Type:       b.TerraformResourceName(),
-		Properties: b,
-	}}
+	opts := &terraform.Options{}
+	addResources(tfConf, opts, project.TerraformConfig.StateBucket)
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -43,9 +50,48 @@ func deployTerraform(config *config.Config, project *config.Project) error {
 	}
 	defer os.RemoveAll(dir)
 
-	imports := []terraform.Import{{
-		Address: "google_storage_bucket." + b.ID(),
-		ID:      fmt.Sprintf("%s/%s", project.ID, b.ID()),
-	}}
-	return terraformApply(tfConf, dir, &terraform.Options{Imports: imports})
+	return terraformApply(tfConf, dir, opts)
+}
+
+func dataResources(config *config.Config, project *config.Project, state *tfconfig.StorageBucket) error {
+	rs := project.TerraformResources()
+	if len(rs) == 0 {
+		return nil
+	}
+	tfConf := terraform.NewConfig()
+	tfConf.Terraform.Backend = &terraform.Backend{
+		Bucket: state.Name,
+		Prefix: "resources",
+	}
+	opts := &terraform.Options{}
+	addResources(tfConf, opts, rs...)
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	return terraformApply(tfConf, dir, opts)
+}
+
+func addResources(config *terraform.Config, opts *terraform.Options, resources ...tfconfig.Resource) {
+	for _, r := range resources {
+		config.Resources = append(config.Resources, &terraform.Resource{
+			Name:       r.ID(),
+			Type:       r.ResourceType(),
+			Properties: r,
+		})
+
+		type importer interface {
+			ImportID() string
+		}
+
+		if i, ok := r.(importer); ok {
+			opts.Imports = append(opts.Imports, terraform.Import{
+				Address: fmt.Sprintf("%s.%s", r.ResourceType(), r.ID()),
+				ID:      i.ImportID(),
+			})
+		}
+	}
 }

@@ -15,3 +15,10 @@
 // Package tfconfig provides utilities to parse terraform resource configurations.
 // This is a temporary package and will be merged back into the parent config package once deployment manager has been deprecated.
 package tfconfig
+
+// Resource is an interface that must be implemented by all concrete resource implementations.
+type Resource interface {
+	Init(projectID string) error
+	ID() string
+	ResourceType() string
+}
