@@ -24,12 +24,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestApply(t *testing.T) {
 	var b []byte
-	cmdRun = func(cmd *exec.Cmd) error {
+	origCmdRun := runner.CmdRun
+	defer func() { runner.CmdRun = origCmdRun }()
+	runner.CmdRun = func(cmd *exec.Cmd) error {
 		if cmd.Args[0] == "terraform" && len(b) == 0 {
 			var err error
 			b, err = ioutil.ReadFile(filepath.Join(cmd.Dir, "main.tf.json"))

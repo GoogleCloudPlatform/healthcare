@@ -24,6 +24,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
@@ -48,7 +49,9 @@ func TestRunServerBucket(t *testing.T) {
 	conf, _ := testconf.ConfigAndProject(t, nil)
 
 	var gotArgs []string
-	cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
+	origCmdCombinedOutput := runner.CmdCombinedOutput
+	defer func() { runner.CmdCombinedOutput = origCmdCombinedOutput }()
+	runner.CmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		if len(gotArgs) != 0 {
 			return nil, errors.New("fake CombinedOutput: unexpectedly called more than once")
 		}

@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
@@ -93,8 +94,14 @@ resources:
 				wantDeploymentCommand: tc.wantDeploymentCommand,
 			}
 
-			cmdRun = commander.Run
-			cmdCombinedOutput = commander.CombinedOutput
+			origCmdRun := runner.CmdRun
+			origCmdCombinedOutput := runner.CmdCombinedOutput
+			defer func() {
+				runner.CmdRun = origCmdRun
+				runner.CmdCombinedOutput = origCmdCombinedOutput
+			}()
+			runner.CmdRun = commander.Run
+			runner.CmdCombinedOutput = commander.CombinedOutput
 
 			if err := Upsert("foo-deployment", deployment, projID); err != nil {
 				t.Fatalf("createOrUpdateDeployment = %v", err)

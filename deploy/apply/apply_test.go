@@ -29,6 +29,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -169,9 +170,16 @@ resources:
 `
 
 func TestDeploy(t *testing.T) {
-	cmdRun = func(cmd *exec.Cmd) error { return nil }
-	origCmdOutput := cmdOutput
-	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+
+	origCmdRun := runner.CmdRun
+	origCmdOutput := runner.CmdOutput
+	defer func() {
+		runner.CmdRun = origCmdRun
+		runner.CmdOutput = origCmdOutput
+	}()
+
+	runner.CmdRun = func(cmd *exec.Cmd) error { return nil }
+	runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		args := strings.Join(cmd.Args, " ")
 		var res string
 		switch {
@@ -684,11 +692,11 @@ func TestVerifyProject(t *testing.T) {
 		},
 	}
 
-	origCmdOutput := cmdOutput
-	defer func() { cmdOutput = origCmdOutput }()
+	origCmdOutput := runner.CmdOutput
+	defer func() { runner.CmdOutput = origCmdOutput }()
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+			runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 				return []byte(tc.resp), tc.err
 			}
 			gotProjectNum, gotErr := verifyProject(tc.projectID, tc.projectNum, tc.parentType, tc.parentID)
@@ -724,13 +732,13 @@ func TestSetupBilling(t *testing.T) {
 			wantSubstring: "--billing-account default_billing_account",
 		},
 	}
-	origCmdRun := cmdRun
-	defer func() { cmdRun = origCmdRun }()
+	origCmdRun := runner.CmdRun
+	defer func() { runner.CmdRun = origCmdRun }()
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			got := ""
-			cmdRun = func(cmd *exec.Cmd) error {
+			runner.CmdRun = func(cmd *exec.Cmd) error {
 				if got != "" {
 					t.Fatal("cmdRun is called more than once")
 				}
@@ -778,22 +786,24 @@ func TestCreateDeletionLien(t *testing.T) {
 			wantEmptyCmdRun: true,
 		},
 	}
-	origCmdRun := cmdRun
-	defer func() { cmdRun = origCmdRun }()
-	origCmdOutput := cmdOutput
-	defer func() { cmdOutput = origCmdOutput }()
+	origCmdRun := runner.CmdRun
+	origCmdOutput := runner.CmdOutput
+	defer func() {
+		runner.CmdRun = origCmdRun
+		runner.CmdOutput = origCmdOutput
+	}()
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var got string
-			cmdRun = func(cmd *exec.Cmd) error {
+			runner.CmdRun = func(cmd *exec.Cmd) error {
 				if got != "" {
 					t.Fatal("cmdRun is called more than once")
 				}
 				got = strings.Join(cmd.Args, " ")
 				return nil
 			}
-			cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+			runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 				return []byte(tc.cmdOutput), nil
 			}
 			if err := createDeletionLien(tc.project); err != nil {
@@ -833,12 +843,12 @@ func TestStackdriverAccountExist(t *testing.T) {
 		},
 	}
 
-	origCmdCombinedOutput := cmdCombinedOutput
-	defer func() { cmdCombinedOutput = origCmdCombinedOutput }()
+	origCmdCombinedOutput := runner.CmdCombinedOutput
+	defer func() { runner.CmdCombinedOutput = origCmdCombinedOutput }()
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
+			runner.CmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
 				return []byte(tc.cmdOutput), tc.cmdError
 			}
 			exist, err := stackdriverAccountExists(projectID)
@@ -907,7 +917,10 @@ func TestMain(m *testing.M) {
 		"writerIdentity": "serviceAccount:p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
 	}`
 
-	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+	origCmdOutput := runner.CmdOutput
+	defer func() { runner.CmdOutput = origCmdOutput }()
+
+	runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		args := []string{"gcloud", "logging", "sinks", "describe"}
 		if cmp.Equal(cmd.Args[:len(args)], args) {
 			return []byte(logSinkJSON), nil

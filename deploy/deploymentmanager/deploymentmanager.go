@@ -23,13 +23,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/ghodss/yaml"
-)
-
-// The following vars are stubbed in tests.
-var (
-	cmdRun            = (*exec.Cmd).Run
-	cmdCombinedOutput = (*exec.Cmd).CombinedOutput
 )
 
 // Deployment represents a single deployment which can be used by the GCP Deployment Manager.
@@ -97,9 +92,7 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 	log.Printf("Running gcloud command with args: %v", args)
 
 	cmd := exec.Command("gcloud", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
-	if err := cmdRun(cmd); err != nil {
+	if err := runner.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to run command: %v", err)
 	}
 	return nil
@@ -113,7 +106,7 @@ func checkDeploymentExists(name, projectID string) (bool, error) {
 
 	cmd := exec.Command("gcloud", "deployment-manager", "deployments", "list", "--format", "json", "--project", projectID)
 
-	out, err := cmdCombinedOutput(cmd)
+	out, err := runner.CmdCombinedOutput(cmd)
 	if err != nil {
 		return false, fmt.Errorf("failed to run command: %v\n%v", err, string(out))
 	}

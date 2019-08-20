@@ -16,5 +16,6 @@ go_library(
     deps = [
         "//deploy/apply:go_default_library",
         "//deploy/config:go_default_library",
+        "//deploy/runner:go_default_library",
     ],
 )

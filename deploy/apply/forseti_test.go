@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
@@ -82,7 +83,9 @@ func TestGrantForsetiPermissions(t *testing.T) {
 	wantCmdCnt := 9
 	wantCmdPrefix := "gcloud projects add-iam-policy-binding project1 --member serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com --role roles/"
 	var got []string
-	cmdRun = func(cmd *exec.Cmd) error {
+	origCmdRun := runner.CmdRun
+	defer func() { runner.CmdRun = origCmdRun }()
+	runner.CmdRun = func(cmd *exec.Cmd) error {
 		got = append(got, strings.Join(cmd.Args, " "))
 		return nil
 	}

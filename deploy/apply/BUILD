@@ -23,6 +23,7 @@ go_library(
         "//deploy/config:go_default_library",
         "//deploy/config/tfconfig:go_default_library",
         "//deploy/deploymentmanager:go_default_library",
+        "//deploy/runner:go_default_library",
         "//deploy/terraform:go_default_library",
     ],
 )
@@ -41,6 +42,7 @@ go_test(
     deps = [
         "//deploy/config:go_default_library",
         "//deploy/deploymentmanager:go_default_library",
+        "//deploy/runner:go_default_library",
         "//deploy/terraform:go_default_library",
         "//deploy/testconf:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",

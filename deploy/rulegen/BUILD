@@ -24,6 +24,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//deploy/config:go_default_library",
+        "//deploy/runner:go_default_library",
         "@com_github_mitchellh_hashstructure//:go_default_library",
         "@in_gopkg_yaml_v2//:go_default_library",
     ],
@@ -48,6 +49,7 @@ go_test(
     # Override default run dir to make it easier to find test files.
     rundir = ".",
     deps = [
+        "//deploy/runner:go_default_library",
         "//deploy/testconf:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
         "@in_ghodss_yaml//:go_default_library",

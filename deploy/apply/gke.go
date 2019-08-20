@@ -23,6 +23,7 @@ import (
 	"os/exec"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // deployGKEWorkloads deploys the GKE resources (e.g., workloads, services) in the project.
@@ -135,7 +136,7 @@ func getLocationTypeAndValue(cluster *config.GKECluster) (string, string, error)
 
 func getGCloudCredentials(clusterName, locationType, locationValue, projectID string) error {
 	cmd := exec.Command("gcloud", "container", "clusters", "get-credentials", clusterName, locationType, locationValue, "--project", projectID)
-	if err := cmdRun(cmd); err != nil {
+	if err := runner.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to get cluster credentials for %q: %v", clusterName, err)
 	}
 	return nil
@@ -145,7 +146,7 @@ func applyClusterWorkload(containerYamlPath string) error {
 	// kubectl declarative object configuration
 	// https://kubernetes.io/docs/concepts/overview/object-management-kubectl/overview/
 	cmd := exec.Command("kubectl", "apply", "-f", containerYamlPath)
-	if err := cmdRun(cmd); err != nil {
+	if err := runner.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to apply workloads with kubectl: %s", err)
 	}
 	return nil
@@ -155,7 +156,7 @@ func configBinauthzPolicy(policyYamlPath, projectID string) error {
 	// binaryauthorization.googleapis.com must be enabled
 	// https://cloud.google.com/binary-authorization/docs/quickstart
 	cmd := exec.Command("gcloud", "beta", "container", "binauthz", "policy", "import", policyYamlPath, "--project", projectID)
-	if err := cmdRun(cmd); err != nil {
+	if err := runner.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to import policy for %q: %v", projectID, err)
 	}
 	return nil

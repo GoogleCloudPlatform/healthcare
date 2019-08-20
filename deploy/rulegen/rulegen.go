@@ -30,12 +30,8 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"gopkg.in/yaml.v2" // don't use ghodss/yaml as it does not preserve key ordering
-)
-
-// The following vars are stubbed in tests.
-var (
-	cmdCombinedOutput = (*exec.Cmd).CombinedOutput
 )
 
 // Run runs the rule generator to generate forseti rules.
@@ -142,7 +138,7 @@ func copyRulesToBucket(local, remote string) error {
 	u.Path = path.Join(u.Path, "rules")
 	log.Printf("Uploading rules to %q", u.String())
 	cmd := exec.Command("gsutil", "cp", filepath.Join(local, "*.yaml"), u.String())
-	if out, err := cmdCombinedOutput(cmd); err != nil {
+	if out, err := runner.CmdCombinedOutput(cmd); err != nil {
 		return fmt.Errorf("failed to copy yaml files to forseti server bucket: %v, %v", err, string(out))
 	}
 	return nil

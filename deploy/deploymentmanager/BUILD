@@ -9,6 +9,7 @@ go_library(
     srcs = ["deploymentmanager.go"],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager",
     deps = [
+        "//deploy/runner:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],
 )
@@ -18,6 +19,7 @@ go_test(
     srcs = ["deploymentmanager_test.go"],
     embed = [":go_default_library"],
     deps = [
+        "//deploy/runner:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],

@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -31,6 +30,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/deploymentmanager"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
 
@@ -49,21 +49,6 @@ const deploymentRetryWaitTime = time.Minute
 
 // The following vars are stubbed in tests.
 var (
-	cmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		log.Printf("Running: %v", cmd.Args)
-		return cmd.CombinedOutput()
-	}
-	cmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		log.Printf("Running: %v", cmd.Args)
-		cmd.Stderr = os.Stderr
-		return cmd.Output()
-	}
-	cmdRun = func(cmd *exec.Cmd) error {
-		log.Printf("Running: %v", cmd.Args)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
-	}
 	upsertDeployment = deploymentmanager.Upsert
 	terraformApply   = terraform.Apply
 )
@@ -137,10 +122,11 @@ func DeployResources(conf *config.Config, project *config.Project, opts *Options
 		}
 		// TODO: return after this once we can deploy all necessary resources like log sinks, etc in terraform.
 	}
-	if err := grantDeploymentManagerAccess(project); err != nil {
-		return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
+	if !opts.DryRun {
+		if err := grantDeploymentManagerAccess(project); err != nil {
+			return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
+		}
 	}
-
 	if err := deployPrerequisite(project); err != nil {
 		return fmt.Errorf("failed to deploy pre-requisites: %v", err)
 	}
@@ -223,7 +209,7 @@ func addBinding(projectID, serviceAccount, role string) error {
 		"--role", fmt.Sprintf("roles/%s", role),
 		"--project", projectID,
 	)
-	if err := cmdRun(cmd); err != nil {
+	if err := runner.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to add iam policy binding for service account %q for role %q: %v", serviceAccount, role, err)
 	}
 	return nil
@@ -232,7 +218,7 @@ func addBinding(projectID, serviceAccount, role string) error {
 func getLogSinkServiceAccount(project *config.Project) (string, error) {
 	cmd := exec.Command("gcloud", "logging", "sinks", "describe", project.BQLogSink.Name(), "--format", "json", "--project", project.ID)
 
-	out, err := cmdOutput(cmd)
+	out, err := runner.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to query log sink service account from gcloud: %v", err)
 	}
@@ -337,7 +323,7 @@ func getDeployment(project *config.Project, resources []config.Resource) (*deplo
 
 func removeOwnerUser(project *config.Project) error {
 	cmd := exec.Command("gcloud", "config", "get-value", "account", "--format", "json", "--project", project.ID)
-	out, err := cmdOutput(cmd)
+	out, err := runner.CmdOutput(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to get currently authenticated user: %v", err)
 	}
@@ -361,7 +347,7 @@ func removeOwnerUser(project *config.Project) error {
 	cmd = exec.Command(
 		"gcloud", "projects", "remove-iam-policy-binding", project.ID,
 		"--member", member, "--role", role, "--project", project.ID)
-	return cmdRun(cmd)
+	return runner.CmdRun(cmd)
 }
 
 func hasBinding(project *config.Project, role string, member string) (has bool, err error) {
@@ -370,7 +356,7 @@ func hasBinding(project *config.Project, role string, member string) (has bool, 
 		"--project", project.ID,
 		"--format", "json",
 	)
-	out, err := cmdOutput(cmd)
+	out, err := runner.CmdOutput(cmd)
 	if err != nil {
 		return false, fmt.Errorf("failed to get iam policy bindings: %v", err)
 	}
@@ -448,8 +434,8 @@ func verifyOrCreateProject(conf *config.Config, project *config.Project) error {
 		log.Printf("Project %q exists, skipping project creation.", project.ID)
 		return nil
 	}
-	args := []string{"projects", "create", project.ID}
 
+	args := []string{"projects", "create", project.ID}
 	if parentType == "" {
 		log.Println("Creating project without a parent organization or folder.")
 	} else {
@@ -457,7 +443,7 @@ func verifyOrCreateProject(conf *config.Config, project *config.Project) error {
 	}
 
 	cmd := exec.Command("gcloud", args...)
-	if err := cmdRun(cmd); err != nil {
+	if err := runner.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to run project creating command: %v", err)
 	}
 	pnum, err = verifyProject(project.ID, "", parentType, parentID)
@@ -473,7 +459,7 @@ func verifyOrCreateProject(conf *config.Config, project *config.Project) error {
 // It returns the project number if exists and error if any.
 func verifyProject(projectID, projectNumber, parentType, parentID string) (string, error) {
 	cmd := exec.Command("gcloud", "projects", "describe", projectID, "--format", "json")
-	out, err := cmdOutput(cmd)
+	out, err := runner.CmdOutput(cmd)
 	if err != nil {
 		// `gcloud projects describe` command might fail due to reasons other than project does not
 		// exist (e.g. caller does not have sufficient permission). In that case, project could exist
@@ -530,7 +516,7 @@ func setupBilling(project *config.Project, defaultBillingAccount string) error {
 	}
 
 	cmd := exec.Command("gcloud", "beta", "billing", "projects", "link", project.ID, "--billing-account", ba)
-	if err := cmdRun(cmd); err != nil {
+	if err := runner.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to link project to billing account %q: %v", ba, err)
 	}
 	return nil
@@ -580,7 +566,7 @@ func enableServiceAPIs(project *config.Project) error {
 		args := []string{"--project", project.ID, "services", "enable"}
 		args = append(args, wantAPIs[i:min(i+batchN, len(wantAPIs))]...)
 		cmd := exec.Command("gcloud", args...)
-		if err := cmdRun(cmd); err != nil {
+		if err := runner.CmdRun(cmd); err != nil {
 			return fmt.Errorf("failed to enable service APIs: %v", err)
 		}
 	}
@@ -604,7 +590,7 @@ func createCustomComputeImages(project *config.Project) error {
 		// Check if custom image already exists.
 		cmd := exec.Command("gcloud", "--project", project.ID, "compute", "images", "list",
 			"--no-standard-images", "--filter", fmt.Sprintf("name=%s", i.CustomBootImage.ImageName), "--format", "value(name)")
-		out, err := cmdOutput(cmd)
+		out, err := runner.CmdOutput(cmd)
 		if err != nil {
 			return fmt.Errorf("failed to check the existence of custom image %q: %v", i.CustomBootImage.ImageName, err)
 		}
@@ -614,7 +600,7 @@ func createCustomComputeImages(project *config.Project) error {
 		}
 		// Create the image.
 		cmd = exec.Command("gcloud", "--project", project.ID, "compute", "images", "create", i.CustomBootImage.ImageName, "--source-uri", fmt.Sprintf("gs://%s", i.CustomBootImage.GCSPath))
-		if err := cmdRun(cmd); err != nil {
+		if err := runner.CmdRun(cmd); err != nil {
 			return fmt.Errorf("failed to create custom image %q: %v", i.CustomBootImage.ImageName, err)
 		}
 	}
@@ -630,7 +616,7 @@ func createDeletionLien(project *config.Project) error {
 	defaultLien := "resourcemanager.projects.delete"
 	cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "resource-manager", "liens",
 		"list", "--filter", fmt.Sprintf("restrictions=%s", defaultLien), "--format", "value(restrictions)")
-	out, err := cmdOutput(cmd)
+	out, err := runner.CmdOutput(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to check existing deletion liens: %v", err)
 	}
@@ -641,7 +627,7 @@ func createDeletionLien(project *config.Project) error {
 	// Create the lien.
 	cmd = exec.Command("gcloud", "--project", project.ID, "alpha", "resource-manager", "liens",
 		"create", "--restrictions", defaultLien, "--reason", "Automated project deletion lien deployment.")
-	if err := cmdRun(cmd); err != nil {
+	if err := runner.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to create restriction lien %q: %v", defaultLien, err)
 	}
 	return nil
@@ -714,7 +700,7 @@ creation of Stackdriver account and terminate the deployment.
 // stackdriverAccountExists checks whether a Stackdriver account exists in the project.
 func stackdriverAccountExists(projectID string) (bool, error) {
 	cmd := exec.Command("gcloud", "--project", projectID, "alpha", "monitoring", "policies", "list")
-	out, err := cmdCombinedOutput(cmd)
+	out, err := runner.CmdCombinedOutput(cmd)
 	if err != nil {
 		if strings.Contains(string(out), "not a Stackdriver workspace") {
 			return false, nil

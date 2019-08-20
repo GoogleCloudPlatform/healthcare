@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 )
@@ -29,7 +30,9 @@ func TestGetGCloudCredentials(t *testing.T) {
 	clusterName := "bar-cluster"
 	projectID := "foo-project"
 	var gotArgs [][]string
-	cmdRun = func(cmd *exec.Cmd) error {
+	origCmdRun := runner.CmdRun
+	defer func() { runner.CmdRun = origCmdRun }()
+	runner.CmdRun = func(cmd *exec.Cmd) error {
 		gotArgs = append(gotArgs, cmd.Args)
 		return nil
 	}
@@ -46,7 +49,9 @@ func TestGetGCloudCredentials(t *testing.T) {
 func TestApplyClusterResource(t *testing.T) {
 	containerYamlPath := "foo/bar/abc.yaml"
 	var gotArgs [][]string
-	cmdRun = func(cmd *exec.Cmd) error {
+	origCmdRun := runner.CmdRun
+	defer func() { runner.CmdRun = origCmdRun }()
+	runner.CmdRun = func(cmd *exec.Cmd) error {
 		gotArgs = append(gotArgs, cmd.Args)
 		return nil
 	}
@@ -123,7 +128,9 @@ resources:
 
 	_, project := testconf.ConfigAndProject(t, configExtend)
 	var gotArgs [][]string
-	cmdRun = func(cmd *exec.Cmd) error {
+	origCmdRun := runner.CmdRun
+	defer func() { runner.CmdRun = origCmdRun }()
+	runner.CmdRun = func(cmd *exec.Cmd) error {
 		gotArgs = append(gotArgs, cmd.Args)
 		return nil
 	}
@@ -227,7 +234,9 @@ resources:
 	for _, tc := range testcases {
 		_, project := testconf.ConfigAndProject(t, &tc.in)
 		var gotArgs [][]string
-		cmdRun = func(cmd *exec.Cmd) error {
+		origCmdRun := runner.CmdRun
+		defer func() { runner.CmdRun = origCmdRun }()
+		runner.CmdRun = func(cmd *exec.Cmd) error {
 			gotArgs = append(gotArgs, cmd.Args)
 			return nil
 		}
@@ -250,7 +259,9 @@ binauthz:
 
 	_, project := testconf.ConfigAndProject(t, configExtend)
 	var gotArgs [][]string
-	cmdRun = func(cmd *exec.Cmd) error {
+	origCmdRun := runner.CmdRun
+	defer func() { runner.CmdRun = origCmdRun }()
+	runner.CmdRun = func(cmd *exec.Cmd) error {
 		gotArgs = append(gotArgs, cmd.Args)
 		return nil
 	}

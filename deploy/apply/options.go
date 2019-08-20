@@ -24,4 +24,6 @@ type Options struct {
 	EnableTerraform bool
 	// Toggle whether Forseti is enabled.
 	EnableForseti bool
+	// Toggle whether dry run mode is enabled.
+	DryRun bool
 }

@@ -114,6 +114,9 @@ func (c *Config) Init(genFields *AllGeneratedFields) error {
 	if genFields.Projects == nil {
 		genFields.Projects = make(map[string]*GeneratedFields)
 	}
+	if genFields.Forseti == nil {
+		genFields.Forseti = &ForsetiServiceInfo{}
+	}
 	c.AllGeneratedFields = genFields
 	if err := c.initForseti(); err != nil {
 		return fmt.Errorf("failed to init forseti: %v", err)

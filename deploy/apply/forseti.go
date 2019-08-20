@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
 
@@ -45,6 +46,7 @@ var forsetiStandardRoles = [...]string{
 
 // Forseti applies project configuration to a Forseti project.
 func Forseti(conf *config.Config, project *config.Project, opts *Options) error {
+	opts.EnableForseti = false
 	if err := Default(conf, project, opts); err != nil {
 		return err
 	}
@@ -65,6 +67,9 @@ func Forseti(conf *config.Config, project *config.Project, opts *Options) error 
 	}
 	conf.AllGeneratedFields.Forseti.ServiceBucket = serverBucket
 
+	if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -108,7 +113,7 @@ func forsetiServerServiceAccount(projectID string) (string, error) {
 		"--filter", "email:forseti-server-gcp-*",
 	)
 
-	out, err := cmdOutput(cmd)
+	out, err := runner.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to obtain Forseti server service account: %v", err)
 	}
@@ -133,7 +138,7 @@ func forsetiServerServiceAccount(projectID string) (string, error) {
 func forsetiServerBucket(projectID string) (string, error) {
 	cmd := exec.Command("gsutil", "ls", "-p", projectID)
 
-	out, err := cmdOutput(cmd)
+	out, err := runner.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to obtain Forseti server bucket: %v", err)
 	}

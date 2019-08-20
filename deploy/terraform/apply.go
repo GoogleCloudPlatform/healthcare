@@ -24,16 +24,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-)
 
-// The following vars are stubbed in tests.
-var cmdRun = func(cmd *exec.Cmd) error {
-	log.Printf("Running: %v", cmd.Args)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	return cmd.Run()
-}
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
+)
 
 // Options configure a terraform apply call.
 type Options struct {
@@ -58,7 +51,7 @@ func Apply(config *Config, dir string, opts *Options) error {
 		if err := os.MkdirAll(dst, os.ModePerm); err != nil {
 			return fmt.Errorf("failed to mkdir %q: %v", dst, err)
 		}
-		if err := cmdRun(exec.Command("cp", "-r", m.Source, dst)); err != nil {
+		if err := runner.CmdRun(exec.Command("cp", "-r", m.Source, dst)); err != nil {
 			return fmt.Errorf("failed to copy %q to %q: %v", m.Source, dst, err)
 		}
 	}
@@ -66,7 +59,7 @@ func Apply(config *Config, dir string, opts *Options) error {
 	runCmd := func(args ...string) error {
 		cmd := exec.Command("terraform", args...)
 		cmd.Dir = dir
-		return cmdRun(cmd)
+		return runner.CmdRun(cmd)
 	}
 	b, err := json.MarshalIndent(config, "", " ")
 	if err != nil {

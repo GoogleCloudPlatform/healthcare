@@ -11,6 +11,9 @@ go_library(
         "config.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/terraform",
+    deps = [
+        "//deploy/runner:go_default_library",
+    ],
 )
 
 go_test(
@@ -22,6 +25,7 @@ go_test(
     # Override default run dir to make it easier to find test files.
     rundir = ".",
     deps = [
+        "//deploy/runner:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
     ],
 )
