@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/imdario/mergo"
 )
@@ -64,6 +65,14 @@ func (p interfacePair) MergedMap() (map[string]interface{}, error) {
 		}
 		if err := mergo.Merge(&merged, &rawMap); err != nil {
 			return nil, fmt.Errorf("failed to merge raw map with its parsed version: %v", err)
+		}
+	}
+
+	// All fields starting with "_" are considered private (i.e. handled in code) and should not be
+	// passed down to the deployment config.
+	for k := range merged {
+		if strings.HasPrefix(k, "_") {
+			delete(merged, k)
 		}
 	}
 	return merged, nil

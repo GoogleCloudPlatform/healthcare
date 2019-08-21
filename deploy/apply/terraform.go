@@ -93,5 +93,12 @@ func addResources(config *terraform.Config, opts *terraform.Options, resources .
 				ID:      i.ImportID(),
 			})
 		}
+
+		type depender interface {
+			DependentResources() []tfconfig.Resource
+		}
+		if d, ok := r.(depender); ok {
+			addResources(config, opts, d.DependentResources()...)
+		}
 	}
 }

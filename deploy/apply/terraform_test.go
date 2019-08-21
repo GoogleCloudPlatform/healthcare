@@ -43,7 +43,10 @@ func TestDeployTerraform(t *testing.T) {
 			data: &testconf.ConfigData{`
 storage_buckets:
 - name: foo-bucket
-  location: US`},
+  location: US
+  _iam_members:
+  - role: roles/storage.admin
+    member: user:foo-user@my-domain.com`},
 			want: &applyCall{
 				Config: unmarshal(t, `
 terraform:
@@ -60,7 +63,15 @@ resource:
       project: my-project
       location: US
       versioning:
-        enabled: true`),
+        enabled: true
+- google_storage_bucket_iam_member:
+    foo-bucket:
+      for_each:
+      - role: roles/storage.admin
+        member: user:foo-user@my-domain.com
+      bucket: '${google_storage_bucket.foo-bucket.name}'
+      role: '${each.value.role}'
+      member: '${each.value.member}'`),
 				Imports: []terraform.Import{{
 					Address: "google_storage_bucket.foo-bucket",
 					ID:      "my-project/foo-bucket",

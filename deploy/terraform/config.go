@@ -94,6 +94,16 @@ func (m *Module) MarshalJSON() ([]byte, error) {
 }
 
 // Resource defines a terraform resource config.
+//
+// Dependencies can be created between resources using terraform references.
+// See https://www.terraform.io/docs/configuration/resources.html#resource-dependencies.
+//
+// Meta-arguments are also supported.
+// See https://www.terraform.io/docs/configuration/resources.html#meta-arguments
+// This is especially useful when wanting to create multiple resources that share a common set of fields,
+// such as IAM members of a data resource (e.g. storage_bucket_iam_member).
+// Instead of creating a separate config for each IAM member, a single IAM member using a meta-argument
+// like for_each or count can be expanded by terraform to deploy all IAM members of a resource.
 type Resource struct {
 	Name       string
 	Type       string
