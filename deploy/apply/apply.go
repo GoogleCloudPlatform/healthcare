@@ -102,7 +102,7 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 		return fmt.Errorf("failed to create stackdriver account: %v", err)
 	}
 
-	if err := createAlerts(); err != nil {
+	if err := createAlerts(project); err != nil {
 		return fmt.Errorf("failed to create alerts: %v", err)
 	}
 
@@ -710,8 +710,86 @@ func stackdriverAccountExists(projectID string) (bool, error) {
 	return true, nil
 }
 
-func createAlerts() error {
-	// TODO: add logic.
+// createAlerts creates Stackdriver alerts for logs-based metrics.
+// TODO: no longer need this after migrating to Terraform.
+func createAlerts(project *config.Project) error {
+	if project.StackdriverAlertEmail == "" {
+		log.Println("No Stackdriver alert email specified, skipping creation of Stackdriver alerts.")
+		return nil
+	}
+
+	type labels struct {
+		EmailAddress string `json:"email_address"`
+	}
+
+	type channel struct {
+		Name        string `json:"name"`
+		DisplayName string `json:"displayName"`
+		Type        string `json:"type"`
+		Labels      labels `json:"labels"`
+	}
+
+	// Check channel existence and create if not.
+	cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "monitoring", "channels", "list",
+		"--format", "json")
+
+	out, err := runner.CmdOutput(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to list existing monitoring channels: %v", err)
+	}
+
+	var channels []channel
+	if err := json.Unmarshal(out, &channels); err != nil {
+		return fmt.Errorf("failed to unmarshal exist monitoring channels list output: %v", err)
+	}
+
+	var exists bool
+	var chanName string
+	for _, c := range channels {
+		// Assume only one channel exists per email.
+		if c.Labels.EmailAddress == project.StackdriverAlertEmail {
+			exists = true
+			chanName = c.Name
+			break
+		}
+	}
+	if exists {
+		log.Printf("Stackdriver notification channel already exists for %s.", project.StackdriverAlertEmail)
+	} else {
+		log.Println("Creating Stackdriver notification channel.")
+		newChannel := channel{
+			DisplayName: "Email",
+			Type:        "email",
+			Labels: labels{
+				EmailAddress: project.StackdriverAlertEmail,
+			},
+		}
+
+		b, err := json.Marshal(newChannel)
+		if err != nil {
+			return fmt.Errorf("failed to marshal channel to create: %v", err)
+		}
+
+		cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "monitoring", "channels", "create",
+			fmt.Sprintf("--channel-content=%s", string(b)), "--format", "json")
+		out, err := runner.CmdOutput(cmd)
+		if err != nil {
+			return fmt.Errorf("failed to create new monitoring channel: %v", err)
+		}
+		var c channel
+		if err := json.Unmarshal(out, &c); err != nil {
+			return fmt.Errorf("failed to unmarshal created monitoring channel output: %v", err)
+		}
+		chanName = c.Name
+	}
+
+	if chanName == "" {
+		return errors.New("channel name is empty")
+	}
+
+	// TODO: Create alerts.
+	log.Printf("Creating Stackdriver alerts for channel %s.", chanName)
+
 	return nil
 }
 
