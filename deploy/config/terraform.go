@@ -44,5 +44,8 @@ func (p *Project) TerraformResources() []tfconfig.Resource {
 	for _, r := range p.StorageBuckets {
 		rs = append(rs, r)
 	}
+	for _, r := range p.BigqueryDatasets {
+		rs = append(rs, r)
+	}
 	return rs
 }

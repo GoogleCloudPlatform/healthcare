@@ -7,6 +7,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
+        "bigquery_dataset.go",
         "config.go",
         "pair.go",
         "storage_bucket.go",

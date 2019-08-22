@@ -95,7 +95,8 @@ type Project struct {
 	} `json:"resources"`
 
 	// Terraform resources
-	StorageBuckets []*tfconfig.StorageBucket `json:"storage_buckets"`
+	BigqueryDatasets []*tfconfig.BigqueryDataset `json:"bigquery_datasets"`
+	StorageBuckets   []*tfconfig.StorageBucket   `json:"storage_buckets"`
 
 	BinauthzPolicy *BinAuthz `json:"binauthz"`
 

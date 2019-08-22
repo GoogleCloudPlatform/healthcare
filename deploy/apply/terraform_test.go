@@ -25,7 +25,7 @@ import (
 )
 
 type applyCall struct {
-	Config  interface{}
+	Config  map[string]interface{}
 	Imports []terraform.Import
 }
 
@@ -39,6 +39,26 @@ func TestDeployTerraform(t *testing.T) {
 			name: "no_resources",
 		},
 		{
+			name: "bigquery_dataset",
+			data: &testconf.ConfigData{`
+bigquery_datasets:
+- dataset_id: foo_dataset
+  location: US`},
+			want: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_bigquery_dataset:
+    foo_dataset:
+      dataset_id: foo_dataset
+      project: my-project
+      location: US`),
+				Imports: []terraform.Import{{
+					Address: "google_bigquery_dataset.foo_dataset",
+					ID:      "my-project:foo_dataset",
+				}},
+			},
+		},
+		{
 			name: "storage_bucket",
 			data: &testconf.ConfigData{`
 storage_buckets:
@@ -49,13 +69,6 @@ storage_buckets:
     member: user:foo-user@my-domain.com`},
 			want: &applyCall{
 				Config: unmarshal(t, `
-terraform:
-  required_version: ">= 0.12.0"
-  backend:
-    gcs:
-      bucket: my-project-state
-      prefix: resources
-
 resource:
 - google_storage_bucket:
     foo-bucket:
@@ -107,6 +120,7 @@ resource:
 
 			want := []applyCall{stateBucketCall(t)}
 			if tc.want != nil {
+				addDefaultConfig(t, tc.want.Config)
 				want = append(want, *tc.want)
 			}
 
@@ -138,12 +152,26 @@ resource:
 	}
 }
 
+func addDefaultConfig(t *testing.T, config map[string]interface{}) {
+	def := `
+terraform:
+  required_version: '>= 0.12.0'
+  backend:
+    gcs:
+      bucket: my-project-state
+      prefix: resources`
+
+	if err := yaml.Unmarshal([]byte(def), &config); err != nil {
+		t.Fatalf("json.Unmarshal default config: %v", err)
+	}
+}
+
 // unmarshal is a helper to unmarshal a yaml or json string to an interface (map).
 // Note: the actual configs will always be json, but we allow yaml in tests to make them easier to write in test cases.
-func unmarshal(t *testing.T, s string) interface{} {
-	var out interface{}
+func unmarshal(t *testing.T, s string) map[string]interface{} {
+	out := make(map[string]interface{})
 	if err := yaml.Unmarshal([]byte(s), &out); err != nil {
-		t.Fatalf("json.Unmarshal = %v", err)
+		t.Fatalf("yaml.Unmarshal = %v", err)
 	}
 	return out
 }

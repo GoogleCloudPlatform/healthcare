@@ -480,6 +480,14 @@ definitions:
                   description: |
                     Wraps the CFT template network.py.
 
+      bigquery_datasets:
+        type: array
+        description: |
+          DEV ONLY.
+          Supports google_bigquery_dataset (https://www.terraform.io/docs/providers/google/r/bigquery_dataset.html).
+        items:
+          type: object
+
       storage_buckets:
         type: array
         description: |
