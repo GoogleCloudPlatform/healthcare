@@ -34,6 +34,7 @@ import (
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/apply"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/rulegen"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
@@ -136,7 +137,7 @@ func run() (err error) {
 	if enableForseti {
 		log.Printf("Applying config for Forseti project %q", conf.Forseti.Project.ID)
 		// Forseti for Forseti project itself is enabled at the end of apply.Forseti().
-		if err := apply.Forseti(conf, conf.Forseti.Project, opts); err != nil {
+		if err := apply.Forseti(conf, opts); err != nil {
 			return fmt.Errorf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
 		}
 		if enableRemoteAudit {
@@ -156,5 +157,12 @@ func run() (err error) {
 			return fmt.Errorf("failed to apply config for project %q: %v", p.ID, err)
 		}
 	}
+
+	log.Println("Running rule generator.")
+	if err := rulegen.Run(conf, *rulesPath); err != nil {
+		return fmt.Errorf("failed to generate Forseti rules: %v", err)
+	}
+	log.Println("Rule generation successful")
+
 	return nil
 }

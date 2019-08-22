@@ -16,6 +16,7 @@ package apply
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -45,23 +46,35 @@ var forsetiStandardRoles = [...]string{
 }
 
 // Forseti applies project configuration to a Forseti project.
-func Forseti(conf *config.Config, project *config.Project, opts *Options) error {
+func Forseti(conf *config.Config, opts *Options) error {
+	project := conf.Forseti.Project
 	opts.EnableForseti = false
 	if err := Default(conf, project, opts); err != nil {
 		return err
+	}
+
+	if (conf.AllGeneratedFields.Forseti.ServiceAccount == "") != (conf.AllGeneratedFields.Forseti.ServiceBucket == "") {
+		return errors.New("previous Forseti deployment was left at a broken state: server_bucket and service_account must be set or unset together; you might need to set up a new Forseti project")
+	}
+
+	// Only deploy Forseti config if not already deployed.
+	// TODO: Use Terraform remote state to handle this.
+	if conf.AllGeneratedFields.Forseti.ServiceAccount != "" || conf.AllGeneratedFields.Forseti.ServiceBucket != "" {
+		log.Println("Forseti config is already deployed, skipping Forseti config deployment.")
+		return nil
 	}
 
 	if err := ForsetiConfig(conf, opts.EnableTerraform); err != nil {
 		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
 
-	serviceAccount, err := forsetiServerServiceAccount(conf.Forseti.Project.ID)
+	serviceAccount, err := forsetiServerServiceAccount(project.ID)
 	if err != nil {
 		return fmt.Errorf("failed to set Forseti server service account: %v", err)
 	}
 	conf.AllGeneratedFields.Forseti.ServiceAccount = serviceAccount
 
-	serverBucket, err := forsetiServerBucket(conf.Forseti.Project.ID)
+	serverBucket, err := forsetiServerBucket(project.ID)
 	if err != nil {
 		return fmt.Errorf("failed to set Forseti server bucket: %v", err)
 	}
@@ -105,7 +118,7 @@ func ForsetiConfig(conf *config.Config, enableRemoteState bool) error {
 }
 
 // forsetiServerServiceAccount gets the server instance service account of the give Forseti project.
-// TODO Use Terraform state or output.
+// TODO: Use Terraform state or output.
 func forsetiServerServiceAccount(projectID string) (string, error) {
 	cmd := exec.Command(
 		"gcloud", "--project", projectID,
@@ -134,7 +147,7 @@ func forsetiServerServiceAccount(projectID string) (string, error) {
 }
 
 // forsetiServerBucket gets the bucket holding the Forseti server instance's configuration.
-// TODO Use Terraform state or output.
+// TODO: Use Terraform state or output.
 func forsetiServerBucket(projectID string) (string, error) {
 	cmd := exec.Command("gsutil", "ls", "-p", projectID)
 
