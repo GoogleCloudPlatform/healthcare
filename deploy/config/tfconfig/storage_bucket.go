@@ -70,8 +70,14 @@ func (b *StorageBucket) DependentResources() []Resource {
 	if len(b.IAMMembers) == 0 {
 		return nil
 	}
+
+	forEach := make(map[string]*StorageIAMMember)
+	for _, m := range b.IAMMembers {
+		key := fmt.Sprintf("%s %s", m.Role, m.Member)
+		forEach[key] = m
+	}
 	return []Resource{&StorageIAMMember{
-		ForEach: b.IAMMembers,
+		ForEach: forEach,
 		Bucket:  fmt.Sprintf("${google_storage_bucket.%s.name}", b.Name),
 		Role:    "${each.value.role}",
 		Member:  "${each.value.member}",
@@ -115,7 +121,7 @@ type StorageIAMMember struct {
 
 	// ForEach is used to let a single iam member expand to reference multiple iam members
 	// through the use of terraform's for_each iterator.
-	ForEach []*StorageIAMMember `json:"for_each,omitempty"`
+	ForEach map[string]*StorageIAMMember `json:"for_each,omitempty"`
 
 	// Bucket should be written as a terraform reference to a bucket name so that it is created after the bucket.
 	// e.g. ${google_storage_bucket.foo_bucket.name}

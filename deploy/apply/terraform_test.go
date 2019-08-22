@@ -80,8 +80,9 @@ resource:
 - google_storage_bucket_iam_member:
     foo-bucket:
       for_each:
-      - role: roles/storage.admin
-        member: user:foo-user@my-domain.com
+        'roles/storage.admin user:foo-user@my-domain.com':
+          role: roles/storage.admin
+          member: user:foo-user@my-domain.com
       bucket: '${google_storage_bucket.foo-bucket.name}'
       role: '${each.value.role}'
       member: '${each.value.member}'`),
