@@ -77,6 +77,8 @@ func StubFakeCmds() {
 			return []byte("[]"), nil
 		case contains(cmdStr, "monitoring channels create"):
 			return []byte(`{"name": "projects/dryrun/notificationChannels/dryrun"}`), nil
+		case contains(cmdStr, "monitoring policies list"):
+			return []byte("[]"), nil
 		default:
 			return nil, nil
 		}

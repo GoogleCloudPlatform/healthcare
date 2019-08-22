@@ -29,6 +29,14 @@ import (
 // https://cloud.google.com/storage/docs/access-logs#delivery.
 const accessLogsWriter = "group:cloud-storage-analytics@google.com"
 
+// Logging Metric names used to create logs-based-metrics and Stackdriver alerts.
+const (
+	IAMChangeMetricName                = "iam-policy-change-count"
+	BucketPermissionChangeMetricName   = "bucket-permission-change-count"
+	BQSettingChangeMetricName          = "bigquery-settings-change-count"
+	BucketUnexpectedAccessMetricPrefix = "unexpected-access-"
+)
+
 // Config represents a (partial)f representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
 type Config struct {
@@ -383,7 +391,7 @@ func (p *Project) addBaseResources() error {
 	defaultMetrics := []*Metric{
 		&Metric{
 			MetricProperties: MetricProperties{
-				MetricName:      "bigquery-settings-change-count",
+				MetricName:      BQSettingChangeMetricName,
 				Description:     "Count of bigquery permission changes.",
 				Filter:          `resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"`,
 				Descriptor:      unexpectedUserDescriptor,
@@ -392,7 +400,7 @@ func (p *Project) addBaseResources() error {
 		},
 		&Metric{
 			MetricProperties: MetricProperties{
-				MetricName:      "iam-policy-change-count",
+				MetricName:      IAMChangeMetricName,
 				Description:     "Count of IAM policy changes.",
 				Filter:          `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`,
 				Descriptor:      unexpectedUserDescriptor,
@@ -401,7 +409,7 @@ func (p *Project) addBaseResources() error {
 		},
 		&Metric{
 			MetricProperties: MetricProperties{
-				MetricName:  "bucket-permission-change-count",
+				MetricName:  BucketPermissionChangeMetricName,
 				Description: "Count of GCS permissions changes.",
 				Filter: `resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
 (protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)`,
@@ -461,7 +469,7 @@ protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})`)
 
 		p.Metrics = append(p.Metrics, &Metric{
 			MetricProperties: MetricProperties{
-				MetricName:      "unexpected-access-" + b.Name(),
+				MetricName:      BucketUnexpectedAccessMetricPrefix + b.Name(),
 				Description:     "Count of unexpected data access to " + b.Name(),
 				Filter:          buf.String(),
 				Descriptor:      unexpectedUserDescriptor,

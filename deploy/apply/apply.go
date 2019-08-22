@@ -787,8 +787,143 @@ func createAlerts(project *config.Project) error {
 		return errors.New("channel name is empty")
 	}
 
-	// TODO: Create alerts.
+	// Create alerts.
 	log.Printf("Creating Stackdriver alerts for channel %s.", chanName)
+
+	// https://cloud.google.com/monitoring/api/ref_v3/rest/v3/projects.alertPolicies
+	type documentation struct {
+		Content  string `json:"content"`
+		MimeType string `json:"mimeType"`
+	}
+	type conditionThreshold struct {
+		Comparison string `json:"comparison"`
+		Filter     string `json:"filter"`
+		Duration   string `json:"duration"`
+	}
+	type condition struct {
+		Name               string              `json:"name"`
+		DisplayName        string              `json:"displayName"`
+		ConditionThreshold *conditionThreshold `json:"conditionThreshold"`
+	}
+	type alert struct {
+		Name                 string         `json:"name"`
+		DisplayName          string         `json:"displayName"`
+		Documentation        *documentation `json:"documentation"`
+		Conditions           []*condition   `json:"conditions"`
+		Combiner             string         `json:"combiner"`
+		Enabled              bool           `json:"enabled"`
+		NotificationChannels []string       `json:"notificationChannels"`
+	}
+
+	// Get existing alerts.
+	cmd = exec.Command("gcloud", "--project", project.ID, "alpha", "monitoring", "policies", "list", "--format", "json")
+
+	out, err = runner.CmdOutput(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to list existing monitoring alert policies: %v", err)
+	}
+
+	var alerts []alert
+	if err := json.Unmarshal(out, &alerts); err != nil {
+		return fmt.Errorf("failed to unmarshal exist monitoring channels list output: %v", err)
+	}
+
+	var existingAlerts = make(map[string]*alert)
+	for _, a := range alerts {
+		existingAlerts[a.DisplayName] = &a
+	}
+
+	// Default alerts are based on default custom logging metrics created in config.addBaseResources().
+	alertsToCreate := []*alert{
+		{
+			DisplayName: "IAM Policy Change Alert",
+			Documentation: &documentation{
+				Content: "This policy ensures the designated user/group is notified when IAM policies are altered.",
+			},
+			Conditions: []*condition{
+				{
+					ConditionThreshold: &conditionThreshold{
+						Filter: fmt.Sprintf(`resource.type=one_of("global","pubsub_topic","pubsub_subscription","gce_instance") AND metric.type="logging.googleapis.com/user/%s"`, config.IAMChangeMetricName),
+					},
+					DisplayName: fmt.Sprintf("No tolerance on %s!", config.IAMChangeMetricName),
+				},
+			},
+		},
+		{
+			DisplayName: "Bucket Permission Change Alert",
+			Documentation: &documentation{
+				Content: "This policy ensures the designated user/group is notified when bucket/object permissions are altered.",
+			},
+			Conditions: []*condition{
+				{
+					ConditionThreshold: &conditionThreshold{
+						Filter: fmt.Sprintf(`resource.type="gcs_bucket" AND metric.type="logging.googleapis.com/user/%s"`, config.BucketPermissionChangeMetricName),
+					},
+					DisplayName: fmt.Sprintf("No tolerance on %s!", config.BucketPermissionChangeMetricName),
+				},
+			},
+		},
+		{
+			DisplayName: "Bigquery Update Alert",
+			Documentation: &documentation{
+				Content: "This policy ensures the designated user/group is notified when Bigquery dataset settings are altered.",
+			},
+			Conditions: []*condition{
+				{
+					ConditionThreshold: &conditionThreshold{
+						Filter: fmt.Sprintf(`resource.type="global" AND metric.type="logging.googleapis.com/user/%s"`, config.BQSettingChangeMetricName),
+					},
+					DisplayName: fmt.Sprintf("No tolerance on %s!", config.BQSettingChangeMetricName),
+				},
+			},
+		},
+	}
+
+	for _, b := range project.Resources.GCSBuckets {
+		if len(b.ExpectedUsers) == 0 {
+			continue
+		}
+		metricName := config.BucketUnexpectedAccessMetricPrefix + b.Name()
+		alertsToCreate = append(alertsToCreate, &alert{
+			DisplayName: fmt.Sprintf("Unexpected Access to %s Alert", b.Name()),
+			Documentation: &documentation{
+				Content: fmt.Sprintf("This policy ensures the designated user/group is notified when bucket %s is accessed by an unexpected user.", b.Name()),
+			},
+			Conditions: []*condition{
+				{
+					ConditionThreshold: &conditionThreshold{
+						Filter: fmt.Sprintf(`resource.type="gcs_bucket" AND metric.type="logging.googleapis.com/user/%s"`, metricName),
+					},
+					DisplayName: fmt.Sprintf("No tolerance on %s!", metricName),
+				},
+			},
+		})
+	}
+
+	for _, a := range alertsToCreate {
+		if existingAlerts[a.DisplayName] != nil {
+			continue
+		}
+		// Set common default values.
+		a.Documentation.MimeType = "text/markdown"
+		a.Combiner = "AND"
+		a.Enabled = true
+		a.NotificationChannels = []string{chanName}
+		for _, c := range a.Conditions {
+			c.ConditionThreshold.Comparison = "COMPARISON_GT"
+			c.ConditionThreshold.Duration = "0s"
+		}
+		// Create alerts.
+		log.Printf("Creating alert %q", a.DisplayName)
+		b, err := json.Marshal(a)
+		if err != nil {
+			return fmt.Errorf("failed to marshal alert policy to create: %v", err)
+		}
+		cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "monitoring", "policies", "create", fmt.Sprintf("--policy=%s", string(b)))
+		if err := runner.CmdRun(cmd); err != nil {
+			return fmt.Errorf("failed to create new alert policy %q: %v", a.DisplayName, err)
+		}
+	}
 
 	return nil
 }
