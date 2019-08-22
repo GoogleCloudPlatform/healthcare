@@ -158,6 +158,10 @@ func run() (err error) {
 		}
 	}
 
+  if !enableForseti {
+		return nil
+	}
+
 	log.Println("Running rule generator.")
 	if err := rulegen.Run(conf, *rulesPath); err != nil {
 		return fmt.Errorf("failed to generate Forseti rules: %v", err)
