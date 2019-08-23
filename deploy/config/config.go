@@ -141,7 +141,7 @@ func (c *Config) Init(genFields *AllGeneratedFields) error {
 			c.AllGeneratedFields.Projects[p.ID] = &GeneratedFields{}
 		}
 		p.GeneratedFields = c.AllGeneratedFields.Projects[p.ID]
-		if err := p.Init(c.AuditLogsProject); err != nil {
+		if err := p.Init(c.ProjectForAuditLogs(p)); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)
 		}
 	}
@@ -264,10 +264,6 @@ func (p *Project) Init(auditLogsProject *Project) error {
 }
 
 func (p *Project) initAuditResources(auditProject *Project) error {
-	if auditProject == nil {
-		auditProject = p
-	}
-
 	p.BQLogSink = &LogSink{
 		LogSinkProperties: LogSinkProperties{
 			Sink:                 "audit-logs-to-bigquery",
