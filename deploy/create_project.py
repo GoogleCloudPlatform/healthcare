@@ -413,19 +413,30 @@ def create_alerts(config):
         ('This policy ensures the designated user/group is notified when '
          'Bigquery dataset settings are altered.'), channel, project_id)
 
-  for data_bucket in config.project.get('data_buckets', []):
+  buckets = []
+  for bucket in config.project.get('data_buckets', []):
     # Every bucket with 'expected_users' has an expected-access alert.
-    if 'expected_users' not in data_bucket:
+    if 'expected_users' not in bucket:
       continue
+    bucket_name = get_data_bucket_name(bucket, project_id)
+    buckets.append(bucket_name)
 
-    bucket_name = get_data_bucket_name(data_bucket, project_id)
-    metric_name = 'unexpected-access-' + bucket_name
-    display_name = 'Unexpected Access to {} Alert'.format(bucket_name)
+  for bucket in config.project.get('resources', {}).get('gcs_buckets', []):
+    # Every bucket with 'expected_users' has an expected-access alert.
+    if 'expected_users' not in bucket:
+      continue
+    if 'name' not in bucket['properties']:
+      raise utils.InvalidConfigError('GCS bucket must contains name')
+    buckets.append(bucket['properties']['name'])
+
+  for bucket in buckets:
+    metric_name = 'unexpected-access-' + bucket
+    display_name = 'Unexpected Access to {} Alert'.format(bucket)
     if display_name not in existing_alerts:
       utils.create_alert_policy(
           ['gcs_bucket'], metric_name, display_name,
           ('This policy ensures the designated user/group is notified when '
-           'bucket {} is accessed by an unexpected user.'.format(bucket_name)),
+           'bucket {} is accessed by an unexpected user.'.format(bucket)),
           channel, project_id)
 
 
