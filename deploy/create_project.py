@@ -549,7 +549,8 @@ def setup_project(config):
     except Exception as e:  # pylint: disable=broad-except
       traceback.print_exc()
       logging.error('%s: setup failed on step %s: %s', project_id, step_num, e)
-      logging.error('Failure information has been written to --project_yaml.')
+      logging.error(
+          'Failure information has been written to --generated_fields_path.')
 
       # only record failed step if project was undeployed, an update can always
       # start from the beginning
@@ -557,7 +558,7 @@ def setup_project(config):
         project_generated_fields['failed_step'] = step_num
         write_generated_fields(config)
         logging.info(
-            'Failure info has been written to the generated fields block. '
+            'Failure info has been written to --generated_fields_path. '
             'Please correct any issues and re-run the script.')
 
       return False
