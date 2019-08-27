@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
@@ -30,6 +31,8 @@ type applyCall struct {
 }
 
 func TestDeployTerraform(t *testing.T) {
+	config.EnableTerraform = true
+
 	tests := []struct {
 		name string
 		data *testconf.ConfigData

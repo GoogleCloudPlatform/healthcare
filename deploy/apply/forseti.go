@@ -16,7 +16,6 @@ package apply
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -53,18 +52,7 @@ func Forseti(conf *config.Config, opts *Options) error {
 		return err
 	}
 
-	if (conf.AllGeneratedFields.Forseti.ServiceAccount == "") != (conf.AllGeneratedFields.Forseti.ServiceBucket == "") {
-		return errors.New("previous Forseti deployment was left at a broken state: server_bucket and service_account must be set or unset together; you might need to set up a new Forseti project")
-	}
-
-	// Only deploy Forseti config if not already deployed.
-	// TODO: Use Terraform remote state to handle this.
-	if conf.AllGeneratedFields.Forseti.ServiceAccount != "" || conf.AllGeneratedFields.Forseti.ServiceBucket != "" {
-		log.Println("Forseti config is already deployed, skipping Forseti config deployment.")
-		return nil
-	}
-
-	if err := ForsetiConfig(conf, opts.EnableTerraform); err != nil {
+	if err := ForsetiConfig(conf); err != nil {
 		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
 
@@ -89,11 +77,19 @@ func Forseti(conf *config.Config, opts *Options) error {
 // ForsetiConfig applies the forseti config, if it exists. It does not configure
 // other settings such as billing account, deletion lien, etc.
 // TODO Make it private or merge it into Forseti() after removing apply_forseti.go.
-func ForsetiConfig(conf *config.Config, enableRemoteState bool) error {
+func ForsetiConfig(conf *config.Config) error {
 	if conf.Forseti == nil {
 		log.Println("no forseti config, nothing to do")
 		return nil
 	}
+
+	// Always deploy state bucket, otherwise a forseti installation that failed half way through
+	// will be left in a partial state and every following attempt will install a fresh instance.
+	// TODO: once terraform is launched and default just let the Default take care of deploying the state bucket and remove this block.
+	if err := stateBucket(conf, conf.Forseti.Project); err != nil {
+		return fmt.Errorf("failed to deploy terraform state: %v", err)
+	}
+
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return err
@@ -107,11 +103,9 @@ func ForsetiConfig(conf *config.Config, enableRemoteState bool) error {
 		Properties: conf.Forseti.Properties,
 	}}
 
-	if enableRemoteState {
-		tfConf.Terraform.Backend = &terraform.Backend{
-			Bucket: conf.Forseti.Project.TerraformConfig.StateBucket.Name,
-			Prefix: "forseti",
-		}
+	tfConf.Terraform.Backend = &terraform.Backend{
+		Bucket: conf.Forseti.Project.TerraformConfig.StateBucket.Name,
+		Prefix: "forseti",
 	}
 
 	return terraformApply(tfConf, dir, nil)

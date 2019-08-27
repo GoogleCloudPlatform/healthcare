@@ -49,6 +49,10 @@ forseti:
     owners_group: my-forseti-project-owners@mydomain.com    # Replace this with the owners group for this project.
     auditors_group: my-forseti-project-auditors@mydomain.com  # Replace this with your auditors group.
     create_deletion_lien: true
+    terraform:
+      state_storage_bucket:
+        name: my-forseti-project-state
+        location: US
     audit_logs:
       logs_bq_dataset:
         properties:

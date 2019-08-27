@@ -93,6 +93,8 @@ definitions:
         type: object
         description: DEV ONLY. Configuration for Terraform.
         additionalProperties: false
+        required:
+        - state_storage_bucket
         properties:
           state_storage_bucket:
             type: object

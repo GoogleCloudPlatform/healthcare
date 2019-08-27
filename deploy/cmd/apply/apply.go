@@ -88,6 +88,7 @@ func main() {
 }
 
 func run() (err error) {
+	config.EnableTerraform = *enableTerraform
 	conf, err := config.Load(*configPath, *outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %v", err)

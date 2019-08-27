@@ -15,21 +15,10 @@
 package config
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 )
 
 func (p *Project) initTerraform() error {
-	b := p.TerraformConfig.StateBucket
-	if b == nil {
-		return errors.New("state bucket must not be nil if terraform config is set")
-	}
-	if err := b.Init(p.ID); err != nil {
-		return fmt.Errorf("failed to init terraform state bucket: %v", err)
-	}
-
 	for _, r := range p.TerraformResources() {
 		if err := r.Init(p.ID); err != nil {
 			return err

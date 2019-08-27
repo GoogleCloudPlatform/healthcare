@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
@@ -121,7 +122,7 @@ projects:
 			allowUnexported := cmp.AllowUnexported(
 				config.BigqueryDataset{}, config.DefaultResource{}, config.ForsetiProperties{},
 				config.GCSBucket{}, config.LifecycleRule{}, config.IAMPolicy{}, config.Metric{},
-				config.Pubsub{}, config.Subscription{},
+				config.Pubsub{}, config.Subscription{}, tfconfig.StorageBucket{},
 			)
 			opts := []cmp.Option{
 				allowUnexported,

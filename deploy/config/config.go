@@ -17,6 +17,7 @@ package config
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -24,6 +25,11 @@ import (
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 )
+
+// EnableTerraform determines whether terraform will be enabled or not.
+// Note: The terraform state bucket does not respect this var as it is required currently for Forseti projects.
+// TODO: remove this once DM has been deprecated.
+var EnableTerraform = false
 
 // accessLogsWriter is the access logs writer.
 // https://cloud.google.com/storage/docs/access-logs#delivery.
@@ -65,7 +71,7 @@ type Project struct {
 	DataReadWriteGroups []string `json:"data_readwrite_groups"`
 	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
 
-	TerraformConfig *struct {
+	TerraformConfig struct {
 		StateBucket *tfconfig.StorageBucket `json:"state_storage_bucket"`
 	} `json:"terraform"`
 
@@ -237,7 +243,18 @@ func (p *Project) Init(auditLogsProject *Project) error {
 		p.GeneratedFields = &GeneratedFields{}
 	}
 
-	if p.TerraformConfig != nil {
+	// init the state bucket outside the regular terraform resoures since forseti projects will
+	// still define a state bucket even when not enabling terraform.
+	if p.TerraformConfig.StateBucket != nil {
+		if err := p.TerraformConfig.StateBucket.Init(p.ID); err != nil {
+			return fmt.Errorf("failed to init terraform state bucket: %v", err)
+		}
+	}
+
+	if EnableTerraform {
+		if p.TerraformConfig.StateBucket == nil {
+			return errors.New("state_storage_bucket must be set when terraform is enabled")
+		}
 		if err := p.initTerraform(); err != nil {
 			return err
 		}

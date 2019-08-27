@@ -35,7 +35,7 @@ func TestForsetiConfig(t *testing.T) {
 		return nil
 	}
 
-	if err := ForsetiConfig(conf, true); err != nil {
+	if err := ForsetiConfig(conf); err != nil {
 		t.Fatalf("Forseti = %v", err)
 	}
 

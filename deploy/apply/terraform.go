@@ -36,8 +36,8 @@ func defaultTerraform(config *config.Config, project *config.Project) error {
 }
 
 func stateBucket(config *config.Config, project *config.Project) error {
-	if project.TerraformConfig == nil {
-		return errors.New("terraform block in project must be set when terraform is enabled")
+	if project.TerraformConfig.StateBucket == nil {
+		return errors.New("state_storage_bucket must not be nil")
 	}
 
 	tfConf := terraform.NewConfig()

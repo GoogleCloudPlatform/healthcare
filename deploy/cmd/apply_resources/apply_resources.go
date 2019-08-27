@@ -52,6 +52,7 @@ func main() {
 		log.Fatal("--project must be set")
 	}
 
+	config.EnableTerraform = *enableTerraform
 	conf, err := config.Load(*projectYAMLPath, *generatedFieldsPath)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
