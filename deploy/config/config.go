@@ -215,6 +215,9 @@ func (c *Config) initForseti() error {
 	if c.Forseti == nil {
 		return nil
 	}
+	if c.Forseti.Project.TerraformConfig.StateBucket == nil {
+		return errors.New("state_storage_bucket must be set for forseti project")
+	}
 	if c.Forseti.Properties == nil {
 		c.Forseti.Properties = new(ForsetiProperties)
 	}
