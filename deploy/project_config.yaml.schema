@@ -351,14 +351,15 @@ definitions:
                   description: |
                     A helper to set a deletion lifecycle rule to clean up
                     objects after the specified number of days.
-                expected_users:
-                  type: array
-                  description: |
-                    Helper to create an unexpected access metric for accesses
-                    from users outside of this list.
-                  items:
-                    type: string
-                    description: User emails (e.g. foo@domain.com)
+                # TODO: Reenable if needed. Consider removing it after migrating to Terraform.
+                # expected_users:
+                #   type: array
+                #   description: |
+                #     Helper to create an unexpected access metric for accesses
+                #     from users outside of this list.
+                #   items:
+                #     type: string
+                #     description: User emails (e.g. foo@domain.com)
           gke_clusters:
             type: array
             description: Provides support for GKE Clusters.

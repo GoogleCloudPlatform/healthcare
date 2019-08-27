@@ -316,9 +316,7 @@ resources:
 			configData: &testconf.ConfigData{`
 resources:
   gcs_buckets:
-  - expected_users:
-    - some-expected-user@my-domain.com
-    properties:
+  - properties:
       name: foo-bucket
       location: us-east1`},
 			want: `
@@ -345,31 +343,7 @@ resources:
     versioning:
       enabled: true
     logging:
-      logBucket: my-project-logs
-- name: unexpected-access-foo-bucket
-  type: logging.v2.metric
-  properties:
-    metric: unexpected-access-foo-bucket
-    description: Count of unexpected data access to foo-bucket
-    metricDescriptor:
-      metricKind: DELTA
-      valueType: INT64
-      unit: '1'
-      labels:
-      - key: user
-        description: Unexpected user
-        valueType: STRING
-    labelExtractors:
-      user: 'EXTRACT(protoPayload.authenticationInfo.principalEmail)'
-    filter: |-
-      resource.type=gcs_bucket AND
-      logName=projects/my-project/logs/cloudaudit.googleapis.com%2Fdata_access AND
-      protoPayload.resourceName=projects/_/buckets/foo-bucket AND
-      protoPayload.status.code!=7 AND
-      protoPayload.authenticationInfo.principalEmail!=(some-expected-user@my-domain.com)
-  metadata:
-    dependsOn:
-    - foo-bucket`,
+      logBucket: my-project-logs`,
 		},
 		{
 			name: "iam_custom_role",
