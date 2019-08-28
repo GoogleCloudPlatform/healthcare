@@ -87,6 +87,9 @@ func applyConfigs() (err error) {
 	if *outputPath == "" {
 		return errors.New("--output_path must be set")
 	}
+	if *outputPath == *configPath {
+		log.Fatal("--outputPath must not be set to the same as --configPath")
+	}
 	if *dryRun {
 		runner.StubFakeCmds()
 	}

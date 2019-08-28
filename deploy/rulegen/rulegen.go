@@ -66,6 +66,11 @@ func Run(conf *config.Config, outputPath string) (err error) {
 			}
 			err = copyRulesToBucket(local, outputPath)
 		}()
+	} else {
+		local, err = config.NormalizePath(local)
+		if err != nil {
+			return fmt.Errorf("failed to normalize path %q: %v", local, err)
+		}
 	}
 	return writeRules(conf, local)
 }

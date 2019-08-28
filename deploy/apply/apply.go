@@ -99,6 +99,10 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
 
+	if err := collectGCEInfo(project); err != nil {
+		return fmt.Errorf("failed to collect GCE instances info: %v", err)
+	}
+
 	if err := createStackdriverAccount(project); err != nil {
 		return fmt.Errorf("failed to create stackdriver account: %v", err)
 	}
@@ -154,7 +158,6 @@ func DeployResources(conf *config.Config, project *config.Project, opts *Options
 			Role: "WRITER", UserByEmail: sinkSA,
 		})
 	} else if currSA != sinkSA {
-		project.GeneratedFields.LogSinkServiceAccount = sinkSA
 		// Replace all instances of old writer SA with new.
 		for _, a := range project.AuditLogs.LogsBQDataset.Accesses {
 			if a.UserByEmail == currSA {
@@ -162,6 +165,7 @@ func DeployResources(conf *config.Config, project *config.Project, opts *Options
 			}
 		}
 	}
+	project.GeneratedFields.LogSinkServiceAccount = sinkSA
 
 	if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
 		return fmt.Errorf("failed to deploy audit resources: %v", err)
@@ -400,6 +404,25 @@ func deployPrerequisite(project *config.Project) error {
 		return fmt.Errorf("failed to get deployment for pre-requisites: %v", err)
 	}
 	return upsertDeployment(setupPrerequisiteDeploymentName, deployment, project.ID)
+}
+
+func collectGCEInfo(project *config.Project) error {
+	if len(project.Resources.GCEInstances) == 0 {
+		project.GeneratedFields.GCEInstanceInfoList = nil
+		return nil
+	}
+	cmd := exec.Command("gcloud", "--project", project.ID, "compute", "instances", "list", "--format", "json")
+	out, err := runner.CmdOutput(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to list existing compute instances: %v", err)
+	}
+
+	var i []config.GCEInstanceInfo
+	if err := json.Unmarshal(out, &i); err != nil {
+		return fmt.Errorf("failed to unmarshal existing compute instances list output: %v", err)
+	}
+	project.GeneratedFields.GCEInstanceInfoList = i
+	return nil
 }
 
 // verifyOrCreateProject verifies the project if exists or creates the project if does not exist.
