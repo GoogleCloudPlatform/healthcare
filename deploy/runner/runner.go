@@ -55,11 +55,11 @@ func StubFakeCmds() {
 		return true
 	}
 	CmdRun = func(cmd *exec.Cmd) error {
-		log.Printf("Dry run call: %v", cmd.Args)
+		log.Printf("Dry run call: %s", strings.Join(cmd.Args, " "))
 		return nil
 	}
 	CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		log.Printf("Dry run call: %v", cmd.Args)
+		log.Printf("Dry run call: %s", strings.Join(cmd.Args, " "))
 		switch cmdStr := strings.Join(cmd.Args, " "); {
 		case contains(cmdStr, "projects describe"):
 			return nil, errors.New("")
@@ -84,7 +84,7 @@ func StubFakeCmds() {
 		}
 	}
 	CmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		log.Printf("Dry run call: %v", cmd.Args)
+		log.Printf("Dry run call: %s", strings.Join(cmd.Args, " "))
 		switch cmdStr := strings.Join(cmd.Args, " "); {
 		case contains(cmdStr, "deployment-manager deployments list", "--format json"):
 			return []byte("[]"), nil

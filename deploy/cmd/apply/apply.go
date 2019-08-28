@@ -72,23 +72,24 @@ func main() {
 	flag.Var(&projects, "projects", "Comma separeted project IDs within --config_path to deploy, or leave unspecified to deploy all projects.")
 	flag.Parse()
 
-	if *configPath == "" {
-		log.Fatal("--config_path must be set")
-	}
-	if *outputPath == "" {
-		log.Fatal("--output_path must be set")
-	}
-	if *dryRun {
-		runner.StubFakeCmds()
-	}
-	if err := run(); err != nil {
-		log.Fatalf("Setup failed: %v", err)
+	if err := applyConfigs(); err != nil {
+		log.Fatalf("Failed to apply configs: %v", err)
 	}
 	log.Println("Setup completed successfully.")
 }
 
-func run() (err error) {
+// TODO: add tests.
+func applyConfigs() (err error) {
 	config.EnableTerraform = *enableTerraform
+	if *configPath == "" {
+		return errors.New("--config_path must be set")
+	}
+	if *outputPath == "" {
+		return errors.New("--output_path must be set")
+	}
+	if *dryRun {
+		runner.StubFakeCmds()
+	}
 	conf, err := config.Load(*configPath, *outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %v", err)
@@ -159,7 +160,7 @@ func run() (err error) {
 		}
 	}
 
-  if !enableForseti {
+	if !enableForseti {
 		return nil
 	}
 

@@ -25,6 +25,7 @@ import (
 	"log"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -552,6 +553,7 @@ func enableServiceAPIs(project *config.Project) error {
 	for a := range m {
 		wantAPIs = append(wantAPIs, a)
 	}
+	sort.Slice(wantAPIs, func(i, j int) bool { return wantAPIs[i] < wantAPIs[j] })
 
 	min := func(x, y int) int {
 		if x < y {

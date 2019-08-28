@@ -1,0 +1,14 @@
+gcloud projects describe my-project --format json
+gcloud projects create my-project --organization 12345678
+gcloud projects describe my-project --format json
+gcloud beta billing projects link my-project --billing-account 000000-000000-000000
+gcloud --project my-project services enable cloudresourcemanager.googleapis.com deploymentmanager.googleapis.com iam.googleapis.com
+gcloud deployment-manager deployments list --format json --project my-project
+gcloud deployment-manager deployments create data-protect-toolkit-prerequisites --project my-project --config /tmp/xxxxxxxxx
+gcloud deployment-manager deployments list --format json --project my-project
+gcloud deployment-manager deployments create data-protect-toolkit-resources --project my-project --config /tmp/xxxxxxxxx
+gcloud logging sinks describe audit-logs-to-bigquery --format json --project my-project
+gcloud deployment-manager deployments list --format json --project my-project
+gcloud deployment-manager deployments create data-protect-toolkit-audit-my-project --project my-project --config /tmp/xxxxxxxxx
+gcloud config get-value account --format json --project my-project
+gcloud projects get-iam-policy my-project --project my-project --format json
