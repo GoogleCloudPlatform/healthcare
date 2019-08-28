@@ -93,8 +93,10 @@ type Project struct {
 		IAMPolicies     []*IAMPolicy       `json:"iam_policies"`
 		IPAddresses     []*DefaultResource `json:"ip_addresses"`
 		Pubsubs         []*Pubsub          `json:"pubsubs"`
+		Routes          []*DefaultResource `json:"routes"`
 		ServiceAccounts []*ServiceAccount  `json:"service_accounts"`
 		VPCNetworks     []*DefaultResource `json:"vpc_networks"`
+		VPNs            []*DefaultResource `json:"vpns"`
 
 		// Kubectl resources
 		GKEWorkloads []*GKEWorkload `json:"gke_workloads"`
@@ -544,6 +546,10 @@ func (p *Project) DeploymentManagerResources() []Resource {
 		r.TmplPath = "deploy/config/templates/ip_reservation/ip_address.py"
 		rs = append(rs, r)
 	}
+	for _, r := range prs.Routes {
+		r.TmplPath = "deploy/config/templates/route/single_route.py"
+		rs = append(rs, r)
+	}
 	for _, r := range prs.ServiceAccounts {
 		rs = append(rs, r)
 	}
@@ -552,6 +558,10 @@ func (p *Project) DeploymentManagerResources() []Resource {
 	}
 	for _, r := range prs.VPCNetworks {
 		r.TmplPath = "deploy/config/templates/network/network.py"
+		rs = append(rs, r)
+	}
+	for _, r := range prs.VPNs {
+		r.TmplPath = "deploy/config/templates/vpn/vpn.py"
 		rs = append(rs, r)
 	}
 	return rs

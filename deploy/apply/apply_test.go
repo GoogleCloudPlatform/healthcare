@@ -453,6 +453,39 @@ resources:
         - 'user:extra-reader@google.com'`,
 		},
 		{
+			name: "route",
+			configData: &testconf.ConfigData{`
+resources:
+  routes:
+  - properties:
+      name: foo-route
+      network: foo-network
+      region: us-central1
+      routeType: vpntunnel
+      vpnTunnelName: bar-tunnel
+      priority: 20000
+      destRange: "10.0.0.0/24"
+      tags:
+        - my-iproute-tag`},
+			want: `
+imports:
+- path: {{abs "deploy/config/templates/route/single_route.py"}}
+
+resources:
+- name: foo-route
+  type: {{abs "deploy/config/templates/route/single_route.py"}}
+  properties:
+      name: foo-route
+      network: foo-network
+      region: us-central1
+      routeType: vpntunnel
+      vpnTunnelName: bar-tunnel
+      priority: 20000
+      destRange: "10.0.0.0/24"
+      tags:
+        - my-iproute-tag`,
+		},
+		{
 			name: "service_accounts",
 			configData: &testconf.ConfigData{`
 resources:
@@ -497,6 +530,34 @@ resources:
       region: us-central1
       ipCidrRange: 172.16.0.0/24
       enableFlowLogs: true`,
+		},
+		{
+			name: "vpn",
+			configData: &testconf.ConfigData{`
+resources:
+  vpns:
+  - name: foo-vpn
+    properties:
+      region: us-central1
+      networkURL: foo-network
+      peerAddress: "33.33.33.33"
+      sharedSecret: "INSERT_SECRET_HERE"
+      localTrafficSelector: ["0.0.0.0/0"]
+      remoteTrafficSelector: ["0.0.0.0/0"]`},
+			want: `
+imports:
+- path: {{abs "deploy/config/templates/vpn/vpn.py"}}
+
+resources:
+- name: foo-vpn
+  type: {{abs "deploy/config/templates/vpn/vpn.py"}}
+  properties:
+      region: us-central1
+      networkURL: foo-network
+      peerAddress: "33.33.33.33"
+      sharedSecret: "INSERT_SECRET_HERE"
+      localTrafficSelector: ["0.0.0.0/0"]
+      remoteTrafficSelector: ["0.0.0.0/0"]`,
 		},
 	}
 
