@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
@@ -32,6 +33,7 @@ type applyCall struct {
 
 func TestDeployTerraform(t *testing.T) {
 	config.EnableTerraform = true
+	runner.StubFakeCmds()
 
 	tests := []struct {
 		name string
@@ -118,11 +120,11 @@ resource:
 				return nil
 			}
 
-			if err := defaultTerraform(conf, project); err != nil {
+			if err := Default(conf, project, &Options{DryRun: true, EnableTerraform: true}); err != nil {
 				t.Fatalf("deployTerraform: %v", err)
 			}
 
-			want := []applyCall{stateBucketCall(t), auditCall(t)}
+			want := []applyCall{projectCall(t), stateBucketCall(t), auditCall(t)}
 			if tc.want != nil {
 				addDefaultConfig(t, tc.want.Config)
 				want = append(want, *tc.want)
@@ -132,6 +134,26 @@ resource:
 				t.Errorf("terraform config differs (-got, +want):\n%v", diff)
 			}
 		})
+	}
+}
+
+func projectCall(t *testing.T) applyCall {
+	return applyCall{
+		Config: unmarshal(t, `
+terraform:
+  required_version: ">= 0.12.0"
+
+resource:
+- google_project:
+    my-project:
+      project_id: my-project
+      name: my-project
+      folder_id: '98765321'
+      billing_account: 000000-000000-000000`),
+		Imports: []terraform.Import{{
+			Address: "google_project.my-project",
+			ID:      "my-project",
+		}},
 	}
 }
 

@@ -25,6 +25,45 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
 
+func createProjectTerraform(config *config.Config, project *config.Project) error {
+	fid := project.FolderID
+	if fid == "" {
+		fid = config.Overall.FolderID
+	}
+
+	// Only one of folder ID or org ID can be set in the project resource.
+	var oid string
+	if fid == "" {
+		oid = config.Overall.OrganizationID
+	}
+
+	ba := project.BillingAccount
+	if ba == "" {
+		ba = config.Overall.BillingAccount
+	}
+
+	res := &tfconfig.ProjectResource{
+		OrgID:          oid,
+		FolderID:       fid,
+		BillingAccount: ba,
+	}
+	if err := res.Init(project.ID); err != nil {
+		return err
+	}
+
+	tfConf := terraform.NewConfig()
+	opts := &terraform.Options{}
+	addResources(tfConf, opts, res)
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	return terraformApply(tfConf, dir, opts)
+}
+
 func defaultTerraform(config *config.Config, project *config.Project) error {
 	if err := stateBucket(config, project); err != nil {
 		return fmt.Errorf("failed to deploy terraform state: %v", err)

@@ -75,12 +75,18 @@ type depender interface {
 
 // Default applies project configurations to a default project.
 func Default(conf *config.Config, project *config.Project, opts *Options) error {
-	if err := verifyOrCreateProject(conf, project); err != nil {
-		return fmt.Errorf("failed to verify or create project: %v", err)
-	}
-
-	if err := setupBilling(project, conf.Overall.BillingAccount); err != nil {
-		return fmt.Errorf("failed to set up billing: %v", err)
+	if opts.EnableTerraform {
+		// TODO: consider joining state bucket deployment with this as well.
+		if err := createProjectTerraform(conf, project); err != nil {
+			return fmt.Errorf("failed to create project: %v", err)
+		}
+	} else {
+		if err := verifyOrCreateProject(conf, project); err != nil {
+			return fmt.Errorf("failed to verify or create project: %v", err)
+		}
+		if err := setupBilling(project, conf.Overall.BillingAccount); err != nil {
+			return fmt.Errorf("failed to set up billing: %v", err)
+		}
 	}
 
 	if err := enableServiceAPIs(project); err != nil {
