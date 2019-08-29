@@ -34,7 +34,6 @@ definitions:
     - project_id
     - owners_group
     - auditors_group
-    - audit_logs
     properties:
       project_id:
         type: string
@@ -190,6 +189,27 @@ definitions:
                   storageClass:
                     type: string
                     description: Storage class of the bucket.
+      audit:
+        type: object
+        description: |
+          DEV ONLY (TERRAFORM).
+          Configuration of the (local or remote) audit logs for this project.
+          This cannot be changed after the project has been deployed.
+        additionalProperties: false
+        required:
+        - logs_bigquery_dataset
+        properties:
+          logs_bigquery_dataset:
+            type: object
+            description: |
+              BigQuery dataset to hold audit logs.
+              Supports google_bigquery_dataset (https://www.terraform.io/docs/providers/google/r/bigquery_dataset.html).
+          logs_storage_bucket:
+            type: object
+            description: |
+              GCS bucket to hold GCS logs. Required only if the project contains
+              storage_buckets.
+
       stackdriver_alert_email:
         $ref: '#/definitions/email_address'
         description: |
@@ -512,7 +532,7 @@ definitions:
       bigquery_datasets:
         type: array
         description: |
-          DEV ONLY.
+          DEV ONLY (TERRAFORM).
           Supports google_bigquery_dataset (https://www.terraform.io/docs/providers/google/r/bigquery_dataset.html).
         items:
           type: object
@@ -520,7 +540,7 @@ definitions:
       storage_buckets:
         type: array
         description: |
-          DEV ONLY.
+          DEV ONLY (TERRAFORM).
           Supports google_storage_bucket (https://www.terraform.io/docs/providers/google/r/storage_bucket.html).
         items:
           type: object

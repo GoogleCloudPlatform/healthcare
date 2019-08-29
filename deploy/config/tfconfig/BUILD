@@ -9,6 +9,7 @@ go_library(
     srcs = [
         "bigquery_dataset.go",
         "config.go",
+        "logging_sink.go",
         "pair.go",
         "storage_bucket.go",
     ],

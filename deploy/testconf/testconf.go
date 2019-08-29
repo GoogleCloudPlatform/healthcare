@@ -55,6 +55,14 @@ forseti:
           name: my-forseti-project-logs
           location: US
           storageClass: MULTI_REGIONAL
+    audit:
+      logs_bigquery_dataset:
+        dataset_id: audit_logs
+        location: US
+      logs_storage_bucket:
+        name: my-forseti-project-logs
+        location: US
+        storage_class: MULTI_REGIONAL
   properties:
     storage_bucket_location: us-east1
 
@@ -84,6 +92,14 @@ projects:
         name: my-project-logs
         location: US
         storageClass: MULTI_REGIONAL
+  audit:
+    logs_bigquery_dataset:
+      dataset_id: audit_logs
+      location: US
+    logs_storage_bucket:
+      name: my-project-logs
+      location: US
+      storage_class: MULTI_REGIONAL
 {{lpad .ExtraProjectConfig 2}}
 `
 

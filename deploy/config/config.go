@@ -43,7 +43,7 @@ const (
 	BucketUnexpectedAccessMetricPrefix = "unexpected-access-"
 )
 
-// Config represents a (partial)f representation of a projects YAML file.
+// Config represents a (partial) representation of a projects YAML file.
 // Only the required fields are present. See project_config.yaml.schema for details.
 type Config struct {
 	Overall struct {
@@ -113,10 +113,17 @@ type Project struct {
 		LogsGCSBucket *GCSBucket      `json:"logs_gcs_bucket"`
 	} `json:"audit_logs"`
 
+	Audit struct {
+		LogsBigqueryDataset *tfconfig.BigqueryDataset `json:"logs_bigquery_dataset"`
+		LogsStorageBucket   *tfconfig.StorageBucket   `json:"logs_storage_bucket"`
+	} `json:"audit"`
+
 	// The following vars are set through helpers and not directly through the user defined config.
 	GeneratedFields *GeneratedFields `json:"-"`
 	BQLogSink       *LogSink         `json:"-"`
-	Metrics         []*Metric        `json:"-"`
+	// TODO: replace DM log sink with TF once DM is deprecated.
+	BQLogSinkTF *tfconfig.LoggingSink `json:"-"`
+	Metrics     []*Metric             `json:"-"`
 }
 
 // Init initializes the config and all its projects.
@@ -257,9 +264,7 @@ func (p *Project) Init(auditLogsProject *Project) error {
 		if p.TerraformConfig.StateBucket == nil {
 			return errors.New("state_storage_bucket must be set when terraform is enabled")
 		}
-		if err := p.initTerraform(); err != nil {
-			return err
-		}
+		return p.initTerraform(auditLogsProject)
 	}
 
 	if err := p.initAuditResources(auditLogsProject); err != nil {

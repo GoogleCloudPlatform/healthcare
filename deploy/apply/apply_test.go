@@ -896,7 +896,7 @@ func TestStackdriverAccountExist(t *testing.T) {
 
 func TestGetLogSinkServiceAccount(t *testing.T) {
 	_, project := testconf.ConfigAndProject(t, nil)
-	got, err := getLogSinkServiceAccount(project)
+	got, err := getLogSinkServiceAccount(project, "audit-logs-to-bigquery")
 	want := "p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
 	if got != want || err != nil {
 		t.Errorf("getLogSinkServiceAccount(%v) = %q, %v; want %q, nil", project, got, err, want)

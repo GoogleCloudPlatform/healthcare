@@ -49,7 +49,7 @@ type Access struct {
 // Init initializes the resource.
 func (d *BigqueryDataset) Init(projectID string) error {
 	if d.DatasetID == "" {
-		return errors.New("name must be set")
+		return errors.New("dataset_id must be set")
 	}
 	if d.Location == "" {
 		return errors.New("location must be set")

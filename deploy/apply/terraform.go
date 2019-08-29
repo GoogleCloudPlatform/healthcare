@@ -29,7 +29,10 @@ func defaultTerraform(config *config.Config, project *config.Project) error {
 	if err := stateBucket(config, project); err != nil {
 		return fmt.Errorf("failed to deploy terraform state: %v", err)
 	}
-	if err := dataResources(config, project, project.TerraformConfig.StateBucket); err != nil {
+	if err := auditResources(config, project); err != nil {
+		return fmt.Errorf("failed to deploy audit resources: %v", err)
+	}
+	if err := dataResources(config, project); err != nil {
 		return fmt.Errorf("failed to deploy terraform data resources: %v", err)
 	}
 	return nil
@@ -53,14 +56,61 @@ func stateBucket(config *config.Config, project *config.Project) error {
 	return terraformApply(tfConf, dir, opts)
 }
 
-func dataResources(config *config.Config, project *config.Project, state *tfconfig.StorageBucket) error {
+func auditResources(config *config.Config, project *config.Project) error {
+	auditProject := config.ProjectForAuditLogs(project)
+	tfConf := terraform.NewConfig()
+	tfConf.Terraform.Backend = &terraform.Backend{
+		Bucket: auditProject.TerraformConfig.StateBucket.Name,
+		// Attach project ID to prefix.
+		// This is because the audit project will contain an audit deployment for every project it holds audit logs for in its own state bucket.
+		// Attaching the prefix ensures we don't have a collision in names.
+		Prefix: "audit-" + project.ID,
+	}
+
+	d := project.Audit.LogsBigqueryDataset
+	d.Accesses = append(d.Accesses, &tfconfig.Access{
+		Role: "WRITER",
+
+		// Trim "serviceAccount:" prefix as user_by_email does not allow it.
+		UserByEmail: fmt.Sprintf(
+			`${replace(google_logging_project_sink.%s.writer_identity, "serviceAccount:", "")}`,
+			project.BQLogSinkTF.ID(),
+		),
+	})
+
+	rs := []tfconfig.Resource{project.BQLogSinkTF, d}
+	if b := project.Audit.LogsStorageBucket; b != nil {
+		rs = append(rs, b)
+	}
+
+	opts := &terraform.Options{}
+	addResources(tfConf, opts, rs...)
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	if err := terraformApply(tfConf, dir, opts); err != nil {
+		return err
+	}
+
+	project.GeneratedFields.LogSinkServiceAccount, err = getLogSinkServiceAccount(project, project.BQLogSinkTF.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get log sink service account: %v", err)
+	}
+	return nil
+}
+
+func dataResources(config *config.Config, project *config.Project) error {
 	rs := project.TerraformResources()
 	if len(rs) == 0 {
 		return nil
 	}
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
-		Bucket: state.Name,
+		Bucket: project.TerraformConfig.StateBucket.Name,
 		Prefix: "resources",
 	}
 	opts := &terraform.Options{}
@@ -75,6 +125,10 @@ func dataResources(config *config.Config, project *config.Project, state *tfconf
 	return terraformApply(tfConf, dir, opts)
 }
 
+// addResources adds the given resources to the given terraform config.
+// If the resource implements functions to get an import ID, the terraform options will be updated
+// with the import ID, so the resource is imported to the terraform state if it already exists.
+// The import ID for a resource can be found in terraform's documentation for the resource.
 func addResources(config *terraform.Config, opts *terraform.Options, resources ...tfconfig.Resource) {
 	for _, r := range resources {
 		config.Resources = append(config.Resources, &terraform.Resource{

@@ -122,7 +122,7 @@ resource:
 				t.Fatalf("deployTerraform: %v", err)
 			}
 
-			want := []applyCall{stateBucketCall(t)}
+			want := []applyCall{stateBucketCall(t), auditCall(t)}
 			if tc.want != nil {
 				addDefaultConfig(t, tc.want.Config)
 				want = append(want, *tc.want)
@@ -153,6 +153,67 @@ resource:
 			Address: "google_storage_bucket.my-project-state",
 			ID:      "my-project/my-project-state",
 		}},
+	}
+}
+
+func auditCall(t *testing.T) applyCall {
+	return applyCall{
+		Config: unmarshal(t, `
+terraform:
+  required_version: '>= 0.12.0'
+  backend:
+    gcs:
+      bucket: my-project-state
+      prefix: audit-my-project
+resource:
+- google_logging_project_sink:
+    audit-logs-to-bigquery:
+      name: audit-logs-to-bigquery
+      project: my-project
+      filter: 'logName:"logs/cloudaudit.googleapis.com"'
+      destination: bigquery.googleapis.com/projects/my-project/datasets/audit_logs
+      unique_writer_identity: true
+- google_bigquery_dataset:
+    audit_logs:
+      dataset_id: audit_logs
+      project: my-project
+      location: US
+      access:
+      - role: OWNER
+        group_by_email: my-project-owners@my-domain.com
+      - role: READER
+        group_by_email: my-project-auditors@my-domain.com
+      - role: WRITER
+        user_by_email: '${replace(google_logging_project_sink.audit-logs-to-bigquery.writer_identity, "serviceAccount:", "")}'
+- google_storage_bucket:
+    my-project-logs:
+      name: my-project-logs
+      project: my-project
+      location: US
+      storage_class: MULTI_REGIONAL
+      versioning:
+        enabled: true
+- google_storage_bucket_iam_member:
+    my-project-logs:
+      for_each:
+        'roles/storage.admin group:my-project-owners@my-domain.com':
+          role: roles/storage.admin
+          member: group:my-project-owners@my-domain.com
+        'roles/storage.objectCreator group:cloud-storage-analytics@google.com':
+          role: roles/storage.objectCreator
+          member: group:cloud-storage-analytics@google.com
+        'roles/storage.objectViewer group:my-project-auditors@my-domain.com':
+          role: roles/storage.objectViewer
+          member: group:my-project-auditors@my-domain.com
+      bucket: ${google_storage_bucket.my-project-logs.name}
+      role: ${each.value.role}
+      member: ${each.value.member}
+`),
+		Imports: []terraform.Import{
+			{Address: "google_logging_project_sink.audit-logs-to-bigquery", ID: "projects/my-project/sinks/audit-logs-to-bigquery"},
+			{Address: "google_bigquery_dataset.audit_logs", ID: "my-project:audit_logs"},
+			{Address: "google_storage_bucket.my-project-logs", ID: "my-project/my-project-logs"},
+		},
 	}
 }
 

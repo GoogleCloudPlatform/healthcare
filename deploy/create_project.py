@@ -662,6 +662,7 @@ def main(argv):
       FLAGS.project_yaml,
       '--generated_fields_path',
       FLAGS.generated_fields_path,
+      '--enable_terraform=%s' % FLAGS.enable_terraform,
   ],
                                      get_output=True)
   root_config = yaml.load(config_string)

@@ -122,11 +122,9 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 // DeployResources deploys the CFT resources in the project.
 func DeployResources(conf *config.Config, project *config.Project, opts *Options) error {
 	if opts.EnableTerraform {
-		if err := defaultTerraform(conf, project); err != nil {
-			return err
-		}
-		// TODO: return after this once we can deploy all necessary resources like log sinks, etc in terraform.
+		return defaultTerraform(conf, project)
 	}
+
 	if !opts.DryRun {
 		if err := grantDeploymentManagerAccess(project); err != nil {
 			return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
@@ -146,7 +144,7 @@ func DeployResources(conf *config.Config, project *config.Project, opts *Options
 
 	// Always get the latest log sink writer as when the sink is moved between deployments it may
 	// create a new sink writer.
-	sinkSA, err := getLogSinkServiceAccount(project)
+	sinkSA, err := getLogSinkServiceAccount(project, project.BQLogSink.Name())
 	if err != nil {
 		return fmt.Errorf("failed to get log sink service account: %v", err)
 	}
@@ -220,8 +218,8 @@ func addBinding(projectID, serviceAccount, role string) error {
 	return nil
 }
 
-func getLogSinkServiceAccount(project *config.Project) (string, error) {
-	cmd := exec.Command("gcloud", "logging", "sinks", "describe", project.BQLogSink.Name(), "--format", "json", "--project", project.ID)
+func getLogSinkServiceAccount(project *config.Project, sinkName string) (string, error) {
+	cmd := exec.Command("gcloud", "logging", "sinks", "describe", sinkName, "--format", "json", "--project", project.ID)
 
 	out, err := runner.CmdOutput(cmd)
 	if err != nil {

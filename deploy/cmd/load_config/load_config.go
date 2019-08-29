@@ -27,6 +27,7 @@ import (
 var (
 	projectYAMLPath     = flag.String("project_yaml_path", "", "Path to project yaml file")
 	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
+	enableTerraform     = flag.Bool("enable_terraform", false, "DEV ONLY. Enable terraform.")
 )
 
 func main() {
@@ -36,6 +37,7 @@ func main() {
 		log.Fatal("--project_yaml_path must be set")
 	}
 
+	config.EnableTerraform = *enableTerraform
 	b, err := config.LoadBytes(*projectYAMLPath)
 	if err != nil {
 		log.Fatalf("failed to load config to bytes: %v", err)

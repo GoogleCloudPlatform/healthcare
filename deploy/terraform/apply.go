@@ -34,6 +34,9 @@ type Options struct {
 }
 
 // Apply applies the config. The config will be written as a .tf.json file in the given dir.
+// All imports in opts.Imports will be imported prior being applied.
+// Thus, if a resource exists it will be imported to the terraform state.
+// Without importing an existing resource terraform can fail with an "ALREADY EXISTS" error when it tries to create it.
 func Apply(config *Config, dir string, opts *Options) error {
 	if opts == nil {
 		opts = new(Options)
