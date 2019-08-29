@@ -64,6 +64,7 @@ py_test(
         "//deploy/cmd/load_config",
         "//deploy/cmd/rule_generator",
         "//deploy/samples:configs",
+        "//deploy/samples/spanned_configs:configs",
     ],
     python_version = "PY3",
     deps = [

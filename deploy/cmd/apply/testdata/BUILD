@@ -7,6 +7,6 @@ licenses(["notice"])  # Apache 2.0
 filegroup(
     name = "testdata",
     srcs = [
-        "minimal_dryrun_commands.txt",
+        "project_with_remote_audit_logs_dryrun_commands.txt",
     ],
 )

@@ -163,7 +163,7 @@ func applyConfigs() (err error) {
 		}
 	}
 
-	if !enableForseti {
+	if !enableForseti || *dryRun {
 		return nil
 	}
 

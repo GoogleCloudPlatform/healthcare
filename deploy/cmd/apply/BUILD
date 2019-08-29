@@ -28,6 +28,7 @@ go_test(
     data = [
         "//deploy/cmd/apply/testdata",
         "//deploy/samples:configs",
+        "//deploy/samples/spanned_configs:configs",
     ],
     embed = [":go_default_library"],
     # Override default run dir to make it easier to find test files.

@@ -65,6 +65,7 @@ go_test(
     ],
     data = [
         "//deploy/samples:configs",
+        "//deploy/samples/spanned_configs:configs",
     ],
     # Override default run dir to make it easier to find test files.
     rundir = ".",
