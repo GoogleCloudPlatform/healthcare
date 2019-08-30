@@ -526,11 +526,11 @@ func (p *Project) DeploymentManagerResources() []Resource {
 		rs = append(rs, r)
 	}
 	for _, r := range prs.CloudRouter {
-		r.TmplPath = "deploy/config/templates/cloud_router/cloud_router.py"
+		r.TmplPath = "config/templates/cloud_router/cloud_router.py"
 		rs = append(rs, r)
 	}
 	for _, r := range prs.GCEFirewalls {
-		r.TmplPath = "deploy/config/templates/firewall/firewall.py"
+		r.TmplPath = "config/templates/firewall/firewall.py"
 		rs = append(rs, r)
 	}
 	for _, r := range prs.GCEInstances {
@@ -549,11 +549,11 @@ func (p *Project) DeploymentManagerResources() []Resource {
 		rs = append(rs, r)
 	}
 	for _, r := range prs.IPAddresses {
-		r.TmplPath = "deploy/config/templates/ip_reservation/ip_address.py"
+		r.TmplPath = "config/templates/ip_reservation/ip_address.py"
 		rs = append(rs, r)
 	}
 	for _, r := range prs.Routes {
-		r.TmplPath = "deploy/config/templates/route/single_route.py"
+		r.TmplPath = "config/templates/route/single_route.py"
 		rs = append(rs, r)
 	}
 	for _, r := range prs.ServiceAccounts {
@@ -563,11 +563,11 @@ func (p *Project) DeploymentManagerResources() []Resource {
 		rs = append(rs, r)
 	}
 	for _, r := range prs.VPCNetworks {
-		r.TmplPath = "deploy/config/templates/network/network.py"
+		r.TmplPath = "config/templates/network/network.py"
 		rs = append(rs, r)
 	}
 	for _, r := range prs.VPNs {
-		r.TmplPath = "deploy/config/templates/vpn/vpn.py"
+		r.TmplPath = "config/templates/vpn/vpn.py"
 		rs = append(rs, r)
 	}
 	return rs

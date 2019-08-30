@@ -10,8 +10,8 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cmd/rule_generator",
     visibility = ["//visibility:private"],
     deps = [
-        "//deploy/config:go_default_library",
-        "//deploy/rulegen:go_default_library",
+        "//config:go_default_library",
+        "//rulegen:go_default_library",
     ],
 )
 

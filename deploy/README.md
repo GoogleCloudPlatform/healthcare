@@ -129,8 +129,8 @@ remote audit logs) and one or more data hosting projects.
 
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
-$ cd healthcare
-$ bazel run deploy:create_project -- \
+$ cd healthcare/deploy
+$ bazel run :create_project -- \
   --project_yaml=${PROJECT_CONFIG?} \
   --generated_fields_path=${GENERATED_FIELDS?} \
   --projects=${PROJECTS?} \

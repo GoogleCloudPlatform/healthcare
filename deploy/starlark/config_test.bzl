@@ -46,7 +46,7 @@ _config_test = rule(
             doc = "Additional configs or templates to import.",
         ),
         "_config_loader": attr.label(
-            default = Label("//deploy/cmd/load_config"),
+            default = Label("//cmd/load_config"),
             doc = "The config loader binary. Internal attribute and should not be set by users.",
             cfg = "host",
             executable = True,
@@ -55,13 +55,13 @@ _config_test = rule(
         # The following attributes are added purely for the purpose of making
         # schema files available in the runfiles tree.
         "_generated_fields_schema": attr.label(
-            default = Label("//deploy:generated_fields.yaml.schema"),
+            default = Label("//:generated_fields.yaml.schema"),
             doc = "The generated fields schema. Internal attribute and should not be set by users.",
             cfg = "host",
             allow_single_file = True,
         ),
         "_project_config_schema": attr.label(
-            default = Label("//deploy:project_config.yaml.schema"),
+            default = Label("//:project_config.yaml.schema"),
             doc = "The project config schema. Internal attribute and should not be set by users.",
             cfg = "host",
             allow_single_file = True,

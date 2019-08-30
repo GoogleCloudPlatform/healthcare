@@ -50,7 +50,7 @@ func (c *GKECluster) Name() string {
 
 // TemplatePath returns the name of the template to use for this cluster.
 func (*GKECluster) TemplatePath() string {
-	return "deploy/config/templates/gke/gke.py"
+	return "config/templates/gke/gke.py"
 }
 
 // aliasGKECluster is used to prevent infinite recursion when dealing with json marshaling.

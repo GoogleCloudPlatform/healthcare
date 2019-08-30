@@ -29,7 +29,7 @@ import (
 )
 
 func TestNormalizePath(t *testing.T) {
-	relativePath := "deploy/samples/project_with_remote_audit_logs.yaml"
+	relativePath := "samples/project_with_remote_audit_logs.yaml"
 	path, err := config.NormalizePath(relativePath)
 	if err != nil {
 		t.Fatalf("cannot normalizePath: %q", relativePath)
@@ -85,13 +85,13 @@ func TestLoad(t *testing.T) {
 	}{
 		{
 			name:      "spanned_configs",
-			inputPath: "deploy/samples/spanned_configs/root.yaml",
-			wantPath:  "deploy/samples/project_with_remote_audit_logs.yaml",
+			inputPath: "samples/spanned_configs/root.yaml",
+			wantPath:  "samples/project_with_remote_audit_logs.yaml",
 		},
 		{
 			name:      "template",
-			inputPath: "deploy/samples/template/input.yaml",
-			wantPath:  "deploy/samples/minimal.yaml",
+			inputPath: "samples/template/input.yaml",
+			wantPath:  "samples/minimal.yaml",
 		},
 	}
 

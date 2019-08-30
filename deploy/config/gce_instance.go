@@ -55,7 +55,7 @@ func (i *GCEInstance) Name() string {
 
 // TemplatePath returns the name of the template to use for this instance.
 func (i *GCEInstance) TemplatePath() string {
-	return "deploy/config/templates/instance/instance.py"
+	return "config/templates/instance/instance.py"
 }
 
 // aliasGCEInstance is used to prevent infinite recursion when dealing with json marshaling.

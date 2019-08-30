@@ -396,11 +396,11 @@ func deployPrerequisite(project *config.Project) error {
 	resources := []config.Resource{
 		&config.DefaultResource{
 			OuterName: "enable-all-audit-log-policies",
-			TmplPath:  "deploy/templates/audit_log_config.py",
+			TmplPath:  "templates/audit_log_config.py",
 		},
 		&config.DefaultResource{
 			OuterName: "chc-type-provider",
-			TmplPath:  "deploy/templates/chc_resource/chc_res_type_provider.jinja",
+			TmplPath:  "templates/chc_resource/chc_res_type_provider.jinja",
 		},
 	}
 	deployment, err := getDeployment(project, resources)

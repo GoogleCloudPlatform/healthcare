@@ -14,6 +14,6 @@ go_library(
     srcs = ["grant_forseti_access.go"],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cmd/grant_forseti_access",
     deps = [
-        "//deploy/apply:go_default_library",
+        "//apply:go_default_library",
     ],
 )

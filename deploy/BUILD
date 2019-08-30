@@ -18,10 +18,10 @@ py_binary(
     srcs = ["create_project.py"],
     # Pass binary paths as arg due to unstable location in bazel built binaries.
     args = [
-        "--apply_binary=$(location //deploy/cmd/apply)",
+        "--apply_binary=$(location //cmd/apply)",
     ],
     data = [
-        "//deploy/cmd/apply",
+        "//cmd/apply",
     ],
     python_version = "PY3",
     deps = [":create_project_lib"],
@@ -30,5 +30,5 @@ py_binary(
 py_library(
     name = "create_project_lib",
     srcs = ["create_project.py"],
-    data = ["//deploy/templates"],
+    data = ["//templates"],
 )

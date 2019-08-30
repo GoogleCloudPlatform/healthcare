@@ -34,10 +34,10 @@ import (
 )
 
 // projectConfigSchema is the path of the project config schema template relative to the repo root.
-const projectConfigSchema = "deploy/project_config.yaml.schema"
+const projectConfigSchema = "project_config.yaml.schema"
 
 // generatedFieldsSchema is the path of the generated fields schema template relative to the repo root.
-const generatedFieldsSchema = "deploy/generated_fields.yaml.schema"
+const generatedFieldsSchema = "generated_fields.yaml.schema"
 
 // NormalizePath normalizes paths specified through a local run or Bazel invocation.
 func NormalizePath(path string) (string, error) {

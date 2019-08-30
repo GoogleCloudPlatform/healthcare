@@ -66,7 +66,7 @@ func (d *BigqueryDataset) Name() string {
 
 // TemplatePath returns the name of the template to use for this dataset.
 func (d *BigqueryDataset) TemplatePath() string {
-	return "deploy/config/templates/bigquery/bigquery_dataset.py"
+	return "config/templates/bigquery/bigquery_dataset.py"
 }
 
 // aliasBQDataset is used to prevent infinite recursion when dealing with json marshaling.

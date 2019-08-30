@@ -2,7 +2,7 @@
 
 package(default_visibility = ["//visibility:public"])
 
-load("//deploy/starlark:config_test.bzl", "config_test")
+load("//starlark:config_test.bzl", "config_test")
 
 licenses(["notice"])  # Apache 2.0
 

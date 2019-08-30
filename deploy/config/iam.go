@@ -45,7 +45,7 @@ func (i *IAMCustomRole) Name() string {
 
 // TemplatePath returns the template to use for this custom role.
 func (i *IAMCustomRole) TemplatePath() string {
-	return "deploy/config/templates/iam_custom_role/project_custom_role.py"
+	return "config/templates/iam_custom_role/project_custom_role.py"
 }
 
 // aliasIAMCustomRole is used to prevent infinite recursion when dealing with json marshaling.
@@ -97,7 +97,7 @@ func (i *IAMPolicy) Name() string {
 
 // TemplatePath returns the template to use for this custom role.
 func (i *IAMPolicy) TemplatePath() string {
-	return "deploy/config/templates/iam_member/iam_member.py"
+	return "config/templates/iam_member/iam_member.py"
 }
 
 // aliasIAMPolicy is used to prevent infinite recursion when dealing with json marshaling.

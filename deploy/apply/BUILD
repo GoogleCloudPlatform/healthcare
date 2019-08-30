@@ -14,17 +14,17 @@ go_library(
         "terraform.go",
     ],
     data = [
-        "//deploy/templates",
-        "//deploy/templates/chc_resource:chc_dataset_files",
+        "//templates",
+        "//templates/chc_resource:chc_dataset_files",
         "@terraform_google_forseti//:all_files",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/apply",
     deps = [
-        "//deploy/config:go_default_library",
-        "//deploy/config/tfconfig:go_default_library",
-        "//deploy/deploymentmanager:go_default_library",
-        "//deploy/runner:go_default_library",
-        "//deploy/terraform:go_default_library",
+        "//config:go_default_library",
+        "//config/tfconfig:go_default_library",
+        "//deploymentmanager:go_default_library",
+        "//runner:go_default_library",
+        "//terraform:go_default_library",
     ],
 )
 
@@ -40,11 +40,11 @@ go_test(
     # Override default run dir to make it easier to find test files.
     rundir = ".",
     deps = [
-        "//deploy/config:go_default_library",
-        "//deploy/deploymentmanager:go_default_library",
-        "//deploy/runner:go_default_library",
-        "//deploy/terraform:go_default_library",
-        "//deploy/testconf:go_default_library",
+        "//config:go_default_library",
+        "//deploymentmanager:go_default_library",
+        "//runner:go_default_library",
+        "//terraform:go_default_library",
+        "//testconf:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
         "@com_github_google_cmp//cmp/cmpopts:go_default_library",
         "@in_ghodss_yaml//:go_default_library",

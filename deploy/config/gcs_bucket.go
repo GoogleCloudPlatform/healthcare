@@ -130,7 +130,7 @@ func (b *GCSBucket) Name() string {
 
 // TemplatePath returns the name of the template to use for the bucket.
 func (b *GCSBucket) TemplatePath() string {
-	return "deploy/config/templates/gcs_bucket/gcs_bucket.py"
+	return "config/templates/gcs_bucket/gcs_bucket.py"
 }
 
 // aliasGCSBucket is used to prevent infinite recursion when dealing with json marshaling.

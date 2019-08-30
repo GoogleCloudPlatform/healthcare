@@ -38,26 +38,26 @@ import (
 
 const wantPreRequisiteDeploymentYAML = `
 imports:
-- path: {{abs "deploy/templates/audit_log_config.py"}}
-- path: {{abs "deploy/templates/chc_resource/chc_res_type_provider.jinja"}}
+- path: {{abs "templates/audit_log_config.py"}}
+- path: {{abs "templates/chc_resource/chc_res_type_provider.jinja"}}
 
 resources:
 - name: enable-all-audit-log-policies
-  type: {{abs "deploy/templates/audit_log_config.py"}}
+  type: {{abs "templates/audit_log_config.py"}}
   properties: {}
 - name: chc-type-provider
-  type: {{abs "deploy/templates/chc_resource/chc_res_type_provider.jinja"}}
+  type: {{abs "templates/chc_resource/chc_res_type_provider.jinja"}}
   properties: {}
 `
 
 const wantAuditDeploymentYAML = `
 imports:
-- path: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
-- path: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
+- path: {{abs "config/templates/bigquery/bigquery_dataset.py"}}
+- path: {{abs "config/templates/gcs_bucket/gcs_bucket.py"}}
 
 resources:
 - name: audit_logs
-  type: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
+  type: {{abs "config/templates/bigquery/bigquery_dataset.py"}}
   properties:
     name: audit_logs
     location: US
@@ -69,7 +69,7 @@ resources:
     - userByEmail: p12345-999999@gcp-sa-logging.iam.gserviceaccount.com
       role: WRITER
 - name: my-project-logs
-  type: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
+  type: {{abs "config/templates/gcs_bucket/gcs_bucket.py"}}
   properties:
     name: my-project-logs
     location: US
@@ -97,7 +97,7 @@ resources:
 
 const wantDefaultResourceDeploymentYAML = `
 imports:
-- path: {{abs "deploy/config/templates/iam_member/iam_member.py"}}
+- path: {{abs "config/templates/iam_member/iam_member.py"}}
 
 resources:
 - name: audit-logs-to-bigquery
@@ -158,7 +158,7 @@ resources:
     labelExtractors:
       user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
 - name: required-project-bindings
-  type: {{abs "deploy/config/templates/iam_member/iam_member.py"}}
+  type: {{abs "config/templates/iam_member/iam_member.py"}}
   properties:
     roles:
     - role: roles/owner
@@ -208,10 +208,10 @@ resources:
       location: US`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
+- path: {{abs "config/templates/bigquery/bigquery_dataset.py"}}
 resources:
 - name: foo-dataset
-  type: {{abs "deploy/config/templates/bigquery/bigquery_dataset.py"}}
+  type: {{abs "config/templates/bigquery/bigquery_dataset.py"}}
   properties:
     name: foo-dataset
     location: US
@@ -237,11 +237,11 @@ resources:
       asn: 65002`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/cloud_router/cloud_router.py"}}
+- path: {{abs "config/templates/cloud_router/cloud_router.py"}}
 
 resources:
 - name: bar-cloud-router
-  type: {{abs "deploy/config/templates/cloud_router/cloud_router.py"}}
+  type: {{abs "config/templates/cloud_router/cloud_router.py"}}
   properties:
       name: bar-cloud-router
       network: default
@@ -269,11 +269,11 @@ resources:
           - 10.0.0.0/8`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/firewall/firewall.py"}}
+- path: {{abs "config/templates/firewall/firewall.py"}}
 
 resources:
 - name: foo-firewall-rules
-  type: {{abs "deploy/config/templates/firewall/firewall.py"}}
+  type: {{abs "config/templates/firewall/firewall.py"}}
   properties:
     network: foo-network
     rules:
@@ -300,11 +300,11 @@ resources:
       machineType: f1-micro`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/instance/instance.py"}}
+- path: {{abs "config/templates/instance/instance.py"}}
 
 resources:
 - name: foo-instance
-  type: {{abs "deploy/config/templates/instance/instance.py"}}
+  type: {{abs "config/templates/instance/instance.py"}}
   properties:
     name: foo-instance
     diskImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-1804-lts
@@ -321,11 +321,11 @@ resources:
       location: us-east1`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
+- path: {{abs "config/templates/gcs_bucket/gcs_bucket.py"}}
 
 resources:
 - name: foo-bucket
-  type: {{abs "deploy/config/templates/gcs_bucket/gcs_bucket.py"}}
+  type: {{abs "config/templates/gcs_bucket/gcs_bucket.py"}}
   properties:
     name: foo-bucket
     location: us-east1
@@ -356,11 +356,11 @@ resources:
       - iam.roles.get`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/iam_custom_role/project_custom_role.py"}}
+- path: {{abs "config/templates/iam_custom_role/project_custom_role.py"}}
 
 resources:
 - name: fooCustomRole
-  type:  {{abs "deploy/config/templates/iam_custom_role/project_custom_role.py"}}
+  type:  {{abs "config/templates/iam_custom_role/project_custom_role.py"}}
   properties:
     roleId: fooCustomRole
     includedPermissions:
@@ -380,7 +380,7 @@ resources:
 			want: `
 resources:
 - name: foo-owner-binding
-  type:  {{abs "deploy/config/templates/iam_member/iam_member.py"}}
+  type:  {{abs "config/templates/iam_member/iam_member.py"}}
   properties:
    roles:
    - role: roles/owner
@@ -399,11 +399,11 @@ resources:
       description: 'my bar ip'`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/ip_reservation/ip_address.py"}}
+- path: {{abs "config/templates/ip_reservation/ip_address.py"}}
 
 resources:
 - name: mybarip
-  type: {{abs "deploy/config/templates/ip_reservation/ip_address.py"}}
+  type: {{abs "config/templates/ip_reservation/ip_address.py"}}
   properties:
     name: mybarip
     region: us-central1
@@ -429,11 +429,11 @@ resources:
           - 'user:extra-reader@google.com'`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/pubsub/pubsub.py"}}
+- path: {{abs "config/templates/pubsub/pubsub.py"}}
 
 resources:
 - name: foo-topic
-  type: {{abs "deploy/config/templates/pubsub/pubsub.py"}}
+  type: {{abs "config/templates/pubsub/pubsub.py"}}
   properties:
     topic: foo-topic
     accessControl:
@@ -469,11 +469,11 @@ resources:
         - my-iproute-tag`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/route/single_route.py"}}
+- path: {{abs "config/templates/route/single_route.py"}}
 
 resources:
 - name: foo-route
-  type: {{abs "deploy/config/templates/route/single_route.py"}}
+  type: {{abs "config/templates/route/single_route.py"}}
   properties:
       name: foo-route
       network: foo-network
@@ -517,11 +517,11 @@ resources:
         enableFlowLogs: true`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/network/network.py"}}
+- path: {{abs "config/templates/network/network.py"}}
 
 resources:
 - name: some-private
-  type: {{abs "deploy/config/templates/network/network.py"}}
+  type: {{abs "config/templates/network/network.py"}}
   properties:
     name: some-private
     autoCreateSubnetworks: false
@@ -546,11 +546,11 @@ resources:
       remoteTrafficSelector: ["0.0.0.0/0"]`},
 			want: `
 imports:
-- path: {{abs "deploy/config/templates/vpn/vpn.py"}}
+- path: {{abs "config/templates/vpn/vpn.py"}}
 
 resources:
 - name: foo-vpn
-  type: {{abs "deploy/config/templates/vpn/vpn.py"}}
+  type: {{abs "config/templates/vpn/vpn.py"}}
   properties:
       region: us-central1
       networkURL: foo-network

@@ -14,10 +14,10 @@ go_library(
     srcs = ["apply.go"],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cmd/apply",
     deps = [
-        "//deploy/apply:go_default_library",
-        "//deploy/config:go_default_library",
-        "//deploy/rulegen:go_default_library",
-        "//deploy/runner:go_default_library",
+        "//apply:go_default_library",
+        "//config:go_default_library",
+        "//rulegen:go_default_library",
+        "//runner:go_default_library",
     ],
 )
 
@@ -26,9 +26,9 @@ go_test(
     size = "small",
     srcs = ["apply_test.go"],
     data = [
-        "//deploy/cmd/apply/testdata",
-        "//deploy/samples:configs",
-        "//deploy/samples/spanned_configs:configs",
+        "//cmd/apply/testdata",
+        "//samples:configs",
+        "//samples/spanned_configs:configs",
     ],
     embed = [":go_default_library"],
     # Override default run dir to make it easier to find test files.

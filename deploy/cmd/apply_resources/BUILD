@@ -14,7 +14,7 @@ go_library(
     srcs = ["apply_resources.go"],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/cmd/apply_resources",
     deps = [
-        "//deploy/apply:go_default_library",
-        "//deploy/config:go_default_library",
+        "//apply:go_default_library",
+        "//config:go_default_library",
     ],
 )

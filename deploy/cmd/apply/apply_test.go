@@ -29,10 +29,10 @@ import (
 
 func TestApplyConfigs(t *testing.T) {
 	configPaths := []string{
-		"deploy/samples/project_with_remote_audit_logs.yaml",
-		"deploy/samples/spanned_configs/root.yaml",
+		"samples/project_with_remote_audit_logs.yaml",
+		"samples/spanned_configs/root.yaml",
 	}
-	cmdFilePath := "deploy/cmd/apply/testdata/project_with_remote_audit_logs_dryrun_commands.txt"
+	cmdFilePath := "cmd/apply/testdata/project_with_remote_audit_logs_dryrun_commands.txt"
 	excludeNonCommandLinesRe := regexp.MustCompile("(?m)^(.{0,2}|([^D]|D[^r]|Dr[^y]).*)\n")
 	replaceTmpDirNameRe := regexp.MustCompile("(?m)/tmp/.*$")
 
