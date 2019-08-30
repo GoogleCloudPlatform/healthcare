@@ -97,6 +97,26 @@ resource:
 				}},
 			},
 		},
+		{
+			name: "project_iam_member",
+			data: &testconf.ConfigData{`
+iam_members:
+- role: roles/owner
+  member: user:foo-user@my-domain.com`},
+			want: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_project_iam_member:
+    my-project:
+      for_each:
+        'roles/owner user:foo-user@my-domain.com':
+          role: roles/owner
+          member: user:foo-user@my-domain.com
+      project: my-project
+      role: '${each.value.role}'
+      member: '${each.value.member}'`),
+			},
+		},
 	}
 
 	for _, tc := range tests {

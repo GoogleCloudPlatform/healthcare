@@ -537,6 +537,27 @@ definitions:
         items:
           type: object
 
+      iam_members:
+        type: array
+        description: |
+          DEV ONLY. Project level IAM members.
+          Supports google_project_iam_member (https://www.terraform.io/docs/providers/google/r/google_project_iam.html).
+          Only the fields below are allowed.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - role
+            - member
+            properties:
+              role:
+                type: string
+                description: The role that should be applied.
+              member:
+                type: string
+                description: |
+                  Identities that will be granted the privilege in role.
+
       storage_buckets:
         type: array
         description: |
