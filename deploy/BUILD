@@ -18,18 +18,10 @@ py_binary(
     srcs = ["create_project.py"],
     # Pass binary paths as arg due to unstable location in bazel built binaries.
     args = [
-        "--apply_binary=$(location //deploy/cmd/apply_resources)",
-        "--apply_forseti_binary=$(location //deploy/cmd/apply_forseti)",
-        "--rule_generator_binary=$(location //deploy/cmd/rule_generator)",
-        "--load_config_binary=$(location //deploy/cmd/load_config)",
-        "--grant_forseti_access_binary=$(location //deploy/cmd/grant_forseti_access)",
+        "--apply_binary=$(location //deploy/cmd/apply)",
     ],
     data = [
-        "//deploy/cmd/apply_forseti",
-        "//deploy/cmd/apply_resources",
-        "//deploy/cmd/grant_forseti_access",
-        "//deploy/cmd/load_config",
-        "//deploy/cmd/rule_generator",
+        "//deploy/cmd/apply",
     ],
     python_version = "PY3",
     deps = [":create_project_lib"],
@@ -39,36 +31,4 @@ py_library(
     name = "create_project_lib",
     srcs = ["create_project.py"],
     data = ["//deploy/templates"],
-    deps = [
-        "//deploy/utils",
-        "//deploy/utils:forseti",
-        "//deploy/utils:runner",
-    ],
-)
-
-py_test(
-    name = "create_project_test",
-    srcs = ["create_project_test.py"],
-    # Pass binary paths as arg due to unstable location in bazel built binaries.
-    args = [
-        "--apply_binary=$(location //deploy/cmd/apply_resources)",
-        "--apply_forseti_binary=$(location //deploy/cmd/apply_forseti)",
-        "--rule_generator_binary=$(location //deploy/cmd/rule_generator)",
-        "--load_config_binary=$(location //deploy/cmd/load_config)",
-        "--grant_forseti_access_binary=$(location //deploy/cmd/grant_forseti_access)",
-    ],
-    data = [
-        "//deploy/cmd/apply_forseti",
-        "//deploy/cmd/apply_resources",
-        "//deploy/cmd/grant_forseti_access",
-        "//deploy/cmd/load_config",
-        "//deploy/cmd/rule_generator",
-        "//deploy/samples:configs",
-        "//deploy/samples/spanned_configs:configs",
-    ],
-    python_version = "PY3",
-    deps = [
-        ":create_project_lib",
-        "//deploy/utils",
-    ],
 )
