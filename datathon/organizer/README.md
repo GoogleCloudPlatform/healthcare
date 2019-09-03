@@ -232,24 +232,25 @@ to create the Google Cloud projects, including
     *   Set up a Compute Engine VM with the free version of RStudio server, (in
         turned-off state) and opens up port 8787 for incoming connections.
 
+Make sure you are in the `healthcare/deploy` directory.
+
 ```shell
-bazel run --incompatible_use_python_toolchains deploy:create_project -- \
-  --project_yaml=datathon/organizer/input.yaml \
-  --generated_fields_path=datathon/organizer/generated_fields.yaml \
+bazel run cmd/apply:apply -- \
+  --config_path=../datathon/organizer/input.yaml \
+  --output_path=../datathon/organizer/output.yaml \
   --dry_run
 ```
 
 Note that the `--dry_run` flag enables dry run mode, which only prints the
 commands to be run for you to review. If everything looks good, you can rerun
-the command with `--nodry_run` instead to actually create the projects. The file
-defined in the `--output_yaml_path` flag, will store the exact configuration
+the command without `--dry_run` instead to actually create the projects. The
+file defined in the `--output_path` flag, will store the exact configuration
 used for creating the projects after environment variable substitution.
 
 ```shell
-bazel run --incompatible_use_python_toolchains deploy:create_project -- \
-  --project_yaml=datathon/organizer/input.yaml \
-  --generated_fields_path=datathon/organizer/generated_fields.yaml \
-  --nodry_run
+bazel run cmd/apply:apply -- \
+  --config_path=../datathon/organizer/input.yaml \
+  --output_path=../datathon/organizer/output.yaml \
 ```
 
 In case the deployment fails, please examine the error messages and make
