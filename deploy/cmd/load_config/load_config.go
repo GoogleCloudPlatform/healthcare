@@ -16,38 +16,47 @@
 package main
 
 import (
-	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 
 	"flag"
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/ghodss/yaml"
 )
 
 var (
-	projectYAMLPath     = flag.String("project_yaml_path", "", "Path to project yaml file")
-	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
-	enableTerraform     = flag.Bool("enable_terraform", false, "DEV ONLY. Enable terraform.")
+	configPath      = flag.String("config_path", "", "Path to project config file")
+	outputPath      = flag.String("output_path", "", "Path to output file to write generated fields")
+	enableTerraform = flag.Bool("enable_terraform", false, "DEV ONLY. Enable terraform.")
 )
 
 func main() {
 	flag.Parse()
 
-	if *projectYAMLPath == "" {
-		log.Fatal("--project_yaml_path must be set")
+	if *configPath == "" {
+		log.Fatal("--config_path must be set")
 	}
 
 	config.EnableTerraform = *enableTerraform
-	b, err := config.LoadBytes(*projectYAMLPath)
+	if *outputPath == "" {
+		genFile, err := ioutil.TempFile("", "output.yaml")
+		if err != nil {
+			log.Fatalf("Failed to create temporary file: %v", err)
+		}
+		defer os.Remove(genFile.Name())
+		*outputPath = genFile.Name()
+	}
+
+	c, err := config.Load(*configPath, *outputPath)
 	if err != nil {
 		log.Fatalf("failed to load config to bytes: %v", err)
 	}
 
-	if *generatedFieldsPath != "" {
-		if _, err := config.LoadGeneratedFields(*generatedFieldsPath); err != nil {
-			log.Fatalf("failed to validate generated fields yaml: %v", err)
-		}
+	b, err := yaml.Marshal(c)
+	if err != nil {
+		log.Fatalf("failed to marshal config: %v", err)
 	}
-
-	fmt.Println(string(b))
+	log.Printf("Successfully loaded config:\n%s", string(b))
 }

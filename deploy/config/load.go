@@ -63,9 +63,23 @@ func NormalizePath(path string) (string, error) {
 
 // Load loads a config from the given path.
 func Load(confPath, genFieldsPath string) (*Config, error) {
-	b, err := LoadBytes(confPath)
+	confPath, err := NormalizePath(confPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load config to bytes: %v", err)
+		return nil, fmt.Errorf("failed to normalize path %q: %v", confPath, err)
+	}
+
+	m, err := loadMap(confPath, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config to map: %v", err)
+	}
+
+	b, err := yaml.Marshal(m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal config map: %v", err)
+	}
+
+	if err := ValidateConf(b); err != nil {
+		return nil, err
 	}
 
 	conf := new(Config)
@@ -81,29 +95,6 @@ func Load(confPath, genFieldsPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to initialize config: %v", err)
 	}
 	return conf, nil
-}
-
-// LoadBytes merges, parses and validates the config at path and returns its bytes.
-func LoadBytes(path string) ([]byte, error) {
-	path, err := NormalizePath(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
-	}
-	m, err := loadMap(path, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config to map: %v", err)
-	}
-
-	b, err := yaml.Marshal(m)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal config map: %v", err)
-	}
-
-	if err := ValidateConf(b); err != nil {
-		return nil, err
-	}
-
-	return b, nil
 }
 
 // ValidateConf validates the input project config against the default schema template.

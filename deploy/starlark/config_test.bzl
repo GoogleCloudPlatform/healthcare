@@ -2,13 +2,13 @@
 
 def _impl(ctx):
     """Core implementation of _config_test rule."""
-    content = "{config_loader} --project_yaml_path {path}".format(
+    content = "{config_loader} --config_path {path}".format(
         config_loader = ctx.executable._config_loader.short_path,
         path = ctx.file.config.short_path,
     )
 
     if ctx.file.generated_fields:
-        content += " --generated_fields_path {path}".format(
+        content += " --output_path {path}".format(
             path = ctx.file.generated_fields.short_path,
         )
 
