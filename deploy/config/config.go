@@ -105,6 +105,7 @@ type Project struct {
 	// Terraform resources
 	BigqueryDatasets []*tfconfig.BigqueryDataset `json:"bigquery_datasets"`
 	IAMMembers       *tfconfig.ProjectIAMMembers `json:"iam_members"`
+	Services         *tfconfig.ProjectServices   `json:"services"`
 	StorageBuckets   []*tfconfig.StorageBucket   `json:"storage_buckets"`
 
 	BinauthzPolicy *BinAuthz `json:"binauthz"`

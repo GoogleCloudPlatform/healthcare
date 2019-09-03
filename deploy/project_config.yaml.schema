@@ -558,6 +558,21 @@ definitions:
                 description: |
                   Identities that will be granted the privilege in role.
 
+      services:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_project_service
+          (https://www.terraform.io/docs/providers/google/r/google_project_service.html).
+          Only the fields below can be set.
+          additionalProperties: false
+          required:
+          - service
+          properties:
+            service:
+              type: string
+              descrpition: The service to enable.
+
       storage_buckets:
         type: array
         description: |

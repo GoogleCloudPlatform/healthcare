@@ -24,6 +24,8 @@ import (
 
 // Config represents a Terraform config.
 // See https://www.terraform.io/docs/configuration/syntax-json.html for documentation.
+// Note: Terraform resources and modules are keyed Type+ID.
+// So google_storage_bucket.foo and google_bigquery_dataset.foo are acceptable in the same config.
 type Config struct {
 	Terraform Terraform   `json:"terraform"`
 	Modules   []*Module   `json:"module,omitempty"`

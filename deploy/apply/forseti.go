@@ -86,7 +86,7 @@ func ForsetiConfig(conf *config.Config) error {
 	// Always deploy state bucket, otherwise a forseti installation that failed half way through
 	// will be left in a partial state and every following attempt will install a fresh instance.
 	// TODO: once terraform is launched and default just let the Default take care of deploying the state bucket and remove this block.
-	if err := stateBucket(conf, conf.Forseti.Project); err != nil {
+	if err := stateBucket(conf.Forseti.Project); err != nil {
 		return fmt.Errorf("failed to deploy terraform state: %v", err)
 	}
 

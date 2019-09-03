@@ -46,8 +46,9 @@ func (ms *ProjectIAMMembers) Init(projectID string) error {
 }
 
 // ID returns the resource unique identifier.
+// It is hardcoded to return "project" as there is at most one of this resource in a deployment.
 func (ms *ProjectIAMMembers) ID() string {
-	return ms.project
+	return "project"
 }
 
 // ResourceType returns the resource terraform provider type.

@@ -65,19 +65,22 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 }
 
 func defaultTerraform(config *config.Config, project *config.Project) error {
-	if err := stateBucket(config, project); err != nil {
+	if err := stateBucket(project); err != nil {
 		return fmt.Errorf("failed to deploy terraform state: %v", err)
 	}
 	if err := auditResources(config, project); err != nil {
 		return fmt.Errorf("failed to deploy audit resources: %v", err)
 	}
-	if err := dataResources(config, project); err != nil {
+	if err := services(project); err != nil {
+		return fmt.Errorf("failed to deploy services: %v", err)
+	}
+	if err := dataResources(project); err != nil {
 		return fmt.Errorf("failed to deploy terraform data resources: %v", err)
 	}
 	return nil
 }
 
-func stateBucket(config *config.Config, project *config.Project) error {
+func stateBucket(project *config.Project) error {
 	if project.TerraformConfig.StateBucket == nil {
 		return errors.New("state_storage_bucket must not be nil")
 	}
@@ -85,6 +88,29 @@ func stateBucket(config *config.Config, project *config.Project) error {
 	tfConf := terraform.NewConfig()
 	opts := &terraform.Options{}
 	addResources(tfConf, opts, project.TerraformConfig.StateBucket)
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	return terraformApply(tfConf, dir, opts)
+}
+
+func services(project *config.Project) error {
+	if project.Services == nil {
+		return nil
+	}
+
+	tfConf := terraform.NewConfig()
+	tfConf.Terraform.Backend = &terraform.Backend{
+		Bucket: project.TerraformConfig.StateBucket.Name,
+		Prefix: "services",
+	}
+
+	opts := &terraform.Options{}
+	addResources(tfConf, opts, project.Services)
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -142,7 +168,7 @@ func auditResources(config *config.Config, project *config.Project) error {
 	return nil
 }
 
-func dataResources(config *config.Config, project *config.Project) error {
+func dataResources(project *config.Project) error {
 	rs := project.TerraformResources()
 	if len(rs) == 0 {
 		return nil

@@ -36,9 +36,10 @@ func TestDeployTerraform(t *testing.T) {
 	runner.StubFakeCmds()
 
 	tests := []struct {
-		name string
-		data *testconf.ConfigData
-		want *applyCall
+		name              string
+		data              *testconf.ConfigData
+		wantServicesCall  *applyCall
+		wantResourcesCall *applyCall
 	}{
 		{
 			name: "no_resources",
@@ -49,7 +50,7 @@ func TestDeployTerraform(t *testing.T) {
 bigquery_datasets:
 - dataset_id: foo_dataset
   location: US`},
-			want: &applyCall{
+			wantResourcesCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
 - google_bigquery_dataset:
@@ -72,7 +73,7 @@ storage_buckets:
   _iam_members:
   - role: roles/storage.admin
     member: user:foo-user@my-domain.com`},
-			want: &applyCall{
+			wantResourcesCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
 - google_storage_bucket:
@@ -103,11 +104,11 @@ resource:
 iam_members:
 - role: roles/owner
   member: user:foo-user@my-domain.com`},
-			want: &applyCall{
+			wantResourcesCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
 - google_project_iam_member:
-    my-project:
+    project:
       for_each:
         'roles/owner user:foo-user@my-domain.com':
           role: roles/owner
@@ -115,6 +116,31 @@ resource:
       project: my-project
       role: '${each.value.role}'
       member: '${each.value.member}'`),
+			},
+		},
+		{
+			name: "project_service",
+			data: &testconf.ConfigData{`
+services:
+- service: compute.googleapis.com
+- service: iam.googleapis.com`},
+			wantServicesCall: &applyCall{
+				Config: unmarshal(t, `
+terraform:
+  required_version: '>= 0.12.0'
+  backend:
+    gcs:
+      bucket: my-project-state
+      prefix: services
+
+resource:
+- google_project_service:
+    project:
+      for_each:
+        'compute.googleapis.com': true
+        'iam.googleapis.com': true
+      project: my-project
+      service: '${each.key}'`),
 			},
 		},
 	}
@@ -145,9 +171,12 @@ resource:
 			}
 
 			want := []applyCall{projectCall(t), stateBucketCall(t), auditCall(t)}
-			if tc.want != nil {
-				addDefaultConfig(t, tc.want.Config)
-				want = append(want, *tc.want)
+			if tc.wantServicesCall != nil {
+				want = append(want, *tc.wantServicesCall)
+			}
+			if tc.wantResourcesCall != nil {
+				addDefaultConfig(t, tc.wantResourcesCall.Config)
+				want = append(want, *tc.wantResourcesCall)
 			}
 
 			if diff := cmp.Diff(got, want); diff != "" {
@@ -165,13 +194,13 @@ terraform:
 
 resource:
 - google_project:
-    my-project:
+    project:
       project_id: my-project
       name: my-project
       folder_id: '98765321'
       billing_account: 000000-000000-000000`),
 		Imports: []terraform.Import{{
-			Address: "google_project.my-project",
+			Address: "google_project.project",
 			ID:      "my-project",
 		}},
 	}

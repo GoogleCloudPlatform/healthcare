@@ -26,6 +26,12 @@ func (p *Project) initTerraform(auditProject *Project) error {
 		return fmt.Errorf("failed to init audit resources: %v", err)
 	}
 
+	if p.Services != nil {
+		if err := p.Services.Init(p.ID); err != nil {
+			return err
+		}
+	}
+
 	for _, r := range p.TerraformResources() {
 		if err := r.Init(p.ID); err != nil {
 			return err

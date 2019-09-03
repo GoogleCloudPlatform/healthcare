@@ -14,6 +14,10 @@
 
 package tfconfig
 
+import (
+	"encoding/json"
+)
+
 // ProjectResource represents a Terraform project resource.
 // https://www.terraform.io/docs/providers/google/r/google_project.html
 type ProjectResource struct {
@@ -35,8 +39,9 @@ func (p *ProjectResource) Init(projectID string) error {
 }
 
 // ID returns the resource unique identifier.
-func (p *ProjectResource) ID() string {
-	return p.ProjectID
+// It is hardcoded to return "project" as there is at most one of this resource in a deployment.
+func (*ProjectResource) ID() string {
+	return "project"
 }
 
 // ResourceType returns the resource terraform provider type.
@@ -47,4 +52,61 @@ func (p *ProjectResource) ResourceType() string {
 // ImportID returns the ID to use for terraform imports.
 func (p *ProjectResource) ImportID() string {
 	return p.ProjectID
+}
+
+// ProjectServices represents multiple Terraform project services.
+// It is used to wrap and merge multiple services into a single service struct when being marshalled to JSON.
+type ProjectServices struct {
+	services []*ProjectService
+	project  string
+}
+
+// ProjectService represents a Terraform project service.
+type ProjectService struct {
+	Service string `json:"service"`
+
+	// The following fields should not be set by users.
+
+	// ForEach is used to let a single iam member expand to reference multiple iam members
+	// through the use of terraform's for_each iterator.
+	ForEach map[string]bool `json:"for_each,omitempty"`
+	Project string          `json:"project,omitempty"`
+}
+
+// Init initializes the resource.
+func (s *ProjectServices) Init(projectID string) error {
+	s.project = projectID
+	return nil
+}
+
+// ID returns the resource unique identifier.
+// It is hardcoded to return "project" as there is at most one of this resource in a deployment.
+func (*ProjectServices) ID() string {
+	return "project"
+}
+
+// ResourceType returns the resource terraform provider type.
+func (*ProjectServices) ResourceType() string {
+	return "google_project_service"
+}
+
+// MarshalJSON marshals the list of members into a single member.
+// The single member will set a for_each block to expand to multiple iam members in the terraform call.
+func (s *ProjectServices) MarshalJSON() ([]byte, error) {
+	forEach := make(map[string]bool)
+
+	for _, svc := range s.services {
+		forEach[svc.Service] = true
+	}
+
+	return json.Marshal(&ProjectService{
+		ForEach: forEach,
+		Project: s.project,
+		Service: "${each.key}",
+	})
+}
+
+// UnmarshalJSON unmarshals the bytes to a list of members.
+func (s *ProjectServices) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &s.services)
 }
