@@ -39,13 +39,6 @@ properties:
           Output only. Fields whose values are produced during deployment and
           are used for monitoring of the project.
         properties:
-          failed_step:
-            type: number
-            description: |
-              Step the deployment script failed at (if they failed).
-              Presence of this field implies a project has not been fully
-              deployed. Conversely, absence implies the project was deployed
-              and now just needs to be updated.
           project_number:
             type: string
             description: The projects unique number.

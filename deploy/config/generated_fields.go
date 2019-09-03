@@ -31,7 +31,6 @@ type GeneratedFields struct {
 	ProjectNumber         string            `json:"project_number,omitempty"`
 	LogSinkServiceAccount string            `json:"log_sink_service_account,omitempty"`
 	GCEInstanceInfoList   []GCEInstanceInfo `json:"gce_instance_info,omitempty"`
-	FailedStep            int               `json:"failed_step,omitempty"`
 }
 
 // GCEInstanceInfo defines the generated fields for instances in a project.
