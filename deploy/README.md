@@ -27,7 +27,7 @@ beneficial if you have several data projects.
     remote audit logs) project(s).
 1.  [Create a YAML config](#create-a-yaml-config) for the project(s) you want to
     deploy.
-1.  [Create New Projects](#create-new-projects) using the `create_project.py`
+1.  [Create New Projects](#create-new-projects) using the `cmd/apply/apply.go`
     script. This will create the audit logs project (if required) and all data
     hosting projects.
 
@@ -96,13 +96,13 @@ remote or local audit logs. The schema for these YAML files is in
 
 WARNING: these samples use newer configuration that is incompatible with the
 previous and require `--enable_new_style_resources` to be passed to the
-`create_project` script. This flag will soon become default and the old style
-configs will be deprecated. Old style config examples can be found
+`cmd/apply/apply.go` script. This flag will soon become default and the old
+style configs will be deprecated. Old style config examples can be found
 [here](https://github.com/GoogleCloudPlatform/healthcare/tree/5bfa6b72a8077028ead4ff8c498325915180c3b8/deploy/samples).
 
 ### Create New Projects
 
-Use the `create_project.py` script to create an audit logs project (if using
+Use the `cmd/apply/apply.go` script to create an audit logs project (if using
 remote audit logs) and one or more data hosting projects.
 
 1.  Make sure the user running the script is in the owners group(s) of all
@@ -124,25 +124,24 @@ remote audit logs) and one or more data hosting projects.
     update.
 
 1.  If the projects were deployed successfully, the script will write a YAML
-    with all generated fields in --generated_fields_path. These fields are used
-    to generate monitoring rules.
+    with all generated fields in --output_path. These fields are used to
+    generate monitoring rules.
 
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare/deploy
-$ bazel run :create_project -- \
-  --project_yaml=${PROJECT_CONFIG?} \
-  --generated_fields_path=${GENERATED_FIELDS?} \
-  --projects=${PROJECTS?} \
-  --nodry_run
+$ bazel run cmd/apply:apply -- \
+  --config_path=${PROJECT_CONFIG?} \
+  --output_path=${GENERATED_FIELDS?} \
+  --projects=${PROJECTS?}
 ```
 
-If the script fails at any point, try to correct the error in the input yaml
+If the script fails at any point, try to correct the error in the input config
 file and try again.
 
 ### Disabled Unneeded APIs
 
-NOTE: This will be moved to `create_project.py`.
+NOTE: This will be moved to `cmd/apply/apply.go`.
 
 List the APIs that are enabled for your project, and remove any that you no
 longer require:
@@ -158,7 +157,7 @@ gcloud services --project ${PROJECT_ID?} disable ${SERVICE_NAME}
 ## Updates
 
 You may wish to modify a project to add additional resources or change an
-existing setting. The `create_project.py` script can be used to also update a
+existing setting. The `cmd/apply/apply.go` script can be used to also update a
 project. Listing a previously deployed project in the `--projects` flag (or
 setting the flag to be `"*"` for all projects), will trigger an update.
 
@@ -169,7 +168,7 @@ references including IAM bindings and enabled APIs.
 
 ## Steps
 
-The script `create_project.py` takes in YAML config files and creates one or
+The script `cmd/apply/apply.go` takes in YAML config files and creates one or
 more projects. It creates an audit logs project if `audit_logs_project` is
 provided and a forseti project if `forseti` is provided. It then creates a data
 hosting project for each project listed under `projects`. For each new project,
@@ -264,7 +263,7 @@ These are solutions to non-typical problems encountered:
 
 #### Log Sink reporting errors on initial deployment
 
-When using the `create_project` script, you may see an error on the log sink
+When using the `cmd/apply/apply.go` script, you may see an error on the log sink
 that exports to the logs dataset or you may have gotten an email with the
 subject "[ACTION REQUIRED] Stackdriver Logging export config error in
 {PROJECT_ID}".
