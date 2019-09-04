@@ -537,6 +537,22 @@ definitions:
         items:
           type: object
 
+      compute_images:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_compute_image (https://www.terraform.io/docs/providers/google/r/compute_image.html).
+        items:
+          type: object
+
+      compute_instances:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_compute_instance (https://www.terraform.io/docs/providers/google/r/compute_instance.html).
+        items:
+          type: object
+
       iam_members:
         type: array
         description: |

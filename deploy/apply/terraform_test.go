@@ -65,6 +65,62 @@ resource:
 			},
 		},
 		{
+			name: "compute_image",
+			data: &testconf.ConfigData{`
+compute_images:
+- name: foo-image
+  raw_disk:
+    source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
+`},
+			wantResourcesCall: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_compute_image:
+    foo-image:
+      name: foo-image
+      project: my-project
+      raw_disk:
+        source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz`),
+				Imports: []terraform.Import{{
+					Address: "google_compute_image.foo-image",
+					ID:      "my-project/foo-image",
+				}},
+			},
+		},
+		{
+			name: "compute_instance",
+			data: &testconf.ConfigData{`
+compute_instances:
+- name: foo-instance
+  zone: us-central1-a
+  machine_type: n1-standard-1
+  boot_disk:
+    initialize_params:
+      image: debian-cloud/debian-9
+  network_interface:
+    network: default
+`},
+			wantResourcesCall: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_compute_instance:
+    foo-instance:
+      name: foo-instance
+      project: my-project
+      zone: us-central1-a
+      machine_type: n1-standard-1
+      boot_disk:
+        initialize_params:
+          image: debian-cloud/debian-9
+      network_interface:
+        network: default`),
+				Imports: []terraform.Import{{
+					Address: "google_compute_instance.foo-instance",
+					ID:      "my-project/us-central1-a/foo-instance",
+				}},
+			},
+		},
+		{
 			name: "storage_bucket",
 			data: &testconf.ConfigData{`
 storage_buckets:
