@@ -250,7 +250,7 @@ used for creating the projects after environment variable substitution.
 ```shell
 bazel run cmd/apply:apply -- \
   --config_path=../datathon/organizer/input.yaml \
-  --output_path=../datathon/organizer/output.yaml \
+  --output_path=../datathon/organizer/output.yaml
 ```
 
 In case the deployment fails, please examine the error messages and make
