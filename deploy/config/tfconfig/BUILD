@@ -7,13 +7,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "go_default_library",
     srcs = [
-        "bigquery_dataset.go",
+        "bigquery.go",
         "config.go",
         "iam.go",
-        "logging_sink.go",
+        "logging.go",
         "pair.go",
         "project.go",
-        "storage_bucket.go",
+        "storage.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig",
     deps = [
