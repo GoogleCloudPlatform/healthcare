@@ -47,7 +47,6 @@ var forsetiStandardRoles = [...]string{
 // Forseti applies project configuration to a Forseti project.
 func Forseti(conf *config.Config, opts *Options) error {
 	project := conf.Forseti.Project
-	opts.EnableForseti = false
 	if err := Default(conf, project, opts); err != nil {
 		return err
 	}

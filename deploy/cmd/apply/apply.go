@@ -126,7 +126,6 @@ func applyConfigs() (err error) {
 		}
 	}()
 
-	enableForseti := conf.Forseti != nil && wantProject(conf.Forseti.Project.ID)
 	enableRemoteAudit := conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID)
 
 	// Cannot enable Forseti for remote audit logs project and Forseti project itself until it is deployed.
@@ -139,20 +138,28 @@ func applyConfigs() (err error) {
 			return fmt.Errorf("failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
 		}
 	}
-	if enableForseti {
+
+	// Deploy the Forseti project.
+	if conf.Forseti != nil && wantProject(conf.Forseti.Project.ID) {
 		log.Printf("Applying config for Forseti project %q", conf.Forseti.Project.ID)
 		// Forseti for Forseti project itself is enabled at the end of apply.Forseti().
 		if err := apply.Forseti(conf, opts); err != nil {
 			return fmt.Errorf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
 		}
-		if enableRemoteAudit {
-			// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
-			if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
-				return fmt.Errorf("failed to grant Forseti permissions to remote audit logs project: %v", err)
-			}
+	}
+
+	if conf.Forseti != nil && conf.AllGeneratedFields.Forseti.ServiceAccount == "" {
+		return fmt.Errorf("forseti project config is specified but has never been deployed")
+	}
+
+	// Use conf.AllGeneratedFields.Forseti.ServiceAccount to check if the Forseti project has been deployed or not.
+	if enableRemoteAudit && conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
+		// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
+		if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
+			return fmt.Errorf("failed to grant Forseti permissions to remote audit logs project: %v", err)
 		}
 	}
-	opts.EnableForseti = enableForseti
+
 	for _, p := range conf.Projects {
 		if !wantProject(p.ID) {
 			continue
@@ -163,7 +170,7 @@ func applyConfigs() (err error) {
 		}
 	}
 
-	if !enableForseti || *dryRun {
+	if conf.AllGeneratedFields.Forseti.ServiceAccount == "" || *dryRun {
 		return nil
 	}
 

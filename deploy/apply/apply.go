@@ -117,7 +117,7 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 		return fmt.Errorf("failed to create alerts: %v", err)
 	}
 
-	if opts.EnableForseti {
+	if conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
 		if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
 			return err
 		}
