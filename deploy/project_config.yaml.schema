@@ -155,8 +155,6 @@ definitions:
               GCS bucket to hold GCS logs. Required only if the project contains
               data_buckets.
             additionalProperties: false
-            required:
-            - ttl_days
             properties:
               ttl_days:
                 type: integer
