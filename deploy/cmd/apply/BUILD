@@ -16,7 +16,6 @@ go_library(
     deps = [
         "//apply:go_default_library",
         "//config:go_default_library",
-        "//rulegen:go_default_library",
         "//runner:go_default_library",
     ],
 )

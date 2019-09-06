@@ -159,7 +159,7 @@ gcloud services --project ${PROJECT_ID?} disable ${SERVICE_NAME}
 You may wish to modify a project to add additional resources or change an
 existing setting. The `cmd/apply/apply.go` script can be used to also update a
 project. Listing a previously deployed project in the `--projects` flag (or
-setting the flag to be `"*"` for all projects), will trigger an update.
+omitting the flag for all projects), will trigger an update.
 
 WARNING: Deployment Manager will run with deletion policy "ABANDON". Thus, if a
 resource is removed from a project, it will become unmonitored rather than
@@ -211,7 +211,8 @@ the script performs the following steps:
 1.  Prompts the user to create a Stackdriver account (currently this must be
     done using the Stackdriver UI).
 
-1.  Creates Stackdriver Alerts for IAM changes and unexpected GCS bucket access.
+1.  Creates Stackdriver Alerts for IAM changes and unexpected Cloud Storage
+    bucket access.
 
 1.  If a `forseti` block is defined:
 
@@ -219,7 +220,20 @@ the script performs the following steps:
         prompted during installation)
     *   Grants permissions for each project to the Forseti service account so
         they may be monitored.
-    *   Generates Forseti rules and writes them to the Forseti server bucket.
+
+## Rule Generation
+
+To generate new rules for the Forseti instance, run the following command:
+
+```shell
+$ bazel run cmd/rule_generator:rule_generator -- \
+  --config_path=${PROJECT_CONFIG?} \
+  --generated_fields_path=${GENERATED_FIELDS?}
+```
+
+By default, the rules will be written to the Forseti server bucket.
+Alternatively, use `--output_path` to specify a local directory or a different
+Cloud Storage bucket to write the rules to.
 
 ## Resources
 

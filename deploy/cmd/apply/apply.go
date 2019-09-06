@@ -34,14 +34,12 @@ import (
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/apply"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/rulegen"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 var (
 	configPath      = flag.String("config_path", "", "Path to project config file")
 	outputPath      = flag.String("output_path", "", "Path to output file to write generated fields")
-	rulesPath       = flag.String("rules_path", "", "Path to local directory or GCS bucket to output rules files. If unset, directly writes to the Forseti server bucket.")
 	dryRun          = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
 	enableTerraform = flag.Bool("enable_terraform", false, "DEV ONLY. Whether terraform is preferred over deployment manager.")
 	projects        arrayFlags
@@ -169,16 +167,5 @@ func applyConfigs() (err error) {
 			return fmt.Errorf("failed to apply config for project %q: %v", p.ID, err)
 		}
 	}
-
-	if conf.AllGeneratedFields.Forseti.ServiceAccount == "" || *dryRun {
-		return nil
-	}
-
-	log.Println("Running rule generator.")
-	if err := rulegen.Run(conf, *rulesPath); err != nil {
-		return fmt.Errorf("failed to generate Forseti rules: %v", err)
-	}
-	log.Println("Rule generation successful")
-
 	return nil
 }
