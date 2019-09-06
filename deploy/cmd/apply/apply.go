@@ -167,5 +167,10 @@ func applyConfigs() (err error) {
 			return fmt.Errorf("failed to apply config for project %q: %v", p.ID, err)
 		}
 	}
+
+	if conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
+		log.Println("Note: Forseti rule generation is no longer run as part of this script. Please use standalone script cmd/rule_generator/rule_generator.go to generate Forseti rules.")
+	}
+
 	return nil
 }

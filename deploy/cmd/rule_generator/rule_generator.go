@@ -15,7 +15,7 @@
 // Rule_generator provides a CLI to generate Forseti rules for the projects in the projects yaml file.
 //
 // Usage:
-//   $ bazel run :rule_generator -- --config_path=${CONFIG_PATH?} --output_path=${OUTPUT_PATH}
+//   $ bazel run :rule_generator -- --config_path=${CONFIG_PATH?} --generated_fields_path=${GENERATED_FIELDS_PATH} --output_path=${OUTPUT_PATH}
 package main
 
 import (
