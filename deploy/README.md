@@ -4,6 +4,11 @@
 
 Tools to configure GCP environments aimed at healthcare use cases.
 
+**Status:** ALPHA
+
+Expect breaking changes. We ensure that we support both deprecated and new
+fields/features for a period of time to allow users to migrate easily.
+
 *   [Setup Instructions](#setup-instructions)
     *   [Script Prerequisites](#script-prerequisites)
     *   [Create Groups](#create-groups)
