@@ -85,8 +85,6 @@ and install Python dependencies.
 ```shell
 git clone https://github.com/GoogleCloudPlatform/healthcare.git
 cd healthcare/deploy
-pip3 install -r requirements.txt
-cd ..
 ```
 
 ## Choosing Domain Name, Project Prefix and Project Zones
@@ -222,7 +220,7 @@ to create the Google Cloud projects, including
     *   Set the read-write editors of resources to `${DATA_EDITORS_GROUP}`.
     *   Direct audit logs to the auditing project `${PROJECT_PREFIX}-auditing`.
 *   A team project
-    *   named `${PROJECT_PREFIX}-team,
+    *   named `${PROJECT_PREFIX}-team`,
     *   whose permission group and auditing are set up in the same way as the
         data-hosting project.
     *   Pre-create a ${PROJECT_PREFIX}-shared-files GCS bucket for users to
