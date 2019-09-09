@@ -51,7 +51,7 @@ func Forseti(conf *config.Config, opts *Options) error {
 		return err
 	}
 
-	if err := ForsetiConfig(conf); err != nil {
+	if err := forsetiConfig(conf); err != nil {
 		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
 
@@ -73,10 +73,9 @@ func Forseti(conf *config.Config, opts *Options) error {
 	return nil
 }
 
-// ForsetiConfig applies the forseti config, if it exists. It does not configure
+// forsetiConfig applies the forseti config, if it exists. It does not configure
 // other settings such as billing account, deletion lien, etc.
-// TODO Make it private or merge it into Forseti() after removing apply_forseti.go.
-func ForsetiConfig(conf *config.Config) error {
+func forsetiConfig(conf *config.Config) error {
 	if conf.Forseti == nil {
 		log.Println("no forseti config, nothing to do")
 		return nil
