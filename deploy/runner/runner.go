@@ -16,7 +16,9 @@
 package runner
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -32,15 +34,24 @@ var (
 	}
 	CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		log.Printf("Running: %v", cmd.Args)
-		cmd.Stderr = os.Stderr
-		return cmd.Output()
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		b, err := cmd.Output()
+		if err != nil {
+			return b, fmt.Errorf("%v: %s", err, stderr.String())
+		}
+		return b, nil
 	}
 	CmdRun = func(cmd *exec.Cmd) error {
 		log.Printf("Running: %v", cmd.Args)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("%v: %s", err, stderr.String())
+		}
+		return nil
 	}
 )
 

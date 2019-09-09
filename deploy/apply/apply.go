@@ -493,6 +493,7 @@ func verifyProject(projectID, projectNumber, parentType, parentID string) (strin
 		// exist (e.g. caller does not have sufficient permission). In that case, project could exist
 		// and the code will return project existence as false. The caller might still attempt to create
 		// the project and fail if the project already exists.
+		log.Printf("Project %q does not exist or the caller does not have permission to see it. Attempting to create it...", projectID)
 		return "", nil
 	}
 
