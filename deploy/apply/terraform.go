@@ -74,7 +74,7 @@ func defaultTerraform(config *config.Config, project *config.Project) error {
 	if err := services(project); err != nil {
 		return fmt.Errorf("failed to deploy services: %v", err)
 	}
-	if err := dataResources(project); err != nil {
+	if err := userResources(project); err != nil {
 		return fmt.Errorf("failed to deploy terraform data resources: %v", err)
 	}
 	return nil
@@ -168,15 +168,15 @@ func auditResources(config *config.Config, project *config.Project) error {
 	return nil
 }
 
-func dataResources(project *config.Project) error {
-	rs := project.TerraformResources()
+func userResources(project *config.Project) error {
+	rs := project.UserResources()
 	if len(rs) == 0 {
 		return nil
 	}
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,
-		Prefix: "resources",
+		Prefix: "user",
 	}
 	opts := &terraform.Options{}
 	addResources(tfConf, opts, rs...)

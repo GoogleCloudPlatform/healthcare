@@ -36,10 +36,10 @@ func TestDeployTerraform(t *testing.T) {
 	runner.StubFakeCmds()
 
 	tests := []struct {
-		name              string
-		data              *testconf.ConfigData
-		wantServicesCall  *applyCall
-		wantResourcesCall *applyCall
+		name             string
+		data             *testconf.ConfigData
+		wantServicesCall *applyCall
+		wantUserCall     *applyCall
 	}{
 		{
 			name: "no_resources",
@@ -50,7 +50,7 @@ func TestDeployTerraform(t *testing.T) {
 bigquery_datasets:
 - dataset_id: foo_dataset
   location: US`},
-			wantResourcesCall: &applyCall{
+			wantUserCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
 - google_bigquery_dataset:
@@ -72,7 +72,7 @@ compute_images:
   raw_disk:
     source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
 `},
-			wantResourcesCall: &applyCall{
+			wantUserCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
 - google_compute_image:
@@ -100,7 +100,7 @@ compute_instances:
   network_interface:
     network: default
 `},
-			wantResourcesCall: &applyCall{
+			wantUserCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
 - google_compute_instance:
@@ -129,7 +129,7 @@ storage_buckets:
   _iam_members:
   - role: roles/storage.admin
     member: user:foo-user@my-domain.com`},
-			wantResourcesCall: &applyCall{
+			wantUserCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
 - google_storage_bucket:
@@ -160,7 +160,7 @@ resource:
 iam_members:
 - role: roles/owner
   member: user:foo-user@my-domain.com`},
-			wantResourcesCall: &applyCall{
+			wantUserCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
 - google_project_iam_member:
@@ -230,9 +230,9 @@ resource:
 			if tc.wantServicesCall != nil {
 				want = append(want, *tc.wantServicesCall)
 			}
-			if tc.wantResourcesCall != nil {
-				addDefaultConfig(t, tc.wantResourcesCall.Config)
-				want = append(want, *tc.wantResourcesCall)
+			if tc.wantUserCall != nil {
+				addDefaultConfig(t, tc.wantUserCall.Config)
+				want = append(want, *tc.wantUserCall)
 			}
 
 			if diff := cmp.Diff(got, want); diff != "" {
@@ -351,7 +351,7 @@ terraform:
   backend:
     gcs:
       bucket: my-project-state
-      prefix: resources`
+      prefix: user`
 
 	if err := yaml.Unmarshal([]byte(def), &config); err != nil {
 		t.Fatalf("json.Unmarshal default config: %v", err)

@@ -32,7 +32,7 @@ func (p *Project) initTerraform(auditProject *Project) error {
 		}
 	}
 
-	for _, r := range p.TerraformResources() {
+	for _, r := range p.UserResources() {
 		if err := r.Init(p.ID); err != nil {
 			return err
 		}
@@ -82,8 +82,8 @@ func (p *Project) initTerraformAuditResources(auditProject *Project) error {
 	return nil
 }
 
-// TerraformResources gets all terraform data resources in this project.
-func (p *Project) TerraformResources() []tfconfig.Resource {
+// UserResources gets all terraform user defined resources in this project.
+func (p *Project) UserResources() []tfconfig.Resource {
 	var rs []tfconfig.Resource
 	for _, r := range p.StorageBuckets {
 		rs = append(rs, r)
