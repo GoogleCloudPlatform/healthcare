@@ -551,7 +551,7 @@ definitions:
         items:
           type: object
 
-      iam_members:
+      project_iam_members:
         type: array
         description: |
           DEV ONLY. Project level IAM members.
@@ -572,7 +572,7 @@ definitions:
                 description: |
                   Identities that will be granted the privilege in role.
 
-      services:
+      project_services:
         type: array
         description: |
           DEV ONLY (TERRAFORM).

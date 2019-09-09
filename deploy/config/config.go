@@ -106,8 +106,8 @@ type Project struct {
 	BigqueryDatasets []*tfconfig.BigqueryDataset `json:"bigquery_datasets"`
 	ComputeImages    []*tfconfig.ComputeImage    `json:"compute_images"`
 	ComputeInstances []*tfconfig.ComputeInstance `json:"compute_instances"`
-	IAMMembers       *tfconfig.ProjectIAMMembers `json:"iam_members"`
-	Services         *tfconfig.ProjectServices   `json:"services"`
+	IAMMembers       *tfconfig.ProjectIAMMembers `json:"project_iam_members"`
+	Services         *tfconfig.ProjectServices   `json:"project_services"`
 	StorageBuckets   []*tfconfig.StorageBucket   `json:"storage_buckets"`
 
 	BinauthzPolicy *BinAuthz `json:"binauthz"`

@@ -157,7 +157,7 @@ resource:
 		{
 			name: "project_iam_member",
 			data: &testconf.ConfigData{`
-iam_members:
+project_iam_members:
 - role: roles/owner
   member: user:foo-user@my-domain.com`},
 			wantUserCall: &applyCall{
@@ -177,7 +177,7 @@ resource:
 		{
 			name: "project_service",
 			data: &testconf.ConfigData{`
-services:
+project_services:
 - service: compute.googleapis.com
 - service: iam.googleapis.com`},
 			wantServicesCall: &applyCall{
