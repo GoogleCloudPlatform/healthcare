@@ -39,10 +39,6 @@ properties:
       The default value is US. See details at
       https://cloud.google.com/bigquery/docs/dataset-locations.
     default: 'US'
-    enum:
-      - Asia
-      - EU
-      - US
   access:
     type: array
     description: |
