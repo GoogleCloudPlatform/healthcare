@@ -25,7 +25,8 @@ imports:
 
     # Replace this location with the closest region for Google Cloud Storage.
     # See https://cloud.google.com/storage/docs/bucket-locations for all options.
-    GCS_LOCATION: US
+    # Both Regional (e.g., us-central1) and Multi-Regional (e.g., EU) are supported.
+    GCS_LOCATION: us-central1
 
     # Replace this location with the closest zone with Google Compute Engine.
     # See https://cloud.google.com/compute/docs/regions-zones/ for all options.

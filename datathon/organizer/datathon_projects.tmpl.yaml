@@ -60,7 +60,7 @@ projects:
       properties:
         name: {{.PROJECT_PREFIX}}-data-audit-logs-gcs
         location: {{.GCS_LOCATION}}
-        storageClass: MULTI_REGIONAL
+        storageClass: STANDARD
       ttl_days: 365
     logs_bq_dataset:
       properties:
@@ -79,7 +79,7 @@ projects:
       properties:
         name: {{.PROJECT_PREFIX}}-team-project-audit-logs-gcs
         location: {{.GCS_LOCATION}}
-        storageClass: MULTI_REGIONAL
+        storageClass: STANDARD
       ttl_days: 365
     logs_bq_dataset:
       properties:
@@ -91,7 +91,7 @@ projects:
     - properties:
         location: {{.GCS_LOCATION}}
         name: {{.PROJECT_PREFIX}}-team-shared-files
-        storageClass: MULTI_REGIONAL
+        storageClass: STANDARD
     iam_policies:
     - name: additional_project_permissions
       properties:
