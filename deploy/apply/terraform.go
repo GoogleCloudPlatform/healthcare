@@ -120,7 +120,9 @@ func services(project *config.Project) error {
 	}
 
 	opts := &terraform.Options{}
-	addResources(tfConf, opts, project.Services)
+	if err := addResources(tfConf, opts, project.Services); err != nil {
+		return err
+	}
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -186,7 +188,9 @@ func userResources(project *config.Project) error {
 		Prefix: "user",
 	}
 	opts := &terraform.Options{}
-	addResources(tfConf, opts, rs...)
+	if err := addResources(tfConf, opts, rs...); err != nil {
+		return err
+	}
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -234,7 +238,7 @@ func defaultResources(project *config.Project) error {
 // If the resource implements functions to get an import ID, the terraform options will be updated
 // with the import ID, so the resource is imported to the terraform state if it already exists.
 // The import ID for a resource can be found in terraform's documentation for the resource.
-func addResources(config *terraform.Config, opts *terraform.Options, resources ...tfconfig.Resource) {
+func addResources(config *terraform.Config, opts *terraform.Options, resources ...tfconfig.Resource) error {
 	for _, r := range resources {
 		config.Resources = append(config.Resources, &terraform.Resource{
 			Name:       r.ID(),
@@ -243,14 +247,21 @@ func addResources(config *terraform.Config, opts *terraform.Options, resources .
 		})
 
 		type importer interface {
-			ImportID() string
+			ImportID() (string, error)
 		}
 
 		if i, ok := r.(importer); ok {
-			opts.Imports = append(opts.Imports, terraform.Import{
-				Address: fmt.Sprintf("%s.%s", r.ResourceType(), r.ID()),
-				ID:      i.ImportID(),
-			})
+			id, err := i.ImportID()
+			if err != nil {
+				return fmt.Errorf("failed to get import ID for %q %q: %v", r.ResourceType(), r.ID(), err)
+			}
+			if id != "" {
+				opts.Imports = append(opts.Imports, terraform.Import{
+					Address: fmt.Sprintf("%s.%s", r.ResourceType(), r.ID()),
+					ID:      id,
+				})
+			}
+
 		}
 
 		type depender interface {
@@ -260,4 +271,5 @@ func addResources(config *terraform.Config, opts *terraform.Options, resources .
 			addResources(config, opts, d.DependentResources()...)
 		}
 	}
+	return nil
 }

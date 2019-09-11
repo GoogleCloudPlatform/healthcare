@@ -45,8 +45,8 @@ func (*LoggingSink) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (s *LoggingSink) ImportID() string {
-	return fmt.Sprintf("projects/%s/sinks/%s", s.Project, s.Name)
+func (s *LoggingSink) ImportID() (string, error) {
+	return fmt.Sprintf("projects/%s/sinks/%s", s.Project, s.Name), nil
 }
 
 // LoggingMetric represents a Terraform logging metric.
@@ -98,6 +98,6 @@ func (m *LoggingMetric) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports
-func (m *LoggingMetric) ImportID() string {
-	return m.Name
+func (m *LoggingMetric) ImportID() (string, error) {
+	return m.Name, nil
 }

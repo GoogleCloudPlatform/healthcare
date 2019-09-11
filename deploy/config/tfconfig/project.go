@@ -50,8 +50,8 @@ func (p *ProjectResource) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (p *ProjectResource) ImportID() string {
-	return p.ProjectID
+func (p *ProjectResource) ImportID() (string, error) {
+	return p.ProjectID, nil
 }
 
 // ProjectServices represents multiple Terraform project services.

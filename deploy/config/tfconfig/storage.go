@@ -86,8 +86,8 @@ func (b *StorageBucket) DependentResources() []Resource {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (b *StorageBucket) ImportID() string {
-	return fmt.Sprintf("%s/%s", b.Project, b.ID())
+func (b *StorageBucket) ImportID() (string, error) {
+	return fmt.Sprintf("%s/%s", b.Project, b.ID()), nil
 }
 
 // aliasStorageBucket is used to prevent infinite recursion when dealing with json marshaling.

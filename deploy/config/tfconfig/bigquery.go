@@ -69,8 +69,8 @@ func (d *BigqueryDataset) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (d *BigqueryDataset) ImportID() string {
-	return fmt.Sprintf("%s:%s", d.Project, d.ID())
+func (d *BigqueryDataset) ImportID() (string, error) {
+	return fmt.Sprintf("%s:%s", d.Project, d.ID()), nil
 }
 
 // aliasBQDataset is used to prevent infinite recursion when dealing with json marshaling.

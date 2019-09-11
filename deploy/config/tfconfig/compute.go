@@ -52,8 +52,8 @@ func (i *ComputeImage) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (i *ComputeImage) ImportID() string {
-	return fmt.Sprintf("%s/%s", i.Project, i.Name)
+func (i *ComputeImage) ImportID() (string, error) {
+	return fmt.Sprintf("%s/%s", i.Project, i.Name), nil
 }
 
 // aliasStorageBucket is used to prevent infinite recursion when dealing with json marshaling.
@@ -110,8 +110,8 @@ func (i *ComputeInstance) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (i *ComputeInstance) ImportID() string {
-	return fmt.Sprintf("%s/%s/%s", i.Project, i.Zone, i.Name)
+func (i *ComputeInstance) ImportID() (string, error) {
+	return fmt.Sprintf("%s/%s/%s", i.Project, i.Zone, i.Name), nil
 }
 
 // aliasStorageBucket is used to prevent infinite recursion when dealing with json marshaling.
