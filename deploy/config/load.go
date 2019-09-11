@@ -96,7 +96,7 @@ func Load(confPath, genFieldsPath string) (*Config, error) {
 		return nil, errors.New("generated fields path is neither specified in config nor command line")
 	}
 
-	if genFieldsPath, err := NormalizePath(genFieldsPath); err != nil {
+	if genFieldsPath, err = NormalizePath(genFieldsPath); err != nil {
 		return nil, fmt.Errorf("failed to normalize path %q: %v", genFieldsPath, err)
 	}
 
