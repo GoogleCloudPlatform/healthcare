@@ -16,9 +16,23 @@
 // This is a temporary package and will be merged back into the parent config package once deployment manager has been deprecated.
 package tfconfig
 
+import (
+	"regexp"
+	"strings"
+)
+
 // Resource is an interface that must be implemented by all concrete resource implementations.
 type Resource interface {
 	Init(projectID string) error
 	ID() string
 	ResourceType() string
+}
+
+// invalidIDRE defines the invalid characters not allowed in terraform resource names.
+var invalidIDRE = regexp.MustCompile("[^a-z0-9-_]")
+
+// standardizeID replaces all characters not allowed for terraform resource names with underscores.
+// It will also lowercase the name.
+func standardizeID(id string) string {
+	return invalidIDRE.ReplaceAllString(strings.ToLower(id), "_")
 }

@@ -32,6 +32,10 @@ func (p *Project) initTerraform(auditProject *Project) error {
 		}
 	}
 
+	if err := p.initDefaultResources(); err != nil {
+		return fmt.Errorf("failed to init default resources: %v", err)
+	}
+
 	for _, r := range p.UserResources() {
 		if err := r.Init(p.ID); err != nil {
 			return err
@@ -82,6 +86,129 @@ func (p *Project) initTerraformAuditResources(auditProject *Project) error {
 	return nil
 }
 
+func (p *Project) initDefaultResources() error {
+	type metricAndAlert struct {
+		metric *tfconfig.LoggingMetric
+		alert  *tfconfig.MonitoringAlertPolicy
+	}
+
+	metricAndAlerts := []metricAndAlert{
+		{
+			metric: &tfconfig.LoggingMetric{
+				Name:        "bigquery-settings-change-count",
+				Description: "Count of bigquery permission changes.",
+				Filter:      `resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"`,
+			},
+			alert: &tfconfig.MonitoringAlertPolicy{
+				DisplayName: "Bigquery Update Alert",
+				Documentation: &tfconfig.Documentation{
+					Content: "This policy ensures the designated user/group is notified when Bigquery dataset settings are altered.",
+				},
+				Conditions: []*tfconfig.Condition{{
+					DisplayName: "No tolerance on bigquery-settings-change-count!",
+					ConditionThreshold: &tfconfig.ConditionThreshold{
+						Filter: `resource.type="global" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bigquery-settings-change-count.name}"`,
+					},
+				}},
+			},
+		},
+		{
+			metric: &tfconfig.LoggingMetric{
+				Name:        "bucket-permission-change-count",
+				Description: "Count of GCS permissions changes.",
+				Filter: `resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
+(protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)`,
+			},
+			alert: &tfconfig.MonitoringAlertPolicy{
+				DisplayName: "Bucket Permission Change Alert",
+				Documentation: &tfconfig.Documentation{
+					Content: "This policy ensures the designated user/group is notified when bucket/object permissions are altered.",
+				},
+				Conditions: []*tfconfig.Condition{{
+					DisplayName: "No tolerance on bucket-permission-change-count!",
+					ConditionThreshold: &tfconfig.ConditionThreshold{
+						Filter: `resource.type="gcs_bucket" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bucket-permission-change-count.name}"`,
+					},
+				}},
+			},
+		},
+		{
+			metric: &tfconfig.LoggingMetric{
+				Name:        "iam-policy-change-count",
+				Description: "Count of IAM policy changes.",
+				Filter:      `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`,
+			},
+			alert: &tfconfig.MonitoringAlertPolicy{
+				DisplayName: "IAM Policy Change Alert",
+				Documentation: &tfconfig.Documentation{
+					Content: "This policy ensures the designated user/group is notified when IAM policies are altered.",
+				},
+				Conditions: []*tfconfig.Condition{{
+					DisplayName: "No tolerance on iam-policy-change-count!",
+					ConditionThreshold: &tfconfig.ConditionThreshold{
+						Filter: `resource.type=one_of("global","pubsub_topic","pubsub_subscription","gce_instance") AND metric.type="logging.googleapis.com/user/${google_logging_metric.iam-policy-change-count.name}"`,
+					},
+				}},
+			},
+		},
+	}
+
+	for _, ma := range metricAndAlerts {
+		if err := ma.metric.Init(p.ID); err != nil {
+			return fmt.Errorf("failed to init metric %q: %v", ma.metric.Name, err)
+		}
+		if err := ma.alert.Init(p.ID); err != nil {
+			return fmt.Errorf("failed to init alert for metric %q: %v", ma.metric.Name, err)
+		}
+		ma.metric.MetricDescriptor = &tfconfig.MetricDescriptor{
+			MetricKind: "DELTA",
+			ValueType:  "INT64",
+			Unit:       "1",
+			Labels: []*tfconfig.Label{{
+				Key:         "user",
+				ValueType:   "STRING",
+				Description: "Unexpected user",
+			}},
+		}
+		ma.metric.LabelExtractors = map[string]string{
+			"user": "EXTRACT(protoPayload.authenticationInfo.principalEmail)",
+		}
+
+		ma.alert.Documentation.MimeType = "text/markdown"
+		ma.alert.Combiner = "AND"
+		for _, c := range ma.alert.Conditions {
+			c.ConditionThreshold.Comparison = "COMPARISON_GT"
+			c.ConditionThreshold.Duration = "0s"
+		}
+
+		p.DefaultLoggingMetrics = append(p.DefaultLoggingMetrics, ma.metric)
+
+		if len(p.NotificationChannels) > 0 {
+			for _, c := range p.NotificationChannels {
+				// The notification channels are deployed in the user deployment, and the unique names of the notification channel is only known after deployment.
+				// Thus we need a reference to the channel name in the user deployment's state.
+				ref := fmt.Sprintf("${data.terraform_remote_state.user.%s.%s.name}", c.ResourceType(), c.ID())
+				ma.alert.NotificationChannels = append(ma.alert.NotificationChannels, ref)
+			}
+			p.DefaultAlertPolicies = append(p.DefaultAlertPolicies, ma.alert)
+		}
+	}
+	return nil
+}
+
+// DefaultResources gets all the default terraform resources in this project.
+// These resources are default resources that are always part of a deployment and typically not controlled by the user.
+func (p *Project) DefaultResources() []tfconfig.Resource {
+	var rs []tfconfig.Resource
+	for _, r := range p.DefaultLoggingMetrics {
+		rs = append(rs, r)
+	}
+	for _, r := range p.DefaultAlertPolicies {
+		rs = append(rs, r)
+	}
+	return rs
+}
+
 // UserResources gets all terraform user defined resources in this project.
 func (p *Project) UserResources() []tfconfig.Resource {
 	var rs []tfconfig.Resource
@@ -99,6 +226,9 @@ func (p *Project) UserResources() []tfconfig.Resource {
 	}
 	if p.IAMMembers != nil {
 		rs = append(rs, p.IAMMembers)
+	}
+	for _, r := range p.NotificationChannels {
+		rs = append(rs, r)
 	}
 	return rs
 }

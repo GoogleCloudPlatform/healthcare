@@ -551,6 +551,21 @@ definitions:
         items:
           type: object
 
+      monitoring_notification_channels:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_monitoring_notification_channel (https://www.terraform.io/docs/providers/google/r/monitoring_notification_channel.html).
+        items:
+          type: object
+          properties:
+            _email:
+              type: string
+              description: |
+                Helper to create an email notification channel.
+                Will set the `type` and `labels` fields (thus these fields must
+                not be set in conjunction with `_email`).
+
       project_iam_members:
         type: array
         description: |

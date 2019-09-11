@@ -12,6 +12,7 @@ go_library(
         "config.go",
         "iam.go",
         "logging.go",
+        "monitoring.go",
         "pair.go",
         "project.go",
         "storage.go",

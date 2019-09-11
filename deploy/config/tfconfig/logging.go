@@ -15,6 +15,7 @@
 package tfconfig
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -46,4 +47,57 @@ func (*LoggingSink) ResourceType() string {
 // ImportID returns the ID to use for terraform imports.
 func (s *LoggingSink) ImportID() string {
 	return fmt.Sprintf("projects/%s/sinks/%s", s.Project, s.Name)
+}
+
+// LoggingMetric represents a Terraform logging metric.
+type LoggingMetric struct {
+	Name             string            `json:"name"`
+	Project          string            `json:"project"`
+	Description      string            `json:"description"`
+	Filter           string            `json:"filter,omitempty"`
+	MetricDescriptor *MetricDescriptor `json:"metric_descriptor,omitempty"`
+	ValueExtractor   string            `json:"value_extractor,omitempty"`
+	LabelExtractors  map[string]string `json:"label_extractors,omitempty"`
+}
+
+// MetricDescriptor is the metric descriptor associated with the logs-based metric.
+type MetricDescriptor struct {
+	MetricKind string   `json:"metric_kind,omitempty"`
+	ValueType  string   `json:"value_type,omitempty"`
+	Unit       string   `json:"unit,omitempty"`
+	Labels     []*Label `json:"labels,omitempty"`
+}
+
+// Label can be used to describe a specific instance of this metric type.
+type Label struct {
+	Key         string `json:"key,omitempty"`
+	ValueType   string `json:"value_type,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// Init initializes the resource.
+func (m *LoggingMetric) Init(projectID string) error {
+	if m.Name == "" {
+		return errors.New("name must be set")
+	}
+	if m.Project != "" {
+		return fmt.Errorf("project must not be set: %v", m.Project)
+	}
+	m.Project = projectID
+	return nil
+}
+
+// ID returns the resource unique identifier.
+func (m *LoggingMetric) ID() string {
+	return m.Name
+}
+
+// ResourceType returns the resource terraform provider type.
+func (m *LoggingMetric) ResourceType() string {
+	return "google_logging_metric"
+}
+
+// ImportID returns the ID to use for terraform imports
+func (m *LoggingMetric) ImportID() string {
+	return m.Name
 }

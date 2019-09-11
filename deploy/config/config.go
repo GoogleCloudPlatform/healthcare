@@ -104,12 +104,13 @@ type Project struct {
 	} `json:"resources"`
 
 	// Terraform resources
-	BigqueryDatasets []*tfconfig.BigqueryDataset `json:"bigquery_datasets"`
-	ComputeImages    []*tfconfig.ComputeImage    `json:"compute_images"`
-	ComputeInstances []*tfconfig.ComputeInstance `json:"compute_instances"`
-	IAMMembers       *tfconfig.ProjectIAMMembers `json:"project_iam_members"`
-	Services         *tfconfig.ProjectServices   `json:"project_services"`
-	StorageBuckets   []*tfconfig.StorageBucket   `json:"storage_buckets"`
+	BigqueryDatasets     []*tfconfig.BigqueryDataset               `json:"bigquery_datasets"`
+	ComputeImages        []*tfconfig.ComputeImage                  `json:"compute_images"`
+	ComputeInstances     []*tfconfig.ComputeInstance               `json:"compute_instances"`
+	IAMMembers           *tfconfig.ProjectIAMMembers               `json:"project_iam_members"`
+	NotificationChannels []*tfconfig.MonitoringNotificationChannel `json:"monitoring_notification_channels"`
+	Services             *tfconfig.ProjectServices                 `json:"project_services"`
+	StorageBuckets       []*tfconfig.StorageBucket                 `json:"storage_buckets"`
 
 	BinauthzPolicy *BinAuthz `json:"binauthz"`
 
@@ -129,6 +130,9 @@ type Project struct {
 	// TODO: replace DM log sink with TF once DM is deprecated.
 	BQLogSinkTF *tfconfig.LoggingSink `json:"-"`
 	Metrics     []*Metric             `json:"-"`
+
+	DefaultAlertPolicies  []*tfconfig.MonitoringAlertPolicy `json:"-"`
+	DefaultLoggingMetrics []*tfconfig.LoggingMetric         `json:"-"`
 }
 
 // Init initializes the config and all its projects.

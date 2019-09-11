@@ -16,6 +16,7 @@ package apply
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
@@ -230,19 +231,123 @@ resource:
 			if tc.wantServicesCall != nil {
 				want = append(want, *tc.wantServicesCall)
 			}
-			if tc.wantUserCall != nil {
-				addDefaultConfig(t, tc.wantUserCall.Config)
-				want = append(want, *tc.wantUserCall)
+			if tc.wantUserCall == nil {
+				tc.wantUserCall = &applyCall{Config: make(map[string]interface{})}
 			}
+			userConfig(t, tc.wantUserCall.Config)
+			want = append(want, *tc.wantUserCall, defaultCall(t, ""))
 
 			if diff := cmp.Diff(got, want); diff != "" {
-				t.Errorf("terraform config differs (-got, +want):\n%v", diff)
+				t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
 			}
 		})
 	}
 }
 
+func TestMonitoring(t *testing.T) {
+	_, project := testconf.ConfigAndProject(t, &testconf.ConfigData{`
+monitoring_notification_channels:
+- display_name: Email
+  _email: my-auditors@my-domain.com`})
+
+	var got []applyCall
+	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+		b, err := json.Marshal(config)
+		if err != nil {
+			t.Fatalf("json.Marshal(%s) = %v", config, err)
+		}
+
+		call := applyCall{
+			Config: unmarshal(t, string(b)),
+		}
+		if opts != nil {
+			call.Imports = opts.Imports
+		}
+		got = append(got, call)
+		return nil
+	}
+
+	if err := userResources(project); err != nil {
+		t.Fatalf("userResources: %v", err)
+	}
+	if err := defaultResources(project); err != nil {
+		t.Fatalf("defaultResources: %v", err)
+	}
+
+	wantUserConfig := unmarshal(t, `
+resource:
+- google_monitoring_notification_channel:
+    email:
+      display_name: Email
+      project: my-project
+      type: email
+      labels:
+        email_address: my-auditors@my-domain.com
+`)
+	userConfig(t, wantUserConfig)
+
+	want := []applyCall{
+		{
+			Config: wantUserConfig,
+		},
+		defaultCall(t, `
+- google_monitoring_alert_policy:
+    bigquery_update_alert:
+      display_name: Bigquery Update Alert
+      project: my-project
+      documentation:
+        content: This policy ensures the designated user/group is notified when Bigquery dataset settings are altered.
+        mime_type: text/markdown
+      combiner: AND
+      conditions:
+      - display_name: No tolerance on bigquery-settings-change-count!
+        condition_threshold:
+          comparison: COMPARISON_GT
+          duration: 0s
+          filter: resource.type="global" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bigquery-settings-change-count.name}"
+      notification_channels:
+      - '${data.terraform_remote_state.user.google_monitoring_notification_channel.email.name}'
+- google_monitoring_alert_policy:
+    bucket_permission_change_alert:
+      display_name: Bucket Permission Change Alert
+      project: my-project
+      documentation:
+        content: This policy ensures the designated user/group is notified when bucket/object permissions are altered.
+        mime_type: text/markdown
+      combiner: AND
+      conditions:
+      - display_name: No tolerance on bucket-permission-change-count!
+        condition_threshold:
+          comparison: COMPARISON_GT
+          duration: 0s
+          filter: resource.type="gcs_bucket" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bucket-permission-change-count.name}"
+      notification_channels:
+      - '${data.terraform_remote_state.user.google_monitoring_notification_channel.email.name}'
+- google_monitoring_alert_policy:
+    iam_policy_change_alert:
+      display_name: IAM Policy Change Alert
+      project: my-project
+      documentation:
+        content: This policy ensures the designated user/group is notified when IAM policies are altered.
+        mime_type: text/markdown
+      combiner: AND
+      conditions:
+      - display_name: No tolerance on iam-policy-change-count!
+        condition_threshold:
+          comparison: COMPARISON_GT
+          duration: 0s
+          filter: resource.type=one_of("global","pubsub_topic","pubsub_subscription","gce_instance") AND metric.type="logging.googleapis.com/user/${google_logging_metric.iam-policy-change-count.name}"
+      notification_channels:
+      - '${data.terraform_remote_state.user.google_monitoring_notification_channel.email.name}'`),
+	}
+
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
+	}
+}
+
 func projectCall(t *testing.T) applyCall {
+	t.Helper()
 	return applyCall{
 		Config: unmarshal(t, `
 terraform:
@@ -263,6 +368,7 @@ resource:
 }
 
 func stateBucketCall(t *testing.T) applyCall {
+	t.Helper()
 	return applyCall{
 		Config: unmarshal(t, `
 terraform:
@@ -344,7 +450,8 @@ resource:
 	}
 }
 
-func addDefaultConfig(t *testing.T, config map[string]interface{}) {
+func userConfig(t *testing.T, config map[string]interface{}) {
+	t.Helper()
 	def := `
 terraform:
   required_version: '>= 0.12.0'
@@ -358,9 +465,96 @@ terraform:
 	}
 }
 
+func defaultCall(t *testing.T, extraResources string) applyCall {
+	t.Helper()
+	return applyCall{
+		Config: unmarshal(t, fmt.Sprintf(`
+terraform:
+  required_version: '>= 0.12.0'
+  backend:
+    gcs:
+      bucket: my-project-state
+      prefix: default
+data:
+- terraform_remote_state:
+    user:
+      backend: gcs
+      config:
+        bucket: my-project-state
+        prefix: user
+resource:
+- google_logging_metric:
+    bigquery-settings-change-count:
+      name: bigquery-settings-change-count
+      project: my-project
+      description: Count of bigquery permission changes.
+      filter: resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"
+      metric_descriptor:
+        metric_kind: DELTA
+        value_type: INT64
+        unit: '1'
+        labels:
+        - key: user
+          description: Unexpected user
+          value_type: STRING
+      label_extractors:
+        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+- google_logging_metric:
+    bucket-permission-change-count:
+      name: bucket-permission-change-count
+      project: my-project
+      description: Count of GCS permissions changes.
+      filter: |-
+        resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
+        (protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)
+      metric_descriptor:
+        metric_kind: DELTA
+        value_type: INT64
+        unit: '1'
+        labels:
+        - key: user
+          description: Unexpected user
+          value_type: STRING
+      label_extractors:
+        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+- google_logging_metric:
+    iam-policy-change-count:
+      name: iam-policy-change-count
+      project: my-project
+      description: Count of IAM policy changes.
+      filter: protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"
+      metric_descriptor:
+        metric_kind: DELTA
+        value_type: INT64
+        unit: '1'
+        labels:
+        - key: user
+          description: Unexpected user
+          value_type: STRING
+      label_extractors:
+        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+%s`, extraResources)),
+		Imports: []terraform.Import{
+			{
+				Address: "google_logging_metric.bigquery-settings-change-count",
+				ID:      "bigquery-settings-change-count",
+			},
+			{
+				Address: "google_logging_metric.bucket-permission-change-count",
+				ID:      "bucket-permission-change-count",
+			},
+			{
+				Address: "google_logging_metric.iam-policy-change-count",
+				ID:      "iam-policy-change-count",
+			},
+		},
+	}
+}
+
 // unmarshal is a helper to unmarshal a yaml or json string to an interface (map).
 // Note: the actual configs will always be json, but we allow yaml in tests to make them easier to write in test cases.
 func unmarshal(t *testing.T, s string) map[string]interface{} {
+	t.Helper()
 	out := make(map[string]interface{})
 	if err := yaml.Unmarshal([]byte(s), &out); err != nil {
 		t.Fatalf("yaml.Unmarshal = %v", err)

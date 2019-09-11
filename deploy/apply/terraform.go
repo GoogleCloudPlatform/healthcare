@@ -65,17 +65,27 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 }
 
 func defaultTerraform(config *config.Config, project *config.Project) error {
+	// State bucket has to be deployed first as other deployments will reference it.
 	if err := stateBucket(project); err != nil {
-		return fmt.Errorf("failed to deploy terraform state: %v", err)
+		return fmt.Errorf("failed to apply terraform state: %v", err)
 	}
+
 	if err := auditResources(config, project); err != nil {
-		return fmt.Errorf("failed to deploy audit resources: %v", err)
+		return fmt.Errorf("failed to apply audit resources: %v", err)
 	}
+
+	// Services deployment enables services that other resources require, so should come before the major resource deployments.
 	if err := services(project); err != nil {
-		return fmt.Errorf("failed to deploy services: %v", err)
+		return fmt.Errorf("failed to apply services: %v", err)
 	}
+
 	if err := userResources(project); err != nil {
-		return fmt.Errorf("failed to deploy terraform data resources: %v", err)
+		return fmt.Errorf("failed to apply user resources: %v", err)
+	}
+
+	// Default deployment references user deployment, so should be done after the user deployment.
+	if err := defaultResources(project); err != nil {
+		return fmt.Errorf("failed to apply default resources: %v", err)
 	}
 	return nil
 }
@@ -170,14 +180,44 @@ func auditResources(config *config.Config, project *config.Project) error {
 
 func userResources(project *config.Project) error {
 	rs := project.UserResources()
-	if len(rs) == 0 {
-		return nil
-	}
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,
 		Prefix: "user",
 	}
+	opts := &terraform.Options{}
+	addResources(tfConf, opts, rs...)
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	return terraformApply(tfConf, dir, opts)
+}
+
+func defaultResources(project *config.Project) error {
+	rs := project.DefaultResources()
+	tfConf := terraform.NewConfig()
+	tfConf.Terraform.Backend = &terraform.Backend{
+		Bucket: project.TerraformConfig.StateBucket.Name,
+		Prefix: "default",
+	}
+
+	// Allow default deployment to reference user deployment.
+	tfConf.Data = append(tfConf.Data, &terraform.Resource{
+		Name: "user",
+		Type: "terraform_remote_state",
+		Properties: map[string]interface{}{
+			"backend": "gcs",
+			"config": map[string]interface{}{
+				"bucket": project.TerraformConfig.StateBucket.Name,
+				"prefix": "user",
+			},
+		},
+	})
+
 	opts := &terraform.Options{}
 	addResources(tfConf, opts, rs...)
 
