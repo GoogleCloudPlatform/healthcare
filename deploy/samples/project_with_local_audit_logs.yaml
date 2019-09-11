@@ -29,6 +29,8 @@ overall:
   billing_account: 000000-000000-000000 # Replace this with your Billing Account.
   domain: domain.com                    # Replace this with your domain.
 
+generated_fields_path: generated_fields.yaml
+
 forseti:
   project:
     project_id: my-forseti-project      # Replace this with a unique ID for your forseti project.

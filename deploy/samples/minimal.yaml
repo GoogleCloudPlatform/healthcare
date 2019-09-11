@@ -20,6 +20,8 @@ overall:
   billing_account: 000000-000000-000000 # Replace this with your Billing Account.
   domain: domain.com                    # Replace this with your domain.
 
+generated_fields_path: generated_fields.yaml
+
 projects:
 - project_id: my-project
   owners_group: my-project-owners@my-domain.com      # Replace this with the owners group for this project.

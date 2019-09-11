@@ -28,6 +28,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"flag"
@@ -82,11 +83,8 @@ func applyConfigs() (err error) {
 	if *configPath == "" {
 		return errors.New("--config_path must be set")
 	}
-	if *outputPath == "" {
-		return errors.New("--output_path must be set")
-	}
 	if *outputPath == *configPath {
-		log.Fatal("--outputPath must not be set to the same as --configPath")
+		log.Fatal("--output_path must not be set to the same as --config_path")
 	}
 	if *dryRun {
 		runner.StubFakeCmds()
@@ -96,8 +94,16 @@ func applyConfigs() (err error) {
 		return fmt.Errorf("failed to load config: %v", err)
 	}
 
-	wantProjects := make(map[string]bool)
+	if !*dryRun {
+		// Make sure the generated fields file is writable.
+		file, err := os.OpenFile(conf.GeneratedFieldsPath, os.O_WRONLY, 0666)
+		if err != nil {
+			return fmt.Errorf("failed to open %q to write: %v", conf.GeneratedFieldsPath, err)
+		}
+		file.Close()
+	}
 
+	wantProjects := make(map[string]bool)
 	for _, p := range projects {
 		wantProjects[p] = true
 	}
@@ -115,7 +121,7 @@ func applyConfigs() (err error) {
 			// Do nothing.
 			return
 		}
-		if curErr := config.DumpGeneratedFields(conf.AllGeneratedFields, *outputPath); curErr != nil {
+		if curErr := config.DumpGeneratedFields(conf.AllGeneratedFields, conf.GeneratedFieldsPath); curErr != nil {
 			if err == nil {
 				err = fmt.Errorf("failed to write generated fields to output file: %v", curErr)
 			} else {

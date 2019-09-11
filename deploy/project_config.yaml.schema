@@ -617,6 +617,8 @@ definitions:
 required:
 - overall
 - projects
+# TODO: Uncomment the following line after migrating existing customers.
+# - generated_fields_path
 
 properties:
   overall:
@@ -730,3 +732,10 @@ properties:
           type: string
           description: |
             Glob supported as defined in https://godoc.org/path/filepath#Glob.
+
+  generated_fields_path:
+    type: string
+    description: |
+      The path of file to store information generated during the deployment
+      process, such as project numbers and Forseti service account. Must be
+      relative to the directory holding the project config.

@@ -25,9 +25,10 @@
 # organises a tree which connects all the files included.
 
 imports:
-- path: 'partial_audit.yaml'
-- path: 'partial_projects.yaml'
-- path: 'partial_other_projects.yaml'
+- path: 'base/base.yaml'
+- path: 'projects/partial_audit.yaml'
+- path: 'projects/partial_projects.yaml'
+- path: 'projects/partial_other_projects.yaml'
 
 
 overall:

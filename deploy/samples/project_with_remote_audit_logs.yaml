@@ -29,6 +29,8 @@ overall:
   billing_account: 000000-000000-000000 # Replace this with your Billing Account.
   domain: domain.com                    # Replace this with your domain.
 
+generated_fields_path: spanned_configs/generated_fields.yaml
+
 # Configure the audit logs hosting project here.
 audit_logs_project:
   project_id: my-audit-logs             # Replace this with a unique ID for your audit logs project.

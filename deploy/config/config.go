@@ -53,9 +53,10 @@ type Config struct {
 		FolderID       string   `json:"folder_id"`
 		AllowedAPIs    []string `json:"allowed_apis"`
 	} `json:"overall"`
-	AuditLogsProject *Project   `json:"audit_logs_project"`
-	Forseti          *Forseti   `json:"forseti"`
-	Projects         []*Project `json:"projects"`
+	AuditLogsProject    *Project   `json:"audit_logs_project"`
+	Forseti             *Forseti   `json:"forseti"`
+	Projects            []*Project `json:"projects"`
+	GeneratedFieldsPath string     `json:"generated_fields_path"`
 
 	// Set by helper and not directly through user defined config.
 	AllGeneratedFields *AllGeneratedFields `json:"-"`

@@ -8,15 +8,21 @@ licenses(["notice"])  # Apache 2.0
 
 filegroup(
     name = "configs",
-    srcs = glob(["*.yaml"]),
+    srcs = glob([
+        "*.yaml",
+        "base/*.yaml",
+        "projects/*.yaml",
+    ]),
 )
 
 config_test(
     name = "sample_spanned_configs_test",
     config = ":root.yaml",
+    generated_fields = ":generated_fields.yaml",
     imports = [
-        ":partial_audit.yaml",
-        ":partial_other_projects.yaml",
-        ":partial_projects.yaml",
+        "base/base.yaml",
+        "projects/partial_audit.yaml",
+        "projects/partial_other_projects.yaml",
+        "projects/partial_projects.yaml",
     ],
 )

@@ -39,10 +39,7 @@ func main() {
 	flag.Parse()
 
 	if *configPath == "" {
-		log.Fatal("--project_yaml_path must be set")
-	}
-	if *generatedFieldsPath == "" {
-		log.Fatal("--generated_fields_path must be set")
+		log.Fatal("--config_path must be set")
 	}
 
 	conf, err := config.Load(*configPath, *generatedFieldsPath)

@@ -87,7 +87,25 @@ func Load(confPath, genFieldsPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %v\nmerged config: %v", err, string(b))
 	}
 
-	genFields, err := LoadGeneratedFields(genFieldsPath)
+	// TODO: remove this check once conf.GeneratedFieldsPath is mandatory.
+	if conf.GeneratedFieldsPath != "" {
+		genFieldsPath = conf.GeneratedFieldsPath
+	}
+
+	if genFieldsPath == "" {
+		return nil, errors.New("generated fields path is neither specified in config nor command line")
+	}
+
+	if genFieldsPath, err := NormalizePath(genFieldsPath); err != nil {
+		return nil, fmt.Errorf("failed to normalize path %q: %v", genFieldsPath, err)
+	}
+
+	if genFieldsPath == confPath {
+		return nil, errors.New("generated fields path cannot be set to the same as config path")
+	}
+	conf.GeneratedFieldsPath = genFieldsPath
+
+	genFields, err := loadGeneratedFields(genFieldsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load generated fields: %v", err)
 	}
@@ -148,6 +166,7 @@ type importsItem struct {
 
 // loadMap loads the config at path into a map. It will also merge all imported configs.
 // The given path should be absolute.
+// TODO: add check for certain attributes, e.g. generated_fields_path, cannot be specified more than once.
 func loadMap(path string, data map[string]interface{}) (map[string]interface{}, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -177,7 +196,8 @@ func loadMap(path string, data map[string]interface{}) (map[string]interface{}, 
 	}
 
 	type config struct {
-		Imports []*importsItem `json:"imports"`
+		Imports             []*importsItem `json:"imports"`
+		GeneratedFieldsPath string         `json:"generated_fields_path"`
 	}
 	conf := new(config)
 	if err := json.Unmarshal(raw, conf); err != nil {
@@ -185,6 +205,13 @@ func loadMap(path string, data map[string]interface{}) (map[string]interface{}, 
 	}
 
 	dir := filepath.Dir(path)
+	if conf.GeneratedFieldsPath != "" {
+		if filepath.IsAbs(conf.GeneratedFieldsPath) {
+			return nil, errors.New("generated fields path from config cannot be absolute")
+		}
+		root["generated_fields_path"] = filepath.Join(dir, conf.GeneratedFieldsPath)
+	}
+
 	pathMap := map[string]bool{
 		path: true,
 	}
@@ -272,15 +299,14 @@ func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string,
 	return filePathList, nil
 }
 
-// LoadGeneratedFields loads and validates generated fields from yaml file at path.
-func LoadGeneratedFields(path string) (*AllGeneratedFields, error) {
-	path, err := NormalizePath(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
+// loadGeneratedFields loads and validates generated fields from yaml file at path.
+func loadGeneratedFields(path string) (*AllGeneratedFields, error) {
+	// Create an empty file (and parent directories, if any) if not exist.
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create directory: %v", err)
 	}
-	// Create an empty file if not exist.
 	if _, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0666); err != nil {
-		return nil, fmt.Errorf("failed to create an empty output file: %v", err)
+		return nil, fmt.Errorf("failed to create an empty generated fields file: %v\nnote: if you hit this error in a test, please create an empty generated fields file manually and add it as a test dependency", err)
 	}
 	b, err := ioutil.ReadFile(path)
 	if err != nil {

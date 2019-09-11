@@ -29,3 +29,4 @@ imports:
     AUDIT_DATASET_NAME: audit_logs
     AUDIT_DATASET_LOCATION: US
 
+generated_fields_path: ../generated_fields.yaml

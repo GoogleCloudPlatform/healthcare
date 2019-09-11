@@ -1,0 +1,7 @@
+# This is an auto-generated file and should not be modified manually.
+
+# This example generated fields file is shared across all sample configs for simplicity.
+projects:
+  my-project:
+    log_sink_service_account: some-sa@gcp-sa-logging.iam.gserviceaccount.com
+    project_number: "123"

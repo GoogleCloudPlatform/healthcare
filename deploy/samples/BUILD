@@ -16,14 +16,17 @@ filegroup(
 config_test(
     name = "sample_minimal_config_test",
     config = "//samples:minimal.yaml",
+    generated_fields = "//samples:generated_fields.yaml",
 )
 
 config_test(
     name = "sample_project_with_local_audit_logs_config_test",
     config = "//samples:project_with_local_audit_logs.yaml",
+    generated_fields = "//samples:generated_fields.yaml",
 )
 
 config_test(
     name = "sample_project_with_remote_audit_logs_config_test",
     config = "//samples:project_with_remote_audit_logs.yaml",
+    generated_fields = "//samples/spanned_configs:generated_fields.yaml",
 )

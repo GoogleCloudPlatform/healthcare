@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
@@ -79,43 +80,32 @@ overall:
 
 func TestLoad(t *testing.T) {
 	tests := []struct {
-		name      string
-		inputPath string
-		wantPath  string
+		name                string
+		inputPath           string
+		wantPath            string
+		wantGenfieldsSuffix string
 	}{
 		{
-			name:      "spanned_configs",
-			inputPath: "samples/spanned_configs/root.yaml",
-			wantPath:  "samples/project_with_remote_audit_logs.yaml",
+			name:                "spanned_configs",
+			inputPath:           "samples/spanned_configs/root.yaml",
+			wantPath:            "samples/project_with_remote_audit_logs.yaml",
+			wantGenfieldsSuffix: "samples/spanned_configs/generated_fields.yaml",
 		},
 		{
-			name:      "template",
-			inputPath: "samples/template/input.yaml",
-			wantPath:  "samples/minimal.yaml",
+			name:                "template",
+			inputPath:           "samples/template/input.yaml",
+			wantPath:            "samples/minimal.yaml",
+			wantGenfieldsSuffix: "samples/generated_fields.yaml",
 		},
 	}
-
-	// Just make sure generated fields are parsed correctly.
-	genFieldsFile, err := ioutil.TempFile("", "")
-	if err != nil {
-		t.Fatalf("ioutil.TempFile: %v", err)
-	}
-	defer func() {
-		os.Remove(genFieldsFile.Name())
-	}()
-	genFieldsFile.Write([]byte(`
-projects:
-  foo-project:
-    log_sink_service_account: some-sa@gcp-sa-logging.iam.gserviceaccount.com
-    project_number: '123'`))
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := config.Load(tc.inputPath, genFieldsFile.Name())
+			got, err := config.Load(tc.inputPath, "")
 			if err != nil {
 				t.Fatalf("config.Load = %v", err)
 			}
-			want, err := config.Load(tc.wantPath, genFieldsFile.Name())
+			want, err := config.Load(tc.wantPath, "")
 			if err != nil {
 				t.Fatalf("config.Load = %v", err)
 			}
@@ -128,11 +118,69 @@ projects:
 				allowUnexported,
 				cmpopts.SortSlices(func(a, b *config.Project) bool { return a.ID < b.ID }),
 			}
+			if !strings.Contains(got.GeneratedFieldsPath, tc.wantGenfieldsSuffix) {
+				t.Fatalf("generated fields path %q does not contain suffix %q", got.GeneratedFieldsPath, tc.wantGenfieldsSuffix)
+			}
 			if diff := cmp.Diff(got, want, opts...); diff != "" {
 				t.Fatalf("yaml differs (-got +want):\n%v", diff)
 			}
 		})
 	}
+}
+
+func TestLoadGeneratedFields(t *testing.T) {
+	tests := []struct {
+		name      string
+		inputConf []byte
+		wantErr   bool
+	}{
+		{
+			name: "valid_genfields_path",
+			inputConf: []byte(`
+overall:
+  billing_account: 000000-000000-000000
+generated_fields_path: a/b/c/generated_fields.yaml
+projects: []
+`),
+			wantErr: false,
+		},
+		{
+			name: "invalid_empty_genfields_path",
+			inputConf: []byte(`
+overall:
+  billing_account: 000000-000000-000000
+projects: []
+`),
+			wantErr: true,
+		},
+		{
+			name: "invalid_absolute_genfields_path",
+			inputConf: []byte(`
+overall:
+  billing_account: 000000-000000-000000
+generated_fields_path: /a/b/c/generated_fields.yaml
+projects: []
+`),
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			conf, err := ioutil.TempFile("", "")
+			if err != nil {
+				t.Fatalf("ioutil.TempFile: %v", err)
+			}
+			defer os.Remove(conf.Name())
+			if _, err := conf.Write(tc.inputConf); err != nil {
+				t.Fatalf("os.File.Write: %v", err)
+			}
+			if _, err := config.Load(conf.Name(), ""); (err != nil) != tc.wantErr {
+				t.Fatalf("config.Load = error: %v; want error %t", err, tc.wantErr)
+			}
+		})
+	}
+
 }
 
 func TestPattern(t *testing.T) {

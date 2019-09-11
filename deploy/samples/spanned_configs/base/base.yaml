@@ -1,0 +1,3 @@
+# This should point to deploy/samples/spanned_configs/generated_fields.yaml as this path is
+# considiered relative to base.yaml instead of root.yaml.
+generated_fields_path: ../generated_fields.yaml
