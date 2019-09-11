@@ -23,7 +23,7 @@ def _impl(ctx):
         ctx.file._generated_fields_schema,
         ctx.file._project_config_schema,
         ctx.file.config,
-    ] + ctx.files.imports
+    ] + ctx.files.deps + ctx.files.imports
 
     if ctx.file.generated_fields:
         runfiles += [ctx.file.generated_fields]
@@ -37,10 +37,16 @@ _config_test = rule(
             doc = "The project config to validate.",
             allow_single_file = True,
         ),
+        "deps": attr.label_list(
+            allow_files = True,
+            doc = "Additional dependent configs, templates or generated fields file to import.",
+        ),
+        # TODO: remove after migrating everyone to deps.
         "generated_fields": attr.label(
             doc = "The generated fields yaml file to validate.",
             allow_single_file = True,
         ),
+        # TODO: remove after migrating everyone to deps.
         "imports": attr.label_list(
             allow_files = True,
             doc = "Additional configs or templates to import.",
@@ -72,6 +78,14 @@ _config_test = rule(
 )
 
 def config_test(**kwargs):
+    """Test rule that fails if a project config is not valid.
+
+    Args:
+      **kwargs: Same attrs of _config_test.
+    """
+    if "deps" in kwargs and kwargs["deps"] == []:
+        fail("`deps` is specified but resolved to no file. It might be because your glob() pattern contains typos.")
+
     if "imports" in kwargs and kwargs["imports"] == []:
         fail("`imports` is specified but resolved to no file. It might be because your glob() pattern contains typos.")
 

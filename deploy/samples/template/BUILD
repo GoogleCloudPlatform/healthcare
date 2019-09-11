@@ -14,9 +14,9 @@ filegroup(
 config_test(
     name = "sample_template_config_test",
     config = ":input.yaml",
-    generated_fields = "//samples:generated_fields.yaml",
-    imports = [
+    deps = [
         ":overall.tmpl.yaml",
         ":project.tmpl.yaml",
+        "//samples:generated_fields.yaml",
     ],
 )

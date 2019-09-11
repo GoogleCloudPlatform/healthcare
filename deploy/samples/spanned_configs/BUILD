@@ -18,11 +18,11 @@ filegroup(
 config_test(
     name = "sample_spanned_configs_test",
     config = ":root.yaml",
-    generated_fields = ":generated_fields.yaml",
-    imports = [
+    deps = [
         "base/base.yaml",
         "projects/partial_audit.yaml",
         "projects/partial_other_projects.yaml",
         "projects/partial_projects.yaml",
+        ":generated_fields.yaml",
     ],
 )
