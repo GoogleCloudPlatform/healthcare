@@ -16,9 +16,7 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
-	"os"
 
 	"flag"
 	
@@ -40,15 +38,6 @@ func main() {
 	}
 
 	config.EnableTerraform = *enableTerraform
-	if *outputPath == "" {
-		genFile, err := ioutil.TempFile("", "output.yaml")
-		if err != nil {
-			log.Fatalf("Failed to create temporary file: %v", err)
-		}
-		defer os.Remove(genFile.Name())
-		*outputPath = genFile.Name()
-	}
-
 	c, err := config.Load(*configPath, *outputPath)
 	if err != nil {
 		log.Fatalf("failed to load config to bytes: %v", err)

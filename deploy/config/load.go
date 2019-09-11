@@ -87,13 +87,19 @@ func Load(confPath, genFieldsPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %v\nmerged config: %v", err, string(b))
 	}
 
+	// TODO: remove this once conf.GeneratedFieldsPath is mandatory.
+	if genFieldsPath != "" && conf.GeneratedFieldsPath != "" {
+		return nil, errors.New("generated fields path cannot be specified in both config and command line (--output_path)")
+	}
+
 	// TODO: remove this check once conf.GeneratedFieldsPath is mandatory.
 	if conf.GeneratedFieldsPath != "" {
 		genFieldsPath = conf.GeneratedFieldsPath
 	}
 
+	// TODO: remove this once conf.GeneratedFieldsPath is mandatory.
 	if genFieldsPath == "" {
-		return nil, errors.New("generated fields path is neither specified in config nor command line")
+		return nil, errors.New("generated fields path is specified in neither config nor command line")
 	}
 
 	if genFieldsPath, err = NormalizePath(genFieldsPath); err != nil {

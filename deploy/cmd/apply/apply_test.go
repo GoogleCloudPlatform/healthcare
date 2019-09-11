@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
-	"os"
 	"regexp"
 	"testing"
 
@@ -37,18 +36,11 @@ func TestApplyConfigs(t *testing.T) {
 	replaceTmpDirNameRe := regexp.MustCompile("(?m)/tmp/.*$")
 
 	for _, p := range configPaths {
-		genFile, err := ioutil.TempFile("", "generated.yaml")
-		if err != nil {
-			t.Fatalf("ioutil.TempFile = %v", err)
-		}
-		defer os.Remove(genFile.Name())
-
 		var b bytes.Buffer
 		log.SetOutput(&b)
 		log.SetFlags(0) // Remove timestamps.
 
 		*configPath = p
-		*outputPath = genFile.Name()
 		projects = arrayFlags{"my-forseti-project"}
 		*dryRun = true
 		if err := applyConfigs(); err != nil {
