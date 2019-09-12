@@ -80,11 +80,14 @@ export BILLING_ACCOUNT=01ABCD-234E56-F7890G1
 
 Finally, you need to clone the open source toolkit from
 [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare)
-and install Python dependencies.
+and checkout a verified version.
 
 ```shell
+# Checkout a verified version of Data Protection Toolkit.
+export DPT_VERSION=731345cdb689c0eab9084d40f278125a92c99f12
 git clone https://github.com/GoogleCloudPlatform/healthcare.git
 cd healthcare/deploy
+git checkout $DPT_VERSION *
 ```
 
 ## Choosing Domain Name, Project Prefix and Project Zones
@@ -232,7 +235,8 @@ to create the Google Cloud projects, including
         [stop](https://cloud.google.com/compute/docs/instances/stop-start-instance#stopping_an_instance)
         the VM after the datathon to save on costs.
 
-Make sure you are in the `healthcare/deploy` directory.
+Make sure you are in the `healthcare/deploy` directory and have checked out a
+stable version of Data Protection Toolkit.
 
 ```shell
 bazel run cmd/apply:apply -- \
@@ -241,11 +245,10 @@ bazel run cmd/apply:apply -- \
   --dry_run
 ```
 
-Note that the `--dry_run` flag enables dry run mode, which only prints the
-commands to be run for you to review. If everything looks good, you can rerun
-the command without `--dry_run` instead to actually create the projects. The
-file defined in the `--output_path` flag, will store the exact configuration
-used for creating the projects after environment variable substitution.
+Note that the `--dry_run` flag enables dry run mode, which only prints sample
+commands with fake responses from gcloud commands. They are not exactly the
+commands that will run. If everything looks good, you can rerun the command
+without `--dry_run` instead to actually create the projects.
 
 ```shell
 bazel run cmd/apply:apply -- \
@@ -254,7 +257,7 @@ bazel run cmd/apply:apply -- \
 ```
 
 In case the deployment fails, please examine the error messages and make
-appropriate changes and re-run the command.
+appropriate changes to the input config and re-run the command.
 
 ### Data Importing
 
