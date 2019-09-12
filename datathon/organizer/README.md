@@ -228,8 +228,9 @@ to create the Google Cloud projects, including
     *   Grant limited preset roles (project viewer, and BigQuery and Storage
         user, etc) to `${PROJECT_USERS_GROUP}`.
     *   Set up a Compute Engine VM with the free version of RStudio server, and
-        opens up port 8787 for incoming connections. You may wish to turn the VM
-        off after the datathon to save on costs.
+        opens up port 8787 for incoming connections. You may wish to
+        [stop](https://cloud.google.com/compute/docs/instances/stop-start-instance#stopping_an_instance)
+        the VM after the datathon to save on costs.
 
 Make sure you are in the `healthcare/deploy` directory.
 
