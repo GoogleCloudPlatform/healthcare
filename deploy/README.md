@@ -105,10 +105,10 @@ previous and require `--enable_new_style_resources` to be passed to the
 style configs will be deprecated. Old style config examples can be found
 [here](https://github.com/GoogleCloudPlatform/healthcare/tree/5bfa6b72a8077028ead4ff8c498325915180c3b8/deploy/samples).
 
-### Create New Projects
+### Apply project configs
 
-Use the `cmd/apply/apply.go` script to create an audit logs project (if using
-remote audit logs) and one or more data hosting projects.
+Use the `cmd/apply/apply.go` script to create or update an audit logs project
+(if using remote audit logs) and one or more data hosting projects.
 
 1.  Make sure the user running the script is in the owners group(s) of all
     projects that will be created, including the audit logs project (if used).
@@ -123,7 +123,7 @@ remote audit logs) and one or more data hosting projects.
     may be prompted for additional steps during the Forseti instance
     installation.
 1.  Optional: pass a `--projects` flag listing the projects you wish to deploy,
-    or `*` (default) to deploy all projects.
+    or omit this flag to deploy all projects.
 
     WARNING: deploying a project that was previously deployed will trigger an
     update.
@@ -135,6 +135,7 @@ remote audit logs) and one or more data hosting projects.
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare/deploy
+# git checkout a commit different from HEAD if necessary.
 $ bazel run cmd/apply:apply -- \
   --config_path=${PROJECT_CONFIG?} \
   --output_path=${GENERATED_FIELDS?} \
