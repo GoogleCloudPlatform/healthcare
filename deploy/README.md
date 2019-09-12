@@ -2,7 +2,11 @@
 
 [![GoDoc](https://godoc.org/github.com/GoogleCloudPlatform/healthcare/deploy?status.svg)](https://godoc.org/github.com/GoogleCloudPlatform/healthcare/deploy)
 
-Tools to configure GCP environments aimed at healthcare use cases.
+The Data Protection Toolkit (DPT) provides a CLI to configure GCP environments.
+It wraps existing tools such as Deployment Manager, Terraform, Gcloud and
+Kubectl to provide an end to end deployment solution. While it is developed for
+healthcare use cases, the tool can be applied to a wide variety of users wishing
+to use Google Cloud.
 
 **Status:** ALPHA
 
@@ -21,10 +25,11 @@ fields/features for a period of time to allow users to migrate easily.
 
 ## Setup Instructions
 
-To use the templates and script in this folder, first decide if you want your
-audit logs saved in the same project as the hosted data (local audit logs), or
-in a separate project (remote audit logs). Remote audit logs can be especially
-beneficial if you have several data projects.
+When creating a DPT config, you have the option to have audit logs saved in the
+same project as the hosted data (local audit logs), or in a separate project
+(remote audit logs). Remote audit logs can be especially beneficial if you have
+several data projects and want a centralized place to aggregate them. This
+cannot be changed afterwards.
 
 1.  [Complete Script Prerequisites](#script-prerequisites) the first time using
     these scripts.
@@ -50,18 +55,6 @@ already available.
 -   [Go 1.10+](https://golang.org/dl/)
 
 -   [Terraform 0.12](https://www.terraform.io/downloads.html)
-
--   [Pip](https://pip.pypa.io/en/stable/installing/)
-
--   [Python 3.6+](https://www.python.org/downloads/)
-
-### Python Dependencies
-
-Install Python dependencies with the following command:
-
-```shell
-$ pip3 install -r requirements.txt
-```
 
 ### Create Groups
 
@@ -115,17 +108,14 @@ Use the `cmd/apply/apply.go` script to create or update an audit logs project
     You should remove the user from these groups after successful deployment.
 1.  If not already logged in, run `gcloud init` to log in as a user with
     permission to create projects under the specified organization and billing
-    account
+    account.
 1.  If you provided a `stackdriver_alert_email` in any project, then when
     prompted during the script, follow the instructions to create new
     Stackdriver Accounts for these projects.
-1.  If you provided a `forseti` config and the project hasn't been deployed you
-    may be prompted for additional steps during the Forseti instance
-    installation.
 1.  Optional: pass a `--projects` flag listing the projects you wish to deploy,
     or omit this flag to deploy all projects.
 
-    WARNING: deploying a project that was previously deployed will trigger an
+    NOTE: deploying a project that was previously deployed will trigger an
     update.
 
 1.  If the projects were deployed successfully, the script will write a YAML
@@ -137,28 +127,13 @@ $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare/deploy
 # git checkout a commit different from HEAD if necessary.
 $ bazel run cmd/apply:apply -- \
-  --config_path=${PROJECT_CONFIG?} \
-  --output_path=${GENERATED_FIELDS?} \
+  --config_path=${CONFIG_PATH?} \
+  --output_path=${OUTPUT_PATH?} \
   --projects=${PROJECTS?}
 ```
 
 If the script fails at any point, try to correct the error in the input config
 file and try again.
-
-### Disabled Unneeded APIs
-
-NOTE: This will be moved to `cmd/apply/apply.go`.
-
-List the APIs that are enabled for your project, and remove any that you no
-longer require:
-
-```shell
-gcloud services list --project ${PROJECT_ID?}
-
-...
-
-gcloud services --project ${PROJECT_ID?} disable ${SERVICE_NAME}
-```
 
 ## Updates
 
@@ -222,8 +197,7 @@ the script performs the following steps:
 
 1.  If a `forseti` block is defined:
 
-    *   Runs the Forseti installer to deploy a Forseti instance (user may be
-        prompted during installation)
+    *   Uses the Forseti Terraform module to deploy a Forseti instance.
     *   Grants permissions for each project to the Forseti service account so
         they may be monitored.
 
@@ -233,8 +207,8 @@ To generate new rules for the Forseti instance, run the following command:
 
 ```shell
 $ bazel run cmd/rule_generator:rule_generator -- \
-  --config_path=${PROJECT_CONFIG?} \
-  --generated_fields_path=${GENERATED_FIELDS?}
+  --config_path=${CONFIG_PATH?} \
+  --generated_fields_path=${OUTPUT_PATH?}
 ```
 
 By default, the rules will be written to the Forseti server bucket.
