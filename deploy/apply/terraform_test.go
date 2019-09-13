@@ -17,6 +17,8 @@ package apply
 import (
 	"encoding/json"
 	"fmt"
+	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
@@ -235,7 +237,7 @@ resource:
 				tc.wantUserCall = &applyCall{Config: make(map[string]interface{})}
 			}
 			userConfig(t, tc.wantUserCall.Config)
-			want = append(want, *tc.wantUserCall, defaultCall(t, ""))
+			want = append(want, *tc.wantUserCall, defaultCall(t, "", nil))
 
 			if diff := cmp.Diff(got, want); diff != "" {
 				t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
@@ -245,6 +247,27 @@ resource:
 }
 
 func TestMonitoring(t *testing.T) {
+	origCmdOutput := runner.CmdOutput
+	defer func() {
+		runner.CmdOutput = origCmdOutput
+	}()
+
+	runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
+		args := strings.Join(cmd.Args, " ")
+		switch {
+		case strings.Contains(args, "monitoring channels list"):
+			return []byte(`[{"displayName": "Email", "name": "projects/my-project/notificationChannels/111"}]`), nil
+		case strings.Contains(args, "monitoring policies list"):
+			// Intentionally omit "IAM Policy Change Alert" to validate it doesn't try to be imported.
+			return []byte(`[
+  {"displayName": "Bigquery Update Alert", "name": "projects/my-project/alertPolicies/222"},
+  {"displayName": "Bucket Permission Change Alert", "name": "projects/my-project/alertPolicies/333"}
+]`), nil
+		default:
+			return origCmdOutput(cmd)
+		}
+	}
+
 	_, project := testconf.ConfigAndProject(t, &testconf.ConfigData{`
 monitoring_notification_channels:
 - display_name: Email
@@ -289,6 +312,9 @@ resource:
 	want := []applyCall{
 		{
 			Config: wantUserConfig,
+			Imports: []terraform.Import{
+				{Address: "google_monitoring_notification_channel.email", ID: "projects/my-project/notificationChannels/111"},
+			},
 		},
 		defaultCall(t, `
 - google_monitoring_alert_policy:
@@ -338,7 +364,11 @@ resource:
           duration: 0s
           filter: resource.type=one_of("global","pubsub_topic","pubsub_subscription","gce_instance") AND metric.type="logging.googleapis.com/user/${google_logging_metric.iam-policy-change-count.name}"
       notification_channels:
-      - '${data.terraform_remote_state.user.google_monitoring_notification_channel.email.name}'`),
+      - '${data.terraform_remote_state.user.google_monitoring_notification_channel.email.name}'`,
+			[]terraform.Import{
+				{Address: "google_monitoring_alert_policy.bigquery_update_alert", ID: "projects/my-project/alertPolicies/222"},
+				{Address: "google_monitoring_alert_policy.bucket_permission_change_alert", ID: "projects/my-project/alertPolicies/333"},
+			}),
 	}
 
 	if diff := cmp.Diff(got, want); diff != "" {
@@ -465,8 +495,9 @@ terraform:
 	}
 }
 
-func defaultCall(t *testing.T, extraResources string) applyCall {
+func defaultCall(t *testing.T, extraResources string, extraImports []terraform.Import) applyCall {
 	t.Helper()
+
 	return applyCall{
 		Config: unmarshal(t, fmt.Sprintf(`
 terraform:
@@ -534,20 +565,11 @@ resource:
       label_extractors:
         user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
 %s`, extraResources)),
-		Imports: []terraform.Import{
-			{
-				Address: "google_logging_metric.bigquery-settings-change-count",
-				ID:      "bigquery-settings-change-count",
-			},
-			{
-				Address: "google_logging_metric.bucket-permission-change-count",
-				ID:      "bucket-permission-change-count",
-			},
-			{
-				Address: "google_logging_metric.iam-policy-change-count",
-				ID:      "iam-policy-change-count",
-			},
-		},
+		Imports: append([]terraform.Import{
+			{Address: "google_logging_metric.bigquery-settings-change-count", ID: "bigquery-settings-change-count"},
+			{Address: "google_logging_metric.bucket-permission-change-count", ID: "bucket-permission-change-count"},
+			{Address: "google_logging_metric.iam-policy-change-count", ID: "iam-policy-change-count"},
+		}, extraImports...),
 	}
 }
 

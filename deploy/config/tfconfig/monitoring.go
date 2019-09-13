@@ -18,6 +18,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os/exec"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // MonitoringNotificationChannel represents a Terraform monitoring notification channel.
@@ -64,6 +67,38 @@ func (c *MonitoringNotificationChannel) ID() string {
 // ResourceType returns the resource terraform provider type.
 func (c *MonitoringNotificationChannel) ResourceType() string {
 	return "google_monitoring_notification_channel"
+}
+
+// ImportID returns the ID to use for terraform imports.
+func (c *MonitoringNotificationChannel) ImportID() (string, error) {
+	// Check channel existence and create if not.
+	cmd := exec.Command("gcloud", "--project", c.Project, "alpha", "monitoring", "channels", "list",
+		"--format", "json")
+
+	out, err := runner.CmdOutput(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to list existing monitoring channels: %v", err)
+	}
+
+	var channels []gcloudMonitoringResource
+	if err := json.Unmarshal(out, &channels); err != nil {
+		return "", fmt.Errorf("failed to unmarshal exist monitoring channels list output: %v", err)
+	}
+
+	var matched []string
+	for _, gc := range channels {
+		if c.DisplayName == gc.DisplayName {
+			matched = append(matched, gc.Name)
+		}
+	}
+	switch len(matched) {
+	case 0:
+		return "", nil
+	case 1:
+		return matched[0], nil
+	default:
+		return "", fmt.Errorf("multiple channels with display name %q found: %v", c.DisplayName, matched)
+	}
 }
 
 // aliasBQDataset is used to prevent infinite recursion when dealing with json marshaling.
@@ -142,6 +177,37 @@ func (p *MonitoringAlertPolicy) ResourceType() string {
 	return "google_monitoring_alert_policy"
 }
 
+// ImportID returns the ID to use for terraform imports.
+func (p *MonitoringAlertPolicy) ImportID() (string, error) {
+	// Get existing alerts.
+	cmd := exec.Command("gcloud", "--project", p.Project, "alpha", "monitoring", "policies", "list", "--format", "json")
+
+	out, err := runner.CmdOutput(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to list existing monitoring alert policies: %v", err)
+	}
+
+	var policies []gcloudMonitoringResource
+	if err := json.Unmarshal(out, &policies); err != nil {
+		return "", fmt.Errorf("failed to unmarshal exist monitoring channels list output: %v", err)
+	}
+
+	var matched []string
+	for _, gp := range policies {
+		if p.DisplayName == gp.DisplayName {
+			matched = append(matched, gp.Name)
+		}
+	}
+	switch len(matched) {
+	case 0:
+		return "", nil
+	case 1:
+		return matched[0], nil
+	default:
+		return "", fmt.Errorf("multiple policies with display name %q found: %v", p.DisplayName, matched)
+	}
+}
+
 // aliasBQDataset is used to prevent infinite recursion when dealing with json marshaling.
 // https://stackoverflow.com/q/52433467
 type aliasMonitoringAlertPolicy MonitoringAlertPolicy
@@ -162,4 +228,9 @@ func (p *MonitoringAlertPolicy) UnmarshalJSON(data []byte) error {
 // It is used to merge the original (raw) user JSON definition with the struct.
 func (p *MonitoringAlertPolicy) MarshalJSON() ([]byte, error) {
 	return interfacePair{p.raw, aliasMonitoringAlertPolicy(*p)}.MarshalJSON()
+}
+
+type gcloudMonitoringResource struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
 }

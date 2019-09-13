@@ -19,6 +19,7 @@ go_library(
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig",
     deps = [
+        "//runner:go_default_library",
         "@com_github_imdario_mergo//:go_default_library",
     ],
 )
