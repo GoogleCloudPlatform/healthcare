@@ -77,3 +77,29 @@ func (ms *ProjectIAMMembers) MarshalJSON() ([]byte, error) {
 func (ms *ProjectIAMMembers) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, &ms.members)
 }
+
+// ServiceAccount represents a Terraform service account.
+type ServiceAccount struct {
+	AccountID   string `json:"account_id"`
+	Project     string `json:"project"`
+	DisplayName string `json:"display_name"`
+}
+
+// Init initializes the resource.
+func (a *ServiceAccount) Init(projectID string) error {
+	if a.Project != "" {
+		return fmt.Errorf("project must not be set: %v", a.Project)
+	}
+	a.Project = projectID
+	return nil
+}
+
+// ID returns the resource unique identifier.
+func (a *ServiceAccount) ID() string {
+	return a.AccountID
+}
+
+// ResourceType returns the resource terraform provider type.
+func (a *ServiceAccount) ResourceType() string {
+	return "google_service_account"
+}

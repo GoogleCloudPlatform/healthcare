@@ -230,5 +230,8 @@ func (p *Project) UserResources() []tfconfig.Resource {
 	for _, r := range p.NotificationChannels {
 		rs = append(rs, r)
 	}
+	for _, r := range p.ServiceAccounts {
+		rs = append(rs, r)
+	}
 	return rs
 }

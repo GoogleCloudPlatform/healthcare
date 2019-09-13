@@ -602,6 +602,32 @@ definitions:
               type: string
               descrpition: The service to enable.
 
+      service_accounts:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_service_account (https://www.terraform.io/docs/providers/google/r/google_service_account.html).
+          Only the fields below are allowed.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - account_id
+            properties:
+              account_id:
+                type: string
+                description: |
+                  The account id that is used to generate the service account
+                  email address and a stable unique id.
+                  It is unique within a project, must be 6-30 characters long,
+                  and match the regular expression [a-z]([-a-z0-9]*[a-z0-9]) to
+                  comply with RFC1035.
+              display_name:
+                type: string
+                description: |
+                  The display name for the service account. Can be updated
+                  without creating a new resource.
+
       storage_buckets:
         type: array
         description: |

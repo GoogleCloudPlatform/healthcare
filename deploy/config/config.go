@@ -110,6 +110,7 @@ type Project struct {
 	IAMMembers           *tfconfig.ProjectIAMMembers               `json:"project_iam_members"`
 	NotificationChannels []*tfconfig.MonitoringNotificationChannel `json:"monitoring_notification_channels"`
 	Services             *tfconfig.ProjectServices                 `json:"project_services"`
+	ServiceAccounts      []*tfconfig.ServiceAccount                `json:"service_accounts"`
 	StorageBuckets       []*tfconfig.StorageBucket                 `json:"storage_buckets"`
 
 	BinauthzPolicy *BinAuthz `json:"binauthz"`

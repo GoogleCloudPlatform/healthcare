@@ -202,6 +202,22 @@ resource:
       service: '${each.key}'`),
 			},
 		},
+		{
+			name: "service_account",
+			data: &testconf.ConfigData{`
+service_accounts:
+- account_id: foo-account
+  display_name: Foo account`},
+			wantUserCall: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_service_account:
+    foo-account:
+      account_id: foo-account
+      project: my-project
+      display_name: Foo account`),
+			},
+		},
 	}
 
 	for _, tc := range tests {
