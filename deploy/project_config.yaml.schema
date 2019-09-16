@@ -594,15 +594,15 @@ definitions:
           Supports google_project_service
           (https://www.terraform.io/docs/providers/google/r/google_project_service.html).
           Only the fields below can be set.
-          items:
-            type: object
-            additionalProperties: false
-            required:
-            - service
-            properties:
-              service:
-                type: string
-                descrpition: The service to enable.
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - service
+          properties:
+            service:
+              type: string
+              descrpition: The service to enable.
 
       pubsub_topics:
         type: array
@@ -638,6 +638,51 @@ definitions:
                           type: string
                           description:
                             Identities that will be granted the privilege in role.
+
+      resource_manager_liens:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_resource_manager_lien (https://www.terraform.io/docs/providers/google/r/resource_manager_lien.html).
+          Only the fields below can be set.
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            _project_deletion:
+              type: boolean
+              description: |
+                Helper to create a project deletion lien. Set this to get a
+                default managed lien. Do not set any other fields.
+            reason:
+              type: string
+              description: |
+                Concise user-visible strings indicating why an action cannot be
+                performed on a resource. Maximum length of 200 characters.
+            origin:
+              type: string
+              description: |
+                A stable, user-visible/meaningful string identifying the origin
+                of the Lien, intended to be inspected programmatically. Maximum
+                length of 200 characters.
+            parent:
+              type: string
+              description: |
+                A reference to the resource this Lien is attached to. The server
+                will validate the parent against those for which Liens are
+                supported. Since a variety of objects can have Liens against
+                them, you must provide the type prefix
+                (e.g. "projects/my-project-name").
+            restrictions:
+              type: array
+              description: |
+                The types of operations which should be blocked as a result of this
+                Lien. Each value should correspond to an IAM permission. The
+                server will validate the permissions against those for which
+                Liens are supported. An empty list is meaningless and will be
+                rejected. e.g. ['resourcemanager.projects.delete']
+              items:
+                type: string
 
       service_accounts:
         type: array

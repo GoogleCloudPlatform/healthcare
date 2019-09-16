@@ -104,13 +104,14 @@ type Project struct {
 	} `json:"resources"`
 
 	// Terraform resources
-	BigqueryDatasets []*tfconfig.BigqueryDataset `json:"bigquery_datasets"`
-	ComputeImages    []*tfconfig.ComputeImage    `json:"compute_images"`
-	ComputeInstances []*tfconfig.ComputeInstance `json:"compute_instances"`
-	IAMMembers       *tfconfig.ProjectIAMMembers `json:"project_iam_members"`
-		NotificationChannels []*tfconfig.MonitoringNotificationChannel `json:"monitoring_notification_channels"`
+	BigqueryDatasets     []*tfconfig.BigqueryDataset               `json:"bigquery_datasets"`
+	ComputeImages        []*tfconfig.ComputeImage                  `json:"compute_images"`
+	ComputeInstances     []*tfconfig.ComputeInstance               `json:"compute_instances"`
+	IAMMembers           *tfconfig.ProjectIAMMembers               `json:"project_iam_members"`
+	NotificationChannels []*tfconfig.MonitoringNotificationChannel `json:"monitoring_notification_channels"`
 	PubsubTopics     []*tfconfig.PubsubTopic     `json:"pubsub_topics"`
-	Services         *tfconfig.ProjectServices   `json:"project_services"`
+	Services             *tfconfig.ProjectServices                 `json:"project_services"`
+	ResourceManagerLiens []*tfconfig.ResourceManagerLien           `json:"resource_manager_liens"`
 	ServiceAccounts      []*tfconfig.ServiceAccount                `json:"service_accounts"`
 	StorageBuckets   []*tfconfig.StorageBucket   `json:"storage_buckets"`
 

@@ -230,7 +230,10 @@ func (p *Project) UserResources() []tfconfig.Resource {
 	for _, r := range p.PubsubTopics {
 		rs = append(rs, r)
 	}
-		for _, r := range p.ServiceAccounts {
+	for _, r := range p.ResourceManagerLiens {
+		rs = append(rs, r)
+	}
+	for _, r := range p.ServiceAccounts {
 		rs = append(rs, r)
 	}
 	for _, r := range p.StorageBuckets {

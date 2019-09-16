@@ -243,6 +243,35 @@ resource:
 			},
 		},
 		{
+			name: "resource_manager_lien",
+			data: &testconf.ConfigData{`
+resource_manager_liens:
+- _project_deletion: true
+- reason: Custom reason
+  origin: custom-origin
+  parent: projects/my-project
+  restrictions:
+  - foo.delete`},
+			wantUserCall: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_resource_manager_lien:
+    managed_project_deletion_lien:
+      reason: Managed project deletion lien
+      origin: managed-terraform
+      parent: projects/my-project
+      restrictions:
+      - resourcemanager.projects.delete
+- google_resource_manager_lien:
+    custom_reason:
+      reason: Custom reason
+      origin: custom-origin
+      parent: projects/my-project
+      restrictions:
+      - foo.delete`),
+			},
+		},
+		{
 			name: "service_account",
 			data: &testconf.ConfigData{`
 service_accounts:
@@ -539,6 +568,10 @@ resource:
 func userConfig(t *testing.T, config map[string]interface{}) {
 	t.Helper()
 	def := `
+data:
+- google_project:
+    my-project:
+      project_id: my-project
 terraform:
   required_version: '>= 0.12.0'
   backend:

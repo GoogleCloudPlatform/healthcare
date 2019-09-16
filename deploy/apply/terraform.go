@@ -187,6 +187,14 @@ func userResources(project *config.Project) error {
 		Bucket: project.TerraformConfig.StateBucket.Name,
 		Prefix: "user",
 	}
+	// Allow user resources to access project runtime info such as project number.
+	tfConf.Data = []*terraform.Resource{{
+		Name: project.ID,
+		Type: "google_project",
+		Properties: map[string]interface{}{
+			"project_id": project.ID,
+		},
+	}}
 	opts := &terraform.Options{}
 	if err := addResources(tfConf, opts, rs...); err != nil {
 		return err
