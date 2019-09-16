@@ -163,7 +163,6 @@ func (p *Project) initDefaultResources() error {
 		ma.metric.MetricDescriptor = &tfconfig.MetricDescriptor{
 			MetricKind: "DELTA",
 			ValueType:  "INT64",
-			Unit:       "1",
 			Labels: []*tfconfig.Label{{
 				Key:         "user",
 				ValueType:   "STRING",

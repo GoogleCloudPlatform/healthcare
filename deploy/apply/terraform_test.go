@@ -612,7 +612,6 @@ resource:
       metric_descriptor:
         metric_kind: DELTA
         value_type: INT64
-        unit: '1'
         labels:
         - key: user
           description: Unexpected user
@@ -630,7 +629,6 @@ resource:
       metric_descriptor:
         metric_kind: DELTA
         value_type: INT64
-        unit: '1'
         labels:
         - key: user
           description: Unexpected user
@@ -646,7 +644,6 @@ resource:
       metric_descriptor:
         metric_kind: DELTA
         value_type: INT64
-        unit: '1'
         labels:
         - key: user
           description: Unexpected user

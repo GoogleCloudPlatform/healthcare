@@ -64,7 +64,6 @@ type LoggingMetric struct {
 type MetricDescriptor struct {
 	MetricKind string   `json:"metric_kind,omitempty"`
 	ValueType  string   `json:"value_type,omitempty"`
-	Unit       string   `json:"unit,omitempty"`
 	Labels     []*Label `json:"labels,omitempty"`
 }
 
