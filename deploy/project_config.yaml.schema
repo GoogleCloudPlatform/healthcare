@@ -594,13 +594,50 @@ definitions:
           Supports google_project_service
           (https://www.terraform.io/docs/providers/google/r/google_project_service.html).
           Only the fields below can be set.
-          additionalProperties: false
-          required:
-          - service
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - service
+            properties:
+              service:
+                type: string
+                descrpition: The service to enable.
+
+      pubsub_topics:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_pubsub_topic (https://www.terraform.io/docs/providers/google/r/pubsub_topic.html).
+        items:
+          type: object
           properties:
-            service:
-              type: string
-              descrpition: The service to enable.
+            _subscriptions:
+              type: array
+              description: |
+                Supports google_pubsub_subscription (https://www.terraform.io/docs/providers/google/r/pubsub_subscription.html).
+                items:
+                  type: object
+                  properties:
+                    _iam_members:
+                     type: array
+                     description: |
+                       Supports google_pubsub_subscription_iam_member (https://www.terraform.io/docs/providers/google/r/pubsub_subscription_iam.html).
+                       Only the fields below are allowed.
+                     items:
+                       type: object
+                       additionalProperties: false
+                       required:
+                       - role
+                       - member
+                       properties:
+                         role:
+                           type: string
+                           description: The role that should be applied.
+                         member:
+                          type: string
+                          description:
+                            Identities that will be granted the privilege in role.
 
       service_accounts:
         type: array

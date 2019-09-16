@@ -38,7 +38,7 @@ func (p *Project) initTerraform(auditProject *Project) error {
 
 	for _, r := range p.UserResources() {
 		if err := r.Init(p.ID); err != nil {
-			return err
+			return fmt.Errorf("failed to init %q (%v): %v", r.ResourceType(), r, err)
 		}
 	}
 	return nil
@@ -212,9 +212,6 @@ func (p *Project) DefaultResources() []tfconfig.Resource {
 // UserResources gets all terraform user defined resources in this project.
 func (p *Project) UserResources() []tfconfig.Resource {
 	var rs []tfconfig.Resource
-	for _, r := range p.StorageBuckets {
-		rs = append(rs, r)
-	}
 	for _, r := range p.BigqueryDatasets {
 		rs = append(rs, r)
 	}
@@ -230,7 +227,13 @@ func (p *Project) UserResources() []tfconfig.Resource {
 	for _, r := range p.NotificationChannels {
 		rs = append(rs, r)
 	}
-	for _, r := range p.ServiceAccounts {
+	for _, r := range p.PubsubTopics {
+		rs = append(rs, r)
+	}
+		for _, r := range p.ServiceAccounts {
+		rs = append(rs, r)
+	}
+	for _, r := range p.StorageBuckets {
 		rs = append(rs, r)
 	}
 	return rs

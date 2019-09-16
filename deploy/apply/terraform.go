@@ -268,7 +268,9 @@ func addResources(config *terraform.Config, opts *terraform.Options, resources .
 			DependentResources() []tfconfig.Resource
 		}
 		if d, ok := r.(depender); ok {
-			addResources(config, opts, d.DependentResources()...)
+			if err := addResources(config, opts, d.DependentResources()...); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

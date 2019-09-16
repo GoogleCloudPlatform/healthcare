@@ -15,6 +15,7 @@ go_library(
         "monitoring.go",
         "pair.go",
         "project.go",
+        "pubsub.go",
         "storage.go",
     ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig",

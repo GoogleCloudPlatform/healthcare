@@ -104,14 +104,15 @@ type Project struct {
 	} `json:"resources"`
 
 	// Terraform resources
-	BigqueryDatasets     []*tfconfig.BigqueryDataset               `json:"bigquery_datasets"`
-	ComputeImages        []*tfconfig.ComputeImage                  `json:"compute_images"`
-	ComputeInstances     []*tfconfig.ComputeInstance               `json:"compute_instances"`
-	IAMMembers           *tfconfig.ProjectIAMMembers               `json:"project_iam_members"`
-	NotificationChannels []*tfconfig.MonitoringNotificationChannel `json:"monitoring_notification_channels"`
-	Services             *tfconfig.ProjectServices                 `json:"project_services"`
+	BigqueryDatasets []*tfconfig.BigqueryDataset `json:"bigquery_datasets"`
+	ComputeImages    []*tfconfig.ComputeImage    `json:"compute_images"`
+	ComputeInstances []*tfconfig.ComputeInstance `json:"compute_instances"`
+	IAMMembers       *tfconfig.ProjectIAMMembers `json:"project_iam_members"`
+		NotificationChannels []*tfconfig.MonitoringNotificationChannel `json:"monitoring_notification_channels"`
+	PubsubTopics     []*tfconfig.PubsubTopic     `json:"pubsub_topics"`
+	Services         *tfconfig.ProjectServices   `json:"project_services"`
 	ServiceAccounts      []*tfconfig.ServiceAccount                `json:"service_accounts"`
-	StorageBuckets       []*tfconfig.StorageBucket                 `json:"storage_buckets"`
+	StorageBuckets   []*tfconfig.StorageBucket   `json:"storage_buckets"`
 
 	BinauthzPolicy *BinAuthz `json:"binauthz"`
 

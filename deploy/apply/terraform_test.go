@@ -203,6 +203,46 @@ resource:
 			},
 		},
 		{
+			name: "pubsub",
+			data: &testconf.ConfigData{`
+pubsub_topics:
+- name: foo-topic
+  _subscriptions:
+  - name: foo-subscription
+    message_retention_duration: 600s
+    retain_acked_messages: true
+    ack_deadline_seconds: 20
+    _iam_members:
+    - role: roles/editor
+      member: user:foo-user@my-domain.com`},
+			wantUserCall: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_pubsub_topic:
+    foo-topic:
+      name: foo-topic
+      project: my-project
+- google_pubsub_subscription:
+    foo-subscription:
+      name: foo-subscription
+      project: my-project
+      topic: ${google_pubsub_topic.foo-topic.name}
+      message_retention_duration: 600s
+      retain_acked_messages: true
+      ack_deadline_seconds: 20
+- google_pubsub_subscription_iam_member:
+    foo-subscription:
+      for_each:
+        'roles/editor user:foo-user@my-domain.com':
+          role: roles/editor
+          member: user:foo-user@my-domain.com
+      subscription: ${google_pubsub_subscription.foo-subscription.name}
+      role: ${each.value.role}
+      member: ${each.value.member}
+      `),
+			},
+		},
+		{
 			name: "service_account",
 			data: &testconf.ConfigData{`
 service_accounts:
