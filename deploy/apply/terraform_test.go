@@ -391,6 +391,9 @@ resource:
       type: email
       labels:
         email_address: my-auditors@my-domain.com
+output:
+- google_monitoring_notification_channel_email:
+    value: ${google_monitoring_notification_channel.email}
 `)
 	userConfig(t, wantUserConfig)
 
@@ -417,7 +420,7 @@ resource:
           duration: 0s
           filter: resource.type="global" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bigquery-settings-change-count.name}"
       notification_channels:
-      - '${data.terraform_remote_state.user.google_monitoring_notification_channel.email.name}'
+      - '${data.terraform_remote_state.user.outputs.google_monitoring_notification_channel_email.name}'
 - google_monitoring_alert_policy:
     bucket_permission_change_alert:
       display_name: Bucket Permission Change Alert
@@ -433,7 +436,7 @@ resource:
           duration: 0s
           filter: resource.type="gcs_bucket" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bucket-permission-change-count.name}"
       notification_channels:
-      - '${data.terraform_remote_state.user.google_monitoring_notification_channel.email.name}'
+      - '${data.terraform_remote_state.user.outputs.google_monitoring_notification_channel_email.name}'
 - google_monitoring_alert_policy:
     iam_policy_change_alert:
       display_name: IAM Policy Change Alert
@@ -449,7 +452,7 @@ resource:
           duration: 0s
           filter: resource.type=one_of("global","pubsub_topic","pubsub_subscription","gce_instance") AND metric.type="logging.googleapis.com/user/${google_logging_metric.iam-policy-change-count.name}"
       notification_channels:
-      - '${data.terraform_remote_state.user.google_monitoring_notification_channel.email.name}'`,
+      - '${data.terraform_remote_state.user.outputs.google_monitoring_notification_channel_email.name}'`,
 			[]terraform.Import{
 				{Address: "google_monitoring_alert_policy.bigquery_update_alert", ID: "projects/my-project/alertPolicies/222"},
 				{Address: "google_monitoring_alert_policy.bucket_permission_change_alert", ID: "projects/my-project/alertPolicies/333"},
@@ -568,16 +571,19 @@ resource:
 func userConfig(t *testing.T, config map[string]interface{}) {
 	t.Helper()
 	def := `
-data:
-- google_project:
-    my-project:
-      project_id: my-project
+provider:
+- google:
+    project: my-project
 terraform:
   required_version: '>= 0.12.0'
   backend:
     gcs:
       bucket: my-project-state
-      prefix: user`
+      prefix: user
+data:
+- google_project:
+    my-project:
+      project_id: my-project`
 
 	if err := yaml.Unmarshal([]byte(def), &config); err != nil {
 		t.Fatalf("json.Unmarshal default config: %v", err)
@@ -589,6 +595,9 @@ func defaultCall(t *testing.T, extraResources string, extraImports []terraform.I
 
 	return applyCall{
 		Config: unmarshal(t, fmt.Sprintf(`
+provider:
+- google:
+    project: my-project
 terraform:
   required_version: '>= 0.12.0'
   backend:

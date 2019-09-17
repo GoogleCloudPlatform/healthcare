@@ -183,10 +183,19 @@ func auditResources(config *config.Config, project *config.Project) error {
 func userResources(project *config.Project) error {
 	rs := project.UserResources()
 	tfConf := terraform.NewConfig()
+
+	// Needed to work around issues like https://github.com/terraform-providers/terraform-provider-google/issues/4460.
+	// Also used if a resource does not explicitly set the project field.
+	tfConf.Providers = append(tfConf.Providers, &terraform.Provider{
+		Name:       "google",
+		Properties: map[string]interface{}{"project": project.ID},
+	})
+
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,
 		Prefix: "user",
 	}
+
 	// Allow user resources to access project runtime info such as project number.
 	tfConf.Data = []*terraform.Resource{{
 		Name: project.ID,
@@ -195,6 +204,15 @@ func userResources(project *config.Project) error {
 			"project_id": project.ID,
 		},
 	}}
+
+	// Notification channels will be used by the following default deployment.
+	for _, c := range project.NotificationChannels {
+		tfConf.Outputs = append(tfConf.Outputs, &terraform.Output{
+			Name:  fmt.Sprintf("%s_%s", c.ResourceType(), c.ID()),
+			Value: fmt.Sprintf("${%s.%s}", c.ResourceType(), c.ID()),
+		})
+	}
+
 	opts := &terraform.Options{}
 	if err := addResources(tfConf, opts, rs...); err != nil {
 		return err
@@ -212,6 +230,14 @@ func userResources(project *config.Project) error {
 func defaultResources(project *config.Project) error {
 	rs := project.DefaultResources()
 	tfConf := terraform.NewConfig()
+
+	// Needed to work around issues like https://github.com/terraform-providers/terraform-provider-google/issues/4460.
+	// Also used if a resource does not explicitly set the project field.
+	tfConf.Providers = append(tfConf.Providers, &terraform.Provider{
+		Name:       "google",
+		Properties: map[string]interface{}{"project": project.ID},
+	})
+
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,
 		Prefix: "default",

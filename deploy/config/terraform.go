@@ -186,7 +186,7 @@ func (p *Project) initDefaultResources() error {
 			for _, c := range p.NotificationChannels {
 				// The notification channels are deployed in the user deployment, and the unique names of the notification channel is only known after deployment.
 				// Thus we need a reference to the channel name in the user deployment's state.
-				ref := fmt.Sprintf("${data.terraform_remote_state.user.%s.%s.name}", c.ResourceType(), c.ID())
+				ref := fmt.Sprintf("${data.terraform_remote_state.user.outputs.%s_%s.name}", c.ResourceType(), c.ID())
 				ma.alert.NotificationChannels = append(ma.alert.NotificationChannels, ref)
 			}
 			p.DefaultAlertPolicies = append(p.DefaultAlertPolicies, ma.alert)

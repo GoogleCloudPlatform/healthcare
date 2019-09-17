@@ -25,20 +25,35 @@ import (
 // Note: Terraform resources and modules are keyed Type+ID.
 // So google_storage_bucket.foo and google_bigquery_dataset.foo are acceptable in the same config.
 type Config struct {
-	Terraform Terraform   `json:"terraform"`
+	Providers []*Provider `json:"provider,omitempty"`
+	Terraform *Terraform  `json:"terraform,omitempty"`
 	Data      []*Resource `json:"data,omitempty"`
 	Modules   []*Module   `json:"module,omitempty"`
 	Resources []*Resource `json:"resource,omitempty"`
+	Outputs   []*Output   `json:"output,omitempty"`
 }
 
 // NewConfig returns a new terraform config.
 func NewConfig() *Config {
 	c := &Config{
-		Terraform: Terraform{
+		Terraform: &Terraform{
 			RequiredVersion: ">= 0.12.0",
 		},
 	}
 	return c
+}
+
+// Provider provides a terraform provider config.
+type Provider struct {
+	Name       string
+	Properties map[string]interface{}
+}
+
+// MarshalJSON implements a custom marshaller which marshals properties to be under name.
+func (p *Provider) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		p.Name: p.Properties,
+	})
 }
 
 // Terraform provides a terraform block config.
@@ -111,7 +126,7 @@ type Resource struct {
 	Properties interface{}
 }
 
-// MarshalJSON implements a custom marshaller which marshals properties to the top level.
+// MarshalJSON implements a custom marshaller which marshals the resource to have the following hierarchy: type - name - properties.
 func (r *Resource) MarshalJSON() ([]byte, error) {
 	return json.Marshal(map[string]interface{}{
 		r.Type: map[string]interface{}{
@@ -125,4 +140,18 @@ func (r *Resource) MarshalJSON() ([]byte, error) {
 type Import struct {
 	Address string
 	ID      string
+}
+
+// Output provides a terraform output config.
+// See https://www.terraform.io/docs/configuration/outputs.html.
+type Output struct {
+	Name  string
+	Value string
+}
+
+// MarshalJSON implements a custom marshaller which marshals value to be under name.
+func (o *Output) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		o.Name: map[string]interface{}{"value": o.Value},
+	})
 }
