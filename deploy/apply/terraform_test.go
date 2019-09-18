@@ -60,7 +60,10 @@ resource:
     foo_dataset:
       dataset_id: foo_dataset
       project: my-project
-      location: US`),
+      location: US
+      access:
+      - role: OWNER
+        group_by_email: my-project-owners@my-domain.com`),
 				Imports: []terraform.Import{{
 					Address: "google_bigquery_dataset.foo_dataset",
 					ID:      "my-project:foo_dataset",

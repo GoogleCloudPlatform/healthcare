@@ -32,6 +32,12 @@ func (p *Project) initTerraform(auditProject *Project) error {
 		}
 	}
 
+	// At least have one owner access set to override default accesses
+	// (https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets).
+	for _, d := range p.BigqueryDatasets {
+		d.Accesses = append(d.Accesses, &tfconfig.Access{Role: "OWNER", GroupByEmail: p.OwnersGroup})
+	}
+
 	if err := p.initDefaultResources(); err != nil {
 		return fmt.Errorf("failed to init default resources: %v", err)
 	}
@@ -54,11 +60,10 @@ func (p *Project) initTerraformAuditResources(auditProject *Project) error {
 		return fmt.Errorf("failed to init logs bq dataset: %v", err)
 	}
 
-	accesses := []*tfconfig.Access{
-		{Role: "OWNER", GroupByEmail: auditProject.OwnersGroup},
-		{Role: "READER", GroupByEmail: p.AuditorsGroup},
-	}
-	d.Accesses = accesses
+	d.Accesses = append(d.Accesses,
+		&tfconfig.Access{Role: "OWNER", GroupByEmail: auditProject.OwnersGroup},
+		&tfconfig.Access{Role: "READER", GroupByEmail: p.AuditorsGroup},
+	)
 
 	p.BQLogSinkTF = &tfconfig.LoggingSink{
 		Name:                 "audit-logs-to-bigquery",
