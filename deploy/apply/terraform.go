@@ -240,7 +240,7 @@ func defaultResources(project *config.Project) error {
 
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,
-		Prefix: "default",
+		Prefix: "defaults",
 	}
 
 	// Allow default deployment to reference user deployment.

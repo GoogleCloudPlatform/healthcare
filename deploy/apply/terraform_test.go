@@ -606,7 +606,7 @@ terraform:
   backend:
     gcs:
       bucket: my-project-state
-      prefix: default
+      prefix: defaults
 data:
 - terraform_remote_state:
     user:
