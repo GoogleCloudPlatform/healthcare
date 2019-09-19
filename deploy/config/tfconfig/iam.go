@@ -22,8 +22,9 @@ import (
 // ProjectIAMMembers represents multiple Terraform project IAM members.
 // It is used to wrap and merge multiple IAM members into a single IAM member when being marshalled to JSON.
 type ProjectIAMMembers struct {
-	members []*ProjectIAMMember
-	project string
+	Members   []*ProjectIAMMember
+	DependsOn []string
+	project   string
 }
 
 // ProjectIAMMember represents a Terraform project IAM member.
@@ -35,8 +36,9 @@ type ProjectIAMMember struct {
 
 	// ForEach is used to let a single iam member expand to reference multiple iam members
 	// through the use of terraform's for_each iterator.
-	ForEach map[string]*ProjectIAMMember `json:"for_each,omitempty"`
-	Project string                       `json:"project,omitempty"`
+	ForEach   map[string]*ProjectIAMMember `json:"for_each,omitempty"`
+	Project   string                       `json:"project,omitempty"`
+	DependsOn []string                     `json:"depends_on,omitempty"`
 }
 
 // Init initializes the resource.
@@ -60,22 +62,23 @@ func (ms *ProjectIAMMembers) ResourceType() string {
 // The single member will set a for_each block to expand to multiple iam members in the terraform call.
 func (ms *ProjectIAMMembers) MarshalJSON() ([]byte, error) {
 	forEach := make(map[string]*ProjectIAMMember)
-	for _, m := range ms.members {
+	for _, m := range ms.Members {
 		key := fmt.Sprintf("%s %s", m.Role, m.Member)
 		forEach[key] = m
 	}
 
 	return json.Marshal(&ProjectIAMMember{
-		ForEach: forEach,
-		Project: ms.project,
-		Role:    "${each.value.role}",
-		Member:  "${each.value.member}",
+		ForEach:   forEach,
+		Project:   ms.project,
+		Role:      "${each.value.role}",
+		Member:    "${each.value.member}",
+		DependsOn: ms.DependsOn,
 	})
 }
 
 // UnmarshalJSON unmarshals the bytes to a list of members.
 func (ms *ProjectIAMMembers) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &ms.members)
+	return json.Unmarshal(b, &ms.Members)
 }
 
 // ServiceAccount represents a Terraform service account.

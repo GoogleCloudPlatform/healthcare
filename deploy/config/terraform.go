@@ -92,6 +92,25 @@ func (p *Project) initTerraformAuditResources(auditProject *Project) error {
 }
 
 func (p *Project) initDefaultResources() error {
+	p.DefaultIAMMembers = &tfconfig.ProjectIAMMembers{
+		Members: []*tfconfig.ProjectIAMMember{{
+			Role:   "roles/owner",
+			Member: "group:" + p.OwnersGroup,
+		}},
+		// Default IAM is deployed in pre-requisites which is deployed alongside services.
+		// It needs resourcemanager.googleapis.com from the services deployment to work.
+		DependsOn: []string{"google_project_service.project"},
+	}
+	if p.Audit.LogsStorageBucket != nil || len(p.StorageBuckets) > 0 {
+		// roles/owner does not grant storage.buckets.setIamPolicy, so we need to add storage admin role on the owners group.
+		p.DefaultIAMMembers.Members = append(p.DefaultIAMMembers.Members, &tfconfig.ProjectIAMMember{
+			Role: "roles/storage.admin", Member: "group:" + p.OwnersGroup,
+		})
+	}
+	if err := p.DefaultIAMMembers.Init(p.ID); err != nil {
+		return fmt.Errorf("failed to init default iam members: %v", err)
+	}
+
 	type metricAndAlert struct {
 		metric *tfconfig.LoggingMetric
 		alert  *tfconfig.MonitoringAlertPolicy

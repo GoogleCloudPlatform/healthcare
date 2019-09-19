@@ -53,7 +53,9 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 
 	tfConf := terraform.NewConfig()
 	opts := &terraform.Options{}
-	addResources(tfConf, opts, res)
+	if err := addResources(tfConf, opts, res); err != nil {
+		return err
+	}
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -74,8 +76,8 @@ func defaultTerraform(config *config.Config, project *config.Project) error {
 		return fmt.Errorf("failed to apply audit resources: %v", err)
 	}
 
-	// Services deployment enables services that other resources require, so should come before the major resource deployments.
-	if err := services(project); err != nil {
+	// prerequisite deployment enables services and adds owners group that other resources require, so should come before the major resource deployments.
+	if err := prerequisite(config, project); err != nil {
 		return fmt.Errorf("failed to apply services: %v", err)
 	}
 
@@ -108,19 +110,20 @@ func stateBucket(project *config.Project) error {
 	return terraformApply(tfConf, dir, opts)
 }
 
-func services(project *config.Project) error {
-	if project.Services == nil {
-		return nil
-	}
-
+func prerequisite(config *config.Config, project *config.Project) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,
-		Prefix: "services",
+		Prefix: "pre-requisites",
 	}
 
 	opts := &terraform.Options{}
-	if err := addResources(tfConf, opts, project.Services); err != nil {
+	var rs []tfconfig.Resource = []tfconfig.Resource{project.DefaultIAMMembers}
+	if project.Services != nil {
+		rs = append(rs, project.Services)
+	}
+
+	if err := addResources(tfConf, opts, rs...); err != nil {
 		return err
 	}
 
@@ -130,7 +133,17 @@ func services(project *config.Project) error {
 	}
 	defer os.RemoveAll(dir)
 
-	return terraformApply(tfConf, dir, opts)
+	if err := terraformApply(tfConf, dir, opts); err != nil {
+		return err
+	}
+
+	// TODO: the user being used for terraform is actually set by gcloud auth application-default login.
+	// This user can differ than the one set by gcloud auth login which is what removeOwnerUser checks for.
+	// Fix this to remove the application-default owner.
+	if err := removeOwnerUser(project); err != nil {
+		return fmt.Errorf("failed to remove authenticated user: %v", err)
+	}
+	return nil
 }
 
 func auditResources(config *config.Config, project *config.Project) error {
@@ -161,7 +174,9 @@ func auditResources(config *config.Config, project *config.Project) error {
 	}
 
 	opts := &terraform.Options{}
-	addResources(tfConf, opts, rs...)
+	if err := addResources(tfConf, opts, rs...); err != nil {
+		return nil
+	}
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {

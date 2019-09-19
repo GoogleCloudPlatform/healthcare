@@ -25,6 +25,7 @@ go_library(
         "//deploymentmanager:go_default_library",
         "//runner:go_default_library",
         "//terraform:go_default_library",
+        "@com_github_imdario_mergo//:go_default_library",
     ],
 )
 

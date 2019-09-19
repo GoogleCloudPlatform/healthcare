@@ -27,6 +27,7 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
+	"github.com/imdario/mergo"
 )
 
 type applyCall struct {
@@ -39,10 +40,10 @@ func TestDeployTerraform(t *testing.T) {
 	runner.StubFakeCmds()
 
 	tests := []struct {
-		name             string
-		data             *testconf.ConfigData
-		wantServicesCall *applyCall
-		wantUserCall     *applyCall
+		name                 string
+		data                 *testconf.ConfigData
+		wantPreRequisiteCall *applyCall
+		wantUserCall         *applyCall
 	}{
 		{
 			name: "no_resources",
@@ -186,16 +187,23 @@ resource:
 project_services:
 - service: compute.googleapis.com
 - service: iam.googleapis.com`},
-			wantServicesCall: &applyCall{
+			wantPreRequisiteCall: &applyCall{
 				Config: unmarshal(t, `
-terraform:
-  required_version: '>= 0.12.0'
-  backend:
-    gcs:
-      bucket: my-project-state
-      prefix: services
-
 resource:
+- google_project_iam_member:
+    project:
+      for_each:
+        'roles/owner group:my-project-owners@my-domain.com':
+          role: roles/owner
+          member: group:my-project-owners@my-domain.com
+        'roles/storage.admin group:my-project-owners@my-domain.com':
+          role: roles/storage.admin
+          member: group:my-project-owners@my-domain.com
+      project: my-project
+      role: ${each.value.role}
+      member: ${each.value.member}
+      depends_on:
+      - google_project_service.project
 - google_project_service:
     project:
       for_each:
@@ -318,14 +326,15 @@ resource:
 			}
 
 			want := []applyCall{projectCall(t), stateBucketCall(t), auditCall(t)}
-			if tc.wantServicesCall != nil {
-				want = append(want, *tc.wantServicesCall)
+			if tc.wantPreRequisiteCall == nil {
+				tc.wantPreRequisiteCall = &applyCall{Config: make(map[string]interface{})}
 			}
+			preRequisiteConfig(t, tc.wantPreRequisiteCall.Config)
 			if tc.wantUserCall == nil {
 				tc.wantUserCall = &applyCall{Config: make(map[string]interface{})}
 			}
 			userConfig(t, tc.wantUserCall.Config)
-			want = append(want, *tc.wantUserCall, defaultCall(t, "", nil))
+			want = append(want, *tc.wantPreRequisiteCall, *tc.wantUserCall, defaultCall(t, "", nil))
 
 			if diff := cmp.Diff(got, want); diff != "" {
 				t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
@@ -571,6 +580,41 @@ resource:
 	}
 }
 
+func preRequisiteConfig(t *testing.T, config map[string]interface{}) {
+	t.Helper()
+	def := `
+terraform:
+  required_version: '>= 0.12.0'
+  backend:
+    gcs:
+      bucket: my-project-state
+      prefix: pre-requisites
+resource:
+- google_project_iam_member:
+    project:
+      for_each:
+        'roles/owner group:my-project-owners@my-domain.com':
+          role: roles/owner
+          member: group:my-project-owners@my-domain.com
+        'roles/storage.admin group:my-project-owners@my-domain.com':
+          role: roles/storage.admin
+          member: group:my-project-owners@my-domain.com
+      project: my-project
+      role: ${each.value.role}
+      member: ${each.value.member}
+      depends_on:
+      - google_project_service.project`
+
+	defConf := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(def), &defConf); err != nil {
+		t.Fatalf("yaml.Unmarshal default config: %v", err)
+	}
+
+	if err := mergo.Merge(&config, &defConf); err != nil {
+		t.Fatalf("mergo.Merge default config: %v", err)
+	}
+}
+
 func userConfig(t *testing.T, config map[string]interface{}) {
 	t.Helper()
 	def := `
@@ -589,7 +633,7 @@ data:
       project_id: my-project`
 
 	if err := yaml.Unmarshal([]byte(def), &config); err != nil {
-		t.Fatalf("json.Unmarshal default config: %v", err)
+		t.Fatalf("yaml.Unmarshal default config: %v", err)
 	}
 }
 
