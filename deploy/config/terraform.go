@@ -266,6 +266,9 @@ func (p *Project) UserResources() []tfconfig.Resource {
 	for _, r := range p.ComputeInstances {
 		rs = append(rs, r)
 	}
+	for _, r := range p.IAMCustomRoles {
+		rs = append(rs, r)
+	}
 	if p.IAMMembers != nil {
 		rs = append(rs, p.IAMMembers)
 	}

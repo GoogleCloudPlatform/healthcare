@@ -566,6 +566,12 @@ definitions:
                 Will set the `type` and `labels` fields (thus these fields must
                 not be set in conjunction with `_email`).
 
+      project_iam_custom_roles:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_project_iam_custom_role (https://www.terraform.io/docs/providers/google/r/google_project_iam_custom_role.html).
+
       project_iam_members:
         type: array
         description: |

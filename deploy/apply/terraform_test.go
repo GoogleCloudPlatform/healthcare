@@ -235,6 +235,36 @@ resource:
 			},
 		},
 		{
+			name: "project_iam_custom_role",
+			data: &testconf.ConfigData{`
+project_iam_custom_roles:
+- role_id: myCustomRole
+  title: "My Custom Role"
+  description: "A description"
+  permissions:
+  - iam.roles.list
+  - iam.roles.create
+  - iam.roles.delete`},
+			wantUserCall: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_project_iam_custom_role:
+    myCustomRole:
+      role_id: myCustomRole
+      project: my-project
+      title: "My Custom Role"
+      description: "A description"
+      permissions:
+      - iam.roles.list
+      - iam.roles.create
+      - iam.roles.delete`),
+				Imports: []terraform.Import{{
+					Address: "google_project_iam_custom_role.myCustomRole",
+					ID:      "projects/my-project/roles/myCustomRole",
+				}},
+			},
+		},
+		{
 			name: "project_service",
 			data: &testconf.ConfigData{`
 project_services:

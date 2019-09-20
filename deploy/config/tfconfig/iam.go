@@ -19,6 +19,61 @@ import (
 	"fmt"
 )
 
+// ProjectIAMCustomRole represents a terraform project iam custom role.
+type ProjectIAMCustomRole struct {
+	RoleID  string `json:"role_id"`
+	Project string `json:"project"`
+
+	raw json.RawMessage
+}
+
+// Init initializes the resource.
+func (r *ProjectIAMCustomRole) Init(projectID string) error {
+	if r.Project != "" {
+		return fmt.Errorf("project must be unset: %v", r.Project)
+	}
+	r.Project = projectID
+	return nil
+}
+
+// ID returns the resource unique identifier.
+// It is hardcoded to return "project" as there is at most one of this resource in a deployment.
+func (r *ProjectIAMCustomRole) ID() string {
+	return r.RoleID
+}
+
+// ResourceType returns the resource terraform provider type.
+func (r *ProjectIAMCustomRole) ResourceType() string {
+	return "google_project_iam_custom_role"
+}
+
+// ImportID returns the ID to use for terraform imports.
+func (r *ProjectIAMCustomRole) ImportID() (string, error) {
+	return fmt.Sprintf("projects/%s/roles/%s", r.Project, r.RoleID), nil
+}
+
+// aliasProjectIAMCustomRole is used to prevent infinite recursion when dealing with json marshaling.
+// https://stackoverflow.com/q/52433467
+type aliasProjectIAMCustomRole ProjectIAMCustomRole
+
+// UnmarshalJSON provides a custom JSON unmarshaller.
+// It is used to store the original (raw) user JSON definition,
+// which can have more fields than what is defined in this struct.
+func (r *ProjectIAMCustomRole) UnmarshalJSON(data []byte) error {
+	var alias aliasProjectIAMCustomRole
+	if err := unmarshalJSONMany(data, &alias, &alias.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal to parsed alias: %v", err)
+	}
+	*r = ProjectIAMCustomRole(alias)
+	return nil
+}
+
+// MarshalJSON provides a custom JSON marshaller.
+// It is used to merge the original (raw) user JSON definition with the struct.
+func (r *ProjectIAMCustomRole) MarshalJSON() ([]byte, error) {
+	return interfacePair{r.raw, aliasProjectIAMCustomRole(*r)}.MarshalJSON()
+}
+
 // ProjectIAMMembers represents multiple Terraform project IAM members.
 // It is used to wrap and merge multiple IAM members into a single IAM member when being marshalled to JSON.
 type ProjectIAMMembers struct {
