@@ -26,20 +26,17 @@ func (p *Project) initTerraform(auditProject *Project) error {
 		return fmt.Errorf("failed to init audit resources: %v", err)
 	}
 
-	if p.Services != nil {
-		if err := p.Services.Init(p.ID); err != nil {
-			return err
-		}
+	if err := p.initPrerequisites(); err != nil {
+		return fmt.Errorf("failed to init pre requisites: %v", err)
+	}
+	if err := p.initDefaultResources(); err != nil {
+		return fmt.Errorf("failed to init default resources: %v", err)
 	}
 
 	// At least have one owner access set to override default accesses
 	// (https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets).
 	for _, d := range p.BigqueryDatasets {
 		d.Accesses = append(d.Accesses, &tfconfig.Access{Role: "OWNER", GroupByEmail: p.OwnersGroup})
-	}
-
-	if err := p.initDefaultResources(); err != nil {
-		return fmt.Errorf("failed to init default resources: %v", err)
 	}
 
 	for _, r := range p.UserResources() {
@@ -91,8 +88,30 @@ func (p *Project) initTerraformAuditResources(auditProject *Project) error {
 	return nil
 }
 
-func (p *Project) initDefaultResources() error {
-	p.DefaultIAMMembers = &tfconfig.ProjectIAMMembers{
+func (p *Project) initPrerequisites() error {
+	if p.Services == nil {
+		p.Services = new(tfconfig.ProjectServices)
+	}
+
+	svcs := []string{
+		"bigquery.googleapis.com",
+		// For project level iam policy updates.
+		"cloudresourcemanager.googleapis.com",
+	}
+
+	if len(p.ComputeInstances) > 0 || len(p.ComputeImages) > 0 {
+		svcs = append(svcs, "compute.googleapis.com")
+	}
+
+	for _, svc := range svcs {
+		p.Services.Services = append(p.Services.Services, &tfconfig.ProjectService{Service: svc})
+	}
+	// Note: services will be de-duplicated when being marshalled.
+	if err := p.Services.Init(p.ID); err != nil {
+		return err
+	}
+
+	p.PrerequisiteIAMMembers = &tfconfig.ProjectIAMMembers{
 		Members: []*tfconfig.ProjectIAMMember{{
 			Role:   "roles/owner",
 			Member: "group:" + p.OwnersGroup,
@@ -103,14 +122,17 @@ func (p *Project) initDefaultResources() error {
 	}
 	if p.Audit.LogsStorageBucket != nil || len(p.StorageBuckets) > 0 {
 		// roles/owner does not grant storage.buckets.setIamPolicy, so we need to add storage admin role on the owners group.
-		p.DefaultIAMMembers.Members = append(p.DefaultIAMMembers.Members, &tfconfig.ProjectIAMMember{
+		p.PrerequisiteIAMMembers.Members = append(p.PrerequisiteIAMMembers.Members, &tfconfig.ProjectIAMMember{
 			Role: "roles/storage.admin", Member: "group:" + p.OwnersGroup,
 		})
 	}
-	if err := p.DefaultIAMMembers.Init(p.ID); err != nil {
+	if err := p.PrerequisiteIAMMembers.Init(p.ID); err != nil {
 		return fmt.Errorf("failed to init default iam members: %v", err)
 	}
+	return nil
+}
 
+func (p *Project) initDefaultResources() error {
 	type metricAndAlert struct {
 		metric *tfconfig.LoggingMetric
 		alert  *tfconfig.MonitoringAlertPolicy

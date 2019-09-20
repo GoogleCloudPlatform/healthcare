@@ -57,7 +57,7 @@ func (p *ProjectResource) ImportID() (string, error) {
 // ProjectServices represents multiple Terraform project services.
 // It is used to wrap and merge multiple services into a single service struct when being marshalled to JSON.
 type ProjectServices struct {
-	services []*ProjectService
+	Services []*ProjectService
 	project  string
 }
 
@@ -95,7 +95,7 @@ func (*ProjectServices) ResourceType() string {
 func (s *ProjectServices) MarshalJSON() ([]byte, error) {
 	forEach := make(map[string]bool)
 
-	for _, svc := range s.services {
+	for _, svc := range s.Services {
 		forEach[svc.Service] = true
 	}
 
@@ -108,5 +108,5 @@ func (s *ProjectServices) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals the bytes to a list of members.
 func (s *ProjectServices) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &s.services)
+	return json.Unmarshal(b, &s.Services)
 }

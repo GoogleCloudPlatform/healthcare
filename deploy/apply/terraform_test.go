@@ -39,6 +39,7 @@ func TestDeployTerraform(t *testing.T) {
 	config.EnableTerraform = true
 	runner.StubFakeCmds()
 
+	// TODO: This test is becoming unwieldy. Break it up into individual tests for specific deployments and have one general test for integration testing.
 	tests := []struct {
 		name                 string
 		data                 *testconf.ConfigData
@@ -79,6 +80,32 @@ compute_images:
   raw_disk:
     source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
 `},
+			wantPreRequisiteCall: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_project_service:
+    project:
+      for_each:
+        'bigquery.googleapis.com': true
+        'cloudresourcemanager.googleapis.com': true
+        'compute.googleapis.com': true
+      project: my-project
+      service: '${each.key}'
+- google_project_iam_member:
+    project:
+      for_each:
+        'roles/owner group:my-project-owners@my-domain.com':
+          role: roles/owner
+          member: group:my-project-owners@my-domain.com
+        'roles/storage.admin group:my-project-owners@my-domain.com':
+          role: roles/storage.admin
+          member: group:my-project-owners@my-domain.com
+      project: my-project
+      role: ${each.value.role}
+      member: ${each.value.member}
+      depends_on:
+      - google_project_service.project`),
+			},
 			wantUserCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
@@ -107,6 +134,32 @@ compute_instances:
   network_interface:
     network: default
 `},
+			wantPreRequisiteCall: &applyCall{
+				Config: unmarshal(t, `
+resource:
+- google_project_service:
+    project:
+      for_each:
+        'bigquery.googleapis.com': true
+        'cloudresourcemanager.googleapis.com': true
+        'compute.googleapis.com': true
+      project: my-project
+      service: '${each.key}'
+- google_project_iam_member:
+    project:
+      for_each:
+        'roles/owner group:my-project-owners@my-domain.com':
+          role: roles/owner
+          member: group:my-project-owners@my-domain.com
+        'roles/storage.admin group:my-project-owners@my-domain.com':
+          role: roles/storage.admin
+          member: group:my-project-owners@my-domain.com
+      project: my-project
+      role: ${each.value.role}
+      member: ${each.value.member}
+      depends_on:
+      - google_project_service.project`),
+			},
 			wantUserCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
@@ -190,6 +243,15 @@ project_services:
 			wantPreRequisiteCall: &applyCall{
 				Config: unmarshal(t, `
 resource:
+- google_project_service:
+    project:
+      for_each:
+        'bigquery.googleapis.com': true
+        'cloudresourcemanager.googleapis.com': true
+        'compute.googleapis.com': true
+        'iam.googleapis.com': true
+      project: my-project
+      service: '${each.key}'
 - google_project_iam_member:
     project:
       for_each:
@@ -203,14 +265,7 @@ resource:
       role: ${each.value.role}
       member: ${each.value.member}
       depends_on:
-      - google_project_service.project
-- google_project_service:
-    project:
-      for_each:
-        'compute.googleapis.com': true
-        'iam.googleapis.com': true
-      project: my-project
-      service: '${each.key}'`),
+      - google_project_service.project`),
 			},
 		},
 		{
@@ -590,6 +645,13 @@ terraform:
       bucket: my-project-state
       prefix: pre-requisites
 resource:
+- google_project_service:
+    project:
+      for_each:
+        'bigquery.googleapis.com': true
+        'cloudresourcemanager.googleapis.com': true
+      project: my-project
+      service: ${each.key}
 - google_project_iam_member:
     project:
       for_each:

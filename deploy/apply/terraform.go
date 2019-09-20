@@ -118,12 +118,7 @@ func prerequisite(config *config.Config, project *config.Project) error {
 	}
 
 	opts := &terraform.Options{}
-	var rs []tfconfig.Resource = []tfconfig.Resource{project.DefaultIAMMembers}
-	if project.Services != nil {
-		rs = append(rs, project.Services)
-	}
-
-	if err := addResources(tfConf, opts, rs...); err != nil {
+	if err := addResources(tfConf, opts, project.Services, project.PrerequisiteIAMMembers); err != nil {
 		return err
 	}
 
