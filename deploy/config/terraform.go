@@ -94,7 +94,7 @@ func (p *Project) initPrerequisites() error {
 	}
 
 	svcs := []string{
-		"bigquery.googleapis.com",
+		"bigquery-json.googleapis.com",
 		// For project level iam policy updates.
 		"cloudresourcemanager.googleapis.com",
 	}
@@ -112,10 +112,10 @@ func (p *Project) initPrerequisites() error {
 	}
 
 	p.PrerequisiteIAMMembers = &tfconfig.ProjectIAMMembers{
-		Members: []*tfconfig.ProjectIAMMember{{
-			Role:   "roles/owner",
-			Member: "group:" + p.OwnersGroup,
-		}},
+		Members: []*tfconfig.ProjectIAMMember{
+			{Role: "roles/owner", Member: "group:" + p.OwnersGroup},
+			{Role: "roles/iam.securityReviewer", Member: "group:" + p.AuditorsGroup},
+		},
 		// Default IAM is deployed in pre-requisites which is deployed alongside services.
 		// It needs resourcemanager.googleapis.com from the services deployment to work.
 		DependsOn: []string{"google_project_service.project"},

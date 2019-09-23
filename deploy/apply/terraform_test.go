@@ -86,7 +86,7 @@ resource:
 - google_project_service:
     project:
       for_each:
-        'bigquery.googleapis.com': true
+        'bigquery-json.googleapis.com': true
         'cloudresourcemanager.googleapis.com': true
         'compute.googleapis.com': true
       project: my-project
@@ -97,6 +97,9 @@ resource:
         'roles/owner group:my-project-owners@my-domain.com':
           role: roles/owner
           member: group:my-project-owners@my-domain.com
+        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
+          role: roles/iam.securityReviewer
+          member: group:my-project-auditors@my-domain.com
         'roles/storage.admin group:my-project-owners@my-domain.com':
           role: roles/storage.admin
           member: group:my-project-owners@my-domain.com
@@ -140,7 +143,7 @@ resource:
 - google_project_service:
     project:
       for_each:
-        'bigquery.googleapis.com': true
+        'bigquery-json.googleapis.com': true
         'cloudresourcemanager.googleapis.com': true
         'compute.googleapis.com': true
       project: my-project
@@ -151,6 +154,9 @@ resource:
         'roles/owner group:my-project-owners@my-domain.com':
           role: roles/owner
           member: group:my-project-owners@my-domain.com
+        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
+          role: roles/iam.securityReviewer
+          member: group:my-project-auditors@my-domain.com
         'roles/storage.admin group:my-project-owners@my-domain.com':
           role: roles/storage.admin
           member: group:my-project-owners@my-domain.com
@@ -276,7 +282,7 @@ resource:
 - google_project_service:
     project:
       for_each:
-        'bigquery.googleapis.com': true
+        'bigquery-json.googleapis.com': true
         'cloudresourcemanager.googleapis.com': true
         'compute.googleapis.com': true
         'iam.googleapis.com': true
@@ -288,6 +294,9 @@ resource:
         'roles/owner group:my-project-owners@my-domain.com':
           role: roles/owner
           member: group:my-project-owners@my-domain.com
+        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
+          role: roles/iam.securityReviewer
+          member: group:my-project-auditors@my-domain.com
         'roles/storage.admin group:my-project-owners@my-domain.com':
           role: roles/storage.admin
           member: group:my-project-owners@my-domain.com
@@ -678,7 +687,7 @@ resource:
 - google_project_service:
     project:
       for_each:
-        'bigquery.googleapis.com': true
+        'bigquery-json.googleapis.com': true
         'cloudresourcemanager.googleapis.com': true
       project: my-project
       service: ${each.key}
@@ -688,6 +697,9 @@ resource:
         'roles/owner group:my-project-owners@my-domain.com':
           role: roles/owner
           member: group:my-project-owners@my-domain.com
+        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
+          role: roles/iam.securityReviewer
+          member: group:my-project-auditors@my-domain.com
         'roles/storage.admin group:my-project-owners@my-domain.com':
           role: roles/storage.admin
           member: group:my-project-owners@my-domain.com
