@@ -12,7 +12,7 @@ use cases.
 **Status:** ALPHA
 
 Expect breaking changes. To allow you to migrate easily, deprecated and new 
-fields/features for a period of time.
+fields/features are supported for a period of time.
 
 *   [Setup instructions](#setup-instructions)
     *   [Script prerequisites](#script-prerequisites)
