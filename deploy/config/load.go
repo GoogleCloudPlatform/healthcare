@@ -18,7 +18,6 @@ package config
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -185,13 +184,8 @@ func loadMap(path string, data map[string]interface{}) (map[string]interface{}, 
 		b = buf.Bytes()
 	}
 
-	var raw json.RawMessage
-	if err := yaml.Unmarshal(b, &raw); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config at path %q: %v", path, err)
-	}
-
 	root := make(map[string]interface{})
-	if err := json.Unmarshal(raw, &root); err != nil {
+	if err := yaml.Unmarshal(b, &root); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal raw config to map at path %q: %v", path, err)
 	}
 
@@ -200,7 +194,7 @@ func loadMap(path string, data map[string]interface{}) (map[string]interface{}, 
 		GeneratedFieldsPath string         `json:"generated_fields_path"`
 	}
 	conf := new(config)
-	if err := json.Unmarshal(raw, conf); err != nil {
+	if err := yaml.Unmarshal(b, conf); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal raw config to struct with imports at path %q: %v", path, err)
 	}
 
