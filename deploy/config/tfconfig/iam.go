@@ -19,6 +19,38 @@ import (
 	"fmt"
 )
 
+// ProjectIAMAuditConfig represents a terraform project iam audit config.
+type ProjectIAMAuditConfig struct {
+	Project         string            `json:"project"`
+	Service         string            `json:"service"`
+	AuditLogConfigs []*AuditLogConfig `json:"audit_log_config"`
+}
+
+// AuditLogConfig represents a terraform audit log config.
+type AuditLogConfig struct {
+	LogType string `json:"log_type"`
+}
+
+// Init initializes the resource.
+func (c *ProjectIAMAuditConfig) Init(projectID string) error {
+	if c.Project != "" {
+		return fmt.Errorf("project must be unset: %v", c.Project)
+	}
+	c.Project = projectID
+	return nil
+}
+
+// ID returns the resource unique identifier.
+// It is hardcoded to return "project" as there is at most one of this resource in a deployment.
+func (c *ProjectIAMAuditConfig) ID() string {
+	return "project"
+}
+
+// ResourceType returns the resource terraform provider type.
+func (c *ProjectIAMAuditConfig) ResourceType() string {
+	return "google_project_iam_audit_config"
+}
+
 // ProjectIAMCustomRole represents a terraform project iam custom role.
 type ProjectIAMCustomRole struct {
 	RoleID  string `json:"role_id"`

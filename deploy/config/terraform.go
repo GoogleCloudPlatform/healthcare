@@ -116,6 +116,15 @@ func (p *Project) initServices() error {
 }
 
 func (p *Project) addDefaultIAM() {
+	// Enable all possible audit log collection.
+	p.IAMAuditConfig = &tfconfig.ProjectIAMAuditConfig{
+		Service: "allServices",
+		AuditLogConfigs: []*tfconfig.AuditLogConfig{
+			{LogType: "DATA_READ"},
+			{LogType: "DATA_WRITE"},
+			{LogType: "ADMIN_READ"},
+		},
+	}
 	if p.IAMMembers == nil {
 		p.IAMMembers = new(tfconfig.ProjectIAMMembers)
 	}
@@ -236,6 +245,9 @@ func (p *Project) addDefaultMonitoring() {
 func (p *Project) TerraformResources() []tfconfig.Resource {
 	var rs []tfconfig.Resource
 	// Put default resources first to make it easier to write tests.
+	if p.IAMAuditConfig != nil {
+		rs = append(rs, p.IAMAuditConfig)
+	}
 	if p.IAMMembers != nil {
 		rs = append(rs, p.IAMMembers)
 	}

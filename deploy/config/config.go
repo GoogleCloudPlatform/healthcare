@@ -135,6 +135,7 @@ type Project struct {
 	BQLogSinkTF *tfconfig.LoggingSink `json:"-"`
 	Metrics     []*Metric             `json:"-"`
 
+	IAMAuditConfig        *tfconfig.ProjectIAMAuditConfig   `json:"-"`
 	DefaultAlertPolicies  []*tfconfig.MonitoringAlertPolicy `json:"-"`
 	DefaultLoggingMetrics []*tfconfig.LoggingMetric         `json:"-"`
 }
