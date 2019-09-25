@@ -16,7 +16,6 @@ package apply
 
 import (
 	"encoding/json"
-	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
@@ -27,7 +26,6 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
-	"github.com/imdario/mergo"
 )
 
 type applyCall struct {
@@ -35,409 +33,96 @@ type applyCall struct {
 	Imports []terraform.Import
 }
 
-func TestDeployTerraform(t *testing.T) {
+const baseResourcesYAML = `
+provider:
+- google:
+    project: my-project
+terraform:
+  required_version: '>= 0.12.0'
+  backend:
+    gcs:
+      bucket: my-project-state
+      prefix: user
+data:
+- google_project:
+    my-project:
+      project_id: my-project
+resource:
+- google_project_iam_member:
+    project:
+      for_each:
+        'roles/owner group:my-project-owners@my-domain.com':
+          role: roles/owner
+          member: group:my-project-owners@my-domain.com
+        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
+          role: roles/iam.securityReviewer
+          member: group:my-project-auditors@my-domain.com
+        'roles/storage.admin group:my-project-owners@my-domain.com':
+          role: roles/storage.admin
+          member: group:my-project-owners@my-domain.com
+      project: my-project
+      role: ${each.value.role}
+      member: ${each.value.member}
+- google_logging_metric:
+    bigquery-settings-change-count:
+      name: bigquery-settings-change-count
+      project: my-project
+      description: Count of bigquery permission changes.
+      filter: resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"
+      metric_descriptor:
+        metric_kind: DELTA
+        value_type: INT64
+        labels:
+        - key: user
+          description: Unexpected user
+          value_type: STRING
+      label_extractors:
+        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+- google_logging_metric:
+    bucket-permission-change-count:
+      name: bucket-permission-change-count
+      project: my-project
+      description: Count of GCS permissions changes.
+      filter: |-
+        resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
+        (protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)
+      metric_descriptor:
+        metric_kind: DELTA
+        value_type: INT64
+        labels:
+        - key: user
+          description: Unexpected user
+          value_type: STRING
+      label_extractors:
+        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+- google_logging_metric:
+    iam-policy-change-count:
+      name: iam-policy-change-count
+      project: my-project
+      description: Count of IAM policy changes.
+      filter: protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"
+      metric_descriptor:
+        metric_kind: DELTA
+        value_type: INT64
+        labels:
+        - key: user
+          description: Unexpected user
+          value_type: STRING
+      label_extractors:
+        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
+`
+
+var resourcesImports = []terraform.Import{
+	{Address: "google_logging_metric.bigquery-settings-change-count", ID: "bigquery-settings-change-count"},
+	{Address: "google_logging_metric.bucket-permission-change-count", ID: "bucket-permission-change-count"},
+	{Address: "google_logging_metric.iam-policy-change-count", ID: "iam-policy-change-count"},
+}
+
+// TODO: Add integration test
+func TestResources(t *testing.T) {
 	config.EnableTerraform = true
 	runner.StubFakeCmds()
 
-	// TODO: This test is becoming unwieldy. Break it up into individual tests for specific deployments and have one general test for integration testing.
-	tests := []struct {
-		name                 string
-		data                 *testconf.ConfigData
-		wantPreRequisiteCall *applyCall
-		wantUserCall         *applyCall
-	}{
-		{
-			name: "no_resources",
-		},
-		{
-			name: "bigquery_dataset",
-			data: &testconf.ConfigData{`
-bigquery_datasets:
-- dataset_id: foo_dataset
-  location: US`},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_bigquery_dataset:
-    foo_dataset:
-      dataset_id: foo_dataset
-      project: my-project
-      location: US
-      access:
-      - role: OWNER
-        group_by_email: my-project-owners@my-domain.com`),
-				Imports: []terraform.Import{{
-					Address: "google_bigquery_dataset.foo_dataset",
-					ID:      "my-project:foo_dataset",
-				}},
-			},
-		},
-		{
-			name: "compute_image",
-			data: &testconf.ConfigData{`
-compute_images:
-- name: foo-image
-  raw_disk:
-    source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
-`},
-			wantPreRequisiteCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_project_service:
-    project:
-      for_each:
-        'bigquery-json.googleapis.com': true
-        'cloudresourcemanager.googleapis.com': true
-        'compute.googleapis.com': true
-      project: my-project
-      service: '${each.key}'
-- google_project_iam_member:
-    project:
-      for_each:
-        'roles/owner group:my-project-owners@my-domain.com':
-          role: roles/owner
-          member: group:my-project-owners@my-domain.com
-        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
-          role: roles/iam.securityReviewer
-          member: group:my-project-auditors@my-domain.com
-        'roles/storage.admin group:my-project-owners@my-domain.com':
-          role: roles/storage.admin
-          member: group:my-project-owners@my-domain.com
-      project: my-project
-      role: ${each.value.role}
-      member: ${each.value.member}
-      depends_on:
-      - google_project_service.project`),
-			},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_compute_image:
-    foo-image:
-      name: foo-image
-      project: my-project
-      raw_disk:
-        source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz`),
-				Imports: []terraform.Import{{
-					Address: "google_compute_image.foo-image",
-					ID:      "my-project/foo-image",
-				}},
-			},
-		},
-		{
-			name: "compute_instance",
-			data: &testconf.ConfigData{`
-compute_instances:
-- name: foo-instance
-  zone: us-central1-a
-  machine_type: n1-standard-1
-  boot_disk:
-    initialize_params:
-      image: debian-cloud/debian-9
-  network_interface:
-    network: default
-`},
-			wantPreRequisiteCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_project_service:
-    project:
-      for_each:
-        'bigquery-json.googleapis.com': true
-        'cloudresourcemanager.googleapis.com': true
-        'compute.googleapis.com': true
-      project: my-project
-      service: '${each.key}'
-- google_project_iam_member:
-    project:
-      for_each:
-        'roles/owner group:my-project-owners@my-domain.com':
-          role: roles/owner
-          member: group:my-project-owners@my-domain.com
-        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
-          role: roles/iam.securityReviewer
-          member: group:my-project-auditors@my-domain.com
-        'roles/storage.admin group:my-project-owners@my-domain.com':
-          role: roles/storage.admin
-          member: group:my-project-owners@my-domain.com
-      project: my-project
-      role: ${each.value.role}
-      member: ${each.value.member}
-      depends_on:
-      - google_project_service.project`),
-			},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_compute_instance:
-    foo-instance:
-      name: foo-instance
-      project: my-project
-      zone: us-central1-a
-      machine_type: n1-standard-1
-      boot_disk:
-        initialize_params:
-          image: debian-cloud/debian-9
-      network_interface:
-        network: default`),
-				Imports: []terraform.Import{{
-					Address: "google_compute_instance.foo-instance",
-					ID:      "my-project/us-central1-a/foo-instance",
-				}},
-			},
-		},
-		{
-			name: "storage_bucket",
-			data: &testconf.ConfigData{`
-storage_buckets:
-- name: foo-bucket
-  location: US
-  _iam_members:
-  - role: roles/storage.admin
-    member: user:foo-user@my-domain.com`},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_storage_bucket:
-    foo-bucket:
-      name: foo-bucket
-      project: my-project
-      location: US
-      versioning:
-        enabled: true
-- google_storage_bucket_iam_member:
-    foo-bucket:
-      for_each:
-        'roles/storage.admin user:foo-user@my-domain.com':
-          role: roles/storage.admin
-          member: user:foo-user@my-domain.com
-      bucket: '${google_storage_bucket.foo-bucket.name}'
-      role: '${each.value.role}'
-      member: '${each.value.member}'`),
-				Imports: []terraform.Import{{
-					Address: "google_storage_bucket.foo-bucket",
-					ID:      "my-project/foo-bucket",
-				}},
-			},
-		},
-		{
-			name: "project_iam_member",
-			data: &testconf.ConfigData{`
-project_iam_members:
-- role: roles/owner
-  member: user:foo-user@my-domain.com`},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_project_iam_member:
-    project:
-      for_each:
-        'roles/owner user:foo-user@my-domain.com':
-          role: roles/owner
-          member: user:foo-user@my-domain.com
-      project: my-project
-      role: '${each.value.role}'
-      member: '${each.value.member}'`),
-			},
-		},
-		{
-			name: "project_iam_custom_role",
-			data: &testconf.ConfigData{`
-project_iam_custom_roles:
-- role_id: myCustomRole
-  title: "My Custom Role"
-  description: "A description"
-  permissions:
-  - iam.roles.list
-  - iam.roles.create
-  - iam.roles.delete`},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_project_iam_custom_role:
-    myCustomRole:
-      role_id: myCustomRole
-      project: my-project
-      title: "My Custom Role"
-      description: "A description"
-      permissions:
-      - iam.roles.list
-      - iam.roles.create
-      - iam.roles.delete`),
-				Imports: []terraform.Import{{
-					Address: "google_project_iam_custom_role.myCustomRole",
-					ID:      "projects/my-project/roles/myCustomRole",
-				}},
-			},
-		},
-		{
-			name: "project_service",
-			data: &testconf.ConfigData{`
-project_services:
-- service: compute.googleapis.com
-- service: iam.googleapis.com`},
-			wantPreRequisiteCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_project_service:
-    project:
-      for_each:
-        'bigquery-json.googleapis.com': true
-        'cloudresourcemanager.googleapis.com': true
-        'compute.googleapis.com': true
-        'iam.googleapis.com': true
-      project: my-project
-      service: '${each.key}'
-- google_project_iam_member:
-    project:
-      for_each:
-        'roles/owner group:my-project-owners@my-domain.com':
-          role: roles/owner
-          member: group:my-project-owners@my-domain.com
-        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
-          role: roles/iam.securityReviewer
-          member: group:my-project-auditors@my-domain.com
-        'roles/storage.admin group:my-project-owners@my-domain.com':
-          role: roles/storage.admin
-          member: group:my-project-owners@my-domain.com
-      project: my-project
-      role: ${each.value.role}
-      member: ${each.value.member}
-      depends_on:
-      - google_project_service.project`),
-			},
-		},
-		{
-			name: "pubsub",
-			data: &testconf.ConfigData{`
-pubsub_topics:
-- name: foo-topic
-  _subscriptions:
-  - name: foo-subscription
-    message_retention_duration: 600s
-    retain_acked_messages: true
-    ack_deadline_seconds: 20
-    _iam_members:
-    - role: roles/editor
-      member: user:foo-user@my-domain.com`},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_pubsub_topic:
-    foo-topic:
-      name: foo-topic
-      project: my-project
-- google_pubsub_subscription:
-    foo-subscription:
-      name: foo-subscription
-      project: my-project
-      topic: ${google_pubsub_topic.foo-topic.name}
-      message_retention_duration: 600s
-      retain_acked_messages: true
-      ack_deadline_seconds: 20
-- google_pubsub_subscription_iam_member:
-    foo-subscription:
-      for_each:
-        'roles/editor user:foo-user@my-domain.com':
-          role: roles/editor
-          member: user:foo-user@my-domain.com
-      subscription: ${google_pubsub_subscription.foo-subscription.name}
-      role: ${each.value.role}
-      member: ${each.value.member}
-      `),
-			},
-		},
-		{
-			name: "resource_manager_lien",
-			data: &testconf.ConfigData{`
-resource_manager_liens:
-- _project_deletion: true
-- reason: Custom reason
-  origin: custom-origin
-  parent: projects/my-project
-  restrictions:
-  - foo.delete`},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_resource_manager_lien:
-    managed_project_deletion_lien:
-      reason: Managed project deletion lien
-      origin: managed-terraform
-      parent: projects/my-project
-      restrictions:
-      - resourcemanager.projects.delete
-- google_resource_manager_lien:
-    custom_reason:
-      reason: Custom reason
-      origin: custom-origin
-      parent: projects/my-project
-      restrictions:
-      - foo.delete`),
-			},
-		},
-		{
-			name: "service_account",
-			data: &testconf.ConfigData{`
-service_accounts:
-- account_id: foo-account
-  display_name: Foo account`},
-			wantUserCall: &applyCall{
-				Config: unmarshal(t, `
-resource:
-- google_service_account:
-    foo-account:
-      account_id: foo-account
-      project: my-project
-      display_name: Foo account`),
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			conf, project := testconf.ConfigAndProject(t, tc.data)
-
-			var got []applyCall
-			terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
-				b, err := json.Marshal(config)
-				if err != nil {
-					t.Fatalf("json.Marshal(%s) = %v", config, err)
-				}
-
-				call := applyCall{
-					Config: unmarshal(t, string(b)),
-				}
-				if opts != nil {
-					call.Imports = opts.Imports
-				}
-				got = append(got, call)
-				return nil
-			}
-
-			if err := Default(conf, project, &Options{DryRun: true, EnableTerraform: true}); err != nil {
-				t.Fatalf("deployTerraform: %v", err)
-			}
-
-			want := []applyCall{projectCall(t), stateBucketCall(t), auditCall(t)}
-			if tc.wantPreRequisiteCall == nil {
-				tc.wantPreRequisiteCall = &applyCall{Config: make(map[string]interface{})}
-			}
-			preRequisiteConfig(t, tc.wantPreRequisiteCall.Config)
-			if tc.wantUserCall == nil {
-				tc.wantUserCall = &applyCall{Config: make(map[string]interface{})}
-			}
-			userConfig(t, tc.wantUserCall.Config)
-			want = append(want, *tc.wantPreRequisiteCall, *tc.wantUserCall, defaultCall(t, "", nil))
-
-			if diff := cmp.Diff(got, want); diff != "" {
-				t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
-			}
-		})
-	}
-}
-
-func TestMonitoring(t *testing.T) {
 	origCmdOutput := runner.CmdOutput
 	defer func() {
 		runner.CmdOutput = origCmdOutput
@@ -459,58 +144,92 @@ func TestMonitoring(t *testing.T) {
 		}
 	}
 
-	_, project := testconf.ConfigAndProject(t, &testconf.ConfigData{`
+	tests := []struct {
+		name          string
+		data          *testconf.ConfigData
+		wantResources string
+		wantImports   []terraform.Import
+	}{
+		{
+			name: "no_resources",
+		},
+		{
+			name: "bigquery_dataset",
+			data: &testconf.ConfigData{`
+bigquery_datasets:
+- dataset_id: foo_dataset
+  location: US`},
+			wantResources: `
+- google_bigquery_dataset:
+    foo_dataset:
+      dataset_id: foo_dataset
+      project: my-project
+      location: US
+      access:
+      - role: OWNER
+        group_by_email: my-project-owners@my-domain.com`,
+			wantImports: []terraform.Import{{
+				Address: "google_bigquery_dataset.foo_dataset",
+				ID:      "my-project:foo_dataset",
+			}},
+		},
+		{
+			name: "compute_image",
+			data: &testconf.ConfigData{`
+compute_images:
+- name: foo-image
+  raw_disk:
+    source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
+`},
+			wantResources: `
+- google_compute_image:
+    foo-image:
+      name: foo-image
+      project: my-project
+      raw_disk:
+        source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz`,
+			wantImports: []terraform.Import{{
+				Address: "google_compute_image.foo-image",
+				ID:      "my-project/foo-image",
+			}},
+		},
+		{
+			name: "compute_instance",
+			data: &testconf.ConfigData{`
+compute_instances:
+- name: foo-instance
+  zone: us-central1-a
+  machine_type: n1-standard-1
+  boot_disk:
+    initialize_params:
+      image: debian-cloud/debian-9
+  network_interface:
+    network: default
+`},
+			wantResources: `
+- google_compute_instance:
+    foo-instance:
+      name: foo-instance
+      project: my-project
+      zone: us-central1-a
+      machine_type: n1-standard-1
+      boot_disk:
+        initialize_params:
+          image: debian-cloud/debian-9
+      network_interface:
+        network: default`,
+			wantImports: []terraform.Import{{
+				Address: "google_compute_instance.foo-instance",
+				ID:      "my-project/us-central1-a/foo-instance",
+			}},
+		},
+		{
+			name: "monitoring_notification_channel",
+			data: &testconf.ConfigData{`
 monitoring_notification_channels:
 - display_name: Email
-  _email: my-auditors@my-domain.com`})
-
-	var got []applyCall
-	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
-		b, err := json.Marshal(config)
-		if err != nil {
-			t.Fatalf("json.Marshal(%s) = %v", config, err)
-		}
-
-		call := applyCall{
-			Config: unmarshal(t, string(b)),
-		}
-		if opts != nil {
-			call.Imports = opts.Imports
-		}
-		got = append(got, call)
-		return nil
-	}
-
-	if err := userResources(project); err != nil {
-		t.Fatalf("userResources: %v", err)
-	}
-	if err := defaultResources(project); err != nil {
-		t.Fatalf("defaultResources: %v", err)
-	}
-
-	wantUserConfig := unmarshal(t, `
-resource:
-- google_monitoring_notification_channel:
-    email:
-      display_name: Email
-      project: my-project
-      type: email
-      labels:
-        email_address: my-auditors@my-domain.com
-output:
-- google_monitoring_notification_channel_email:
-    value: ${google_monitoring_notification_channel.email}
-`)
-	userConfig(t, wantUserConfig)
-
-	want := []applyCall{
-		{
-			Config: wantUserConfig,
-			Imports: []terraform.Import{
-				{Address: "google_monitoring_notification_channel.email", ID: "projects/my-project/notificationChannels/111"},
-			},
-		},
-		defaultCall(t, `
+  _email: my-auditors@my-domain.com`},
+			wantResources: `
 - google_monitoring_alert_policy:
     bigquery_update_alert:
       display_name: Bigquery Update Alert
@@ -526,7 +245,7 @@ output:
           duration: 0s
           filter: resource.type="global" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bigquery-settings-change-count.name}"
       notification_channels:
-      - '${data.terraform_remote_state.user.outputs.google_monitoring_notification_channel_email.name}'
+      - ${google_monitoring_notification_channel.email.name}
 - google_monitoring_alert_policy:
     bucket_permission_change_alert:
       display_name: Bucket Permission Change Alert
@@ -542,7 +261,7 @@ output:
           duration: 0s
           filter: resource.type="gcs_bucket" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bucket-permission-change-count.name}"
       notification_channels:
-      - '${data.terraform_remote_state.user.outputs.google_monitoring_notification_channel_email.name}'
+      - ${google_monitoring_notification_channel.email.name}
 - google_monitoring_alert_policy:
     iam_policy_change_alert:
       display_name: IAM Policy Change Alert
@@ -558,21 +277,191 @@ output:
           duration: 0s
           filter: resource.type=one_of("global","pubsub_topic","pubsub_subscription","gce_instance") AND metric.type="logging.googleapis.com/user/${google_logging_metric.iam-policy-change-count.name}"
       notification_channels:
-      - '${data.terraform_remote_state.user.outputs.google_monitoring_notification_channel_email.name}'`,
-			[]terraform.Import{
+      - ${google_monitoring_notification_channel.email.name}
+- google_monitoring_notification_channel:
+    email:
+      display_name: Email
+      project: my-project
+      type: email
+      labels:
+        email_address: my-auditors@my-domain.com`,
+			wantImports: []terraform.Import{
 				{Address: "google_monitoring_alert_policy.bigquery_update_alert", ID: "projects/my-project/alertPolicies/222"},
 				{Address: "google_monitoring_alert_policy.bucket_permission_change_alert", ID: "projects/my-project/alertPolicies/333"},
-			}),
+				{Address: "google_monitoring_notification_channel.email", ID: "projects/my-project/notificationChannels/111"},
+			},
+		},
+		{
+			name: "storage_bucket",
+			data: &testconf.ConfigData{`
+storage_buckets:
+- name: foo-bucket
+  location: US
+  _iam_members:
+  - role: roles/storage.admin
+    member: user:foo-user@my-domain.com`},
+			wantResources: `
+- google_storage_bucket:
+    foo-bucket:
+      name: foo-bucket
+      project: my-project
+      location: US
+      versioning:
+        enabled: true
+- google_storage_bucket_iam_member:
+    foo-bucket:
+      for_each:
+        'roles/storage.admin user:foo-user@my-domain.com':
+          role: roles/storage.admin
+          member: user:foo-user@my-domain.com
+      bucket: '${google_storage_bucket.foo-bucket.name}'
+      role: '${each.value.role}'
+      member: '${each.value.member}'`,
+			wantImports: []terraform.Import{{
+				Address: "google_storage_bucket.foo-bucket",
+				ID:      "my-project/foo-bucket",
+			}},
+		},
+		{
+			name: "project_iam_custom_role",
+			data: &testconf.ConfigData{`
+project_iam_custom_roles:
+- role_id: myCustomRole
+  title: "My Custom Role"
+  description: "A description"
+  permissions:
+  - iam.roles.list
+  - iam.roles.create
+  - iam.roles.delete`},
+			wantResources: `
+- google_project_iam_custom_role:
+    myCustomRole:
+      role_id: myCustomRole
+      project: my-project
+      title: "My Custom Role"
+      description: "A description"
+      permissions:
+      - iam.roles.list
+      - iam.roles.create
+      - iam.roles.delete`,
+			wantImports: []terraform.Import{{
+				Address: "google_project_iam_custom_role.myCustomRole",
+				ID:      "projects/my-project/roles/myCustomRole",
+			}},
+		},
+		{
+			name: "pubsub",
+			data: &testconf.ConfigData{`
+pubsub_topics:
+- name: foo-topic
+  _subscriptions:
+  - name: foo-subscription
+    message_retention_duration: 600s
+    retain_acked_messages: true
+    ack_deadline_seconds: 20
+    _iam_members:
+    - role: roles/editor
+      member: user:foo-user@my-domain.com`},
+			wantResources: `
+- google_pubsub_topic:
+    foo-topic:
+      name: foo-topic
+      project: my-project
+- google_pubsub_subscription:
+    foo-subscription:
+      name: foo-subscription
+      project: my-project
+      topic: ${google_pubsub_topic.foo-topic.name}
+      message_retention_duration: 600s
+      retain_acked_messages: true
+      ack_deadline_seconds: 20
+- google_pubsub_subscription_iam_member:
+    foo-subscription:
+      for_each:
+        'roles/editor user:foo-user@my-domain.com':
+          role: roles/editor
+          member: user:foo-user@my-domain.com
+      subscription: ${google_pubsub_subscription.foo-subscription.name}
+      role: ${each.value.role}
+      member: ${each.value.member}`,
+		},
+		{
+			name: "resource_manager_lien",
+			data: &testconf.ConfigData{`
+resource_manager_liens:
+- _project_deletion: true
+- reason: Custom reason
+  origin: custom-origin
+  parent: projects/my-project
+  restrictions:
+  - foo.delete`},
+			wantResources: `
+- google_resource_manager_lien:
+    managed_project_deletion_lien:
+      reason: Managed project deletion lien
+      origin: managed-terraform
+      parent: projects/my-project
+      restrictions:
+      - resourcemanager.projects.delete
+- google_resource_manager_lien:
+    custom_reason:
+      reason: Custom reason
+      origin: custom-origin
+      parent: projects/my-project
+      restrictions:
+      - foo.delete`,
+		},
+		{
+			name: "service_account",
+			data: &testconf.ConfigData{`
+service_accounts:
+- account_id: foo-account
+  display_name: Foo account`},
+			wantResources: `
+- google_service_account:
+    foo-account:
+      account_id: foo-account
+      project: my-project
+      display_name: Foo account`,
+		},
 	}
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, project := testconf.ConfigAndProject(t, tc.data)
+
+			var got []applyCall
+			terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+				got = append(got, makeApplyCall(t, config, opts))
+				return nil
+			}
+
+			if err := resources(project); err != nil {
+				t.Fatalf("deployTerraform: %v", err)
+			}
+
+			want := []applyCall{{
+				Config:  unmarshal(t, baseResourcesYAML+tc.wantResources),
+				Imports: append(resourcesImports, tc.wantImports...),
+			}}
+
+			if diff := cmp.Diff(got, want); diff != "" {
+				t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
+			}
+		})
 	}
 }
 
-func projectCall(t *testing.T) applyCall {
-	t.Helper()
-	return applyCall{
+func TestCreateProject(t *testing.T) {
+	config, project := testconf.ConfigAndProject(t, nil)
+
+	var got []applyCall
+	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+		got = append(got, makeApplyCall(t, config, opts))
+		return nil
+	}
+
+	want := []applyCall{{
 		Config: unmarshal(t, `
 terraform:
   required_version: ">= 0.12.0"
@@ -588,12 +477,27 @@ resource:
 			Address: "google_project.project",
 			ID:      "my-project",
 		}},
+	}}
+
+	if err := createProjectTerraform(config, project); err != nil {
+		t.Fatalf("createProjectTerraform: %v", err)
+	}
+
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
 	}
 }
 
-func stateBucketCall(t *testing.T) applyCall {
-	t.Helper()
-	return applyCall{
+func TestStateBucket(t *testing.T) {
+	_, project := testconf.ConfigAndProject(t, nil)
+
+	var got []applyCall
+	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+		got = append(got, makeApplyCall(t, config, opts))
+		return nil
+	}
+
+	want := []applyCall{{
 		Config: unmarshal(t, `
 terraform:
   required_version: ">= 0.12.0"
@@ -610,11 +514,27 @@ resource:
 			Address: "google_storage_bucket.my-project-state",
 			ID:      "my-project/my-project-state",
 		}},
+	}}
+
+	if err := stateBucket(project); err != nil {
+		t.Fatalf("stateBucket: %v", err)
+	}
+
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
 	}
 }
 
-func auditCall(t *testing.T) applyCall {
-	return applyCall{
+func TestAuditResources(t *testing.T) {
+	config, project := testconf.ConfigAndProject(t, nil)
+
+	var got []applyCall
+	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+		got = append(got, makeApplyCall(t, config, opts))
+		return nil
+	}
+
+	want := []applyCall{{
 		Config: unmarshal(t, `
 terraform:
   required_version: '>= 0.12.0'
@@ -671,152 +591,68 @@ resource:
 			{Address: "google_bigquery_dataset.audit_logs", ID: "my-project:audit_logs"},
 			{Address: "google_storage_bucket.my-project-logs", ID: "my-project/my-project-logs"},
 		},
+	}}
+
+	if err := auditResources(config, project); err != nil {
+		t.Fatalf("auditResources: %v", err)
+	}
+
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
 	}
 }
 
-func preRequisiteConfig(t *testing.T, config map[string]interface{}) {
-	t.Helper()
-	def := `
+func TestServices(t *testing.T) {
+	_, project := testconf.ConfigAndProject(t, nil)
+
+	var got []applyCall
+	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+		got = append(got, makeApplyCall(t, config, opts))
+		return nil
+	}
+
+	want := []applyCall{{
+		Config: unmarshal(t, `
 terraform:
   required_version: '>= 0.12.0'
   backend:
     gcs:
       bucket: my-project-state
-      prefix: pre-requisites
+      prefix: services
 resource:
 - google_project_service:
     project:
       for_each:
         'bigquery-json.googleapis.com': true
+        'bigquerystorage.googleapis.com': true
         'cloudresourcemanager.googleapis.com': true
+        'logging.googleapis.com': true
       project: my-project
-      service: ${each.key}
-- google_project_iam_member:
-    project:
-      for_each:
-        'roles/owner group:my-project-owners@my-domain.com':
-          role: roles/owner
-          member: group:my-project-owners@my-domain.com
-        'roles/iam.securityReviewer group:my-project-auditors@my-domain.com':
-          role: roles/iam.securityReviewer
-          member: group:my-project-auditors@my-domain.com
-        'roles/storage.admin group:my-project-owners@my-domain.com':
-          role: roles/storage.admin
-          member: group:my-project-owners@my-domain.com
-      project: my-project
-      role: ${each.value.role}
-      member: ${each.value.member}
-      depends_on:
-      - google_project_service.project`
+      service: ${each.key}`),
+	}}
 
-	defConf := make(map[string]interface{})
-	if err := yaml.Unmarshal([]byte(def), &defConf); err != nil {
-		t.Fatalf("yaml.Unmarshal default config: %v", err)
+	if err := services(project); err != nil {
+		t.Fatalf("services: %v", err)
 	}
 
-	if err := mergo.Merge(&config, &defConf); err != nil {
-		t.Fatalf("mergo.Merge default config: %v", err)
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
 	}
 }
 
-func userConfig(t *testing.T, config map[string]interface{}) {
-	t.Helper()
-	def := `
-provider:
-- google:
-    project: my-project
-terraform:
-  required_version: '>= 0.12.0'
-  backend:
-    gcs:
-      bucket: my-project-state
-      prefix: user
-data:
-- google_project:
-    my-project:
-      project_id: my-project`
-
-	if err := yaml.Unmarshal([]byte(def), &config); err != nil {
-		t.Fatalf("yaml.Unmarshal default config: %v", err)
+func makeApplyCall(t *testing.T, config *terraform.Config, opts *terraform.Options) applyCall {
+	b, err := json.Marshal(config)
+	if err != nil {
+		t.Fatalf("json.Marshal(%s) = %v", config, err)
 	}
-}
 
-func defaultCall(t *testing.T, extraResources string, extraImports []terraform.Import) applyCall {
-	t.Helper()
-
-	return applyCall{
-		Config: unmarshal(t, fmt.Sprintf(`
-provider:
-- google:
-    project: my-project
-terraform:
-  required_version: '>= 0.12.0'
-  backend:
-    gcs:
-      bucket: my-project-state
-      prefix: defaults
-data:
-- terraform_remote_state:
-    user:
-      backend: gcs
-      config:
-        bucket: my-project-state
-        prefix: user
-resource:
-- google_logging_metric:
-    bigquery-settings-change-count:
-      name: bigquery-settings-change-count
-      project: my-project
-      description: Count of bigquery permission changes.
-      filter: resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"
-      metric_descriptor:
-        metric_kind: DELTA
-        value_type: INT64
-        labels:
-        - key: user
-          description: Unexpected user
-          value_type: STRING
-      label_extractors:
-        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
-- google_logging_metric:
-    bucket-permission-change-count:
-      name: bucket-permission-change-count
-      project: my-project
-      description: Count of GCS permissions changes.
-      filter: |-
-        resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
-        (protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)
-      metric_descriptor:
-        metric_kind: DELTA
-        value_type: INT64
-        labels:
-        - key: user
-          description: Unexpected user
-          value_type: STRING
-      label_extractors:
-        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
-- google_logging_metric:
-    iam-policy-change-count:
-      name: iam-policy-change-count
-      project: my-project
-      description: Count of IAM policy changes.
-      filter: protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"
-      metric_descriptor:
-        metric_kind: DELTA
-        value_type: INT64
-        labels:
-        - key: user
-          description: Unexpected user
-          value_type: STRING
-      label_extractors:
-        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
-%s`, extraResources)),
-		Imports: append([]terraform.Import{
-			{Address: "google_logging_metric.bigquery-settings-change-count", ID: "bigquery-settings-change-count"},
-			{Address: "google_logging_metric.bucket-permission-change-count", ID: "bucket-permission-change-count"},
-			{Address: "google_logging_metric.iam-policy-change-count", ID: "iam-policy-change-count"},
-		}, extraImports...),
+	call := applyCall{
+		Config: unmarshal(t, string(b)),
 	}
+	if opts != nil {
+		call.Imports = opts.Imports
+	}
+	return call
 }
 
 // unmarshal is a helper to unmarshal a yaml or json string to an interface (map).

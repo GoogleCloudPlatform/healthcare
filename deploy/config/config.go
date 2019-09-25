@@ -135,9 +135,8 @@ type Project struct {
 	BQLogSinkTF *tfconfig.LoggingSink `json:"-"`
 	Metrics     []*Metric             `json:"-"`
 
-	PrerequisiteIAMMembers *tfconfig.ProjectIAMMembers       `json:"-"`
-	DefaultAlertPolicies   []*tfconfig.MonitoringAlertPolicy `json:"-"`
-	DefaultLoggingMetrics  []*tfconfig.LoggingMetric         `json:"-"`
+	DefaultAlertPolicies  []*tfconfig.MonitoringAlertPolicy `json:"-"`
+	DefaultLoggingMetrics []*tfconfig.LoggingMetric         `json:"-"`
 }
 
 // Init initializes the config and all its projects.

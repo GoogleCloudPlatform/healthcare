@@ -25,13 +25,12 @@ func (p *Project) initTerraform(auditProject *Project) error {
 	if err := p.initTerraformAuditResources(auditProject); err != nil {
 		return fmt.Errorf("failed to init audit resources: %v", err)
 	}
+	if err := p.initServices(); err != nil {
+		return fmt.Errorf("failed to init services: %v", err)
+	}
 
-	if err := p.initPrerequisites(); err != nil {
-		return fmt.Errorf("failed to init pre requisites: %v", err)
-	}
-	if err := p.initDefaultResources(); err != nil {
-		return fmt.Errorf("failed to init default resources: %v", err)
-	}
+	p.addDefaultIAM()
+	p.addDefaultMonitoring()
 
 	// At least have one owner access set to override default accesses
 	// (https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets).
@@ -39,7 +38,7 @@ func (p *Project) initTerraform(auditProject *Project) error {
 		d.Accesses = append(d.Accesses, &tfconfig.Access{Role: "OWNER", GroupByEmail: p.OwnersGroup})
 	}
 
-	for _, r := range p.UserResources() {
+	for _, r := range p.TerraformResources() {
 		if err := r.Init(p.ID); err != nil {
 			return fmt.Errorf("failed to init %q (%v): %v", r.ResourceType(), r, err)
 		}
@@ -88,19 +87,22 @@ func (p *Project) initTerraformAuditResources(auditProject *Project) error {
 	return nil
 }
 
-func (p *Project) initPrerequisites() error {
+func (p *Project) initServices() error {
 	if p.Services == nil {
 		p.Services = new(tfconfig.ProjectServices)
 	}
 
 	svcs := []string{
-		"bigquery-json.googleapis.com",
-		// For project level iam policy updates.
-		"cloudresourcemanager.googleapis.com",
+		"bigquery-json.googleapis.com", // For bigquery audit logs and datasets.
+		"bigquerystorage.googleapis.com",
+		"cloudresourcemanager.googleapis.com", // For project level iam policy updates.
+		"logging.googleapis.com",              // For default logging metrics.
 	}
-
 	if len(p.ComputeInstances) > 0 || len(p.ComputeImages) > 0 {
 		svcs = append(svcs, "compute.googleapis.com")
+	}
+	if len(p.NotificationChannels) > 0 {
+		svcs = append(svcs, "monitoring.googleapis.com")
 	}
 
 	for _, svc := range svcs {
@@ -108,31 +110,29 @@ func (p *Project) initPrerequisites() error {
 	}
 	// Note: services will be de-duplicated when being marshalled.
 	if err := p.Services.Init(p.ID); err != nil {
-		return err
-	}
-
-	p.PrerequisiteIAMMembers = &tfconfig.ProjectIAMMembers{
-		Members: []*tfconfig.ProjectIAMMember{
-			{Role: "roles/owner", Member: "group:" + p.OwnersGroup},
-			{Role: "roles/iam.securityReviewer", Member: "group:" + p.AuditorsGroup},
-		},
-		// Default IAM is deployed in pre-requisites which is deployed alongside services.
-		// It needs resourcemanager.googleapis.com from the services deployment to work.
-		DependsOn: []string{"google_project_service.project"},
-	}
-	if p.Audit.LogsStorageBucket != nil || len(p.StorageBuckets) > 0 {
-		// roles/owner does not grant storage.buckets.setIamPolicy, so we need to add storage admin role on the owners group.
-		p.PrerequisiteIAMMembers.Members = append(p.PrerequisiteIAMMembers.Members, &tfconfig.ProjectIAMMember{
-			Role: "roles/storage.admin", Member: "group:" + p.OwnersGroup,
-		})
-	}
-	if err := p.PrerequisiteIAMMembers.Init(p.ID); err != nil {
-		return fmt.Errorf("failed to init default iam members: %v", err)
+		return fmt.Errorf("failed to init services: %v", err)
 	}
 	return nil
 }
 
-func (p *Project) initDefaultResources() error {
+func (p *Project) addDefaultIAM() {
+	if p.IAMMembers == nil {
+		p.IAMMembers = new(tfconfig.ProjectIAMMembers)
+	}
+
+	p.IAMMembers.Members = append(p.IAMMembers.Members,
+		&tfconfig.ProjectIAMMember{Role: "roles/owner", Member: "group:" + p.OwnersGroup},
+		&tfconfig.ProjectIAMMember{Role: "roles/iam.securityReviewer", Member: "group:" + p.AuditorsGroup},
+	)
+	if p.Audit.LogsStorageBucket != nil || len(p.StorageBuckets) > 0 {
+		// roles/owner does not grant storage.buckets.setIamPolicy, so we need to add storage admin role on the owners group.
+		p.IAMMembers.Members = append(p.IAMMembers.Members, &tfconfig.ProjectIAMMember{
+			Role: "roles/storage.admin", Member: "group:" + p.OwnersGroup,
+		})
+	}
+}
+
+func (p *Project) addDefaultMonitoring() {
 	type metricAndAlert struct {
 		metric *tfconfig.LoggingMetric
 		alert  *tfconfig.MonitoringAlertPolicy
@@ -200,12 +200,6 @@ func (p *Project) initDefaultResources() error {
 	}
 
 	for _, ma := range metricAndAlerts {
-		if err := ma.metric.Init(p.ID); err != nil {
-			return fmt.Errorf("failed to init metric %q: %v", ma.metric.Name, err)
-		}
-		if err := ma.alert.Init(p.ID); err != nil {
-			return fmt.Errorf("failed to init alert for metric %q: %v", ma.metric.Name, err)
-		}
 		ma.metric.MetricDescriptor = &tfconfig.MetricDescriptor{
 			MetricKind: "DELTA",
 			ValueType:  "INT64",
@@ -230,33 +224,28 @@ func (p *Project) initDefaultResources() error {
 
 		if len(p.NotificationChannels) > 0 {
 			for _, c := range p.NotificationChannels {
-				// The notification channels are deployed in the user deployment, and the unique names of the notification channel is only known after deployment.
-				// Thus we need a reference to the channel name in the user deployment's state.
-				ref := fmt.Sprintf("${data.terraform_remote_state.user.outputs.%s_%s.name}", c.ResourceType(), c.ID())
+				ref := fmt.Sprintf("${%s.%s.name}", c.ResourceType(), c.ID())
 				ma.alert.NotificationChannels = append(ma.alert.NotificationChannels, ref)
 			}
 			p.DefaultAlertPolicies = append(p.DefaultAlertPolicies, ma.alert)
 		}
 	}
-	return nil
 }
 
-// DefaultResources gets all the default terraform resources in this project.
-// These resources are default resources that are always part of a deployment and typically not controlled by the user.
-func (p *Project) DefaultResources() []tfconfig.Resource {
+// TerraformResources gets all terraform resources in this project.
+func (p *Project) TerraformResources() []tfconfig.Resource {
 	var rs []tfconfig.Resource
+	// Put default resources first to make it easier to write tests.
+	if p.IAMMembers != nil {
+		rs = append(rs, p.IAMMembers)
+	}
 	for _, r := range p.DefaultLoggingMetrics {
 		rs = append(rs, r)
 	}
 	for _, r := range p.DefaultAlertPolicies {
 		rs = append(rs, r)
 	}
-	return rs
-}
 
-// UserResources gets all terraform user defined resources in this project.
-func (p *Project) UserResources() []tfconfig.Resource {
-	var rs []tfconfig.Resource
 	for _, r := range p.BigqueryDatasets {
 		rs = append(rs, r)
 	}
@@ -268,9 +257,6 @@ func (p *Project) UserResources() []tfconfig.Resource {
 	}
 	for _, r := range p.IAMCustomRoles {
 		rs = append(rs, r)
-	}
-	if p.IAMMembers != nil {
-		rs = append(rs, p.IAMMembers)
 	}
 	for _, r := range p.NotificationChannels {
 		rs = append(rs, r)

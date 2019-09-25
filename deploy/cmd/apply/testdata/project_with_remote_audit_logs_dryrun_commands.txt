@@ -5,6 +5,7 @@ gcloud beta billing projects link my-forseti-project --billing-account 000000-00
 gcloud --project my-forseti-project services enable cloudresourcemanager.googleapis.com deploymentmanager.googleapis.com iam.googleapis.com
 gcloud --project my-forseti-project alpha resource-manager liens list --filter restrictions=resourcemanager.projects.delete --format value(restrictions)
 gcloud --project my-forseti-project alpha resource-manager liens create --restrictions resourcemanager.projects.delete --reason Automated project deletion lien deployment.
+gcloud --project my-forseti-project alpha monitoring policies list
 gcloud deployment-manager deployments list --format json --project my-forseti-project
 gcloud deployment-manager deployments create data-protect-toolkit-prerequisites --project my-forseti-project --config /tmp/xxxxxxxxx
 gcloud deployment-manager deployments list --format json --project my-forseti-project
@@ -14,7 +15,6 @@ gcloud deployment-manager deployments list --format json --project my-audit-logs
 gcloud deployment-manager deployments create data-protect-toolkit-audit-my-forseti-project --project my-audit-logs --config /tmp/xxxxxxxxx
 gcloud config get-value account --format json --project my-forseti-project
 gcloud projects get-iam-policy my-forseti-project --project my-forseti-project --format json
-gcloud --project my-forseti-project alpha monitoring policies list
 gcloud --project my-forseti-project alpha monitoring channels list --format json
 gcloud --project my-forseti-project alpha monitoring channels create --channel-content={"name":"","displayName":"Email","type":"email","labels":{"email_address":"some-alerts-group@mydomain.com"}} --format json
 gcloud --project my-forseti-project alpha monitoring policies list --format json

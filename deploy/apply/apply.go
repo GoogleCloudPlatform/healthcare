@@ -87,34 +87,36 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 		if err := setupBilling(project, conf.Overall.BillingAccount); err != nil {
 			return fmt.Errorf("failed to set up billing: %v", err)
 		}
-	}
 
-	if err := enableServiceAPIs(project); err != nil {
-		return fmt.Errorf("failed to enable service APIs: %v", err)
-	}
+		if err := enableServiceAPIs(project); err != nil {
+			return fmt.Errorf("failed to enable service APIs: %v", err)
+		}
 
-	if err := createCustomComputeImages(project); err != nil {
-		return fmt.Errorf("failed to create compute images: %v", err)
-	}
+		if err := createCustomComputeImages(project); err != nil {
+			return fmt.Errorf("failed to create compute images: %v", err)
+		}
 
-	if err := createDeletionLien(project); err != nil {
-		return fmt.Errorf("failed to create deletion lien: %v", err)
-	}
-
-	if err := DeployResources(conf, project, opts); err != nil {
-		return fmt.Errorf("failed to deploy resources: %v", err)
-	}
-
-	if err := collectGCEInfo(project); err != nil {
-		return fmt.Errorf("failed to collect GCE instances info: %v", err)
+		if err := createDeletionLien(project); err != nil {
+			return fmt.Errorf("failed to create deletion lien: %v", err)
+		}
 	}
 
 	if err := createStackdriverAccount(project); err != nil {
 		return fmt.Errorf("failed to create stackdriver account: %v", err)
 	}
 
-	if err := createAlerts(project); err != nil {
-		return fmt.Errorf("failed to create alerts: %v", err)
+	if err := DeployResources(conf, project, opts); err != nil {
+		return fmt.Errorf("failed to deploy resources: %v", err)
+	}
+
+	if !opts.EnableTerraform {
+		if err := createAlerts(project); err != nil {
+			return fmt.Errorf("failed to create alerts: %v", err)
+		}
+	}
+
+	if err := collectGCEInfo(project); err != nil {
+		return fmt.Errorf("failed to collect GCE instances info: %v", err)
 	}
 
 	if conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
@@ -666,8 +668,8 @@ func createDeletionLien(project *config.Project) error {
 // TODO use Terraform once https://github.com/terraform-providers/terraform-provider-google/issues/2605 is resolved.
 // createStackdriverAccount prompts the user to create a new Stackdriver Account.
 func createStackdriverAccount(project *config.Project) error {
-	if project.StackdriverAlertEmail == "" {
-		log.Println("No Stackdriver alert email specified, skipping creation of Stackdriver account.")
+	if project.StackdriverAlertEmail == "" && len(project.NotificationChannels) == 0 {
+		log.Println("No Stackdriver alert email or notification channels specified, skipping creation of Stackdriver account.")
 		return nil
 	}
 	exist, err := stackdriverAccountExists(project.ID)

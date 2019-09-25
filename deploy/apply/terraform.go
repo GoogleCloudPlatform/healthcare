@@ -72,23 +72,26 @@ func defaultTerraform(config *config.Config, project *config.Project) error {
 		return fmt.Errorf("failed to apply terraform state: %v", err)
 	}
 
+	// TODO: merge services with resources.
+	if err := services(project); err != nil {
+		return fmt.Errorf("failed to apply services: %v", err)
+	}
+
+	if err := resources(project); err != nil {
+		return fmt.Errorf("failed to apply resources: %v", err)
+	}
+
 	if err := auditResources(config, project); err != nil {
 		return fmt.Errorf("failed to apply audit resources: %v", err)
 	}
 
-	// prerequisite deployment enables services and adds owners group that other resources require, so should come before the major resource deployments.
-	if err := prerequisite(config, project); err != nil {
-		return fmt.Errorf("failed to apply services: %v", err)
+	// TODO: the user being used for terraform is actually set by gcloud auth application-default login.
+	// This user can differ than the one set by gcloud auth login which is what removeOwnerUser checks for.
+	// Fix this to remove the application-default owner.
+	if err := removeOwnerUser(project); err != nil {
+		return fmt.Errorf("failed to remove authenticated user: %v", err)
 	}
 
-	if err := userResources(project); err != nil {
-		return fmt.Errorf("failed to apply user resources: %v", err)
-	}
-
-	// Default deployment references user deployment, so should be done after the user deployment.
-	if err := defaultResources(project); err != nil {
-		return fmt.Errorf("failed to apply default resources: %v", err)
-	}
 	return nil
 }
 
@@ -110,15 +113,15 @@ func stateBucket(project *config.Project) error {
 	return terraformApply(tfConf, dir, opts)
 }
 
-func prerequisite(config *config.Config, project *config.Project) error {
+func services(project *config.Project) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,
-		Prefix: "pre-requisites",
+		Prefix: "services",
 	}
 
 	opts := &terraform.Options{}
-	if err := addResources(tfConf, opts, project.Services, project.PrerequisiteIAMMembers); err != nil {
+	if err := addResources(tfConf, opts, project.Services); err != nil {
 		return err
 	}
 
@@ -130,13 +133,6 @@ func prerequisite(config *config.Config, project *config.Project) error {
 
 	if err := terraformApply(tfConf, dir, opts); err != nil {
 		return err
-	}
-
-	// TODO: the user being used for terraform is actually set by gcloud auth application-default login.
-	// This user can differ than the one set by gcloud auth login which is what removeOwnerUser checks for.
-	// Fix this to remove the application-default owner.
-	if err := removeOwnerUser(project); err != nil {
-		return fmt.Errorf("failed to remove authenticated user: %v", err)
 	}
 	return nil
 }
@@ -190,8 +186,8 @@ func auditResources(config *config.Config, project *config.Project) error {
 	return nil
 }
 
-func userResources(project *config.Project) error {
-	rs := project.UserResources()
+func resources(project *config.Project) error {
+	rs := project.TerraformResources()
 	tfConf := terraform.NewConfig()
 
 	// Needed to work around issues like https://github.com/terraform-providers/terraform-provider-google/issues/4460.
@@ -215,59 +211,10 @@ func userResources(project *config.Project) error {
 		},
 	}}
 
-	// Notification channels will be used by the following default deployment.
-	for _, c := range project.NotificationChannels {
-		tfConf.Outputs = append(tfConf.Outputs, &terraform.Output{
-			Name:  fmt.Sprintf("%s_%s", c.ResourceType(), c.ID()),
-			Value: fmt.Sprintf("${%s.%s}", c.ResourceType(), c.ID()),
-		})
-	}
-
 	opts := &terraform.Options{}
 	if err := addResources(tfConf, opts, rs...); err != nil {
 		return err
 	}
-
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(dir)
-
-	return terraformApply(tfConf, dir, opts)
-}
-
-func defaultResources(project *config.Project) error {
-	rs := project.DefaultResources()
-	tfConf := terraform.NewConfig()
-
-	// Needed to work around issues like https://github.com/terraform-providers/terraform-provider-google/issues/4460.
-	// Also used if a resource does not explicitly set the project field.
-	tfConf.Providers = append(tfConf.Providers, &terraform.Provider{
-		Name:       "google",
-		Properties: map[string]interface{}{"project": project.ID},
-	})
-
-	tfConf.Terraform.Backend = &terraform.Backend{
-		Bucket: project.TerraformConfig.StateBucket.Name,
-		Prefix: "defaults",
-	}
-
-	// Allow default deployment to reference user deployment.
-	tfConf.Data = append(tfConf.Data, &terraform.Resource{
-		Name: "user",
-		Type: "terraform_remote_state",
-		Properties: map[string]interface{}{
-			"backend": "gcs",
-			"config": map[string]interface{}{
-				"bucket": project.TerraformConfig.StateBucket.Name,
-				"prefix": "user",
-			},
-		},
-	})
-
-	opts := &terraform.Options{}
-	addResources(tfConf, opts, rs...)
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
