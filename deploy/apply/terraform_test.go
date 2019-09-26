@@ -37,6 +37,8 @@ const baseResourcesYAML = `
 provider:
 - google:
     project: my-project
+- google-beta:
+    project: my-project
 terraform:
   required_version: '>= 0.12.0'
   backend:
@@ -230,6 +232,94 @@ compute_instances:
 				Address: "google_compute_instance.foo-instance",
 				ID:      "my-project/us-central1-a/foo-instance",
 			}},
+		},
+		{
+			name: "healthcare_dataset",
+			data: &testconf.ConfigData{`
+healthcare_datasets:
+- name: foo-dataset
+  location: us-central1
+  _iam_members:
+  - role: roles/editor
+    member: user:foo@my-domain.com
+  _dicom_stores:
+  - name: foo-dicom-store
+    _iam_members:
+    - role: roles/viewer
+      member: user:bar@my-domain.com
+  _fhir_stores:
+  - name: foo-fhir-store
+    _iam_members:
+    - role: roles/viewer
+      member: user:bar@my-domain.com
+  _hl7_v2_stores:
+  - name: foo-hl7-v2-store
+    _iam_members:
+    - role: roles/viewer
+      member: user:bar@my-domain.com
+`},
+			wantResources: `
+- google_healthcare_dataset:
+    foo-dataset:
+      name: foo-dataset
+      location: us-central1
+      project: my-project
+      provider: google-beta
+- google_healthcare_dataset_iam_member:
+    foo-dataset:
+      for_each:
+        'roles/editor user:foo@my-domain.com':
+          role: roles/editor
+          member: user:foo@my-domain.com
+      role: ${each.value.role}
+      member: ${each.value.member}
+      dataset_id: ${google_healthcare_dataset.foo-dataset.id}
+      provider: google-beta
+- google_healthcare_dicom_store:
+    foo-dataset_foo-dicom-store:
+      name: foo-dicom-store
+      dataset: ${google_healthcare_dataset.foo-dataset.id}
+      provider: google-beta
+- google_healthcare_dicom_store_iam_member:
+    foo-dataset_foo-dicom-store:
+      for_each:
+        'roles/viewer user:bar@my-domain.com':
+          role: roles/viewer
+          member: user:bar@my-domain.com
+      role: ${each.value.role}
+      member: ${each.value.member}
+      dicom_store_id: ${google_healthcare_dicom_store.foo-dataset_foo-dicom-store.id}
+      provider: google-beta
+- google_healthcare_fhir_store:
+    foo-dataset_foo-fhir-store:
+      name: foo-fhir-store
+      dataset: ${google_healthcare_dataset.foo-dataset.id}
+      provider: google-beta
+- google_healthcare_fhir_store_iam_member:
+    foo-dataset_foo-fhir-store:
+      for_each:
+        'roles/viewer user:bar@my-domain.com':
+          role: roles/viewer
+          member: user:bar@my-domain.com
+      role: ${each.value.role}
+      member: ${each.value.member}
+      fhir_store_id: ${google_healthcare_fhir_store.foo-dataset_foo-fhir-store.id}
+      provider: google-beta
+- google_healthcare_hl7_v2_store:
+    foo-dataset_foo-hl7-v2-store:
+      name: foo-hl7-v2-store
+      dataset: ${google_healthcare_dataset.foo-dataset.id}
+      provider: google-beta
+- google_healthcare_hl7_v2_store_iam_member:
+    foo-dataset_foo-hl7-v2-store:
+      for_each:
+        'roles/viewer user:bar@my-domain.com':
+          role: roles/viewer
+          member: user:bar@my-domain.com
+      role: ${each.value.role}
+      member: ${each.value.member}
+      hl7_v2_store_id: ${google_healthcare_hl7_v2_store.foo-dataset_foo-hl7-v2-store.id}
+      provider: google-beta`,
 		},
 		{
 			name: "monitoring_notification_channel",

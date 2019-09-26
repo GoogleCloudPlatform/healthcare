@@ -192,10 +192,17 @@ func resources(project *config.Project) error {
 
 	// Needed to work around issues like https://github.com/terraform-providers/terraform-provider-google/issues/4460.
 	// Also used if a resource does not explicitly set the project field.
-	tfConf.Providers = append(tfConf.Providers, &terraform.Provider{
-		Name:       "google",
-		Properties: map[string]interface{}{"project": project.ID},
-	})
+	tfConf.Providers = append(tfConf.Providers,
+		&terraform.Provider{
+			Name:       "google",
+			Properties: map[string]interface{}{"project": project.ID},
+		},
+		// Beta provider needed for some resources such as healthcare resources.
+		&terraform.Provider{
+			Name:       "google-beta",
+			Properties: map[string]interface{}{"project": project.ID},
+		},
+	)
 
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,

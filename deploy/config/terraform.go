@@ -101,6 +101,9 @@ func (p *Project) initServices() error {
 	if len(p.ComputeInstances) > 0 || len(p.ComputeImages) > 0 {
 		svcs = append(svcs, "compute.googleapis.com")
 	}
+	if len(p.HealthcareDatasets) > 0 {
+		svcs = append(svcs, "healthcare.googleapis.com")
+	}
 	if len(p.NotificationChannels) > 0 {
 		svcs = append(svcs, "monitoring.googleapis.com")
 	}
@@ -265,6 +268,9 @@ func (p *Project) TerraformResources() []tfconfig.Resource {
 		rs = append(rs, r)
 	}
 	for _, r := range p.ComputeInstances {
+		rs = append(rs, r)
+	}
+	for _, r := range p.HealthcareDatasets {
 		rs = append(rs, r)
 	}
 	for _, r := range p.IAMCustomRoles {

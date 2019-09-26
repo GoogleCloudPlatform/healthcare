@@ -107,6 +107,7 @@ type Project struct {
 	BigqueryDatasets     []*tfconfig.BigqueryDataset               `json:"bigquery_datasets"`
 	ComputeImages        []*tfconfig.ComputeImage                  `json:"compute_images"`
 	ComputeInstances     []*tfconfig.ComputeInstance               `json:"compute_instances"`
+	HealthcareDatasets   []*tfconfig.HealthcareDataset             `json:"healthcare_datasets"`
 	IAMCustomRoles       []*tfconfig.ProjectIAMCustomRole          `json:"project_iam_custom_roles"`
 	IAMMembers           *tfconfig.ProjectIAMMembers               `json:"project_iam_members"`
 	NotificationChannels []*tfconfig.MonitoringNotificationChannel `json:"monitoring_notification_channels"`
