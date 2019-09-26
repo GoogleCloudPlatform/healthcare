@@ -289,3 +289,6 @@ minutes.
 
 NOTE: if remote audit logs failed to deploy due to this error then you will need
 to re-deploy the audit logs project first.
+
+## Additional samples 
+- [Dicom adapters](https://github.com/GoogleCloudPlatform/healthcare-dicom-dicomweb-adapter) may be deployed as gke_workload resource, sample configuration may be found in this [repository](https://github.com/GoogleCloudPlatform/healthcare-dicom-dicomweb-adapter/tree/master/samples) 
