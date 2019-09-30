@@ -27,6 +27,8 @@ type StorageBucket struct {
 	Location   string     `json:"location"`
 	Versioning versioning `json:"versioning,omitempty"`
 
+	DependsOn []string `json:"depends_on,omitempty"`
+
 	IAMMembers []*StorageIAMMember `json:"_iam_members"`
 
 	raw json.RawMessage

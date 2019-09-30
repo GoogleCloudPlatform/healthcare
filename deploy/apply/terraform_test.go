@@ -570,52 +570,24 @@ resource:
       project_id: my-project
       name: my-project
       folder_id: '98765321'
-      billing_account: 000000-000000-000000`),
-		Imports: []terraform.Import{{
-			Address: "google_project.project",
-			ID:      "my-project",
-		}},
-	}}
-
-	if err := createProjectTerraform(config, project); err != nil {
-		t.Fatalf("createProjectTerraform: %v", err)
-	}
-
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
-	}
-}
-
-func TestStateBucket(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
-	var got []applyCall
-	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
-		got = append(got, makeApplyCall(t, config, opts))
-		return nil
-	}
-
-	want := []applyCall{{
-		Config: unmarshal(t, `
-terraform:
-  required_version: ">= 0.12.0"
-
-resource:
+      billing_account: 000000-000000-000000
 - google_storage_bucket:
     my-project-state:
       name: my-project-state
       project: my-project
       location: US
       versioning:
-        enabled: true`),
-		Imports: []terraform.Import{{
-			Address: "google_storage_bucket.my-project-state",
-			ID:      "my-project/my-project-state",
-		}},
+        enabled: true
+      depends_on:
+      - google_project.project`),
+		Imports: []terraform.Import{
+			{Address: "google_project.project", ID: "my-project"},
+			{Address: "google_storage_bucket.my-project-state", ID: "my-project/my-project-state"},
+		},
 	}}
 
-	if err := stateBucket(project); err != nil {
-		t.Fatalf("stateBucket: %v", err)
+	if err := createProjectTerraform(config, project); err != nil {
+		t.Fatalf("createProjectTerraform: %v", err)
 	}
 
 	if diff := cmp.Diff(got, want); diff != "" {

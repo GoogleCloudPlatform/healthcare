@@ -16,6 +16,7 @@ package apply
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -107,6 +108,24 @@ func forsetiConfig(conf *config.Config) error {
 	}
 
 	return terraformApply(tfConf, dir, nil)
+}
+
+func stateBucket(project *config.Project) error {
+	if project.TerraformConfig.StateBucket == nil {
+		return errors.New("state_storage_bucket must not be nil")
+	}
+
+	tfConf := terraform.NewConfig()
+	opts := &terraform.Options{}
+	addResources(tfConf, opts, project.TerraformConfig.StateBucket)
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	return terraformApply(tfConf, dir, opts)
 }
 
 // forsetiServerServiceAccount gets the server instance service account of the give Forseti project.

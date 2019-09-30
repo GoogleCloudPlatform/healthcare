@@ -272,16 +272,20 @@ func (p *Project) Init(auditLogsProject *Project) error {
 
 	// init the state bucket outside the regular terraform resoures since forseti projects will
 	// still define a state bucket even when not enabling terraform.
-	if p.TerraformConfig.StateBucket != nil {
-		if err := p.TerraformConfig.StateBucket.Init(p.ID); err != nil {
+	if sb := p.TerraformConfig.StateBucket; sb != nil {
+		if err := sb.Init(p.ID); err != nil {
 			return fmt.Errorf("failed to init terraform state bucket: %v", err)
 		}
 	}
 
 	if EnableTerraform {
-		if p.TerraformConfig.StateBucket == nil {
+		sb := p.TerraformConfig.StateBucket
+		if sb == nil {
 			return errors.New("state_storage_bucket must be set when terraform is enabled")
 		}
+
+		// State bucket will be deployed in the same deployment as the project.
+		sb.DependsOn = append(sb.DependsOn, "google_project.project")
 		return p.initTerraform(auditLogsProject)
 	}
 

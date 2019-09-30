@@ -15,7 +15,6 @@
 package apply
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -42,18 +41,18 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 		ba = config.Overall.BillingAccount
 	}
 
-	res := &tfconfig.ProjectResource{
+	pr := &tfconfig.ProjectResource{
 		OrgID:          oid,
 		FolderID:       fid,
 		BillingAccount: ba,
 	}
-	if err := res.Init(project.ID); err != nil {
+	if err := pr.Init(project.ID); err != nil {
 		return err
 	}
 
 	tfConf := terraform.NewConfig()
 	opts := &terraform.Options{}
-	if err := addResources(tfConf, opts, res); err != nil {
+	if err := addResources(tfConf, opts, pr, project.TerraformConfig.StateBucket); err != nil {
 		return err
 	}
 
@@ -67,11 +66,6 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 }
 
 func defaultTerraform(config *config.Config, project *config.Project) error {
-	// State bucket has to be deployed first as other deployments will reference it.
-	if err := stateBucket(project); err != nil {
-		return fmt.Errorf("failed to apply terraform state: %v", err)
-	}
-
 	// TODO: merge services with resources.
 	if err := services(project); err != nil {
 		return fmt.Errorf("failed to apply services: %v", err)
@@ -93,24 +87,6 @@ func defaultTerraform(config *config.Config, project *config.Project) error {
 	}
 
 	return nil
-}
-
-func stateBucket(project *config.Project) error {
-	if project.TerraformConfig.StateBucket == nil {
-		return errors.New("state_storage_bucket must not be nil")
-	}
-
-	tfConf := terraform.NewConfig()
-	opts := &terraform.Options{}
-	addResources(tfConf, opts, project.TerraformConfig.StateBucket)
-
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(dir)
-
-	return terraformApply(tfConf, dir, opts)
 }
 
 func services(project *config.Project) error {
