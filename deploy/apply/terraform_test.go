@@ -44,7 +44,7 @@ terraform:
   backend:
     gcs:
       bucket: my-project-state
-      prefix: user
+      prefix: resources
 data:
 - google_project:
     my-project:

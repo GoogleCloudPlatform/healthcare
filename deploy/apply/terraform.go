@@ -206,7 +206,7 @@ func resources(project *config.Project) error {
 
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.TerraformConfig.StateBucket.Name,
-		Prefix: "user",
+		Prefix: "resources",
 	}
 
 	// Allow user resources to access project runtime info such as project number.
