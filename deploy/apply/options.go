@@ -18,10 +18,6 @@ package apply
 
 // Options configures an apply call.
 type Options struct {
-	// Toggle whether terraform is enabled.
-	// Note: this does not affect Forseti installation, which is always terraform.
-	// TODO: remove once terraform becomes default.
-	EnableTerraform bool
 	// Toggle whether dry run mode is enabled.
 	DryRun bool
 }

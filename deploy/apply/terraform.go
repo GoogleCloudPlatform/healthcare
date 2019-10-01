@@ -15,14 +15,124 @@
 package apply
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
+
+// Terraform applies the project configs for each applicable project in the config to GCP.
+// Empty list of projects is equivalent to all projects.
+// Base projects (remote audit and forseti) are deployed in a round-table fashion with each phase being applied to each project.
+// This makes sure dependencies between base projects are handled correctly
+// (e.g. forseti project wants to store its audit logs in remote audit project while remote audit project wants to be monitored by the forseti project).
+// Then, all data hosting projects are deployed from beginning till end so one data project doesn't leave other data projects in a half deployed state.
+func Terraform(conf *config.Config, projectIDs []string) error {
+	idSet := make(map[string]bool)
+	for _, p := range projectIDs {
+		idSet[p] = true
+	}
+
+	wantProject := func(p *config.Project) bool {
+		return len(projectIDs) == 0 || idSet[p.ID]
+	}
+
+	var baseProjects, dataProjects []*config.Project
+
+	if wantProject(conf.AuditLogsProject) {
+		baseProjects = append(baseProjects, conf.AuditLogsProject)
+	}
+
+	if conf.Forseti != nil && wantProject(conf.Forseti.Project) {
+		baseProjects = append(baseProjects, conf.Forseti.Project)
+	}
+
+	for _, p := range conf.Projects {
+		if wantProject(p) {
+			dataProjects = append(dataProjects, p)
+		}
+	}
+
+	// Apply all base projects in a round-table fashion.
+	log.Println("Applying base projects")
+	if err := projects(conf, baseProjects...); err != nil {
+		return fmt.Errorf("failed to apply base projects: %v", err)
+	}
+
+	// Apply each data hosting project from beginning to end.
+	for _, p := range dataProjects {
+		log.Printf("Applying project %q", p.ID)
+		if err := projects(conf, p); err != nil {
+			return fmt.Errorf("failed to apply %q: %v", p.ID, err)
+		}
+	}
+	return nil
+}
+
+// projects applies all phases in sequence to each project.
+func projects(conf *config.Config, projs ...*config.Project) error {
+	for _, p := range projs {
+		log.Printf("Creating project and state bucket for %q", p.ID)
+		if err := createProjectTerraform(conf, p); err != nil {
+			return err
+		}
+	}
+
+	for _, p := range projs {
+		log.Printf("Appling project %q", p.ID)
+		if err := services(p); err != nil {
+			return fmt.Errorf("failed to apply services: %v", err)
+		}
+		if err := createStackdriverAccount(p); err != nil {
+			return err
+		}
+		if err := defaultTerraform(conf, p); err != nil {
+			return fmt.Errorf("failed to apply resources for %q: %v", p.ID, err)
+		}
+		if err := collectGCEInfo(p); err != nil {
+			return fmt.Errorf("failed to collect GCE instances info: %v", err)
+		}
+	}
+
+	for _, p := range projs {
+		log.Printf("Applying audit resources for %q", p.ID)
+		if err := auditResources(conf, p); err != nil {
+			return fmt.Errorf("failed to apply audit resources for %q: %v", p.ID, err)
+		}
+	}
+
+	if conf.Forseti == nil {
+		return nil
+	}
+
+	for _, p := range projs {
+		// Deploy the forseti instance if forseti project is being requested.
+		if conf.Forseti.Project.ID == p.ID {
+			log.Printf("Applying Forseti instance in %q", conf.Forseti.Project.ID)
+			if err := forsetiConfig(conf); err != nil {
+				return fmt.Errorf("failed to apply forseti instance in %q: %v", conf.Forseti.Project.ID, err)
+			}
+			break
+		}
+	}
+
+	fsa := conf.AllGeneratedFields.Forseti.ServiceAccount
+	if fsa == "" {
+		return errors.New("forseti service account not set in generated fields")
+	}
+	for _, p := range projs {
+		log.Printf("Granting Forseti instance access to project %q", p.ID)
+		if err := GrantForsetiPermissions(p.ID, fsa); err != nil {
+			return fmt.Errorf("failed to grant forseti access to project %q: %v", p.ID, err)
+		}
+	}
+	return nil
+}
 
 func createProjectTerraform(config *config.Config, project *config.Project) error {
 	fid := project.FolderID
@@ -235,7 +345,6 @@ func addResources(config *terraform.Config, opts *terraform.Options, resources .
 					ID:      id,
 				})
 			}
-
 		}
 
 		type depender interface {

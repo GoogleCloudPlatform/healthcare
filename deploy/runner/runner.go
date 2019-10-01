@@ -84,6 +84,8 @@ func StubFakeCmds() {
 			return []byte(`[{"email": "forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com"}]`), nil
 		case contains(cmdStr, "gsutil ls"):
 			return []byte("gs://forseti-server-dryrun"), nil
+		case contains(cmdStr, "iam service-accounts list --format json --filter email:forseti-server-gcp-*"):
+			return []byte(`[{"email": forseti-sa@@forseti-project.iam.gserviceaccount.com"}]`), nil
 		case contains(cmdStr, "monitoring channels list"):
 			return []byte("[]"), nil
 		case contains(cmdStr, "monitoring channels create"):

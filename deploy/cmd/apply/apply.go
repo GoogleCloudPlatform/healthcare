@@ -103,18 +103,6 @@ func applyConfigs() (err error) {
 		file.Close()
 	}
 
-	wantProjects := make(map[string]bool)
-	for _, p := range projects {
-		wantProjects[p] = true
-	}
-
-	wantProject := func(project string) bool {
-		if len(wantProjects) == 0 {
-			return true
-		}
-		return wantProjects[project]
-	}
-
 	// Write generated fields to the output file at the end.
 	defer func() {
 		if *dryRun {
@@ -130,10 +118,28 @@ func applyConfigs() (err error) {
 		}
 	}()
 
-	enableRemoteAudit := conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID)
+	opts := &apply.Options{DryRun: *dryRun}
+
+	if *enableTerraform {
+		return apply.Terraform(conf, projects)
+	}
+
+	// DM ONLY CODE.
+	// TODO: remove this once DM support is shut down.
+	wantProjects := make(map[string]bool)
+	for _, p := range projects {
+		wantProjects[p] = true
+	}
+
+	wantProject := func(project string) bool {
+		if len(wantProjects) == 0 {
+			return true
+		}
+		return wantProjects[project]
+	}
 
 	// Cannot enable Forseti for remote audit logs project and Forseti project itself until it is deployed.
-	opts := &apply.Options{EnableTerraform: *enableTerraform, DryRun: *dryRun}
+	enableRemoteAudit := conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID)
 
 	// Always deploy the remote audit logs project first (if present).
 	if enableRemoteAudit {
