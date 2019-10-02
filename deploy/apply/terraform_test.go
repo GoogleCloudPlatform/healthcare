@@ -141,6 +141,8 @@ func TestResources(t *testing.T) {
 	runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		args := strings.Join(cmd.Args, " ")
 		switch {
+		case strings.Contains(args, "resource-manager liens list"):
+			return []byte(`[{"name": "p1111-l2222", "restrictions": ["resourcemanager.projects.delete"]}]`), nil
 		case strings.Contains(args, "monitoring channels list"):
 			return []byte(`[{"displayName": "Email", "name": "projects/my-project/notificationChannels/111"}]`), nil
 		case strings.Contains(args, "monitoring policies list"):
@@ -482,6 +484,10 @@ pubsub_topics:
       subscription: ${google_pubsub_subscription.foo-subscription.name}
       role: ${each.value.role}
       member: ${each.value.member}`,
+			wantImports: []terraform.Import{
+				{Address: "google_pubsub_topic.foo-topic", ID: "my-project/foo-topic"},
+				{Address: "google_pubsub_subscription.foo-subscription", ID: "my-project/foo-subscription"},
+			},
 		},
 		{
 			name: "resource_manager_lien",
@@ -508,6 +514,9 @@ resource_manager_liens:
       parent: projects/my-project
       restrictions:
       - foo.delete`,
+			wantImports: []terraform.Import{{
+				Address: "google_resource_manager_lien.managed_project_deletion_lien", ID: "my-project/p1111-l2222",
+			}},
 		},
 		{
 			name: "service_account",

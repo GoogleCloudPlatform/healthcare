@@ -15,7 +15,14 @@
 package tfconfig
 
 import (
+	"encoding/json"
 	"fmt"
+	"os/exec"
+	"path"
+	"reflect"
+	"strings"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 const defaultRestriction = "resourcemanager.projects.delete"
@@ -67,6 +74,42 @@ func (l *ResourceManagerLien) ID() string {
 // ResourceType returns the resource terraform provider type.
 func (*ResourceManagerLien) ResourceType() string {
 	return "google_resource_manager_lien"
+}
+
+// ImportID returns the ID to use for terraform imports.
+func (l *ResourceManagerLien) ImportID() (string, error) {
+	pid := strings.TrimPrefix(l.Parent, "projects/")
+	cmd := exec.Command("gcloud", "--project", pid, "alpha", "resource-manager", "liens", "list", "--format", "json")
+
+	out, err := runner.CmdOutput(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to list existing liens: %v", err)
+	}
+
+	type gcloudResourceManagerLien struct {
+		Name         string   `json:"name"`
+		Restrictions []string `json:"restrictions"`
+	}
+
+	var liens []*gcloudResourceManagerLien
+	if err := json.Unmarshal(out, &liens); err != nil {
+		return "", fmt.Errorf("failed to unmarshal existing liens: %v", err)
+	}
+
+	var matched []string
+	for _, gl := range liens {
+		if reflect.DeepEqual(l.Restrictions, gl.Restrictions) {
+			matched = append(matched, strings.TrimPrefix(gl.Name, "liens/"))
+		}
+	}
+	switch len(matched) {
+	case 0:
+		return "", nil
+	case 1:
+		return path.Join(pid, matched[0]), nil
+	default:
+		return "", fmt.Errorf("multiple policies with restrictions %q found: %v", l.Restrictions, matched)
+	}
 }
 
 // MarshalJSON provides a custom JSON marshaller.
