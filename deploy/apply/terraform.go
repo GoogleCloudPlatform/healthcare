@@ -44,6 +44,10 @@ func Terraform(conf *config.Config, projectIDs []string) error {
 
 	var baseProjects, dataProjects []*config.Project
 
+	if conf.Devops != nil && wantProject(conf.Devops.Project) {
+		baseProjects = append(baseProjects, conf.Devops.Project)
+	}
+
 	if wantProject(conf.AuditLogsProject) {
 		baseProjects = append(baseProjects, conf.AuditLogsProject)
 	}
@@ -183,10 +187,6 @@ func defaultTerraform(config *config.Config, project *config.Project) error {
 
 	if err := resources(project); err != nil {
 		return fmt.Errorf("failed to apply resources: %v", err)
-	}
-
-	if err := auditResources(config, project); err != nil {
-		return fmt.Errorf("failed to apply audit resources: %v", err)
 	}
 
 	// TODO: the user being used for terraform is actually set by gcloud auth application-default login.

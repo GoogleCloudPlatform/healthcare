@@ -923,6 +923,20 @@ properties:
           type: string
           minLength: 2
 
+  devops:
+    type: object
+    description: The devops configuration.
+    additionalProperties: false
+    required:
+    - project
+    properties:
+      project:
+        $ref: '#/definitions/gcp_project'
+        description: |
+          The project to hold devops related resources such as Terraform state
+          buckets. If devops is not set, all projects save Terraform state
+          locally.
+
   audit_logs_project:
     $ref: '#/definitions/gcp_project'
     description: |

@@ -86,7 +86,7 @@ func TestViolationExceptions(t *testing.T) {
 		"some-account9@domain.com",
 		"some-account8@domain.com",
 	}
-	if err := conf.Projects[0].Init(conf.ProjectForAuditLogs(conf.Projects[0])); err != nil {
+	if err := conf.Projects[0].Init(conf.ProjectForDevops(conf.Projects[0]), conf.ProjectForAuditLogs(conf.Projects[0])); err != nil {
 		t.Fatalf("failed to init project %q: %v", conf.Projects[0].ID, err)
 	}
 	expectedIAMPolicyChangeCountFilter := `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy" AND
@@ -104,7 +104,7 @@ func TestDoNotHaveViolationExceptions(t *testing.T) {
 	conf := testconf.ConfigBeforeInit(t, nil)
 
 	conf.Projects[0].ViolationExceptions = make(map[string][]string)
-	if err := conf.Projects[0].Init(conf.ProjectForAuditLogs(conf.Projects[0])); err != nil {
+	if err := conf.Projects[0].Init(conf.ProjectForDevops(conf.Projects[0]), conf.ProjectForAuditLogs(conf.Projects[0])); err != nil {
 		t.Fatalf("failed to init project %q: %v", conf.Projects[0].ID, err)
 	}
 	expectedIAMPolicyChangeCountFilter := `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`

@@ -25,6 +25,7 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+// TODO: add devops and remote audit project and add integration test that deploys all projects.
 const configYAML = `
 overall:
   organization_id: '12345678'
