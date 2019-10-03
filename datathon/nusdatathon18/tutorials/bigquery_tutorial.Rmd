@@ -53,7 +53,8 @@ library("ggplot2")
 
 # Shared project.
 project_id <- "nus-datathon-2018-team-00"
-options(httr_oauth_cache=FALSE)
+options(gargle_oob_default=TRUE)
+options(gargle_oauth_cache=FALSE)
 
 # Wrapper for running BigQuery queries.
 run_query <- function(query){

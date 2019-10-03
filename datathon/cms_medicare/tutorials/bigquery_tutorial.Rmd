@@ -51,7 +51,8 @@ library("ggplot2")
 
 # Shared project. If you do not have the shared datathon project, you may use your own GCP project.
 project_id <- "REPLACE-WITH-PROJECT-ID"
-options(httr_oauth_cache=FALSE)
+options(gargle_oob_default=TRUE)
+options(gargle_oauth_cache=FALSE)
 
 # Wrapper for running BigQuery queries.
 run_query <- function(query){

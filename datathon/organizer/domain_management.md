@@ -111,7 +111,7 @@ using various popular programming languages that the GSuite Admin SDK supports.
 
 #### Advanced Testing
 If you are following the Permission Control Group Setup from the README, you
-can return to that document now. If you would like to test or explore the Group 
+can return to that document now. If you would like to test or explore the Group
 Management API further, proceed with these steps.
 
 *   To create a new group, use the

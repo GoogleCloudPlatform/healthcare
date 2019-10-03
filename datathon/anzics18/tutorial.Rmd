@@ -39,7 +39,8 @@ Now that you have done the initial setup, let us start playing with the data. Fi
 library("bigrquery")
 
 project_id <- "datathon-datasets"
-options(httr_oauth_cache=FALSE)
+options(gargle_oob_default=TRUE)
+options(gargle_oauth_cache=FALSE)
 ```
 
 When you run your first query below to BigQuery, you will be asked to first authenticate yourself. The cell's result box will show you an authentication link, where you can log in to your gmail account and accept the data access permission. Once authenticated, you may close the authentication window, and the query result should show up in the result box below.
