@@ -120,8 +120,13 @@ func stateBucket(project *config.Project) error {
 	}
 
 	tfConf := terraform.NewConfig()
+	if err := addResources(tfConf, project.TerraformConfig.StateBucket); err != nil {
+		return err
+	}
 	opts := &terraform.Options{}
-	addResources(tfConf, opts, project.TerraformConfig.StateBucket)
+	if err := addImports(opts, project.TerraformConfig.StateBucket); err != nil {
+		return err
+	}
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {

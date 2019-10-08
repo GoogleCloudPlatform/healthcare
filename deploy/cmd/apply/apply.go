@@ -43,6 +43,7 @@ var (
 	outputPath      = flag.String("output_path", "", "Path to output file to write generated fields")
 	dryRun          = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
 	enableTerraform = flag.Bool("enable_terraform", false, "DEV ONLY. Whether terraform is preferred over deployment manager.")
+	importExisting  = flag.Bool("terraform_import_existing", false, "DEV ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
 	projects        arrayFlags
 )
 
@@ -118,10 +119,10 @@ func applyConfigs() (err error) {
 		}
 	}()
 
-	opts := &apply.Options{DryRun: *dryRun}
+	opts := &apply.Options{DryRun: *dryRun, ImportExisting: *importExisting}
 
 	if *enableTerraform {
-		return apply.Terraform(conf, projects)
+		return apply.Terraform(conf, projects, opts)
 	}
 
 	// DM ONLY CODE.

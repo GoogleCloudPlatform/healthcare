@@ -32,7 +32,7 @@ import (
 // This makes sure dependencies between base projects are handled correctly
 // (e.g. forseti project wants to store its audit logs in remote audit project while remote audit project wants to be monitored by the forseti project).
 // Then, all data hosting projects are deployed from beginning till end so one data project doesn't leave other data projects in a half deployed state.
-func Terraform(conf *config.Config, projectIDs []string) error {
+func Terraform(conf *config.Config, projectIDs []string, opts *Options) error {
 	idSet := make(map[string]bool)
 	for _, p := range projectIDs {
 		idSet[p] = true
@@ -64,22 +64,23 @@ func Terraform(conf *config.Config, projectIDs []string) error {
 
 	// Apply all base projects in a round-table fashion.
 	log.Println("Applying base projects")
-	if err := projects(conf, baseProjects...); err != nil {
+	if err := projects(conf, baseProjects, opts); err != nil {
 		return fmt.Errorf("failed to apply base projects: %v", err)
 	}
 
 	// Apply each data hosting project from beginning to end.
 	for _, p := range dataProjects {
 		log.Printf("Applying project %q", p.ID)
-		if err := projects(conf, p); err != nil {
+		if err := projects(conf, []*config.Project{p}, opts); err != nil {
 			return fmt.Errorf("failed to apply %q: %v", p.ID, err)
 		}
 	}
 	return nil
 }
 
-// projects applies all phases in sequence to each project.
-func projects(conf *config.Config, projs ...*config.Project) error {
+// projects applies phases (one or more steps) to the given projects in a round-table fashion.
+// The purpose behind the current process is to ensure dependencies between base projects are setup properly.
+func projects(conf *config.Config, projs []*config.Project, opts *Options) error {
 	for _, p := range projs {
 		log.Printf("Creating project and state bucket for %q", p.ID)
 		if err := createProjectTerraform(conf, p); err != nil {
@@ -95,7 +96,7 @@ func projects(conf *config.Config, projs ...*config.Project) error {
 		if err := createStackdriverAccount(p); err != nil {
 			return err
 		}
-		if err := defaultTerraform(conf, p); err != nil {
+		if err := defaultTerraform(conf, p, opts); err != nil {
 			return fmt.Errorf("failed to apply resources for %q: %v", p.ID, err)
 		}
 		if err := collectGCEInfo(p); err != nil {
@@ -165,8 +166,12 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 	}
 
 	tfConf := terraform.NewConfig()
+	if err := addResources(tfConf, pr, project.TerraformConfig.StateBucket); err != nil {
+		return err
+	}
 	opts := &terraform.Options{}
-	if err := addResources(tfConf, opts, pr, project.TerraformConfig.StateBucket); err != nil {
+	// Since the project creation deployment is not linked to a remote state, always import the project and state bucket.
+	if err := addImports(opts, pr, project.TerraformConfig.StateBucket); err != nil {
 		return err
 	}
 
@@ -179,13 +184,13 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 	return terraformApply(tfConf, dir, opts)
 }
 
-func defaultTerraform(config *config.Config, project *config.Project) error {
+func defaultTerraform(config *config.Config, project *config.Project, opts *Options) error {
 	// TODO: merge services with resources.
 	if err := services(project); err != nil {
 		return fmt.Errorf("failed to apply services: %v", err)
 	}
 
-	if err := resources(project); err != nil {
+	if err := resources(project, opts); err != nil {
 		return fmt.Errorf("failed to apply resources: %v", err)
 	}
 
@@ -206,8 +211,8 @@ func services(project *config.Project) error {
 		Prefix: "services",
 	}
 
-	opts := &terraform.Options{}
-	if err := addResources(tfConf, opts, project.Services); err != nil {
+	// Services don't need to be imported since they can be re-created even if they already exist.
+	if err := addResources(tfConf, project.Services); err != nil {
 		return err
 	}
 
@@ -217,7 +222,7 @@ func services(project *config.Project) error {
 	}
 	defer os.RemoveAll(dir)
 
-	if err := terraformApply(tfConf, dir, opts); err != nil {
+	if err := terraformApply(tfConf, dir, nil); err != nil {
 		return err
 	}
 	return nil
@@ -250,9 +255,12 @@ func auditResources(config *config.Config, project *config.Project) error {
 		rs = append(rs, b)
 	}
 
+	if err := addResources(tfConf, rs...); err != nil {
+		return err
+	}
 	opts := &terraform.Options{}
-	if err := addResources(tfConf, opts, rs...); err != nil {
-		return nil
+	if err := addImports(opts, rs...); err != nil {
+		return err
 	}
 
 	dir, err := ioutil.TempDir("", "")
@@ -272,7 +280,7 @@ func auditResources(config *config.Config, project *config.Project) error {
 	return nil
 }
 
-func resources(project *config.Project) error {
+func resources(project *config.Project, opts *Options) error {
 	rs := project.TerraformResources()
 	tfConf := terraform.NewConfig()
 
@@ -304,9 +312,14 @@ func resources(project *config.Project) error {
 		},
 	}}
 
-	opts := &terraform.Options{}
-	if err := addResources(tfConf, opts, rs...); err != nil {
+	if err := addResources(tfConf, rs...); err != nil {
 		return err
+	}
+	tfOpts := &terraform.Options{}
+	if opts.ImportExisting {
+		if err := addImports(tfOpts, rs...); err != nil {
+			return err
+		}
 	}
 
 	dir, err := ioutil.TempDir("", "")
@@ -315,14 +328,15 @@ func resources(project *config.Project) error {
 	}
 	defer os.RemoveAll(dir)
 
-	return terraformApply(tfConf, dir, opts)
+	return terraformApply(tfConf, dir, tfOpts)
+}
+
+type dependerTF interface {
+	DependentResources() []tfconfig.Resource
 }
 
 // addResources adds the given resources to the given terraform config.
-// If the resource implements functions to get an import ID, the terraform options will be updated
-// with the import ID, so the resource is imported to the terraform state if it already exists.
-// The import ID for a resource can be found in terraform's documentation for the resource.
-func addResources(config *terraform.Config, opts *terraform.Options, resources ...tfconfig.Resource) error {
+func addResources(config *terraform.Config, resources ...tfconfig.Resource) error {
 	for _, r := range resources {
 		config.Resources = append(config.Resources, &terraform.Resource{
 			Name:       r.ID(),
@@ -330,10 +344,22 @@ func addResources(config *terraform.Config, opts *terraform.Options, resources .
 			Properties: r,
 		})
 
-		type importer interface {
-			ImportID() (string, error)
+		if d, ok := r.(dependerTF); ok {
+			if err := addResources(config, d.DependentResources()...); err != nil {
+				return err
+			}
 		}
+	}
+	return nil
+}
 
+// addImports updates the terraform options with the given resources' import IDs, so the resources are imported to the terraform state if they already exist.
+// The import ID for a resource can be found in terraform's documentation for the resource.
+func addImports(opts *terraform.Options, resources ...tfconfig.Resource) error {
+	type importer interface {
+		ImportID() (string, error)
+	}
+	for _, r := range resources {
 		if i, ok := r.(importer); ok {
 			id, err := i.ImportID()
 			if err != nil {
@@ -347,11 +373,8 @@ func addResources(config *terraform.Config, opts *terraform.Options, resources .
 			}
 		}
 
-		type depender interface {
-			DependentResources() []tfconfig.Resource
-		}
-		if d, ok := r.(depender); ok {
-			if err := addResources(config, opts, d.DependentResources()...); err != nil {
+		if d, ok := r.(dependerTF); ok {
+			if err := addImports(opts, d.DependentResources()...); err != nil {
 				return err
 			}
 		}

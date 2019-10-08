@@ -543,7 +543,7 @@ service_accounts:
 				return nil
 			}
 
-			if err := resources(project); err != nil {
+			if err := resources(project, &Options{ImportExisting: true}); err != nil {
 				t.Fatalf("deployTerraform: %v", err)
 			}
 

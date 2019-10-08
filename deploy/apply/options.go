@@ -20,4 +20,7 @@ package apply
 type Options struct {
 	// Toggle whether dry run mode is enabled.
 	DryRun bool
+	// Toggle whether existing resources will attempt to be imported.
+	// Used when migrating an existing project. Only needs to be done once.
+	ImportExisting bool
 }
