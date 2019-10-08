@@ -1,3 +1,5 @@
+generated_fields_path: generated_fields.yaml
+
 imports:
 - path: datathon_projects.tmpl.yaml
   data:

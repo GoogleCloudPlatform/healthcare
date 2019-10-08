@@ -84,7 +84,7 @@ and checkout a verified version.
 
 ```shell
 # Checkout a verified version of Data Protection Toolkit.
-export DPT_VERSION=731345cdb689c0eab9084d40f278125a92c99f12
+export DPT_VERSION=5a703be2e381d73b998e98b08f3354180c132ddd
 git clone https://github.com/GoogleCloudPlatform/healthcare.git
 cd healthcare/deploy
 git checkout $DPT_VERSION *
@@ -241,7 +241,6 @@ stable version of Data Protection Toolkit.
 ```shell
 bazel run cmd/apply:apply -- \
   --config_path=../datathon/organizer/input.yaml \
-  --output_path=../datathon/organizer/output.yaml \
   --dry_run
 ```
 
@@ -252,8 +251,7 @@ without `--dry_run` instead to actually create the projects.
 
 ```shell
 bazel run cmd/apply:apply -- \
-  --config_path=../datathon/organizer/input.yaml \
-  --output_path=../datathon/organizer/output.yaml
+  --config_path=../datathon/organizer/input.yaml
 ```
 
 In case the deployment fails, please examine the error messages and make
