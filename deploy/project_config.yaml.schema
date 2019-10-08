@@ -76,6 +76,8 @@ definitions:
           Optional list of groups to be granted Read/Write access to non-logging
           GCS buckets, BigQuery datasets and Pubsub subscriptions in this
           project.
+          DEPRECATED if using Terraform. Instead, set `project_iam_members`
+          or per-resource permissions directly.
         uniqueItems: true
         items:
           $ref: '#/definitions/email_address'
@@ -85,6 +87,8 @@ definitions:
         description: |
           Optional list of groups to be granted Read-only access to non-logging
           GCS buckets and BigQuery datasets in this project.
+          DEPRECATED if using Terraform. Instead, set `project_iam_members`
+          or per-resource permissions directly.
         items:
           $ref: '#/definitions/email_address'
 
