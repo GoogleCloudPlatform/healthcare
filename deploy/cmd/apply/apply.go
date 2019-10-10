@@ -18,8 +18,7 @@
 //
 // Usage:
 //   $ bazel run :apply -- \
-//     --config_path=my_config.yaml \
-//     --output_path=my_output.yaml \
+//     --config_path=my_config.yaml
 //
 // To preview the commands that will run, use `--dry_run`.
 package main
@@ -40,9 +39,9 @@ import (
 
 var (
 	configPath      = flag.String("config_path", "", "Path to project config file")
-	outputPath      = flag.String("output_path", "", "Path to output file to write generated fields")
 	dryRun          = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
 	enableTerraform = flag.Bool("enable_terraform", false, "DEV ONLY. Whether terraform is preferred over deployment manager.")
+	importExisting  = flag.Bool("terraform_import_existing", false, "DEV ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
 	projects        arrayFlags
 )
 
@@ -83,13 +82,10 @@ func applyConfigs() (err error) {
 	if *configPath == "" {
 		return errors.New("--config_path must be set")
 	}
-	if *outputPath == *configPath {
-		log.Fatal("--output_path must not be set to the same as --config_path")
-	}
 	if *dryRun {
 		runner.StubFakeCmds()
 	}
-	conf, err := config.Load(*configPath, *outputPath)
+	conf, err := config.Load(*configPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %v", err)
 	}
@@ -101,18 +97,6 @@ func applyConfigs() (err error) {
 			return fmt.Errorf("failed to open %q to write: %v", conf.GeneratedFieldsPath, err)
 		}
 		file.Close()
-	}
-
-	wantProjects := make(map[string]bool)
-	for _, p := range projects {
-		wantProjects[p] = true
-	}
-
-	wantProject := func(project string) bool {
-		if len(wantProjects) == 0 {
-			return true
-		}
-		return wantProjects[project]
 	}
 
 	// Write generated fields to the output file at the end.
@@ -130,10 +114,28 @@ func applyConfigs() (err error) {
 		}
 	}()
 
-	enableRemoteAudit := conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID)
+	opts := &apply.Options{DryRun: *dryRun, ImportExisting: *importExisting}
+
+	if *enableTerraform {
+		return apply.Terraform(conf, projects, opts)
+	}
+
+	// DM ONLY CODE.
+	// TODO: remove this once DM support is shut down.
+	wantProjects := make(map[string]bool)
+	for _, p := range projects {
+		wantProjects[p] = true
+	}
+
+	wantProject := func(project string) bool {
+		if len(wantProjects) == 0 {
+			return true
+		}
+		return wantProjects[project]
+	}
 
 	// Cannot enable Forseti for remote audit logs project and Forseti project itself until it is deployed.
-	opts := &apply.Options{EnableTerraform: *enableTerraform, DryRun: *dryRun}
+	enableRemoteAudit := conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID)
 
 	// Always deploy the remote audit logs project first (if present).
 	if enableRemoteAudit {

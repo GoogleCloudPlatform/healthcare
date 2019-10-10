@@ -16,9 +16,7 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
-	"os"
 
 	"flag"
 	
@@ -28,7 +26,6 @@ import (
 
 var (
 	configPath      = flag.String("config_path", "", "Path to project config file")
-	outputPath      = flag.String("output_path", "", "Path to output file to write generated fields")
 	enableTerraform = flag.Bool("enable_terraform", false, "DEV ONLY. Enable terraform.")
 )
 
@@ -40,16 +37,7 @@ func main() {
 	}
 
 	config.EnableTerraform = *enableTerraform
-	if *outputPath == "" {
-		genFile, err := ioutil.TempFile("", "output.yaml")
-		if err != nil {
-			log.Fatalf("Failed to create temporary file: %v", err)
-		}
-		defer os.Remove(genFile.Name())
-		*outputPath = genFile.Name()
-	}
-
-	c, err := config.Load(*configPath, *outputPath)
+	c, err := config.Load(*configPath)
 	if err != nil {
 		log.Fatalf("failed to load config to bytes: %v", err)
 	}

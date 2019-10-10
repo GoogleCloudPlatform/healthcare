@@ -37,17 +37,27 @@ const baseResourcesYAML = `
 provider:
 - google:
     project: my-project
+- google-beta:
+    project: my-project
 terraform:
   required_version: '>= 0.12.0'
   backend:
     gcs:
       bucket: my-project-state
-      prefix: user
+      prefix: resources
 data:
 - google_project:
     my-project:
       project_id: my-project
 resource:
+- google_project_iam_audit_config:
+    project:
+      project: my-project
+      service: allServices
+      audit_log_config:
+      - log_type: DATA_READ
+      - log_type: DATA_WRITE
+      - log_type: ADMIN_READ
 - google_project_iam_member:
     project:
       for_each:
@@ -131,6 +141,8 @@ func TestResources(t *testing.T) {
 	runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 		args := strings.Join(cmd.Args, " ")
 		switch {
+		case strings.Contains(args, "resource-manager liens list"):
+			return []byte(`[{"name": "p1111-l2222", "restrictions": ["resourcemanager.projects.delete"]}]`), nil
 		case strings.Contains(args, "monitoring channels list"):
 			return []byte(`[{"displayName": "Email", "name": "projects/my-project/notificationChannels/111"}]`), nil
 		case strings.Contains(args, "monitoring policies list"):
@@ -171,6 +183,28 @@ bigquery_datasets:
 			wantImports: []terraform.Import{{
 				Address: "google_bigquery_dataset.foo_dataset",
 				ID:      "my-project:foo_dataset",
+			}},
+		},
+		{
+			name: "compute_firewall",
+			data: &testconf.ConfigData{`
+compute_firewalls:
+- name: foo-firewall
+  network: default
+  allow:
+    protocol: icmp
+`},
+			wantResources: `
+- google_compute_firewall:
+    foo-firewall:
+      name: foo-firewall
+      project: my-project
+      network: default
+      allow:
+        protocol: icmp`,
+			wantImports: []terraform.Import{{
+				Address: "google_compute_firewall.foo-firewall",
+				ID:      "my-project/foo-firewall",
 			}},
 		},
 		{
@@ -222,6 +256,94 @@ compute_instances:
 				Address: "google_compute_instance.foo-instance",
 				ID:      "my-project/us-central1-a/foo-instance",
 			}},
+		},
+		{
+			name: "healthcare_dataset",
+			data: &testconf.ConfigData{`
+healthcare_datasets:
+- name: foo-dataset
+  location: us-central1
+  _iam_members:
+  - role: roles/editor
+    member: user:foo@my-domain.com
+  _dicom_stores:
+  - name: foo-dicom-store
+    _iam_members:
+    - role: roles/viewer
+      member: user:bar@my-domain.com
+  _fhir_stores:
+  - name: foo-fhir-store
+    _iam_members:
+    - role: roles/viewer
+      member: user:bar@my-domain.com
+  _hl7_v2_stores:
+  - name: foo-hl7-v2-store
+    _iam_members:
+    - role: roles/viewer
+      member: user:bar@my-domain.com
+`},
+			wantResources: `
+- google_healthcare_dataset:
+    foo-dataset:
+      name: foo-dataset
+      location: us-central1
+      project: my-project
+      provider: google-beta
+- google_healthcare_dataset_iam_member:
+    foo-dataset:
+      for_each:
+        'roles/editor user:foo@my-domain.com':
+          role: roles/editor
+          member: user:foo@my-domain.com
+      role: ${each.value.role}
+      member: ${each.value.member}
+      dataset_id: ${google_healthcare_dataset.foo-dataset.id}
+      provider: google-beta
+- google_healthcare_dicom_store:
+    foo-dataset_foo-dicom-store:
+      name: foo-dicom-store
+      dataset: ${google_healthcare_dataset.foo-dataset.id}
+      provider: google-beta
+- google_healthcare_dicom_store_iam_member:
+    foo-dataset_foo-dicom-store:
+      for_each:
+        'roles/viewer user:bar@my-domain.com':
+          role: roles/viewer
+          member: user:bar@my-domain.com
+      role: ${each.value.role}
+      member: ${each.value.member}
+      dicom_store_id: ${google_healthcare_dicom_store.foo-dataset_foo-dicom-store.id}
+      provider: google-beta
+- google_healthcare_fhir_store:
+    foo-dataset_foo-fhir-store:
+      name: foo-fhir-store
+      dataset: ${google_healthcare_dataset.foo-dataset.id}
+      provider: google-beta
+- google_healthcare_fhir_store_iam_member:
+    foo-dataset_foo-fhir-store:
+      for_each:
+        'roles/viewer user:bar@my-domain.com':
+          role: roles/viewer
+          member: user:bar@my-domain.com
+      role: ${each.value.role}
+      member: ${each.value.member}
+      fhir_store_id: ${google_healthcare_fhir_store.foo-dataset_foo-fhir-store.id}
+      provider: google-beta
+- google_healthcare_hl7_v2_store:
+    foo-dataset_foo-hl7-v2-store:
+      name: foo-hl7-v2-store
+      dataset: ${google_healthcare_dataset.foo-dataset.id}
+      provider: google-beta
+- google_healthcare_hl7_v2_store_iam_member:
+    foo-dataset_foo-hl7-v2-store:
+      for_each:
+        'roles/viewer user:bar@my-domain.com':
+          role: roles/viewer
+          member: user:bar@my-domain.com
+      role: ${each.value.role}
+      member: ${each.value.member}
+      hl7_v2_store_id: ${google_healthcare_hl7_v2_store.foo-dataset_foo-hl7-v2-store.id}
+      provider: google-beta`,
 		},
 		{
 			name: "monitoring_notification_channel",
@@ -384,6 +506,10 @@ pubsub_topics:
       subscription: ${google_pubsub_subscription.foo-subscription.name}
       role: ${each.value.role}
       member: ${each.value.member}`,
+			wantImports: []terraform.Import{
+				{Address: "google_pubsub_topic.foo-topic", ID: "my-project/foo-topic"},
+				{Address: "google_pubsub_subscription.foo-subscription", ID: "my-project/foo-subscription"},
+			},
 		},
 		{
 			name: "resource_manager_lien",
@@ -410,6 +536,9 @@ resource_manager_liens:
       parent: projects/my-project
       restrictions:
       - foo.delete`,
+			wantImports: []terraform.Import{{
+				Address: "google_resource_manager_lien.managed_project_deletion_lien", ID: "my-project/p1111-l2222",
+			}},
 		},
 		{
 			name: "service_account",
@@ -436,7 +565,7 @@ service_accounts:
 				return nil
 			}
 
-			if err := resources(project); err != nil {
+			if err := resources(project, &Options{ImportExisting: true}); err != nil {
 				t.Fatalf("deployTerraform: %v", err)
 			}
 
@@ -472,52 +601,24 @@ resource:
       project_id: my-project
       name: my-project
       folder_id: '98765321'
-      billing_account: 000000-000000-000000`),
-		Imports: []terraform.Import{{
-			Address: "google_project.project",
-			ID:      "my-project",
-		}},
-	}}
-
-	if err := createProjectTerraform(config, project); err != nil {
-		t.Fatalf("createProjectTerraform: %v", err)
-	}
-
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
-	}
-}
-
-func TestStateBucket(t *testing.T) {
-	_, project := testconf.ConfigAndProject(t, nil)
-
-	var got []applyCall
-	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
-		got = append(got, makeApplyCall(t, config, opts))
-		return nil
-	}
-
-	want := []applyCall{{
-		Config: unmarshal(t, `
-terraform:
-  required_version: ">= 0.12.0"
-
-resource:
+      billing_account: 000000-000000-000000
 - google_storage_bucket:
     my-project-state:
       name: my-project-state
       project: my-project
       location: US
       versioning:
-        enabled: true`),
-		Imports: []terraform.Import{{
-			Address: "google_storage_bucket.my-project-state",
-			ID:      "my-project/my-project-state",
-		}},
+        enabled: true
+      depends_on:
+      - google_project.project`),
+		Imports: []terraform.Import{
+			{Address: "google_project.project", ID: "my-project"},
+			{Address: "google_storage_bucket.my-project-state", ID: "my-project/my-project-state"},
+		},
 	}}
 
-	if err := stateBucket(project); err != nil {
-		t.Fatalf("stateBucket: %v", err)
+	if err := createProjectTerraform(config, project); err != nil {
+		t.Fatalf("createProjectTerraform: %v", err)
 	}
 
 	if diff := cmp.Diff(got, want); diff != "" {

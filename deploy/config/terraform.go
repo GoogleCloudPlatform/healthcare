@@ -101,6 +101,9 @@ func (p *Project) initServices() error {
 	if len(p.ComputeInstances) > 0 || len(p.ComputeImages) > 0 {
 		svcs = append(svcs, "compute.googleapis.com")
 	}
+	if len(p.HealthcareDatasets) > 0 {
+		svcs = append(svcs, "healthcare.googleapis.com")
+	}
 	if len(p.NotificationChannels) > 0 {
 		svcs = append(svcs, "monitoring.googleapis.com")
 	}
@@ -116,6 +119,15 @@ func (p *Project) initServices() error {
 }
 
 func (p *Project) addDefaultIAM() {
+	// Enable all possible audit log collection.
+	p.IAMAuditConfig = &tfconfig.ProjectIAMAuditConfig{
+		Service: "allServices",
+		AuditLogConfigs: []*tfconfig.AuditLogConfig{
+			{LogType: "DATA_READ"},
+			{LogType: "DATA_WRITE"},
+			{LogType: "ADMIN_READ"},
+		},
+	}
 	if p.IAMMembers == nil {
 		p.IAMMembers = new(tfconfig.ProjectIAMMembers)
 	}
@@ -236,6 +248,9 @@ func (p *Project) addDefaultMonitoring() {
 func (p *Project) TerraformResources() []tfconfig.Resource {
 	var rs []tfconfig.Resource
 	// Put default resources first to make it easier to write tests.
+	if p.IAMAuditConfig != nil {
+		rs = append(rs, p.IAMAuditConfig)
+	}
 	if p.IAMMembers != nil {
 		rs = append(rs, p.IAMMembers)
 	}
@@ -249,10 +264,16 @@ func (p *Project) TerraformResources() []tfconfig.Resource {
 	for _, r := range p.BigqueryDatasets {
 		rs = append(rs, r)
 	}
+	for _, r := range p.ComputeFirewalls {
+		rs = append(rs, r)
+	}
 	for _, r := range p.ComputeImages {
 		rs = append(rs, r)
 	}
 	for _, r := range p.ComputeInstances {
+		rs = append(rs, r)
+	}
+	for _, r := range p.HealthcareDatasets {
 		rs = append(rs, r)
 	}
 	for _, r := range p.IAMCustomRoles {

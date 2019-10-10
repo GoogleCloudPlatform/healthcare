@@ -53,6 +53,10 @@ type Config struct {
 		FolderID       string   `json:"folder_id"`
 		AllowedAPIs    []string `json:"allowed_apis"`
 	} `json:"overall"`
+
+	Devops *struct {
+		Project *Project `json:"project"`
+	} `json:"devops"`
 	AuditLogsProject    *Project   `json:"audit_logs_project"`
 	Forseti             *Forseti   `json:"forseti"`
 	Projects            []*Project `json:"projects"`
@@ -105,8 +109,10 @@ type Project struct {
 
 	// Terraform resources
 	BigqueryDatasets     []*tfconfig.BigqueryDataset               `json:"bigquery_datasets"`
+	ComputeFirewalls     []*tfconfig.ComputeFirewall               `json:"compute_firewalls"`
 	ComputeImages        []*tfconfig.ComputeImage                  `json:"compute_images"`
 	ComputeInstances     []*tfconfig.ComputeInstance               `json:"compute_instances"`
+	HealthcareDatasets   []*tfconfig.HealthcareDataset             `json:"healthcare_datasets"`
 	IAMCustomRoles       []*tfconfig.ProjectIAMCustomRole          `json:"project_iam_custom_roles"`
 	IAMMembers           *tfconfig.ProjectIAMMembers               `json:"project_iam_members"`
 	NotificationChannels []*tfconfig.MonitoringNotificationChannel `json:"monitoring_notification_channels"`
@@ -135,6 +141,7 @@ type Project struct {
 	BQLogSinkTF *tfconfig.LoggingSink `json:"-"`
 	Metrics     []*Metric             `json:"-"`
 
+	IAMAuditConfig        *tfconfig.ProjectIAMAuditConfig   `json:"-"`
 	DefaultAlertPolicies  []*tfconfig.MonitoringAlertPolicy `json:"-"`
 	DefaultLoggingMetrics []*tfconfig.LoggingMetric         `json:"-"`
 }
@@ -169,7 +176,7 @@ func (c *Config) Init(genFields *AllGeneratedFields) error {
 			c.AllGeneratedFields.Projects[p.ID] = &GeneratedFields{}
 		}
 		p.GeneratedFields = c.AllGeneratedFields.Projects[p.ID]
-		if err := p.Init(c.ProjectForAuditLogs(p)); err != nil {
+		if err := p.Init(c.ProjectForDevops(p), c.ProjectForAuditLogs(p)); err != nil {
 			return fmt.Errorf("failed to init project %q: %v", p.ID, err)
 		}
 	}
@@ -214,6 +221,9 @@ func (c *Config) AllFolders() []string {
 // This includes Audit, Forseti and all data hosting projects.
 func (c *Config) AllProjects() []*Project {
 	ps := make([]*Project, 0, len(c.Projects))
+	if c.Devops != nil {
+		ps = append(ps, c.Devops.Project)
+	}
 	if c.AuditLogsProject != nil {
 		ps = append(ps, c.AuditLogsProject)
 	}
@@ -225,6 +235,15 @@ func (c *Config) AllProjects() []*Project {
 		return ps[i].ID < ps[j].ID
 	})
 	return ps
+}
+
+// ProjectForDevops is a helper function to get the devops project for the given project.
+// Return the devops project if it exists, else return the project itself (to store devops resources locally).
+func (c *Config) ProjectForDevops(p *Project) *Project {
+	if c.Devops != nil {
+		return c.Devops.Project
+	}
+	return p
 }
 
 // ProjectForAuditLogs is a helper function to get the audit logs project for the given project.
@@ -263,23 +282,27 @@ func (c *Config) initForseti() error {
 
 // Init initializes a project and all its resources.
 // Audit Logs Project should either be a remote project or nil.
-func (p *Project) Init(auditLogsProject *Project) error {
+func (p *Project) Init(devopsProject, auditLogsProject *Project) error {
 	if p.GeneratedFields == nil {
 		p.GeneratedFields = &GeneratedFields{}
 	}
 
 	// init the state bucket outside the regular terraform resoures since forseti projects will
 	// still define a state bucket even when not enabling terraform.
-	if p.TerraformConfig.StateBucket != nil {
-		if err := p.TerraformConfig.StateBucket.Init(p.ID); err != nil {
+	if sb := p.TerraformConfig.StateBucket; sb != nil {
+		if err := sb.Init(devopsProject.ID); err != nil {
 			return fmt.Errorf("failed to init terraform state bucket: %v", err)
 		}
 	}
 
 	if EnableTerraform {
-		if p.TerraformConfig.StateBucket == nil {
+		sb := p.TerraformConfig.StateBucket
+		if sb == nil {
 			return errors.New("state_storage_bucket must be set when terraform is enabled")
 		}
+
+		// State bucket will be deployed in the same deployment as the project.
+		sb.DependsOn = append(sb.DependsOn, "google_project.project")
 		return p.initTerraform(auditLogsProject)
 	}
 

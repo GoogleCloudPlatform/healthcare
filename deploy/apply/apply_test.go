@@ -577,8 +577,8 @@ resources:
 				return nil
 			}
 
-			if err := DeployResources(conf, project, &Options{EnableTerraform: false}); err != nil {
-				t.Fatalf("Deploy: %v", err)
+			if err := DeployResources(conf, project, &Options{}); err != nil {
+				t.Fatalf("DeployResources: %v", err)
 			}
 
 			want := []upsertCall{
@@ -942,6 +942,7 @@ func abs(p string) string {
 }
 
 func TestMain(m *testing.M) {
+	runner.StubFakeCmds()
 	const logSinkJSON = `{
 		"createTime": "2019-04-15T20:00:16.734389353Z",
 		"destination": "bigquery.googleapis.com/projects/my-project/datasets/audit_logs",
@@ -960,7 +961,7 @@ func TestMain(m *testing.M) {
 		if cmp.Equal(cmd.Args[:len(args)], args) {
 			return []byte(logSinkJSON), nil
 		}
-		return nil, fmt.Errorf("unexpected args: %v", cmd.Args)
+		return origCmdOutput(cmd)
 	}
 
 	os.Exit(m.Run())

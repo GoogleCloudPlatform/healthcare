@@ -16,6 +16,7 @@ package apply
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -51,21 +52,16 @@ func Forseti(conf *config.Config, opts *Options) error {
 		return err
 	}
 
+	// Always deploy state bucket, otherwise a forseti installation that failed half way through
+	// will be left in a partial state and every following attempt will install a fresh instance.
+	// TODO: once terraform is launched and default just let the Default take care of deploying the state bucket and remove this block.
+	if err := stateBucket(project); err != nil {
+		return fmt.Errorf("failed to deploy terraform state: %v", err)
+	}
+
 	if err := forsetiConfig(conf); err != nil {
 		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
-
-	serviceAccount, err := forsetiServerServiceAccount(project.ID)
-	if err != nil {
-		return fmt.Errorf("failed to set Forseti server service account: %v", err)
-	}
-	conf.AllGeneratedFields.Forseti.ServiceAccount = serviceAccount
-
-	serverBucket, err := forsetiServerBucket(project.ID)
-	if err != nil {
-		return fmt.Errorf("failed to set Forseti server bucket: %v", err)
-	}
-	conf.AllGeneratedFields.Forseti.ServiceBucket = serverBucket
 
 	if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
 		return err
@@ -80,13 +76,7 @@ func forsetiConfig(conf *config.Config) error {
 		log.Println("no forseti config, nothing to do")
 		return nil
 	}
-
-	// Always deploy state bucket, otherwise a forseti installation that failed half way through
-	// will be left in a partial state and every following attempt will install a fresh instance.
-	// TODO: once terraform is launched and default just let the Default take care of deploying the state bucket and remove this block.
-	if err := stateBucket(conf.Forseti.Project); err != nil {
-		return fmt.Errorf("failed to deploy terraform state: %v", err)
-	}
+	project := conf.Forseti.Project
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -106,7 +96,45 @@ func forsetiConfig(conf *config.Config) error {
 		Prefix: "forseti",
 	}
 
-	return terraformApply(tfConf, dir, nil)
+	if err := terraformApply(tfConf, dir, nil); err != nil {
+		return err
+	}
+
+	serviceAccount, err := forsetiServerServiceAccount(project.ID)
+	if err != nil {
+		return fmt.Errorf("failed to set Forseti server service account: %v", err)
+	}
+	conf.AllGeneratedFields.Forseti.ServiceAccount = serviceAccount
+
+	serverBucket, err := forsetiServerBucket(project.ID)
+	if err != nil {
+		return fmt.Errorf("failed to set Forseti server bucket: %v", err)
+	}
+	conf.AllGeneratedFields.Forseti.ServiceBucket = serverBucket
+	return nil
+}
+
+func stateBucket(project *config.Project) error {
+	if project.TerraformConfig.StateBucket == nil {
+		return errors.New("state_storage_bucket must not be nil")
+	}
+
+	tfConf := terraform.NewConfig()
+	if err := addResources(tfConf, project.TerraformConfig.StateBucket); err != nil {
+		return err
+	}
+	opts := &terraform.Options{}
+	if err := addImports(opts, project.TerraformConfig.StateBucket); err != nil {
+		return err
+	}
+
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	return terraformApply(tfConf, dir, opts)
 }
 
 // forsetiServerServiceAccount gets the server instance service account of the give Forseti project.

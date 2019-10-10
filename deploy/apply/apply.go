@@ -75,30 +75,24 @@ type depender interface {
 
 // Default applies project configurations to a default project.
 func Default(conf *config.Config, project *config.Project, opts *Options) error {
-	if opts.EnableTerraform {
-		// TODO: consider joining state bucket deployment with this as well.
-		if err := createProjectTerraform(conf, project); err != nil {
-			return fmt.Errorf("failed to create project: %v", err)
-		}
-	} else {
-		if err := verifyOrCreateProject(conf, project); err != nil {
-			return fmt.Errorf("failed to verify or create project: %v", err)
-		}
-		if err := setupBilling(project, conf.Overall.BillingAccount); err != nil {
-			return fmt.Errorf("failed to set up billing: %v", err)
-		}
+	if err := verifyOrCreateProject(conf, project); err != nil {
+		return fmt.Errorf("failed to verify or create project: %v", err)
+	}
 
-		if err := enableServiceAPIs(project); err != nil {
-			return fmt.Errorf("failed to enable service APIs: %v", err)
-		}
+	if err := setupBilling(project, conf.Overall.BillingAccount); err != nil {
+		return fmt.Errorf("failed to set up billing: %v", err)
+	}
 
-		if err := createCustomComputeImages(project); err != nil {
-			return fmt.Errorf("failed to create compute images: %v", err)
-		}
+	if err := enableServiceAPIs(project); err != nil {
+		return fmt.Errorf("failed to enable service APIs: %v", err)
+	}
 
-		if err := createDeletionLien(project); err != nil {
-			return fmt.Errorf("failed to create deletion lien: %v", err)
-		}
+	if err := createCustomComputeImages(project); err != nil {
+		return fmt.Errorf("failed to create compute images: %v", err)
+	}
+
+	if err := createDeletionLien(project); err != nil {
+		return fmt.Errorf("failed to create deletion lien: %v", err)
 	}
 
 	if err := createStackdriverAccount(project); err != nil {
@@ -109,19 +103,17 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
 
-	if !opts.EnableTerraform {
-		if err := createAlerts(project); err != nil {
-			return fmt.Errorf("failed to create alerts: %v", err)
-		}
+	if err := createAlerts(project); err != nil {
+		return fmt.Errorf("failed to create alerts: %v", err)
 	}
 
 	if err := collectGCEInfo(project); err != nil {
 		return fmt.Errorf("failed to collect GCE instances info: %v", err)
 	}
 
-	if conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
-		if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
-			return err
+	if fsa := conf.AllGeneratedFields.Forseti.ServiceAccount; fsa != "" {
+		if err := GrantForsetiPermissions(project.ID, fsa); err != nil {
+			return fmt.Errorf("failed to grant forseti access: %v", err)
 		}
 	}
 	return nil
@@ -129,10 +121,6 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 
 // DeployResources deploys the CFT resources in the project.
 func DeployResources(conf *config.Config, project *config.Project, opts *Options) error {
-	if opts.EnableTerraform {
-		return defaultTerraform(conf, project)
-	}
-
 	if !opts.DryRun {
 		if err := grantDeploymentManagerAccess(project); err != nil {
 			return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
@@ -345,7 +333,29 @@ func removeOwnerUser(project *config.Project) error {
 	role := "roles/owner"
 	member = "user:" + member
 
-	// TODO: check user specified bindings in case user wants the binding left
+	// TODO: DM specific code. Remove once deployment manager has been deprecated.
+	for _, p := range project.Resources.IAMPolicies {
+		for _, b := range p.Bindings {
+			if b.Role != role {
+				continue
+			}
+			for _, m := range b.Members {
+				if m == member {
+					// User owner specifically requested, so don't remove them.
+					return nil
+				}
+			}
+		}
+	}
+	if project.IAMMembers != nil {
+		for _, m := range project.IAMMembers.Members {
+			if m.Role == role && m.Member == member {
+				// User owner specifically requested, so don't remove them.
+				return nil
+			}
+		}
+	}
+
 	has, err := hasBinding(project, role, member)
 	if err != nil {
 		return err
@@ -694,7 +704,7 @@ IMPORTANT: Wait about 5 minutes for the account to be created.
 
 For more information, see: https://cloud.google.com/monitoring/accounts/
 
-After the account is created, enter [yes] to continue, or enter [no] to skip the
+After the account is created, type "yes" to continue, or type "no" to skip the
 creation of Stackdriver account and terminate the deployment.
 ------------------------------------------------------------------------------
 `, project.ID)

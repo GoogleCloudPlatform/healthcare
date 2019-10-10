@@ -61,8 +61,8 @@ func (t *PubsubTopic) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (t *PubsubTopic) ImportID() string {
-	return fmt.Sprintf("%s/%s", t.Project, t.Name)
+func (t *PubsubTopic) ImportID() (string, error) {
+	return fmt.Sprintf("%s/%s", t.Project, t.Name), nil
 }
 
 // DependentResources returns the child resources of this resource (subscriptions).
@@ -131,8 +131,8 @@ func (s *PubsubSubscription) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (s *PubsubSubscription) ImportID() string {
-	return fmt.Sprintf("%s/%s", s.Project, s.Name)
+func (s *PubsubSubscription) ImportID() (string, error) {
+	return fmt.Sprintf("%s/%s", s.Project, s.Name), nil
 }
 
 // DependentResources returns the child resources of this resource (subscriptions).

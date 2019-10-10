@@ -61,13 +61,13 @@ func NormalizePath(path string) (string, error) {
 }
 
 // Load loads a config from the given path.
-func Load(confPath, genFieldsPath string) (*Config, error) {
-	confPath, err := NormalizePath(confPath)
+func Load(path string) (*Config, error) {
+	path, err := NormalizePath(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to normalize path %q: %v", confPath, err)
+		return nil, fmt.Errorf("failed to normalize path %q: %v", path, err)
 	}
 
-	m, err := loadMap(confPath, nil)
+	m, err := loadMap(path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config to map: %v", err)
 	}
@@ -86,10 +86,7 @@ func Load(confPath, genFieldsPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %v\nmerged config: %v", err, string(b))
 	}
 
-	// TODO: remove this check once conf.GeneratedFieldsPath is mandatory.
-	if conf.GeneratedFieldsPath != "" {
-		genFieldsPath = conf.GeneratedFieldsPath
-	}
+	genFieldsPath := conf.GeneratedFieldsPath
 
 	if genFieldsPath == "" {
 		return nil, errors.New("generated fields path is neither specified in config nor command line")
@@ -99,7 +96,7 @@ func Load(confPath, genFieldsPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to normalize path %q: %v", genFieldsPath, err)
 	}
 
-	if genFieldsPath == confPath {
+	if genFieldsPath == path {
 		return nil, errors.New("generated fields path cannot be set to the same as config path")
 	}
 	conf.GeneratedFieldsPath = genFieldsPath

@@ -22,7 +22,7 @@ gcloud --project my-forseti-project alpha monitoring policies create --policy={"
 gcloud --project my-forseti-project alpha monitoring policies create --policy={"name":"","displayName":"Bucket Permission Change Alert","documentation":{"content":"This policy ensures the designated user/group is notified when bucket/object permissions are altered.","mimeType":"text/markdown"},"conditions":[{"name":"","displayName":"No tolerance on bucket-permission-change-count!","conditionThreshold":{"comparison":"COMPARISON_GT","filter":"resource.type=\"gcs_bucket\" AND metric.type=\"logging.googleapis.com/user/bucket-permission-change-count\"","duration":"0s"}}],"combiner":"AND","enabled":true,"notificationChannels":["projects/dryrun/notificationChannels/dryrun"]}
 gcloud --project my-forseti-project alpha monitoring policies create --policy={"name":"","displayName":"Bigquery Update Alert","documentation":{"content":"This policy ensures the designated user/group is notified when Bigquery dataset settings are altered.","mimeType":"text/markdown"},"conditions":[{"name":"","displayName":"No tolerance on bigquery-settings-change-count!","conditionThreshold":{"comparison":"COMPARISON_GT","filter":"resource.type=\"global\" AND metric.type=\"logging.googleapis.com/user/bigquery-settings-change-count\"","duration":"0s"}}],"combiner":"AND","enabled":true,"notificationChannels":["projects/dryrun/notificationChannels/dryrun"]}
 terraform init
-terraform import google_storage_bucket.my-forseti-project-state my-forseti-project/my-forseti-project-state
+terraform import -no-color google_storage_bucket.my-forseti-project-state my-forseti-project/my-forseti-project-state
 terraform apply
 cp -r ./external/terraform_google_forseti /tmp/xxxxxxxxx
 terraform init
