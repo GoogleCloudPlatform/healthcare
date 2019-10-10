@@ -2,9 +2,10 @@
 
 def _impl(ctx):
     """Core implementation of _config_test rule."""
-    content = "{config_loader} --config_path {path}".format(
+    content = "{config_loader} --config_path {path} --enable_terraform={enable_terraform}".format(
         config_loader = ctx.executable._config_loader.short_path,
         path = ctx.file.config.short_path,
+        enable_terraform = ctx.attr.enable_terraform,
     )
 
     ctx.actions.write(
@@ -32,6 +33,10 @@ _config_test = rule(
         "deps": attr.label_list(
             allow_files = True,
             doc = "Additional dependent configs, templates or generated fields file to import.",
+        ),
+        "enable_terraform": attr.bool(
+            default = False,
+            doc = "Whether to enable Terraform.",
         ),
         "_config_loader": attr.label(
             default = Label("//cmd/load_config"),
