@@ -27,15 +27,15 @@ overall:
   organization_id: '12345678'           # Replace this with your Organization ID, or remove to setup without an organization.
   folder_id: '98765321'                 # Optional. Replace this with an existing folder within the organization.
   billing_account: 000000-000000-000000 # Replace this with your Billing Account.
-  domain: domain.com                    # Replace this with your domain.
+  domain: example.com                    # Replace this with your domain.
 
 generated_fields_path: spanned_configs/generated_fields.yaml
 
 # Configure the audit logs hosting project here.
 audit_logs_project:
   project_id: my-audit-logs             # Replace this with a unique ID for your audit logs project.
-  owners_group: my-audit-logs-owners@mydomain.com   # Replace this with the owners group for this project.
-  auditors_group: some-auditors-group@mydomain.com  # Replace this with your auditors group.
+  owners_group: my-audit-logs-owners@example.com   # Replace this with the owners group for this project.
+  auditors_group: some-auditors-group@example.com  # Replace this with your auditors group.
   create_deletion_lien: true
   audit_logs:  # Audit logs for acccess to the audit logs project itself.
     logs_bq_dataset:
@@ -43,13 +43,13 @@ audit_logs_project:
         # Naming convention: PROJECT_ID, with underscores instead of dashes.
         name: my_audit_logs
         location: US                    # Replace this with the desired the location for the BigQuery dataset holding audit logs for this project.
-  stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
+  stackdriver_alert_email: some-alerts-group@example.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
 
 forseti:
   project:
-    project_id: my-forseti-project      # Replace this with a unique ID for your forseti project.
-    owners_group: my-forseti-project-owners@mydomain.com    # Replace this with the owners group for this project.
-    auditors_group: my-forseti-project-auditors@mydomain.com  # Replace this with your auditors group.
+    project_id: my-forseti-project      # Replace this with a unique ID for your Forseti project.
+    owners_group: my-forseti-project-owners@example.com    # Replace this with the owners group for this project.
+    auditors_group: my-forseti-project-auditors@example.com  # Replace this with your auditors group.
     create_deletion_lien: true
     terraform:
       state_storage_bucket:
@@ -60,23 +60,23 @@ forseti:
         properties:
           name: my_forseti_project
           location: US
-    stackdriver_alert_email: some-alerts-group@mydomain.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
+    stackdriver_alert_email: some-alerts-group@example.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
   properties: # (OPTIONAL) Any non-default properties to set on the Forseti Terraform module.
     storage_bucket_location: us-east1
 
 # Multiple dataset projects can be deployed at once with the one YAML file.
 projects:
 - project_id: my-project
-  owners_group: my-project-owners@my-domain.com      # Replace this with the owners group for this project.
-  auditors_group: some-auditors-group@my-domain.com
+  owners_group: my-project-owners@example.com      # Replace this with the owners group for this project.
+  auditors_group: some-auditors-group@example.com
   data_readwrite_groups:
-  - some-readwrite-group@my-domain.com
+  - some-readwrite-group@example.com
   data_readonly_groups:
-  - some-readonly-group@my-domain.com
+  - some-readonly-group@example.com
   - another-readonly-group@googlegroups.com
   create_deletion_lien: true
-  # If alert email is present, create StackDriver alerts.
-  stackdriver_alert_email: some-alerts-group@my-domain.com
+  # If alert email is present, create Stackdriver alerts.
+  stackdriver_alert_email: some-alerts-group@example.com
   # These audit logs will be saved to the audit_logs_project.
   audit_logs:
     logs_gcs_bucket:
@@ -102,27 +102,27 @@ projects:
     gcs_buckets:
     - properties:
         location: US-CENTRAL1
-        name: foo-data
+        name: example-data
         storageClass: REGIONAL
     pubsubs:
     - properties:
-        topic: foo-topic
+        topic: example-topic
         accessControl:
         - role: roles/pubsub.publisher
           members:
-          - group:foo-publisher@my-domain.com
+          - group:example-publisher@example.com
         subscriptions:
-        - name: foo-subscription
+        - name: example-subscription
 - project_id: my-other-project
-  owners_group: my-other-project-owners@my-domain.com
-  auditors_group: some-auditors-group@my-domain.com
+  owners_group: my-other-project-owners@example.com
+  auditors_group: some-auditors-group@example.com
   create_deletion_lien: true
   data_readwrite_groups:
-  - some-readwrite-group@my-domain.com
+  - some-readwrite-group@example.com
   data_readonly_groups:
-  - some-readonly-group@my-domain.com
-  - another-readonly-group@googlegroups.com
-  stackdriver_alert_email: some-alerts-group@my-domain.com
+  - some-readonly-group@example.com
+  - another-readonly-group@example.com
+  stackdriver_alert_email: some-alerts-group@example.com
   audit_logs:
     logs_gcs_bucket:
       properties:
@@ -143,5 +143,5 @@ projects:
     gcs_buckets:
     - properties:
         location: EUROPE-WEST1
-        name: foo-other-data
+        name: example-other-data
         storageClass: REGIONAL
