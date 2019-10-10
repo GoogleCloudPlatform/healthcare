@@ -37,12 +37,12 @@ audit_logs_project:
   owners_group: my-audit-logs-owners@example.com   # Replace this with the owners group for this project.
   auditors_group: some-auditors-group@example.com  # Replace this with your auditors group.
   create_deletion_lien: true
-  audit_logs:  # Audit logs for acccess to the audit logs project itself.
+  audit_logs:  # Audit logs for access to the audit logs project itself.
     logs_bq_dataset:
       properties:
         # Naming convention: PROJECT_ID, with underscores instead of dashes.
         name: my_audit_logs
-        location: US                    # Replace this with the desired the location for the BigQuery dataset holding audit logs for this project.
+        location: US                    # Replace this with the desired location for the BigQuery dataset holding audit logs for this project.
   stackdriver_alert_email: some-alerts-group@example.com  # (OPTIONAL) Set a destination email for Stackdriver alerts.
 
 forseti:
