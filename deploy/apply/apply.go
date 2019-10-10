@@ -333,7 +333,29 @@ func removeOwnerUser(project *config.Project) error {
 	role := "roles/owner"
 	member = "user:" + member
 
-	// TODO: check user specified bindings in case user wants the binding left
+	// TODO: DM specific code. Remove once deployment manager has been deprecated.
+	for _, p := range project.Resources.IAMPolicies {
+		for _, b := range p.Bindings {
+			if b.Role != role {
+				continue
+			}
+			for _, m := range b.Members {
+				if m == member {
+					// User owner specifically requested, so don't remove them.
+					return nil
+				}
+			}
+		}
+	}
+	if project.IAMMembers != nil {
+		for _, m := range project.IAMMembers.Members {
+			if m.Role == role && m.Member == member {
+				// User owner specifically requested, so don't remove them.
+				return nil
+			}
+		}
+	}
+
 	has, err := hasBinding(project, role, member)
 	if err != nil {
 		return err
