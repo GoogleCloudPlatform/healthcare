@@ -1,8 +1,7 @@
 # Sample deployment configs and tests.
+load("//starlark:config_test.bzl", "config_test")
 
 package(default_visibility = ["//visibility:public"])
-
-load("//starlark:config_test.bzl", "config_test")
 
 licenses(["notice"])  # Apache 2.0
 
@@ -28,5 +27,12 @@ config_test(
 config_test(
     name = "sample_project_with_remote_audit_logs_config_test",
     config = "//samples:project_with_remote_audit_logs.yaml",
+    deps = ["//samples/spanned_configs:generated_fields.yaml"],
+)
+
+config_test(
+    name = "sample_terraform_config_test",
+    config = "//samples:terraform.yaml",
+    enable_terraform = True,
     deps = ["//samples/spanned_configs:generated_fields.yaml"],
 )
