@@ -882,8 +882,7 @@ definitions:
 required:
 - overall
 - projects
-# TODO: Uncomment the following line after migrating existing customers.
-# - generated_fields_path
+- generated_fields_path
 
 properties:
   overall:

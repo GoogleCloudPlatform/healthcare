@@ -18,8 +18,7 @@
 //
 // Usage:
 //   $ bazel run :apply -- \
-//     --config_path=my_config.yaml \
-//     --output_path=my_output.yaml \
+//     --config_path=my_config.yaml
 //
 // To preview the commands that will run, use `--dry_run`.
 package main
@@ -40,7 +39,6 @@ import (
 
 var (
 	configPath      = flag.String("config_path", "", "Path to project config file")
-	outputPath      = flag.String("output_path", "", "Path to output file to write generated fields")
 	dryRun          = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
 	enableTerraform = flag.Bool("enable_terraform", false, "DEV ONLY. Whether terraform is preferred over deployment manager.")
 	importExisting  = flag.Bool("terraform_import_existing", false, "DEV ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
@@ -84,13 +82,10 @@ func applyConfigs() (err error) {
 	if *configPath == "" {
 		return errors.New("--config_path must be set")
 	}
-	if *outputPath == *configPath {
-		log.Fatal("--output_path must not be set to the same as --config_path")
-	}
 	if *dryRun {
 		runner.StubFakeCmds()
 	}
-	conf, err := config.Load(*configPath, *outputPath)
+	conf, err := config.Load(*configPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %v", err)
 	}

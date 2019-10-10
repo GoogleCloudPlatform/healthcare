@@ -7,11 +7,6 @@ def _impl(ctx):
         path = ctx.file.config.short_path,
     )
 
-    if ctx.file.generated_fields:
-        content += " --output_path {path}".format(
-            path = ctx.file.generated_fields.short_path,
-        )
-
     ctx.actions.write(
         content = content,
         output = ctx.outputs.executable,
@@ -23,10 +18,7 @@ def _impl(ctx):
         ctx.file._generated_fields_schema,
         ctx.file._project_config_schema,
         ctx.file.config,
-    ] + ctx.files.deps + ctx.files.imports
-
-    if ctx.file.generated_fields:
-        runfiles += [ctx.file.generated_fields]
+    ] + ctx.files.deps
 
     return [DefaultInfo(runfiles = ctx.runfiles(files = runfiles))]
 
@@ -40,16 +32,6 @@ _config_test = rule(
         "deps": attr.label_list(
             allow_files = True,
             doc = "Additional dependent configs, templates or generated fields file to import.",
-        ),
-        # TODO: remove after migrating everyone to deps.
-        "generated_fields": attr.label(
-            doc = "The generated fields yaml file to validate.",
-            allow_single_file = True,
-        ),
-        # TODO: remove after migrating everyone to deps.
-        "imports": attr.label_list(
-            allow_files = True,
-            doc = "Additional configs or templates to import.",
         ),
         "_config_loader": attr.label(
             default = Label("//cmd/load_config"),
@@ -85,8 +67,5 @@ def config_test(**kwargs):
     """
     if "deps" in kwargs and kwargs["deps"] == []:
         fail("`deps` is specified but resolved to no file. It might be because your glob() pattern contains typos.")
-
-    if "imports" in kwargs and kwargs["imports"] == []:
-        fail("`imports` is specified but resolved to no file. It might be because your glob() pattern contains typos.")
 
     _config_test(**kwargs)

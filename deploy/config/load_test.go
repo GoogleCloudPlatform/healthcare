@@ -49,6 +49,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "valid_config",
 			inputConf: []byte(`
+generated_fields_path: bar.yaml
 overall:
   billing_account: 000000-000000-000000
   organization_id: '12345678'
@@ -60,6 +61,7 @@ projects: []
 		{
 			name: "invalid_config",
 			inputConf: []byte(`
+generated_fields_path: bar.yaml
 overall:
   billing_account: 000000-000000-000000
   organization_id: '12345678'
@@ -101,11 +103,11 @@ func TestLoad(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := config.Load(tc.inputPath, "")
+			got, err := config.Load(tc.inputPath)
 			if err != nil {
 				t.Fatalf("config.Load = %v", err)
 			}
-			want, err := config.Load(tc.wantPath, "")
+			want, err := config.Load(tc.wantPath)
 			if err != nil {
 				t.Fatalf("config.Load = %v", err)
 			}
@@ -175,7 +177,7 @@ projects: []
 			if _, err := conf.Write(tc.inputConf); err != nil {
 				t.Fatalf("os.File.Write: %v", err)
 			}
-			if _, err := config.Load(conf.Name(), ""); (err != nil) != tc.wantErr {
+			if _, err := config.Load(conf.Name()); (err != nil) != tc.wantErr {
 				t.Fatalf("config.Load = error: %v; want error %t", err, tc.wantErr)
 			}
 		})
@@ -198,6 +200,7 @@ func TestPattern(t *testing.T) {
 
 	bfn := filepath.Join(dir, "b.yaml")
 	bc := []byte(`
+generated_fields_path: bar.yaml
 overall:
   billing_account: 000000-000000-000000
   organization_id: '12345678'
@@ -207,17 +210,11 @@ projects: []
 	if err := ioutil.WriteFile(bfn, bc, 0664); err != nil {
 		t.Fatalf("ioutil.WriteFile = %v", err)
 	}
-
-	// use different file extension so pattern doesn't parse it
-	gfn := filepath.Join(dir, "generated_fields.txt")
-	if _, err := os.Create(gfn); err != nil {
-		t.Fatalf("os.Create: %v", err)
-	}
-	got, err := config.Load(afn, gfn)
+	got, err := config.Load(afn)
 	if err != nil {
 		t.Fatalf("config.Load a.yaml = %v", err)
 	}
-	want, err := config.Load(bfn, gfn)
+	want, err := config.Load(bfn)
 	if err != nil {
 		t.Fatalf("config.Load b.yaml = %v", err)
 	}

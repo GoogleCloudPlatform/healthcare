@@ -15,7 +15,7 @@
 // Rule_generator provides a CLI to generate Forseti rules for the projects in the projects yaml file.
 //
 // Usage:
-//   $ bazel run :rule_generator -- --config_path=${CONFIG_PATH?} --generated_fields_path=${GENERATED_FIELDS_PATH} --output_path=${OUTPUT_PATH}
+//   $ bazel run :rule_generator -- --config_path=${CONFIG_PATH?} --output_path=${OUTPUT_PATH}
 package main
 
 import (
@@ -28,9 +28,8 @@ import (
 )
 
 var (
-	configPath          = flag.String("config_path", "", "Path to project config file")
-	generatedFieldsPath = flag.String("generated_fields_path", "", "Path to generated fields yaml file")
-	outputPath          = flag.String("output_path", "",
+	configPath = flag.String("config_path", "", "Path to project config file")
+	outputPath = flag.String("output_path", "",
 		"Path to local directory or GCS bucket to write forseti rules. "+
 			"If unset, directly writes to the Forseti server bucket")
 )
@@ -42,7 +41,7 @@ func main() {
 		log.Fatal("--config_path must be set")
 	}
 
-	conf, err := config.Load(*configPath, *generatedFieldsPath)
+	conf, err := config.Load(*configPath)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}

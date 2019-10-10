@@ -119,8 +119,9 @@ Use the `cmd/apply/apply.go` script to create or update an audit logs project
     update.
 
 1.  If the projects were deployed successfully, the script will write a YAML
-    with all generated fields in --output_path. These fields are used to
-    generate monitoring rules.
+    with all generated fields in the file specified in the project config using
+    the `generated_fields_path` attribute. These fields are used to generate
+    monitoring rules.
 
 ```shell
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
@@ -128,7 +129,6 @@ $ cd healthcare/deploy
 # git checkout a commit different from HEAD if necessary.
 $ bazel run cmd/apply:apply -- \
   --config_path=${CONFIG_PATH?} \
-  --output_path=${OUTPUT_PATH?} \
   --projects=${PROJECTS?}
 ```
 
@@ -207,8 +207,7 @@ To generate new rules for the Forseti instance, run the following command:
 
 ```shell
 $ bazel run cmd/rule_generator:rule_generator -- \
-  --config_path=${CONFIG_PATH?} \
-  --generated_fields_path=${OUTPUT_PATH?}
+  --config_path=${CONFIG_PATH?}
 ```
 
 By default, the rules will be written to the Forseti server bucket.
