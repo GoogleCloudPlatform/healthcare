@@ -292,10 +292,6 @@ func patternPaths(projectYAMLPath string, importsList []*importsItem) ([]string,
 
 // loadGeneratedFields loads and validates generated fields from yaml file at path.
 func loadGeneratedFields(path string) (*AllGeneratedFields, error) {
-	// Create an empty file (and parent directories, if any) if not exist.
-	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create directory: %v", err)
-	}
 	if _, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0666); err != nil {
 		return nil, fmt.Errorf("failed to create an empty generated fields file: %v\nnote: if you hit this error in a test, please create an empty generated fields file manually and add it as a test dependency", err)
 	}

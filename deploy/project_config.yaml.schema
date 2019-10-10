@@ -934,6 +934,13 @@ properties:
           type: string
           minLength: 2
 
+  generated_fields_path:
+    type: string
+    description: |
+      The path of file to store information generated during the deployment
+      process, such as project numbers and Forseti service account. Must be
+      relative to the directory of the config file containing this field.
+
   devops:
     type: object
     description: The devops configuration.
@@ -1010,10 +1017,3 @@ properties:
           type: string
           description: |
             Glob supported as defined in https://godoc.org/path/filepath#Glob.
-
-  generated_fields_path:
-    type: string
-    description: |
-      The path of file to store information generated during the deployment
-      process, such as project numbers and Forseti service account. Must be
-      relative to the directory holding the project config.

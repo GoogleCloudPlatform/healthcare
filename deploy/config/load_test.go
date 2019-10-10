@@ -141,7 +141,7 @@ func TestLoadGeneratedFields(t *testing.T) {
 			inputConf: []byte(`
 overall:
   billing_account: 000000-000000-000000
-generated_fields_path: a/b/c/generated_fields.yaml
+generated_fields_path: ./generated_fields.yaml
 projects: []
 `),
 			wantErr: false,
@@ -161,6 +161,16 @@ projects: []
 overall:
   billing_account: 000000-000000-000000
 generated_fields_path: /a/b/c/generated_fields.yaml
+projects: []
+`),
+			wantErr: true,
+		},
+		{
+			name: "missing_intermediate_dirs",
+			inputConf: []byte(`
+overall:
+  billing_account: 000000-000000-000000
+generated_fields_path: dne/generated_fields.yaml
 projects: []
 `),
 			wantErr: true,
