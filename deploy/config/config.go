@@ -109,6 +109,7 @@ type Project struct {
 
 	// Terraform resources
 	BigqueryDatasets     []*tfconfig.BigqueryDataset               `json:"bigquery_datasets"`
+	ComputeFirewalls     []*tfconfig.ComputeFirewall               `json:"compute_firewalls"`
 	ComputeImages        []*tfconfig.ComputeImage                  `json:"compute_images"`
 	ComputeInstances     []*tfconfig.ComputeInstance               `json:"compute_instances"`
 	HealthcareDatasets   []*tfconfig.HealthcareDataset             `json:"healthcare_datasets"`

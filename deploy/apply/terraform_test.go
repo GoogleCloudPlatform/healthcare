@@ -186,6 +186,28 @@ bigquery_datasets:
 			}},
 		},
 		{
+			name: "compute_firewall",
+			data: &testconf.ConfigData{`
+compute_firewalls:
+- name: foo-firewall
+  network: default
+  allow:
+    protocol: icmp
+`},
+			wantResources: `
+- google_compute_firewall:
+    foo-firewall:
+      name: foo-firewall
+      project: my-project
+      network: default
+      allow:
+        protocol: icmp`,
+			wantImports: []terraform.Import{{
+				Address: "google_compute_firewall.foo-firewall",
+				ID:      "my-project/foo-firewall",
+			}},
+		},
+		{
 			name: "compute_image",
 			data: &testconf.ConfigData{`
 compute_images:

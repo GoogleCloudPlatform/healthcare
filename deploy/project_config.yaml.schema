@@ -539,6 +539,14 @@ definitions:
         items:
           type: object
 
+      compute_firewalls:
+        type: array
+        description: |
+          DEV ONLY (TERRAFORM).
+          Supports google_compute_firewall (https://www.terraform.io/docs/providers/google/r/compute_firewall.html).
+        items:
+          type: object
+
       compute_images:
         type: array
         description: |

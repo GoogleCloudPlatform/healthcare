@@ -20,6 +20,63 @@ import (
 	"fmt"
 )
 
+// ComputeFirewall represents a Terraform GCE firewall.
+type ComputeFirewall struct {
+	Name    string `json:"name"`
+	Project string `json:"project"`
+
+	raw json.RawMessage
+}
+
+// Init initializes the resource.
+func (f *ComputeFirewall) Init(projectID string) error {
+	if f.Name == "" {
+		return errors.New("name must be set")
+	}
+	if f.Project != "" {
+		return fmt.Errorf("project must not be set: %q", f.Project)
+	}
+	f.Project = projectID
+	return nil
+}
+
+// ID returns the resource unique identifier.
+func (f *ComputeFirewall) ID() string {
+	return f.Name
+}
+
+// ResourceType returns the resource terraform provider type.
+func (*ComputeFirewall) ResourceType() string {
+	return "google_compute_firewall"
+}
+
+// ImportID returns the ID to use for terraform imports.
+func (f *ComputeFirewall) ImportID() (string, error) {
+	return fmt.Sprintf("%s/%s", f.Project, f.Name), nil
+}
+
+// aliasComputeFirewall is used to prevent infinite recursion when dealing with json marshaling.
+// https://stackoverflow.com/q/52433467
+type aliasComputeFirewall ComputeFirewall
+
+// UnmarshalJSON provides a custom JSON unmarshaller.
+// It is used to store the original (raw) user JSON definition,
+// which can have more fields than what is defined in this struct.
+func (f *ComputeFirewall) UnmarshalJSON(data []byte) error {
+	var alias aliasComputeImage
+	if err := unmarshalJSONMany(data, &alias, &alias.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal to parsed alias: %v", err)
+	}
+	*f = ComputeFirewall(alias)
+	return nil
+}
+
+// MarshalJSON provides a custom JSON marshaller.
+// It is used to merge the original (raw) user JSON definition with the struct.
+func (f *ComputeFirewall) MarshalJSON() ([]byte, error) {
+	return interfacePair{f.raw, aliasComputeFirewall(*f)}.MarshalJSON()
+}
+
 // ComputeImage represents a Terraform GCE compute image.
 type ComputeImage struct {
 	Name    string `json:"name"`
