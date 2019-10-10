@@ -148,7 +148,7 @@ func validate(inputYAML []byte, schemaPath string) error {
 	var sb strings.Builder
 	sb.WriteString("config has validation errors:")
 	for _, err := range result.Errors() {
-		sb.WriteString(fmt.Sprintf("\n- %v", err))
+		sb.WriteString(fmt.Sprintf("\n- %s: %s", err.Context().String(), err.Description()))
 	}
 	return errors.New(sb.String())
 }
