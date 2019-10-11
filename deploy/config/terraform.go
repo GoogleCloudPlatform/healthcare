@@ -37,6 +37,11 @@ func (p *Project) initTerraform(auditProject *Project) error {
 	for _, d := range p.BigqueryDatasets {
 		d.Accesses = append(d.Accesses, &tfconfig.Access{Role: "OWNER", GroupByEmail: p.OwnersGroup})
 	}
+	if p.Audit.LogsStorageBucket != nil {
+		for _, b := range p.StorageBuckets {
+			b.Logging = &tfconfig.Logging{LogBucket: p.Audit.LogsStorageBucket.Name}
+		}
+	}
 
 	for _, r := range p.TerraformResources() {
 		if err := r.Init(p.ID); err != nil {

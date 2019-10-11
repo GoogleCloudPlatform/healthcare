@@ -25,6 +25,7 @@ type StorageBucket struct {
 	Name       string     `json:"name"`
 	Project    string     `json:"project"`
 	Location   string     `json:"location"`
+	Logging    *Logging   `json:"logging,omitempty"`
 	Versioning versioning `json:"versioning,omitempty"`
 
 	DependsOn []string `json:"depends_on,omitempty"`
@@ -32,6 +33,11 @@ type StorageBucket struct {
 	IAMMembers []*StorageIAMMember `json:"_iam_members"`
 
 	raw json.RawMessage
+}
+
+// Logging is the bucket's Access & Storage Logs configuration.
+type Logging struct {
+	LogBucket string `json:"log_bucket"`
 }
 
 type versioning struct {

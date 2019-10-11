@@ -428,6 +428,8 @@ storage_buckets:
       name: foo-bucket
       project: my-project
       location: US
+      logging:
+        log_bucket: my-project-logs
       versioning:
         enabled: true
 - google_storage_bucket_iam_member:
