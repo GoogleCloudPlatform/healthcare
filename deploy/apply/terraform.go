@@ -39,7 +39,7 @@ func Terraform(conf *config.Config, projectIDs []string, opts *Options) error {
 	}
 
 	wantProject := func(p *config.Project) bool {
-		return len(projectIDs) == 0 || idSet[p.ID]
+		return p != nil && (len(projectIDs) == 0 || idSet[p.ID])
 	}
 
 	var baseProjects, dataProjects []*config.Project
@@ -62,10 +62,12 @@ func Terraform(conf *config.Config, projectIDs []string, opts *Options) error {
 		}
 	}
 
-	// Apply all base projects in a round-table fashion.
-	log.Println("Applying base projects")
-	if err := projects(conf, baseProjects, opts); err != nil {
-		return fmt.Errorf("failed to apply base projects: %v", err)
+	if len(baseProjects) > 0 {
+		// Apply all base projects in a round-robin fashion.
+		log.Println("Applying base projects")
+		if err := projects(conf, baseProjects, opts); err != nil {
+			return fmt.Errorf("failed to apply base projects: %v", err)
+		}
 	}
 
 	// Apply each data hosting project from beginning to end.
@@ -78,7 +80,7 @@ func Terraform(conf *config.Config, projectIDs []string, opts *Options) error {
 	return nil
 }
 
-// projects applies phases (one or more steps) to the given projects in a round-table fashion.
+// projects applies phases (one or more steps) to the given projects in a round-robin fashion.
 // The purpose behind the current process is to ensure dependencies between base projects are setup properly.
 func projects(conf *config.Config, projs []*config.Project, opts *Options) error {
 	for _, p := range projs {
