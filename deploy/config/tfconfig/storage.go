@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // StorageBucket represents a Terraform GCS bucket.
@@ -142,7 +144,7 @@ func (b *StorageBucket) DependentResources() []Resource {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (b *StorageBucket) ImportID() (string, error) {
+func (b *StorageBucket) ImportID(runner runner.Runner) (string, error) {
 	return fmt.Sprintf("%s/%s", b.Project, b.ID()), nil
 }
 

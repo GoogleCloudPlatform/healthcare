@@ -17,6 +17,8 @@ package tfconfig
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // ProjectIAMAuditConfig represents a terraform project iam audit config.
@@ -80,7 +82,7 @@ func (r *ProjectIAMCustomRole) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (r *ProjectIAMCustomRole) ImportID() (string, error) {
+func (r *ProjectIAMCustomRole) ImportID(runner runner.Runner) (string, error) {
 	return fmt.Sprintf("projects/%s/roles/%s", r.Project, r.RoleID), nil
 }
 

@@ -16,7 +16,6 @@ package apply
 
 import (
 	"encoding/json"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -30,12 +29,12 @@ func TestForsetiConfig(t *testing.T) {
 	conf, _ := testconf.ConfigAndProject(t, nil)
 
 	var gotTFConf *terraform.Config
-	terraformApply = func(config *terraform.Config, _ string, _ *terraform.Options) error {
+	terraformApply = func(config *terraform.Config, _ string, _ *terraform.Options, _ runner.Runner) error {
 		gotTFConf = config
 		return nil
 	}
 
-	if err := forsetiConfig(conf); err != nil {
+	if err := forsetiConfig(conf, &runner.FakeRunner{}); err != nil {
 		t.Fatalf("Forseti = %v", err)
 	}
 
@@ -82,20 +81,14 @@ func TestForsetiConfig(t *testing.T) {
 func TestGrantForsetiPermissions(t *testing.T) {
 	wantCmdCnt := 9
 	wantCmdPrefix := "gcloud projects add-iam-policy-binding project1 --member serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com --role roles/"
-	var got []string
-	origCmdRun := runner.CmdRun
-	defer func() { runner.CmdRun = origCmdRun }()
-	runner.CmdRun = func(cmd *exec.Cmd) error {
-		got = append(got, strings.Join(cmd.Args, " "))
-		return nil
-	}
-	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com"); err != nil {
+	r := &testRunner{}
+	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com", r); err != nil {
 		t.Fatalf("GrantForsetiPermissions = %v", err)
 	}
-	if len(got) != wantCmdCnt {
-		t.Fatalf("number of permissions granted differ: got %d, want %d", len(got), wantCmdCnt)
+	if len(r.called) != wantCmdCnt {
+		t.Fatalf("number of permissions granted differ: got %d, want %d", len(r.called), wantCmdCnt)
 	}
-	for _, cmd := range got {
+	for _, cmd := range r.called {
 		if !strings.HasPrefix(cmd, wantCmdPrefix) {
 			t.Fatalf("command %q does not contain expected prefix %q", cmd, wantCmdPrefix)
 		}

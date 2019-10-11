@@ -18,31 +18,36 @@ package terraform
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestApply(t *testing.T) {
-	var b []byte
-	origCmdRun := runner.CmdRun
-	defer func() { runner.CmdRun = origCmdRun }()
-	runner.CmdRun = func(cmd *exec.Cmd) error {
-		if cmd.Args[0] == "terraform" && len(b) == 0 {
-			var err error
-			b, err = ioutil.ReadFile(filepath.Join(cmd.Dir, "main.tf.json"))
-			if err != nil {
-				t.Fatalf("ioutil.ReadFile = %v", err)
-			}
-		}
-		return nil
-	}
+type testRunner struct {
+	gotConfig []byte
+}
 
+func (r *testRunner) CmdRun(cmd *exec.Cmd) error {
+	if cmd.Args[0] == "terraform" && len(r.gotConfig) == 0 {
+		var err error
+		r.gotConfig, err = ioutil.ReadFile(filepath.Join(cmd.Dir, "main.tf.json"))
+		if err != nil {
+			return fmt.Errorf("ioutil.ReadFile = %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *testRunner) CmdOutput(cmd *exec.Cmd) ([]byte, error) { return nil, nil }
+
+func (r *testRunner) CmdCombinedOutput(cmd *exec.Cmd) ([]byte, error) { return nil, nil }
+
+func TestApply(t *testing.T) {
 	conf := NewConfig()
 	conf.Terraform.Backend = &Backend{
 		Bucket: "foo-state",
@@ -63,7 +68,8 @@ func TestApply(t *testing.T) {
 		t.Fatalf("ioutil.TempDir: %v", err)
 	}
 	defer os.RemoveAll(dir)
-	if err := Apply(conf, dir, nil); err != nil {
+	r := &testRunner{}
+	if err := Apply(conf, dir, nil, r); err != nil {
 		t.Fatalf("Forseti = %v", err)
 	}
 
@@ -93,7 +99,7 @@ func TestApply(t *testing.T) {
 }`
 
 	var got, want interface{}
-	if err := json.Unmarshal(b, &got); err != nil {
+	if err := json.Unmarshal(r.gotConfig, &got); err != nil {
 		t.Fatalf("json.Unmarshal = %v", err)
 	}
 	if err := json.Unmarshal([]byte(wantConfig), &want); err != nil {

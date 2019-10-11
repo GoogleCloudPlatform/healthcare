@@ -77,7 +77,7 @@ func (*ResourceManagerLien) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (l *ResourceManagerLien) ImportID() (string, error) {
+func (l *ResourceManagerLien) ImportID(runner runner.Runner) (string, error) {
 	pid := strings.TrimPrefix(l.Parent, "projects/")
 	cmd := exec.Command("gcloud", "--project", pid, "alpha", "resource-manager", "liens", "list", "--format", "json")
 

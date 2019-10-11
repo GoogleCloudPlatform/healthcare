@@ -20,7 +20,6 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
@@ -89,27 +88,18 @@ resources:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			commander := &fakeCommander{
+			r := &testRunner{
 				listDeploymentName:    tc.listDeploymentName,
 				wantDeploymentCommand: tc.wantDeploymentCommand,
 			}
 
-			origCmdRun := runner.CmdRun
-			origCmdCombinedOutput := runner.CmdCombinedOutput
-			defer func() {
-				runner.CmdRun = origCmdRun
-				runner.CmdCombinedOutput = origCmdCombinedOutput
-			}()
-			runner.CmdRun = commander.Run
-			runner.CmdCombinedOutput = commander.CombinedOutput
-
-			if err := Upsert("foo-deployment", deployment, projID); err != nil {
+			if err := Upsert("foo-deployment", deployment, projID, r); err != nil {
 				t.Fatalf("createOrUpdateDeployment = %v", err)
 			}
 
 			got := make(map[string]interface{})
 			want := make(map[string]interface{})
-			if err := yaml.Unmarshal(commander.gotConfigFileContents, &got); err != nil {
+			if err := yaml.Unmarshal(r.gotConfigFileContents, &got); err != nil {
 				t.Fatalf("yaml.Unmarshal got config: %v", err)
 			}
 			if err := yaml.Unmarshal([]byte(wantDeploymentYAML), &want); err != nil {
@@ -123,31 +113,31 @@ resources:
 	}
 }
 
-// TODO: simplify this
-type fakeCommander struct {
+type testRunner struct {
 	listDeploymentName    string
 	wantDeploymentCommand []string
-
 	gotConfigFileContents []byte
 }
 
-func (c *fakeCommander) Run(cmd *exec.Cmd) error {
-	if !cmp.Equal(cmd.Args[:len(c.wantDeploymentCommand)], c.wantDeploymentCommand) {
+func (r *testRunner) CmdRun(cmd *exec.Cmd) error {
+	if !cmp.Equal(cmd.Args[:len(r.wantDeploymentCommand)], r.wantDeploymentCommand) {
 		return fmt.Errorf("fake cmdRun: unexpected args: %v", cmd.Args)
 	}
 	configFile := cmd.Args[len(cmd.Args)-1] // config file is the last file
 	var err error
-	c.gotConfigFileContents, err = ioutil.ReadFile(configFile)
+	r.gotConfigFileContents, err = ioutil.ReadFile(configFile)
 	if err != nil {
 		return fmt.Errorf("failed to read %q: %v", configFile, err)
 	}
 	return nil
 }
 
-func (c *fakeCommander) CombinedOutput(cmd *exec.Cmd) ([]byte, error) {
+func (r *testRunner) CmdOutput(cmd *exec.Cmd) ([]byte, error) { return nil, nil }
+
+func (r *testRunner) CmdCombinedOutput(cmd *exec.Cmd) ([]byte, error) {
 	listArgs := []string{"gcloud", "deployment-manager", "deployments", "list", "--format", "json"}
 	if cmp.Equal(cmd.Args[:len(listArgs)], listArgs) {
-		out := fmt.Sprintf(`[{"name": "%s"}]`, c.listDeploymentName)
+		out := fmt.Sprintf(`[{"name": "%s"}]`, r.listDeploymentName)
 		return []byte(out), nil
 	}
 	return nil, fmt.Errorf("fake cmdCombinedOutput: unexpected args: %v", cmd.Args)

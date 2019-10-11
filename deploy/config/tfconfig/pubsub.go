@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // PubsubTopic represents a Terraform pubsub topic.
@@ -61,7 +63,7 @@ func (t *PubsubTopic) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (t *PubsubTopic) ImportID() (string, error) {
+func (t *PubsubTopic) ImportID(runner runner.Runner) (string, error) {
 	return fmt.Sprintf("%s/%s", t.Project, t.Name), nil
 }
 
@@ -131,7 +133,7 @@ func (s *PubsubSubscription) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (s *PubsubSubscription) ImportID() (string, error) {
+func (s *PubsubSubscription) ImportID(runner runner.Runner) (string, error) {
 	return fmt.Sprintf("%s/%s", s.Project, s.Name), nil
 }
 

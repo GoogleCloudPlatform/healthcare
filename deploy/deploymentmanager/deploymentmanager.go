@@ -53,7 +53,7 @@ type Metadata struct {
 }
 
 // Upsert creates the deployment if it does not exist, else updates it.
-func Upsert(name string, deployment *Deployment, projectID string) error {
+func Upsert(name string, deployment *Deployment, projectID string, runner runner.Runner) error {
 	b, err := yaml.Marshal(deployment)
 	if err != nil {
 		return fmt.Errorf("failed to marshal deployment : %v", err)
@@ -73,7 +73,7 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 		return fmt.Errorf("failed to close temp file: %v", err)
 	}
 
-	exists, err := checkDeploymentExists(name, projectID)
+	exists, err := checkDeploymentExists(name, projectID, runner)
 	if err != nil {
 		return fmt.Errorf("failed to check if deployment exists: %v", err)
 	}
@@ -99,7 +99,7 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 }
 
 // checkDeploymentExists determines whether the deployment with the given name exists in the given project.
-func checkDeploymentExists(name, projectID string) (bool, error) {
+func checkDeploymentExists(name, projectID string, runner runner.Runner) (bool, error) {
 	type deploymentInfo struct {
 		Name string `json:"name"`
 	}

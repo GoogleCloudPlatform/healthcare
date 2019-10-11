@@ -17,6 +17,8 @@ package tfconfig
 import (
 	"errors"
 	"fmt"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // LoggingSink represents a logging sink.
@@ -45,7 +47,7 @@ func (*LoggingSink) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (s *LoggingSink) ImportID() (string, error) {
+func (s *LoggingSink) ImportID(runner runner.Runner) (string, error) {
 	return fmt.Sprintf("projects/%s/sinks/%s", s.Project, s.Name), nil
 }
 
@@ -97,6 +99,6 @@ func (m *LoggingMetric) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports
-func (m *LoggingMetric) ImportID() (string, error) {
+func (m *LoggingMetric) ImportID(runner runner.Runner) (string, error) {
 	return m.Name, nil
 }

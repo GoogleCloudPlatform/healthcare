@@ -24,11 +24,30 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ghodss/yaml"
 )
+
+type testRunner struct {
+	args []string
+}
+
+func (r *testRunner) CmdRun(cmd *exec.Cmd) error { return nil }
+
+func (r *testRunner) CmdOutput(cmd *exec.Cmd) ([]byte, error) { return nil, nil }
+
+func (r *testRunner) CmdCombinedOutput(cmd *exec.Cmd) ([]byte, error) {
+	if len(r.args) != 0 {
+		return nil, errors.New("fake CombinedOutput: unexpectedly called more than once")
+	}
+	r.args = cmd.Args
+	if len(r.args) != 4 {
+		return nil, fmt.Errorf("fake CombinedOutput: unexpected number of args: got %d, want 4, %v ", len(cmd.Args), cmd.Args)
+	}
+	checkRulesDir(&testing.T{}, filepath.Dir(r.args[2]))
+	return nil, nil
+}
 
 func TestRunOutputPath(t *testing.T) {
 	conf, _ := testconf.ConfigAndProject(t, nil)
@@ -38,7 +57,7 @@ func TestRunOutputPath(t *testing.T) {
 		t.Fatalf("ioutil.TempDir = %v", err)
 	}
 
-	if err := Run(conf, tmpDir); err != nil {
+	if err := Run(conf, tmpDir, &testRunner{}); err != nil {
 		t.Fatalf("Run = %v", err)
 	}
 
@@ -47,32 +66,15 @@ func TestRunOutputPath(t *testing.T) {
 
 func TestRunServerBucket(t *testing.T) {
 	conf, _ := testconf.ConfigAndProject(t, nil)
-
-	var gotArgs []string
-	origCmdCombinedOutput := runner.CmdCombinedOutput
-	defer func() { runner.CmdCombinedOutput = origCmdCombinedOutput }()
-	runner.CmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		if len(gotArgs) != 0 {
-			return nil, errors.New("fake CombinedOutput: unexpectedly called more than once")
-		}
-
-		gotArgs = cmd.Args
-		if len(gotArgs) != 4 {
-			return nil, fmt.Errorf("fake CombinedOutput: unexpected number of args: got %d, want 4, %v ", len(cmd.Args), cmd.Args)
-		}
-		checkRulesDir(t, filepath.Dir(gotArgs[2]))
-		return nil, nil
-	}
-	if err := Run(conf, ""); err != nil {
+	r := &testRunner{}
+	if err := Run(conf, "", r); err != nil {
 		t.Fatalf("Run = %v", err)
 	}
-
 	wantRE, err := regexp.Compile(`gsutil cp .*\*\.yaml gs://my-forseti-project-server/rules`)
 	if err != nil {
 		t.Fatalf("regexp.Compile = %v", err)
 	}
-	got := strings.Join(gotArgs, " ")
-	if !wantRE.MatchString(got) {
+	if got := strings.Join(r.args, " "); !wantRE.MatchString(got) {
 		t.Fatalf("rules upload command does not match: got %q, want match of %q", got, wantRE)
 	}
 }

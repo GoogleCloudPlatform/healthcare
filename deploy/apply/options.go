@@ -16,6 +16,8 @@
 
 package apply
 
+import "github.com/GoogleCloudPlatform/healthcare/deploy/runner"
+
 // Options configures an apply call.
 type Options struct {
 	// Toggle whether dry run mode is enabled.
@@ -23,4 +25,6 @@ type Options struct {
 	// Toggle whether existing resources will attempt to be imported.
 	// Used when migrating an existing project. Only needs to be done once.
 	ImportExisting bool
+	// The runner to use for the apply call.
+	Runner runner.Runner
 }

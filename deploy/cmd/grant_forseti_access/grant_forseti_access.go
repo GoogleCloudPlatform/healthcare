@@ -26,6 +26,7 @@ import (
 	"flag"
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/apply"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 var (
@@ -44,7 +45,7 @@ func main() {
 		log.Fatal("--forseti_service_account must be set")
 	}
 
-	if err := apply.GrantForsetiPermissions(*projectID, *forsetiServiceAccount); err != nil {
+	if err := apply.GrantForsetiPermissions(*projectID, *forsetiServiceAccount, &runner.DefaultRunner{}); err != nil {
 		log.Fatalf("failed to grant forseti permissions: %v", err)
 	}
 }

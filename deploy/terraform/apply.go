@@ -37,7 +37,7 @@ type Options struct {
 // All imports in opts.Imports will be imported prior being applied.
 // Thus, if a resource exists it will be imported to the terraform state.
 // Without importing an existing resource terraform can fail with an "ALREADY EXISTS" error when it tries to create it.
-func Apply(config *Config, dir string, opts *Options) error {
+func Apply(config *Config, dir string, opts *Options, runner runner.Runner) error {
 	if opts == nil {
 		opts = new(Options)
 	}
