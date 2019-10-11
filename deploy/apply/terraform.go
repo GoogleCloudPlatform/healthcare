@@ -108,7 +108,7 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options) error
 
 	for _, p := range projs {
 		log.Printf("Applying audit resources for %q", p.ID)
-		if err := auditResources(conf, p); err != nil {
+		if err := auditResources(conf, p, opts); err != nil {
 			return fmt.Errorf("failed to apply audit resources for %q: %v", p.ID, err)
 		}
 	}
@@ -230,7 +230,7 @@ func services(project *config.Project) error {
 	return nil
 }
 
-func auditResources(config *config.Config, project *config.Project) error {
+func auditResources(config *config.Config, project *config.Project, opts *Options) error {
 	auditProject := config.ProjectForAuditLogs(project)
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
@@ -260,9 +260,12 @@ func auditResources(config *config.Config, project *config.Project) error {
 	if err := addResources(tfConf, rs...); err != nil {
 		return err
 	}
-	opts := &terraform.Options{}
-	if err := addImports(opts, rs...); err != nil {
-		return err
+
+	tfOpts := &terraform.Options{}
+	if opts.ImportExisting {
+		if err := addImports(tfOpts, rs...); err != nil {
+			return err
+		}
 	}
 
 	dir, err := ioutil.TempDir("", "")
@@ -271,7 +274,7 @@ func auditResources(config *config.Config, project *config.Project) error {
 	}
 	defer os.RemoveAll(dir)
 
-	if err := terraformApply(tfConf, dir, opts); err != nil {
+	if err := terraformApply(tfConf, dir, tfOpts); err != nil {
 		return err
 	}
 

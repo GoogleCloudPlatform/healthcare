@@ -696,7 +696,7 @@ resource:
 		},
 	}}
 
-	if err := auditResources(config, project); err != nil {
+	if err := auditResources(config, project, &Options{ImportExisting: true}); err != nil {
 		t.Fatalf("auditResources: %v", err)
 	}
 
