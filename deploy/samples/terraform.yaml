@@ -15,7 +15,7 @@ devops:
       logs_bigquery_dataset:
         dataset_id: devops_audit_logs
         location: US
-    terraform:
+    devops:
       state_storage_bucket:
         name: foo-devops-state
         location: US
@@ -28,7 +28,7 @@ audit_logs_project:
     logs_bigquery_dataset:
       dataset_id: foo_audit_logs
       location: US
-  terraform:
+  devops:
     state_storage_bucket:
       name: foo-audit-state
       location: US
@@ -42,7 +42,7 @@ forseti:
       logs_bigquery_dataset:
         dataset_id: foo_forseti_logs
         location: US
-    terraform:
+    devops:
       state_storage_bucket:
         name: foo-forseti-state
         location: US
@@ -57,7 +57,7 @@ projects:
     logs_bigquery_dataset:
       dataset_id: data_audit_logs
       location: US
-  terraform:
+  devops:
     state_storage_bucket:
       name: foo-data-state
       location: US

@@ -168,12 +168,12 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 	}
 
 	tfConf := terraform.NewConfig()
-	if err := addResources(tfConf, pr, project.TerraformConfig.StateBucket); err != nil {
+	if err := addResources(tfConf, pr, project.DevopsConfig.StateBucket); err != nil {
 		return err
 	}
 	opts := &terraform.Options{}
 	// Since the project creation deployment is not linked to a remote state, always import the project and state bucket.
-	if err := addImports(opts, pr, project.TerraformConfig.StateBucket); err != nil {
+	if err := addImports(opts, pr, project.DevopsConfig.StateBucket); err != nil {
 		return err
 	}
 
@@ -209,7 +209,7 @@ func defaultTerraform(config *config.Config, project *config.Project, opts *Opti
 func services(project *config.Project) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
-		Bucket: project.TerraformConfig.StateBucket.Name,
+		Bucket: project.DevopsConfig.StateBucket.Name,
 		Prefix: "services",
 	}
 
@@ -234,7 +234,7 @@ func auditResources(config *config.Config, project *config.Project, opts *Option
 	auditProject := config.ProjectForAuditLogs(project)
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
-		Bucket: auditProject.TerraformConfig.StateBucket.Name,
+		Bucket: auditProject.DevopsConfig.StateBucket.Name,
 		// Attach project ID to prefix.
 		// This is because the audit project will contain an audit deployment for every project it holds audit logs for in its own state bucket.
 		// Attaching the prefix ensures we don't have a collision in names.
@@ -304,7 +304,7 @@ func resources(project *config.Project, opts *Options) error {
 	)
 
 	tfConf.Terraform.Backend = &terraform.Backend{
-		Bucket: project.TerraformConfig.StateBucket.Name,
+		Bucket: project.DevopsConfig.StateBucket.Name,
 		Prefix: "resources",
 	}
 

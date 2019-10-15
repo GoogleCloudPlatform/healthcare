@@ -92,7 +92,7 @@ func forsetiConfig(conf *config.Config) error {
 	}}
 
 	tfConf.Terraform.Backend = &terraform.Backend{
-		Bucket: conf.Forseti.Project.TerraformConfig.StateBucket.Name,
+		Bucket: conf.Forseti.Project.DevopsConfig.StateBucket.Name,
 		Prefix: "forseti",
 	}
 
@@ -115,16 +115,16 @@ func forsetiConfig(conf *config.Config) error {
 }
 
 func stateBucket(project *config.Project) error {
-	if project.TerraformConfig.StateBucket == nil {
+	if project.DevopsConfig.StateBucket == nil {
 		return errors.New("state_storage_bucket must not be nil")
 	}
 
 	tfConf := terraform.NewConfig()
-	if err := addResources(tfConf, project.TerraformConfig.StateBucket); err != nil {
+	if err := addResources(tfConf, project.DevopsConfig.StateBucket); err != nil {
 		return err
 	}
 	opts := &terraform.Options{}
-	if err := addImports(opts, project.TerraformConfig.StateBucket); err != nil {
+	if err := addImports(opts, project.DevopsConfig.StateBucket); err != nil {
 		return err
 	}
 

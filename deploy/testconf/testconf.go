@@ -43,7 +43,7 @@ forseti:
     project_id: my-forseti-project
     owners_group: my-forseti-project-owners@my-domain.com
     auditors_group: my-forseti-project-auditors@my-domain.com
-    terraform:
+    devops:
       state_storage_bucket:
         name: my-forseti-project-state
         location: US
@@ -78,7 +78,7 @@ projects:
   data_readonly_groups:
   - my-project-readonly@my-domain.com
   - another-readonly-group@googlegroups.com
-  terraform:
+  devops:
     state_storage_bucket:
       name: my-project-state
       location: US

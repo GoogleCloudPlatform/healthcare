@@ -76,9 +76,9 @@ type Project struct {
 	DataReadWriteGroups []string `json:"data_readwrite_groups"`
 	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
 
-	TerraformConfig struct {
+	DevopsConfig struct {
 		StateBucket *tfconfig.StorageBucket `json:"state_storage_bucket"`
-	} `json:"terraform"`
+	} `json:"devops"`
 
 	CreateDeletionLien    bool                `json:"create_deletion_lien"`
 	EnabledAPIs           []string            `json:"enabled_apis"`
@@ -289,14 +289,14 @@ func (p *Project) Init(devopsProject, auditLogsProject *Project) error {
 
 	// init the state bucket outside the regular terraform resoures since forseti projects will
 	// still define a state bucket even when not enabling terraform.
-	if sb := p.TerraformConfig.StateBucket; sb != nil {
+	if sb := p.DevopsConfig.StateBucket; sb != nil {
 		if err := sb.Init(devopsProject.ID); err != nil {
 			return fmt.Errorf("failed to init terraform state bucket: %v", err)
 		}
 	}
 
 	if EnableTerraform {
-		sb := p.TerraformConfig.StateBucket
+		sb := p.DevopsConfig.StateBucket
 		if sb == nil {
 			return errors.New("state_storage_bucket must be set when terraform is enabled")
 		}
