@@ -22,15 +22,17 @@ import (
 
 // StorageBucket represents a Terraform GCS bucket.
 type StorageBucket struct {
-	Name       string     `json:"name"`
-	Project    string     `json:"project"`
-	Location   string     `json:"location"`
-	Logging    *Logging   `json:"logging,omitempty"`
-	Versioning versioning `json:"versioning,omitempty"`
+	Name           string           `json:"name"`
+	Project        string           `json:"project"`
+	Location       string           `json:"location"`
+	LifecycleRules []*LifecycleRule `json:"lifecycle_rule,omitempty"`
+	Logging        *Logging         `json:"logging,omitempty"`
+	Versioning     versioning       `json:"versioning,omitempty"`
 
 	DependsOn []string `json:"depends_on,omitempty"`
 
 	IAMMembers []*StorageIAMMember `json:"_iam_members"`
+	TTLDays    int                 `json:"_ttl_days"`
 
 	raw json.RawMessage
 }
@@ -43,6 +45,45 @@ type Logging struct {
 type versioning struct {
 	// Use pointer to differentiate between zero value and intentionally being set to false.
 	Enabled *bool `json:"enabled"`
+}
+
+// LifecycleRule defines a partial bucket lifecycle rule implementation.
+type LifecycleRule struct {
+	Action    *action    `json:"action,omitempty"`
+	Condition *condition `json:"condition,omitempty"`
+
+	raw json.RawMessage
+}
+
+type action struct {
+	Type string `json:"type,omitempty"`
+}
+
+type condition struct {
+	Age       int    `json:"age,omitempty"`
+	WithState string `json:"with_state,omitempty"`
+}
+
+// aliasGCSBucket is used to prevent infinite recursion when dealing with json marshaling.
+// https://stackoverflow.com/q/52433467
+type aliasLifecycleRule LifecycleRule
+
+// UnmarshalJSON provides a custom JSON unmarshaller.
+// It is used to store the original (raw) user JSON definition,
+// which can have more fields than what is defined in this struct.
+func (r *LifecycleRule) UnmarshalJSON(data []byte) error {
+	var alias aliasLifecycleRule
+	if err := unmarshalJSONMany(data, &alias, &alias.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal to parsed alias: %v", err)
+	}
+	*r = LifecycleRule(alias)
+	return nil
+}
+
+// MarshalJSON provides a custom JSON marshaller.
+// It is used to merge the original (raw) user JSON definition with the struct.
+func (r *LifecycleRule) MarshalJSON() ([]byte, error) {
+	return interfacePair{r.raw, aliasLifecycleRule(*r)}.MarshalJSON()
 }
 
 // Init initializes the resource.
@@ -60,6 +101,13 @@ func (b *StorageBucket) Init(projectID string) error {
 	}
 	t := true
 	b.Versioning.Enabled = &t
+
+	if b.TTLDays > 0 {
+		b.LifecycleRules = append(b.LifecycleRules, &LifecycleRule{
+			Action:    &action{Type: "Delete"},
+			Condition: &condition{Age: b.TTLDays, WithState: "ANY"},
+		})
+	}
 	return nil
 }
 

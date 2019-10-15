@@ -419,15 +419,35 @@ monitoring_notification_channels:
 storage_buckets:
 - name: foo-bucket
   location: US
+  _ttl_days: 365
   _iam_members:
   - role: roles/storage.admin
-    member: user:foo-user@my-domain.com`},
+    member: user:foo-user@my-domain.com
+  lifecycle_rule:
+  - action:
+      type: SetStorageClass
+      storage_class: COLDLINE
+    condition:
+      age: 99
+      with_state: ANY`},
 			wantResources: `
 - google_storage_bucket:
     foo-bucket:
       name: foo-bucket
       project: my-project
       location: US
+      lifecycle_rule:
+      - action:
+          type: SetStorageClass
+          storage_class: COLDLINE
+        condition:
+          age: 99
+          with_state: ANY
+      - action:
+          type: Delete
+        condition:
+          age: 365
+          with_state: ANY
       logging:
         log_bucket: my-project-logs
       versioning:
