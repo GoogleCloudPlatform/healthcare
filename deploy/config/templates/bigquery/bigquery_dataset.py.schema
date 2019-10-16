@@ -44,7 +44,7 @@ properties:
     description: |
       An array of objects that define dataset access for one or more
       entities. You can set this property when inserting or updating
-      the dataset to control who is allowed to access the data. If not 
+      the dataset to control who is allowed to access the data. If not
       specified at the dataset creation time, BigQuery defines default
       dataset access for the following entities:
         access.specialGroup: projectReaders; access.role: READER
@@ -67,7 +67,7 @@ properties:
         - domain:
           type: string
           description: |
-            The domain to grant access to. All users signed in with the 
+            The domain to grant access to. All users signed in with the
             specified domain are granted the corresponding access.
             Example: "example.com".
         - userByEmail:
@@ -92,7 +92,7 @@ properties:
             A view from a different dataset to grant access to. Queries
             executed against that view have the Read access to tables in that
             dataset. The Role value is not required when this field is set. If
-            the view is updated, access to that view must be granted again 
+            the view is updated, access to that view must be granted again
             via an Update operation.
           properties:
             datasetId:
@@ -124,9 +124,9 @@ properties:
       The default lifetime of all tables in the dataset, in milliseconds. The
       minimum value is 3600000 milliseconds (one hour). Once this property is
       set, all newly-created tables in the dataset get their expirationTime
-      property set to the creation time plus the value of this property. 
+      property set to the creation time plus the value of this property.
       Changes to the value affect only new tables, not the existing ones. When
-      expirationTime for a given table is reached, that table is deleted 
+      expirationTime for a given table is reached, that table is deleted
       automatically. If a table's expirationTime is modified or
       removed before the table expires, or if you provide an explicit
       expirationTime while creating the table, that value takes precedence over

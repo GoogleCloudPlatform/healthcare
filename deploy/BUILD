@@ -2,7 +2,7 @@
 
 package(default_visibility = ["//visibility:public"])
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 load("@bazel_gazelle//:def.bzl", "gazelle")
 # gazelle:prefix github.com/GoogleCloudPlatform/healthcare/deploy
