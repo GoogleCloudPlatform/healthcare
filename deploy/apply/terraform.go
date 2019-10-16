@@ -108,7 +108,7 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options) error
 
 	for _, p := range projs {
 		log.Printf("Applying audit resources for %q", p.ID)
-		if err := auditResources(conf, p, opts); err != nil {
+		if err := auditResources(p, opts); err != nil {
 			return fmt.Errorf("failed to apply audit resources for %q: %v", p.ID, err)
 		}
 	}
@@ -230,15 +230,11 @@ func services(project *config.Project) error {
 	return nil
 }
 
-func auditResources(config *config.Config, project *config.Project, opts *Options) error {
-	auditProject := config.ProjectForAuditLogs(project)
+func auditResources(project *config.Project, opts *Options) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
-		Bucket: auditProject.DevopsConfig.StateBucket.Name,
-		// Attach project ID to prefix.
-		// This is because the audit project will contain an audit deployment for every project it holds audit logs for in its own state bucket.
-		// Attaching the prefix ensures we don't have a collision in names.
-		Prefix: "audit-" + project.ID,
+		Bucket: project.DevopsConfig.StateBucket.Name,
+		Prefix: "audit",
 	}
 
 	d := project.Audit.LogsBigqueryDataset

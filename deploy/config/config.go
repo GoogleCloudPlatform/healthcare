@@ -293,6 +293,11 @@ func (p *Project) Init(devopsProject, auditLogsProject *Project) error {
 		if err := sb.Init(devopsProject.ID); err != nil {
 			return fmt.Errorf("failed to init terraform state bucket: %v", err)
 		}
+		// TODO: Uncomment this once we can support importing iam members, else this resource will always be created.
+		// sb.IAMMembers = append(sb.IAMMembers, &tfconfig.StorageIAMMember{
+		// 	Role:   "roles/storage.admin",
+		// 	Member: "group:" + p.OwnersGroup,
+		// })
 	}
 
 	if EnableTerraform {

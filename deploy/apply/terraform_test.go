@@ -649,7 +649,7 @@ resource:
 }
 
 func TestAuditResources(t *testing.T) {
-	config, project := testconf.ConfigAndProject(t, nil)
+	_, project := testconf.ConfigAndProject(t, nil)
 
 	var got []applyCall
 	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
@@ -664,7 +664,7 @@ terraform:
   backend:
     gcs:
       bucket: my-project-state
-      prefix: audit-my-project
+      prefix: audit
 resource:
 - google_logging_project_sink:
     audit-logs-to-bigquery:
@@ -716,7 +716,7 @@ resource:
 		},
 	}}
 
-	if err := auditResources(config, project, &Options{ImportExisting: true}); err != nil {
+	if err := auditResources(project, &Options{ImportExisting: true}); err != nil {
 		t.Fatalf("auditResources: %v", err)
 	}
 
