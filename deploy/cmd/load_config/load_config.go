@@ -47,4 +47,9 @@ func main() {
 		log.Fatalf("failed to marshal config: %v", err)
 	}
 	log.Printf("Successfully loaded config:\n%s", string(b))
+	b, err = yaml.Marshal(c.AllGeneratedFields)
+	if err != nil {
+		log.Fatalf("failed to marshal generated fields: %v", err)
+	}
+	log.Printf("Successfully loaded generated fields:\n%s", string(b))
 }
