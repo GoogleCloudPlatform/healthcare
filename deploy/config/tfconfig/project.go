@@ -16,6 +16,8 @@ package tfconfig
 
 import (
 	"encoding/json"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // ProjectResource represents a Terraform project resource.
@@ -50,7 +52,7 @@ func (p *ProjectResource) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (p *ProjectResource) ImportID() (string, error) {
+func (p *ProjectResource) ImportID(runner.Runner) (string, error) {
 	return p.ProjectID, nil
 }
 

@@ -25,6 +25,7 @@ import (
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/rulegen"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 var (
@@ -46,7 +47,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	if err := rulegen.Run(conf, *outputPath); err != nil {
+	if err := rulegen.Run(conf, *outputPath, &runner.Default{}); err != nil {
 		log.Fatal(err)
 	}
 

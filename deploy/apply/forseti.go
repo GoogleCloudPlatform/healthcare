@@ -46,24 +46,24 @@ var forsetiStandardRoles = [...]string{
 }
 
 // Forseti applies project configuration to a Forseti project.
-func Forseti(conf *config.Config, opts *Options) error {
+func Forseti(conf *config.Config, rn runner.Runner) error {
 	project := conf.Forseti.Project
-	if err := Default(conf, project, opts); err != nil {
+	if err := Default(conf, project, rn); err != nil {
 		return err
 	}
 
 	// Always deploy state bucket, otherwise a forseti installation that failed half way through
 	// will be left in a partial state and every following attempt will install a fresh instance.
 	// TODO: once terraform is launched and default just let the Default take care of deploying the state bucket and remove this block.
-	if err := stateBucket(project); err != nil {
+	if err := stateBucket(project, rn); err != nil {
 		return fmt.Errorf("failed to deploy terraform state: %v", err)
 	}
 
-	if err := forsetiConfig(conf); err != nil {
+	if err := forsetiConfig(conf, rn); err != nil {
 		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
 
-	if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
+	if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, rn); err != nil {
 		return err
 	}
 	return nil
@@ -71,7 +71,7 @@ func Forseti(conf *config.Config, opts *Options) error {
 
 // forsetiConfig applies the forseti config, if it exists. It does not configure
 // other settings such as billing account, deletion lien, etc.
-func forsetiConfig(conf *config.Config) error {
+func forsetiConfig(conf *config.Config, rn runner.Runner) error {
 	if conf.Forseti == nil {
 		log.Println("no forseti config, nothing to do")
 		return nil
@@ -96,17 +96,17 @@ func forsetiConfig(conf *config.Config) error {
 		Prefix: "forseti",
 	}
 
-	if err := terraformApply(tfConf, dir, nil); err != nil {
+	if err := terraformApply(tfConf, dir, nil, rn); err != nil {
 		return err
 	}
 
-	serviceAccount, err := forsetiServerServiceAccount(project.ID)
+	serviceAccount, err := forsetiServerServiceAccount(project.ID, rn)
 	if err != nil {
 		return fmt.Errorf("failed to set Forseti server service account: %v", err)
 	}
 	conf.AllGeneratedFields.Forseti.ServiceAccount = serviceAccount
 
-	serverBucket, err := forsetiServerBucket(project.ID)
+	serverBucket, err := forsetiServerBucket(project.ID, rn)
 	if err != nil {
 		return fmt.Errorf("failed to set Forseti server bucket: %v", err)
 	}
@@ -114,7 +114,7 @@ func forsetiConfig(conf *config.Config) error {
 	return nil
 }
 
-func stateBucket(project *config.Project) error {
+func stateBucket(project *config.Project, rn runner.Runner) error {
 	if project.DevopsConfig.StateBucket == nil {
 		return errors.New("state_storage_bucket must not be nil")
 	}
@@ -124,7 +124,7 @@ func stateBucket(project *config.Project) error {
 		return err
 	}
 	opts := &terraform.Options{}
-	if err := addImports(opts, project.DevopsConfig.StateBucket); err != nil {
+	if err := addImports(opts, rn, project.DevopsConfig.StateBucket); err != nil {
 		return err
 	}
 
@@ -134,19 +134,19 @@ func stateBucket(project *config.Project) error {
 	}
 	defer os.RemoveAll(dir)
 
-	return terraformApply(tfConf, dir, opts)
+	return terraformApply(tfConf, dir, opts, rn)
 }
 
 // forsetiServerServiceAccount gets the server instance service account of the give Forseti project.
 // TODO: Use Terraform state or output.
-func forsetiServerServiceAccount(projectID string) (string, error) {
+func forsetiServerServiceAccount(projectID string, rn runner.Runner) (string, error) {
 	cmd := exec.Command(
 		"gcloud", "--project", projectID,
 		"iam", "service-accounts", "list", "--format", "json",
 		"--filter", "email:forseti-server-gcp-*",
 	)
 
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to obtain Forseti server service account: %v", err)
 	}
@@ -168,10 +168,10 @@ func forsetiServerServiceAccount(projectID string) (string, error) {
 
 // forsetiServerBucket gets the bucket holding the Forseti server instance's configuration.
 // TODO: Use Terraform state or output.
-func forsetiServerBucket(projectID string) (string, error) {
+func forsetiServerBucket(projectID string, rn runner.Runner) (string, error) {
 	cmd := exec.Command("gsutil", "ls", "-p", projectID)
 
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to obtain Forseti server bucket: %v", err)
 	}
@@ -192,9 +192,9 @@ func forsetiServerBucket(projectID string) (string, error) {
 
 // GrantForsetiPermissions grants all necessary permissions to the given Forseti service account in the project.
 // TODO: Use Terraform to deploy these.
-func GrantForsetiPermissions(projectID, serviceAccount string) error {
+func GrantForsetiPermissions(projectID, serviceAccount string, rn runner.Runner) error {
 	for _, r := range forsetiStandardRoles {
-		if err := addBinding(projectID, serviceAccount, r); err != nil {
+		if err := addBinding(projectID, serviceAccount, r, rn); err != nil {
 			return fmt.Errorf("failed to grant all necessary permissions to Forseti service account %q in project %q: %v", serviceAccount, projectID, err)
 		}
 	}

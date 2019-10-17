@@ -128,34 +128,43 @@ var resourcesImports = []terraform.Import{
 	{Address: "google_logging_metric.iam-policy-change-count", ID: "iam-policy-change-count"},
 }
 
-// TODO: Add integration test
-func TestResources(t *testing.T) {
-	config.EnableTerraform = true
-	runner.StubFakeCmds()
+type tfTestRunner struct{}
 
-	origCmdOutput := runner.CmdOutput
-	defer func() {
-		runner.CmdOutput = origCmdOutput
-	}()
+func (*tfTestRunner) CmdRun(*exec.Cmd) error { return nil }
 
-	runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		args := strings.Join(cmd.Args, " ")
-		switch {
-		case strings.Contains(args, "resource-manager liens list"):
-			return []byte(`[{"name": "p1111-l2222", "restrictions": ["resourcemanager.projects.delete"]}]`), nil
-		case strings.Contains(args, "monitoring channels list"):
-			return []byte(`[{"displayName": "Email", "name": "projects/my-project/notificationChannels/111"}]`), nil
-		case strings.Contains(args, "monitoring policies list"):
-			// Intentionally omit "IAM Policy Change Alert" to validate it doesn't try to be imported.
-			return []byte(`[
+func (*tfTestRunner) CmdOutput(cmd *exec.Cmd) ([]byte, error) {
+	const logSinkJSON = `{
+			"createTime": "2019-04-15T20:00:16.734389353Z",
+			"destination": "bigquery.googleapis.com/projects/my-project/datasets/audit_logs",
+			"filter": "logName:\"logs/cloudaudit.googleapis.com\"",
+			"name": "audit-logs-to-bigquery",
+			"outputVersionFormat": "V2",
+			"updateTime": "2019-04-15T20:00:16.734389353Z",
+			"writerIdentity": "serviceAccount:p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
+		}`
+	switch cmdStr := strings.Join(cmd.Args, " "); {
+	case contains(cmdStr, "logging sinks describe audit-logs-to-bigquery", "--format json"):
+		return []byte(logSinkJSON), nil
+	case strings.Contains(cmdStr, "resource-manager liens list"):
+		return []byte(`[{"name": "p1111-l2222", "restrictions": ["resourcemanager.projects.delete"]}]`), nil
+	case strings.Contains(cmdStr, "monitoring channels list"):
+		return []byte(`[{"displayName": "Email", "name": "projects/my-project/notificationChannels/111"}]`), nil
+	case strings.Contains(cmdStr, "monitoring policies list"):
+		// Intentionally omit "IAM Policy Change Alert" to validate it doesn't try to be imported.
+		return []byte(`[
   {"displayName": "Bigquery Update Alert", "name": "projects/my-project/alertPolicies/222"},
   {"displayName": "Bucket Permission Change Alert", "name": "projects/my-project/alertPolicies/333"}
 ]`), nil
-		default:
-			return origCmdOutput(cmd)
-		}
+	default:
+		return nil, nil
 	}
+}
 
+func (*tfTestRunner) CmdCombinedOutput(*exec.Cmd) ([]byte, error) { return nil, nil }
+
+// TODO: Add integration test
+func TestResources(t *testing.T) {
+	config.EnableTerraform = true
 	tests := []struct {
 		name          string
 		data          *testconf.ConfigData
@@ -582,12 +591,12 @@ service_accounts:
 			_, project := testconf.ConfigAndProject(t, tc.data)
 
 			var got []applyCall
-			terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+			terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options, _ runner.Runner) error {
 				got = append(got, makeApplyCall(t, config, opts))
 				return nil
 			}
 
-			if err := resources(project, &Options{ImportExisting: true}); err != nil {
+			if err := resources(project, &Options{ImportExisting: true}, &tfTestRunner{}); err != nil {
 				t.Fatalf("deployTerraform: %v", err)
 			}
 
@@ -607,7 +616,7 @@ func TestCreateProject(t *testing.T) {
 	config, project := testconf.ConfigAndProject(t, nil)
 
 	var got []applyCall
-	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options, _ runner.Runner) error {
 		got = append(got, makeApplyCall(t, config, opts))
 		return nil
 	}
@@ -639,7 +648,7 @@ resource:
 		},
 	}}
 
-	if err := createProjectTerraform(config, project); err != nil {
+	if err := createProjectTerraform(config, project, &tfTestRunner{}); err != nil {
 		t.Fatalf("createProjectTerraform: %v", err)
 	}
 
@@ -652,7 +661,7 @@ func TestAuditResources(t *testing.T) {
 	_, project := testconf.ConfigAndProject(t, nil)
 
 	var got []applyCall
-	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options, _ runner.Runner) error {
 		got = append(got, makeApplyCall(t, config, opts))
 		return nil
 	}
@@ -716,7 +725,7 @@ resource:
 		},
 	}}
 
-	if err := auditResources(project, &Options{ImportExisting: true}); err != nil {
+	if err := auditResources(project, &Options{ImportExisting: true}, &tfTestRunner{}); err != nil {
 		t.Fatalf("auditResources: %v", err)
 	}
 
@@ -729,7 +738,7 @@ func TestServices(t *testing.T) {
 	_, project := testconf.ConfigAndProject(t, nil)
 
 	var got []applyCall
-	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options) error {
+	terraformApply = func(config *terraform.Config, _ string, opts *terraform.Options, _ runner.Runner) error {
 		got = append(got, makeApplyCall(t, config, opts))
 		return nil
 	}
@@ -754,7 +763,7 @@ resource:
       service: ${each.key}`),
 	}}
 
-	if err := services(project); err != nil {
+	if err := services(project, &tfTestRunner{}); err != nil {
 		t.Fatalf("services: %v", err)
 	}
 

@@ -27,9 +27,9 @@ import (
 )
 
 // deployGKEWorkloads deploys the GKE resources (e.g., workloads, services) in the project.
-func deployGKEWorkloads(project *config.Project) error {
+func deployGKEWorkloads(project *config.Project, rn runner.Runner) error {
 	for _, w := range project.Resources.GKEWorkloads {
-		if err := installClusterWorkload(w.ClusterName, project, w.Properties); err != nil {
+		if err := installClusterWorkload(w.ClusterName, project, w.Properties, rn); err != nil {
 			return fmt.Errorf("failed to deploy workload: %v", err)
 		}
 	}
@@ -55,7 +55,7 @@ func interfaceToJSONFile(f *os.File, data interface{}) error {
 
 // installClusterWorkload creates and updates (when it exists) not only workloads
 // but also all resources supported by "kubectl apply -f". Data comes from a GKEWorkload struct.
-func installClusterWorkload(clusterName string, project *config.Project, workload interface{}) error {
+func installClusterWorkload(clusterName string, project *config.Project, workload interface{}, rn runner.Runner) error {
 	tmp, err := ioutil.TempFile("", "")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %v", err)
@@ -66,10 +66,10 @@ func installClusterWorkload(clusterName string, project *config.Project, workloa
 		return fmt.Errorf("failed to create write workload file: %v", err)
 	}
 
-	return installClusterWorkloadFromFile(clusterName, tmp.Name(), project)
+	return installClusterWorkloadFromFile(clusterName, tmp.Name(), project, rn)
 }
 
-func importBinauthz(projectID string, binauthz *config.BinAuthz) error {
+func importBinauthz(projectID string, binauthz *config.BinAuthz, rn runner.Runner) error {
 	if binauthz == nil {
 		return nil
 	}
@@ -84,12 +84,12 @@ func importBinauthz(projectID string, binauthz *config.BinAuthz) error {
 		return fmt.Errorf("failed to create write policy file: %v", err)
 	}
 
-	return configBinauthzPolicy(tmp.Name(), projectID)
+	return configBinauthzPolicy(tmp.Name(), projectID, rn)
 }
 
 // installClusterWorkloadFromFile creates and updates (when it exists) not only workloads
 // but also all resources supported by "kubectl apply -f".
-func installClusterWorkloadFromFile(clusterName, containerYamlPath string, project *config.Project) error {
+func installClusterWorkloadFromFile(clusterName, containerYamlPath string, project *config.Project, rn runner.Runner) error {
 	cluster := getClusterByName(project, clusterName)
 	if cluster == nil {
 		return fmt.Errorf("failed to find cluster: %q", clusterName)
@@ -98,10 +98,10 @@ func installClusterWorkloadFromFile(clusterName, containerYamlPath string, proje
 	if err != nil {
 		return err
 	}
-	if err := getGCloudCredentials(clusterName, locationType, locationValue, project.ID); err != nil {
+	if err := getGCloudCredentials(clusterName, locationType, locationValue, project.ID, rn); err != nil {
 		return err
 	}
-	if err := applyClusterWorkload(containerYamlPath); err != nil {
+	if err := applyClusterWorkload(containerYamlPath, rn); err != nil {
 		return err
 	}
 	return nil
@@ -134,29 +134,29 @@ func getLocationTypeAndValue(cluster *config.GKECluster) (string, string, error)
 	}
 }
 
-func getGCloudCredentials(clusterName, locationType, locationValue, projectID string) error {
+func getGCloudCredentials(clusterName, locationType, locationValue, projectID string, rn runner.Runner) error {
 	cmd := exec.Command("gcloud", "container", "clusters", "get-credentials", clusterName, locationType, locationValue, "--project", projectID)
-	if err := runner.CmdRun(cmd); err != nil {
+	if err := rn.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to get cluster credentials for %q: %v", clusterName, err)
 	}
 	return nil
 }
 
-func applyClusterWorkload(containerYamlPath string) error {
+func applyClusterWorkload(containerYamlPath string, rn runner.Runner) error {
 	// kubectl declarative object configuration
 	// https://kubernetes.io/docs/concepts/overview/object-management-kubectl/overview/
 	cmd := exec.Command("kubectl", "apply", "-f", containerYamlPath)
-	if err := runner.CmdRun(cmd); err != nil {
+	if err := rn.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to apply workloads with kubectl: %s", err)
 	}
 	return nil
 }
 
-func configBinauthzPolicy(policyYamlPath, projectID string) error {
+func configBinauthzPolicy(policyYamlPath, projectID string, rn runner.Runner) error {
 	// binaryauthorization.googleapis.com must be enabled
 	// https://cloud.google.com/binary-authorization/docs/quickstart
 	cmd := exec.Command("gcloud", "beta", "container", "binauthz", "policy", "import", policyYamlPath, "--project", projectID)
-	if err := runner.CmdRun(cmd); err != nil {
+	if err := rn.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to import policy for %q: %v", projectID, err)
 	}
 	return nil

@@ -49,7 +49,6 @@ go_test(
     # Override default run dir to make it easier to find test files.
     rundir = ".",
     deps = [
-        "//runner:go_default_library",
         "//testconf:go_default_library",
         "@com_github_google_cmp//cmp:go_default_library",
         "@in_ghodss_yaml//:go_default_library",

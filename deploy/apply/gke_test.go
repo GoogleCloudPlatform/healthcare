@@ -15,12 +15,10 @@
 package apply
 
 import (
-	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/testconf"
 	"github.com/google/go-cmp/cmp"
 )
@@ -29,38 +27,30 @@ func TestGetGCloudCredentials(t *testing.T) {
 	region := "foo-center"
 	clusterName := "bar-cluster"
 	projectID := "foo-project"
-	var gotArgs [][]string
-	origCmdRun := runner.CmdRun
-	defer func() { runner.CmdRun = origCmdRun }()
-	runner.CmdRun = func(cmd *exec.Cmd) error {
-		gotArgs = append(gotArgs, cmd.Args)
-		return nil
-	}
-	wantArgs := [][]string{{
-		"gcloud", "container", "clusters", "get-credentials", clusterName, "--region", region, "--project", projectID}}
-	if err := getGCloudCredentials(clusterName, "--region", region, projectID); err != nil {
+	wantCmd := strings.Join([]string{"gcloud", "container", "clusters", "get-credentials", clusterName, "--region", region, "--project", projectID}, " ")
+	r := &testRunner{}
+	if err := getGCloudCredentials(clusterName, "--region", region, projectID, r); err != nil {
 		t.Fatalf("getGCloudCredentials error: %v", err)
 	}
-	if diff := cmp.Diff(gotArgs, wantArgs); len(diff) != 0 {
+	if len(r.called) != 1 {
+		t.Fatalf("getGCloudCredentials did not run correct number of commands: got %d, want 1", len(r.called))
+	}
+	if diff := cmp.Diff(r.called[0], wantCmd); len(diff) != 0 {
 		t.Fatalf("getGCloudCredentials commands differ: (-got, +want)\n:%v", diff)
 	}
 }
 
 func TestApplyClusterResource(t *testing.T) {
 	containerYamlPath := "foo/bar/abc.yaml"
-	var gotArgs [][]string
-	origCmdRun := runner.CmdRun
-	defer func() { runner.CmdRun = origCmdRun }()
-	runner.CmdRun = func(cmd *exec.Cmd) error {
-		gotArgs = append(gotArgs, cmd.Args)
-		return nil
-	}
-	wantArgs := [][]string{{
-		"kubectl", "apply", "-f", containerYamlPath}}
-	if err := applyClusterWorkload(containerYamlPath); err != nil {
+	wantCmd := strings.Join([]string{"kubectl", "apply", "-f", containerYamlPath}, " ")
+	r := &testRunner{}
+	if err := applyClusterWorkload(containerYamlPath, r); err != nil {
 		t.Fatalf("applyClusterWorkload error: %v", err)
 	}
-	if diff := cmp.Diff(gotArgs, wantArgs); len(diff) != 0 {
+	if len(r.called) != 1 {
+		t.Fatalf("applyClusterWorkload did not run correct number of commands: got %d, want 1", len(r.called))
+	}
+	if diff := cmp.Diff(r.called[0], wantCmd); len(diff) != 0 {
 		t.Fatalf("applyClusterWorkload commands differ: (-got, +want)\n:%v", diff)
 	}
 }
@@ -121,31 +111,24 @@ resources:
       apiVersion: extensions/v1beta1`,
 	}
 
-	wantArgs := [][]string{
-		{"gcloud", "container", "clusters", "get-credentials", "cluster1", "--region", "somewhere1", "--project", "my-project"},
-		{"kubectl", "apply", "-f"},
+	wantCmds := []string{
+		"gcloud container clusters get-credentials cluster1 --region somewhere1 --project my-project",
+		"kubectl apply -f",
 	}
 
 	_, project := testconf.ConfigAndProject(t, configExtend)
-	var gotArgs [][]string
-	origCmdRun := runner.CmdRun
-	defer func() { runner.CmdRun = origCmdRun }()
-	runner.CmdRun = func(cmd *exec.Cmd) error {
-		gotArgs = append(gotArgs, cmd.Args)
-		return nil
-	}
-	err := deployGKEWorkloads(project)
-	if err != nil {
+	r := &testRunner{}
+	if err := deployGKEWorkloads(project, r); err != nil {
 		t.Fatalf("deployGKEWorkloads error: %v", err)
 	}
-	if len(gotArgs) != 2 {
-		t.Fatalf("deployGKEWorkloads does not run correct number of commands: %d", len(gotArgs))
+	if len(r.called) != 2 {
+		t.Fatalf("deployGKEWorkloads does not run correct number of commands: got %d, want 2", len(r.called))
 	}
-	if diff := cmp.Diff(gotArgs[0], wantArgs[0]); len(diff) != 0 {
-		t.Fatalf("get-credentials cmd error: %v", gotArgs[0])
+	if diff := cmp.Diff(r.called[0], wantCmds[0]); len(diff) != 0 {
+		t.Fatalf("credentials commands differ: (-got, +want)\n:%v", diff)
 	}
-	if diff := cmp.Diff(gotArgs[1][:3], wantArgs[1]); len(diff) != 0 {
-		t.Fatalf("kubectl cmd error: %v", gotArgs[1])
+	if !strings.Contains(r.called[1], wantCmds[1]) {
+		t.Fatalf("kubectl commands differ: got %q, want contains %q", r.called[1], wantCmds[1])
 	}
 }
 
@@ -233,15 +216,7 @@ resources:
 
 	for _, tc := range testcases {
 		_, project := testconf.ConfigAndProject(t, &tc.in)
-		var gotArgs [][]string
-		origCmdRun := runner.CmdRun
-		defer func() { runner.CmdRun = origCmdRun }()
-		runner.CmdRun = func(cmd *exec.Cmd) error {
-			gotArgs = append(gotArgs, cmd.Args)
-			return nil
-		}
-
-		err := deployGKEWorkloads(project)
+		err := deployGKEWorkloads(project, &testRunner{})
 		if err == nil || !strings.Contains(err.Error(), tc.err) {
 			t.Errorf("deployGKEWorkloads unexpected error: got %q, want error with substring %q", err, tc.err)
 		}
@@ -253,32 +228,22 @@ func TestImportBinaryAuthorizationPolicy(t *testing.T) {
 binauthz:
   properties: {}`}
 
-	wantArgs := [][]string{
-		{"gcloud", "beta", "container", "binauthz", "policy", "import", "foo.json", "--project", "my-project"},
-	}
+	wantArgSegs := []string{"gcloud beta container binauthz policy import", "--project my-project"}
 
 	_, project := testconf.ConfigAndProject(t, configExtend)
-	var gotArgs [][]string
-	origCmdRun := runner.CmdRun
-	defer func() { runner.CmdRun = origCmdRun }()
-	runner.CmdRun = func(cmd *exec.Cmd) error {
-		gotArgs = append(gotArgs, cmd.Args)
-		return nil
-	}
 	if project.BinauthzPolicy == nil {
 		return
 	}
-
-	if err := importBinauthz(project.ID, project.BinauthzPolicy); err != nil {
+	r := &testRunner{}
+	if err := importBinauthz(project.ID, project.BinauthzPolicy, r); err != nil {
 		t.Fatalf("importBinauthz error: %v", err)
 	}
-	if len(gotArgs) != 1 {
-		t.Fatalf("importBinauthz does not run correct number of commands: %d", len(gotArgs))
+	if len(r.called) != 1 {
+		t.Fatalf("importBinauthz does not run correct number of commands: got %d, want 1", len(r.called))
 	}
-	if diff := cmp.Diff(gotArgs[0][:6], wantArgs[0][:6]); diff != "" {
-		t.Fatalf("binauthz cmd error between index 0 and 5: %v", gotArgs[0])
-	}
-	if diff := cmp.Diff(gotArgs[0][7:9], wantArgs[0][7:9]); diff != "" {
-		t.Fatalf("binauthz cmd error between index 7 and 8: %v", gotArgs[0])
+	for _, s := range wantArgSegs {
+		if !strings.Contains(r.called[0], s) {
+			t.Errorf("binauthz commands does not contain wanted args: got %q, want %q", r.called[0], s)
+		}
 	}
 }

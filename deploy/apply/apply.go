@@ -74,45 +74,45 @@ type depender interface {
 }
 
 // Default applies project configurations to a default project.
-func Default(conf *config.Config, project *config.Project, opts *Options) error {
-	if err := verifyOrCreateProject(conf, project); err != nil {
+func Default(conf *config.Config, project *config.Project, rn runner.Runner) error {
+	if err := verifyOrCreateProject(conf, project, rn); err != nil {
 		return fmt.Errorf("failed to verify or create project: %v", err)
 	}
 
-	if err := setupBilling(project, conf.Overall.BillingAccount); err != nil {
+	if err := setupBilling(project, conf.Overall.BillingAccount, rn); err != nil {
 		return fmt.Errorf("failed to set up billing: %v", err)
 	}
 
-	if err := enableServiceAPIs(project); err != nil {
+	if err := enableServiceAPIs(project, rn); err != nil {
 		return fmt.Errorf("failed to enable service APIs: %v", err)
 	}
 
-	if err := createCustomComputeImages(project); err != nil {
+	if err := createCustomComputeImages(project, rn); err != nil {
 		return fmt.Errorf("failed to create compute images: %v", err)
 	}
 
-	if err := createDeletionLien(project); err != nil {
+	if err := createDeletionLien(project, rn); err != nil {
 		return fmt.Errorf("failed to create deletion lien: %v", err)
 	}
 
-	if err := createStackdriverAccount(project); err != nil {
+	if err := createStackdriverAccount(project, rn); err != nil {
 		return fmt.Errorf("failed to create stackdriver account: %v", err)
 	}
 
-	if err := DeployResources(conf, project, opts); err != nil {
+	if err := DeployResources(conf, project, rn); err != nil {
 		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
 
-	if err := createAlerts(project); err != nil {
+	if err := createAlerts(project, rn); err != nil {
 		return fmt.Errorf("failed to create alerts: %v", err)
 	}
 
-	if err := collectGCEInfo(project); err != nil {
+	if err := collectGCEInfo(project, rn); err != nil {
 		return fmt.Errorf("failed to collect GCE instances info: %v", err)
 	}
 
 	if fsa := conf.AllGeneratedFields.Forseti.ServiceAccount; fsa != "" {
-		if err := GrantForsetiPermissions(project.ID, fsa); err != nil {
+		if err := GrantForsetiPermissions(project.ID, fsa, rn); err != nil {
 			return fmt.Errorf("failed to grant forseti access: %v", err)
 		}
 	}
@@ -120,27 +120,28 @@ func Default(conf *config.Config, project *config.Project, opts *Options) error 
 }
 
 // DeployResources deploys the CFT resources in the project.
-func DeployResources(conf *config.Config, project *config.Project, opts *Options) error {
-	if !opts.DryRun {
-		if err := grantDeploymentManagerAccess(project); err != nil {
+func DeployResources(conf *config.Config, project *config.Project, rn runner.Runner) error {
+	if _, ok := rn.(*runner.Default); ok {
+		if err := grantDeploymentManagerAccess(project, rn); err != nil {
 			return fmt.Errorf("failed to grant deployment manager access to the project: %v", err)
 		}
 	}
-	if err := deployPrerequisite(project); err != nil {
+
+	if err := deployPrerequisite(project, rn); err != nil {
 		return fmt.Errorf("failed to deploy pre-requisites: %v", err)
 	}
 
-	if err := importBinauthz(project.ID, project.BinauthzPolicy); err != nil {
+	if err := importBinauthz(project.ID, project.BinauthzPolicy, rn); err != nil {
 		return fmt.Errorf("failed to import binary authorization policy: %v", err)
 	}
 
-	if err := deployResources(project); err != nil {
+	if err := deployResources(project, rn); err != nil {
 		return fmt.Errorf("failed to deploy resources: %v", err)
 	}
 
 	// Always get the latest log sink writer as when the sink is moved between deployments it may
 	// create a new sink writer.
-	sinkSA, err := getLogSinkServiceAccount(project, project.BQLogSink.Name())
+	sinkSA, err := getLogSinkServiceAccount(project, project.BQLogSink.Name(), rn)
 	if err != nil {
 		return fmt.Errorf("failed to get log sink service account: %v", err)
 	}
@@ -161,17 +162,17 @@ func DeployResources(conf *config.Config, project *config.Project, opts *Options
 	}
 	project.GeneratedFields.LogSinkServiceAccount = sinkSA
 
-	if err := deployAudit(project, conf.ProjectForAuditLogs(project)); err != nil {
+	if err := deployAudit(project, conf.ProjectForAuditLogs(project), rn); err != nil {
 		return fmt.Errorf("failed to deploy audit resources: %v", err)
 	}
 
-	if err := deployGKEWorkloads(project); err != nil {
+	if err := deployGKEWorkloads(project, rn); err != nil {
 		return fmt.Errorf("failed to deploy GKE workloads: %v", err)
 	}
 
 	// Only remove owner account if there is an organization to ensure the project has an administrator.
 	if conf.Overall.OrganizationID != "" {
-		if err := removeOwnerUser(project); err != nil {
+		if err := removeOwnerUser(project, rn); err != nil {
 			return fmt.Errorf("failed to remove owner user: %v", err)
 		}
 	}
@@ -184,7 +185,7 @@ func DeployResources(conf *config.Config, project *config.Project, opts *Options
 // This is not a problem on initial deployment since no resources have been created.
 // DM is HIPAA compliant, so it's ok to leave its access.
 // See https://cloud.google.com/iam/docs/granting-changing-revoking-access.
-func grantDeploymentManagerAccess(project *config.Project) error {
+func grantDeploymentManagerAccess(project *config.Project, rn runner.Runner) error {
 	pnum := project.GeneratedFields.ProjectNumber
 	if pnum == "" {
 		return fmt.Errorf("project number not set in generated fields %+v", project.GeneratedFields)
@@ -193,7 +194,7 @@ func grantDeploymentManagerAccess(project *config.Project) error {
 
 	// TODO: account for this in the rule generator.
 	for _, role := range deploymentManagerRoles {
-		if err := addBinding(project.ID, serviceAcct, role); err != nil {
+		if err := addBinding(project.ID, serviceAcct, role, rn); err != nil {
 			return fmt.Errorf("failed to grant role %q to DM service account %q: %v", role, serviceAcct, err)
 		}
 	}
@@ -201,23 +202,23 @@ func grantDeploymentManagerAccess(project *config.Project) error {
 }
 
 // addBinding adds an IAM policy binding for the given service account for the given role.
-func addBinding(projectID, serviceAccount, role string) error {
+func addBinding(projectID, serviceAccount, role string, rn runner.Runner) error {
 	cmd := exec.Command(
 		"gcloud", "projects", "add-iam-policy-binding", projectID,
 		"--member", fmt.Sprintf("serviceAccount:%s", serviceAccount),
 		"--role", fmt.Sprintf("roles/%s", role),
 		"--project", projectID,
 	)
-	if err := runner.CmdRun(cmd); err != nil {
+	if err := rn.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to add iam policy binding for service account %q for role %q: %v", serviceAccount, role, err)
 	}
 	return nil
 }
 
-func getLogSinkServiceAccount(project *config.Project, sinkName string) (string, error) {
+func getLogSinkServiceAccount(project *config.Project, sinkName string, rn runner.Runner) (string, error) {
 	cmd := exec.Command("gcloud", "logging", "sinks", "describe", sinkName, "--format", "json", "--project", project.ID)
 
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to query log sink service account from gcloud: %v", err)
 	}
@@ -233,7 +234,7 @@ func getLogSinkServiceAccount(project *config.Project, sinkName string) (string,
 	return strings.TrimPrefix(s.WriterIdentity, "serviceAccount:"), nil
 }
 
-func deployAudit(project, auditProject *config.Project) error {
+func deployAudit(project, auditProject *config.Project, rn runner.Runner) error {
 	rs := []config.Resource{&project.AuditLogs.LogsBQDataset}
 	if project.AuditLogs.LogsGCSBucket != nil {
 		rs = append(rs, project.AuditLogs.LogsGCSBucket)
@@ -246,13 +247,13 @@ func deployAudit(project, auditProject *config.Project) error {
 	// Append project ID to deployment name so each project has unique deployment if there is
 	// a remote audit logs project.
 	name := fmt.Sprintf("%s-%s", auditDeploymentName, project.ID)
-	if err := upsertDeployment(name, deployment, auditProject.ID); err != nil {
+	if err := upsertDeployment(name, deployment, auditProject.ID, rn); err != nil {
 		return fmt.Errorf("failed to deploy audit resources: %v", err)
 	}
 	return nil
 }
 
-func deployResources(project *config.Project) error {
+func deployResources(project *config.Project, rn runner.Runner) error {
 	rs := project.DeploymentManagerResources()
 	if len(rs) == 0 {
 		log.Println("No resources to deploy.")
@@ -262,7 +263,7 @@ func deployResources(project *config.Project) error {
 	if err != nil {
 		return err
 	}
-	if err := upsertDeployment(resourceDeploymentName, deployment, project.ID); err != nil {
+	if err := upsertDeployment(resourceDeploymentName, deployment, project.ID, rn); err != nil {
 		return fmt.Errorf("failed to deploy deployment manager resources: %v", err)
 	}
 	return nil
@@ -320,9 +321,9 @@ func getDeployment(project *config.Project, resources []config.Resource) (*deplo
 	return deployment, nil
 }
 
-func removeOwnerUser(project *config.Project) error {
+func removeOwnerUser(project *config.Project, rn runner.Runner) error {
 	cmd := exec.Command("gcloud", "config", "get-value", "account", "--format", "json", "--project", project.ID)
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to get currently authenticated user: %v", err)
 	}
@@ -356,7 +357,7 @@ func removeOwnerUser(project *config.Project) error {
 		}
 	}
 
-	has, err := hasBinding(project, role, member)
+	has, err := hasBinding(project, role, member, rn)
 	if err != nil {
 		return err
 	}
@@ -368,16 +369,16 @@ func removeOwnerUser(project *config.Project) error {
 	cmd = exec.Command(
 		"gcloud", "projects", "remove-iam-policy-binding", project.ID,
 		"--member", member, "--role", role, "--project", project.ID)
-	return runner.CmdRun(cmd)
+	return rn.CmdRun(cmd)
 }
 
-func hasBinding(project *config.Project, role string, member string) (has bool, err error) {
+func hasBinding(project *config.Project, role string, member string, rn runner.Runner) (has bool, err error) {
 	cmd := exec.Command(
 		"gcloud", "projects", "get-iam-policy", project.ID,
 		"--project", project.ID,
 		"--format", "json",
 	)
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return false, fmt.Errorf("failed to get iam policy bindings: %v", err)
 	}
@@ -404,7 +405,7 @@ func hasBinding(project *config.Project, role string, member string) (has bool, 
 }
 
 // deployPrerequisite deploys the CHC resources in the project.
-func deployPrerequisite(project *config.Project) error {
+func deployPrerequisite(project *config.Project, rn runner.Runner) error {
 	resources := []config.Resource{
 		&config.DefaultResource{
 			OuterName: "enable-all-audit-log-policies",
@@ -419,16 +420,16 @@ func deployPrerequisite(project *config.Project) error {
 	if err != nil {
 		return fmt.Errorf("failed to get deployment for pre-requisites: %v", err)
 	}
-	return upsertDeployment(setupPrerequisiteDeploymentName, deployment, project.ID)
+	return upsertDeployment(setupPrerequisiteDeploymentName, deployment, project.ID, rn)
 }
 
-func collectGCEInfo(project *config.Project) error {
+func collectGCEInfo(project *config.Project, rn runner.Runner) error {
 	if len(project.Resources.GCEInstances) == 0 {
 		project.GeneratedFields.GCEInstanceInfoList = nil
 		return nil
 	}
 	cmd := exec.Command("gcloud", "--project", project.ID, "compute", "instances", "list", "--format", "json")
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to list existing compute instances: %v", err)
 	}
@@ -448,7 +449,7 @@ func collectGCEInfo(project *config.Project) error {
 // in the generated fields, it also checks if the project ID corresponds to the project number.
 // In the future, maybe consider changing the folder ID or organization ID of the existing project
 // if different from config.
-func verifyOrCreateProject(conf *config.Config, project *config.Project) error {
+func verifyOrCreateProject(conf *config.Config, project *config.Project, rn runner.Runner) error {
 	orgID := conf.Overall.OrganizationID
 	folderID := conf.Overall.FolderID
 	if project.FolderID != "" {
@@ -465,7 +466,7 @@ func verifyOrCreateProject(conf *config.Config, project *config.Project) error {
 	}
 
 	// Enforce a check on the existing project number in the generated fields.
-	pnum, err := verifyProject(project.ID, project.GeneratedFields.ProjectNumber, parentType, parentID)
+	pnum, err := verifyProject(project.ID, project.GeneratedFields.ProjectNumber, parentType, parentID, rn)
 	if err != nil {
 		return err
 	}
@@ -483,10 +484,10 @@ func verifyOrCreateProject(conf *config.Config, project *config.Project) error {
 	}
 
 	cmd := exec.Command("gcloud", args...)
-	if err := runner.CmdRun(cmd); err != nil {
+	if err := rn.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to run project creating command: %v", err)
 	}
-	pnum, err = verifyProject(project.ID, "", parentType, parentID)
+	pnum, err = verifyProject(project.ID, "", parentType, parentID, rn)
 	if err != nil {
 		return fmt.Errorf("failed to verify newly created project: %v", err)
 	}
@@ -497,9 +498,9 @@ func verifyOrCreateProject(conf *config.Config, project *config.Project) error {
 
 // verifyProject checks project existence and enforces project config metadata.
 // It returns the project number if exists and error if any.
-func verifyProject(projectID, projectNumber, parentType, parentID string) (string, error) {
+func verifyProject(projectID, projectNumber, parentType, parentID string, rn runner.Runner) (string, error) {
 	cmd := exec.Command("gcloud", "projects", "describe", projectID, "--format", "json")
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		// `gcloud projects describe` command might fail due to reasons other than project does not
 		// exist (e.g. caller does not have sufficient permission). In that case, project could exist
@@ -550,14 +551,14 @@ func verifyProject(projectID, projectNumber, parentType, parentID string) (strin
 }
 
 // setupBilling sets the billing account for the project.
-func setupBilling(project *config.Project, defaultBillingAccount string) error {
+func setupBilling(project *config.Project, defaultBillingAccount string, rn runner.Runner) error {
 	ba := defaultBillingAccount
 	if project.BillingAccount != "" {
 		ba = project.BillingAccount
 	}
 
 	cmd := exec.Command("gcloud", "beta", "billing", "projects", "link", project.ID, "--billing-account", ba)
-	if err := runner.CmdRun(cmd); err != nil {
+	if err := rn.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to link project to billing account %q: %v", ba, err)
 	}
 	return nil
@@ -566,7 +567,7 @@ func setupBilling(project *config.Project, defaultBillingAccount string) error {
 // enableServiceAPIs enables service APIs for this project.
 // Use this function instead of enabling private APIs in deployment manager because deployment
 // management does not have all the APIs' access, which might triger PERMISSION_DENIED errors.
-func enableServiceAPIs(project *config.Project) error {
+func enableServiceAPIs(project *config.Project, rn runner.Runner) error {
 	m := make(map[string]bool)
 	for _, a := range project.EnabledAPIs {
 		m[a] = true
@@ -608,7 +609,7 @@ func enableServiceAPIs(project *config.Project) error {
 		args := []string{"--project", project.ID, "services", "enable"}
 		args = append(args, wantAPIs[i:min(i+batchN, len(wantAPIs))]...)
 		cmd := exec.Command("gcloud", args...)
-		if err := runner.CmdRun(cmd); err != nil {
+		if err := rn.CmdRun(cmd); err != nil {
 			return fmt.Errorf("failed to enable service APIs: %v", err)
 		}
 	}
@@ -620,7 +621,7 @@ func enableServiceAPIs(project *config.Project) error {
 // service account doesn't need to be granted access to the image GCS bucket.
 // Note: for updates, only new images will be created. Existing images will not be modified.
 // TODO: no longer need this after migrating to Terraform.
-func createCustomComputeImages(project *config.Project) error {
+func createCustomComputeImages(project *config.Project, rn runner.Runner) error {
 	if len(project.Resources.GCEInstances) == 0 {
 		log.Println("No GCE images to create.")
 		return nil
@@ -632,7 +633,7 @@ func createCustomComputeImages(project *config.Project) error {
 		// Check if custom image already exists.
 		cmd := exec.Command("gcloud", "--project", project.ID, "compute", "images", "list",
 			"--no-standard-images", "--filter", fmt.Sprintf("name=%s", i.CustomBootImage.ImageName), "--format", "value(name)")
-		out, err := runner.CmdOutput(cmd)
+		out, err := rn.CmdOutput(cmd)
 		if err != nil {
 			return fmt.Errorf("failed to check the existence of custom image %q: %v", i.CustomBootImage.ImageName, err)
 		}
@@ -642,7 +643,7 @@ func createCustomComputeImages(project *config.Project) error {
 		}
 		// Create the image.
 		cmd = exec.Command("gcloud", "--project", project.ID, "compute", "images", "create", i.CustomBootImage.ImageName, "--source-uri", fmt.Sprintf("gs://%s", i.CustomBootImage.GCSPath))
-		if err := runner.CmdRun(cmd); err != nil {
+		if err := rn.CmdRun(cmd); err != nil {
 			return fmt.Errorf("failed to create custom image %q: %v", i.CustomBootImage.ImageName, err)
 		}
 	}
@@ -650,7 +651,7 @@ func createCustomComputeImages(project *config.Project) error {
 }
 
 // createDeletionLien create the project deletion lien, if specified.
-func createDeletionLien(project *config.Project) error {
+func createDeletionLien(project *config.Project, rn runner.Runner) error {
 	if !project.CreateDeletionLien {
 		return nil
 	}
@@ -658,7 +659,7 @@ func createDeletionLien(project *config.Project) error {
 	defaultLien := "resourcemanager.projects.delete"
 	cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "resource-manager", "liens",
 		"list", "--filter", fmt.Sprintf("restrictions=%s", defaultLien), "--format", "value(restrictions)")
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to check existing deletion liens: %v", err)
 	}
@@ -669,7 +670,7 @@ func createDeletionLien(project *config.Project) error {
 	// Create the lien.
 	cmd = exec.Command("gcloud", "--project", project.ID, "alpha", "resource-manager", "liens",
 		"create", "--restrictions", defaultLien, "--reason", "Automated project deletion lien deployment.")
-	if err := runner.CmdRun(cmd); err != nil {
+	if err := rn.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to create restriction lien %q: %v", defaultLien, err)
 	}
 	return nil
@@ -677,12 +678,12 @@ func createDeletionLien(project *config.Project) error {
 
 // TODO use Terraform once https://github.com/terraform-providers/terraform-provider-google/issues/2605 is resolved.
 // createStackdriverAccount prompts the user to create a new Stackdriver Account.
-func createStackdriverAccount(project *config.Project) error {
+func createStackdriverAccount(project *config.Project, rn runner.Runner) error {
 	if project.StackdriverAlertEmail == "" && len(project.NotificationChannels) == 0 {
 		log.Println("No Stackdriver alert email or notification channels specified, skipping creation of Stackdriver account.")
 		return nil
 	}
-	exist, err := stackdriverAccountExists(project.ID)
+	exist, err := stackdriverAccountExists(project.ID, rn)
 	if err != nil {
 		return err
 	}
@@ -719,7 +720,7 @@ creation of Stackdriver account and terminate the deployment.
 		if !ok {
 			return errors.New("user skipped the creation of Stackdriver account")
 		}
-		exist, err := stackdriverAccountExists(project.ID)
+		exist, err := stackdriverAccountExists(project.ID, rn)
 		if err != nil {
 			return err
 		}
@@ -740,9 +741,9 @@ creation of Stackdriver account and terminate the deployment.
 }
 
 // stackdriverAccountExists checks whether a Stackdriver account exists in the project.
-func stackdriverAccountExists(projectID string) (bool, error) {
+func stackdriverAccountExists(projectID string, rn runner.Runner) (bool, error) {
 	cmd := exec.Command("gcloud", "--project", projectID, "alpha", "monitoring", "policies", "list")
-	out, err := runner.CmdCombinedOutput(cmd)
+	out, err := rn.CmdCombinedOutput(cmd)
 	if err != nil {
 		if strings.Contains(string(out), "not a Stackdriver workspace") {
 			return false, nil
@@ -754,7 +755,7 @@ func stackdriverAccountExists(projectID string) (bool, error) {
 
 // createAlerts creates Stackdriver alerts for logs-based metrics.
 // TODO: no longer need this after migrating to Terraform.
-func createAlerts(project *config.Project) error {
+func createAlerts(project *config.Project, rn runner.Runner) error {
 	if project.StackdriverAlertEmail == "" {
 		log.Println("No Stackdriver alert email specified, skipping creation of Stackdriver alerts.")
 		return nil
@@ -775,7 +776,7 @@ func createAlerts(project *config.Project) error {
 	cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "monitoring", "channels", "list",
 		"--format", "json")
 
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to list existing monitoring channels: %v", err)
 	}
@@ -814,7 +815,7 @@ func createAlerts(project *config.Project) error {
 
 		cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "monitoring", "channels", "create",
 			fmt.Sprintf("--channel-content=%s", string(b)), "--format", "json")
-		out, err := runner.CmdOutput(cmd)
+		out, err := rn.CmdOutput(cmd)
 		if err != nil {
 			return fmt.Errorf("failed to create new monitoring channel: %v", err)
 		}
@@ -860,7 +861,7 @@ func createAlerts(project *config.Project) error {
 	// Get existing alerts.
 	cmd = exec.Command("gcloud", "--project", project.ID, "alpha", "monitoring", "policies", "list", "--format", "json")
 
-	out, err = runner.CmdOutput(cmd)
+	out, err = rn.CmdOutput(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to list existing monitoring alert policies: %v", err)
 	}
@@ -962,7 +963,7 @@ func createAlerts(project *config.Project) error {
 			return fmt.Errorf("failed to marshal alert policy to create: %v", err)
 		}
 		cmd := exec.Command("gcloud", "--project", project.ID, "alpha", "monitoring", "policies", "create", fmt.Sprintf("--policy=%s", string(b)))
-		if err := runner.CmdRun(cmd); err != nil {
+		if err := rn.CmdRun(cmd); err != nil {
 			return fmt.Errorf("failed to create new alert policy %q: %v", a.DisplayName, err)
 		}
 	}

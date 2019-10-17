@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -169,30 +168,57 @@ resources:
       - group:my-project-auditors@my-domain.com
 `
 
-func TestDeploy(t *testing.T) {
-
-	origCmdRun := runner.CmdRun
-	origCmdOutput := runner.CmdOutput
-	defer func() {
-		runner.CmdRun = origCmdRun
-		runner.CmdOutput = origCmdOutput
-	}()
-
-	runner.CmdRun = func(cmd *exec.Cmd) error { return nil }
-	runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		args := strings.Join(cmd.Args, " ")
-		var res string
-		switch {
-		case strings.HasPrefix(args, "gcloud config get-value account"):
-			res = `"foo-user@my-domain.com"`
-		case strings.HasPrefix(args, "gcloud projects get-iam-policy"):
-			res = "{}"
-		default:
-			return origCmdOutput(cmd)
+func contains(s string, subs ...string) bool {
+	for _, sub := range subs {
+		if !strings.Contains(s, sub) {
+			return false
 		}
-		return []byte(res), nil
 	}
+	return true
+}
 
+type testRunner struct {
+	called []string
+	// Any command called on the runner will return the following output and error unless treated differently.
+	cmdOutput string
+	cmdErr    error
+}
+
+func (r *testRunner) CmdRun(cmd *exec.Cmd) error {
+	r.called = append(r.called, strings.Join(cmd.Args, " "))
+	return r.cmdErr
+}
+
+func (r *testRunner) CmdOutput(cmd *exec.Cmd) ([]byte, error) {
+	const logSinkJSON = `{
+			"createTime": "2019-04-15T20:00:16.734389353Z",
+			"destination": "bigquery.googleapis.com/projects/my-project/datasets/audit_logs",
+			"filter": "logName:\"logs/cloudaudit.googleapis.com\"",
+			"name": "audit-logs-to-bigquery",
+			"outputVersionFormat": "V2",
+			"updateTime": "2019-04-15T20:00:16.734389353Z",
+			"writerIdentity": "serviceAccount:p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
+		}`
+
+	r.called = append(r.called, strings.Join(cmd.Args, " "))
+	switch cmdStr := strings.Join(cmd.Args, " "); {
+	case contains(cmdStr, "logging sinks describe audit-logs-to-bigquery", "--format json"):
+		return []byte(logSinkJSON), r.cmdErr
+	case contains(cmdStr, "config get-value account", "--format json"):
+		return []byte(`"foo-user@my-domain.com"`), r.cmdErr
+	case contains(cmdStr, "projects get-iam-policy"):
+		return []byte("{}"), r.cmdErr
+	default:
+		return []byte(r.cmdOutput), r.cmdErr
+	}
+}
+
+func (r *testRunner) CmdCombinedOutput(cmd *exec.Cmd) ([]byte, error) {
+	r.called = append(r.called, strings.Join(cmd.Args, " "))
+	return []byte(r.cmdOutput), r.cmdErr
+}
+
+func TestDeploy(t *testing.T) {
 	tests := []struct {
 		name       string
 		configData *testconf.ConfigData
@@ -572,12 +598,12 @@ resources:
 			}
 
 			var got []upsertCall
-			upsertDeployment = func(name string, deployment *deploymentmanager.Deployment, projectID string) error {
+			upsertDeployment = func(name string, deployment *deploymentmanager.Deployment, projectID string, _ runner.Runner) error {
 				got = append(got, upsertCall{name, deployment, projectID})
 				return nil
 			}
 
-			if err := DeployResources(conf, project, &Options{}); err != nil {
+			if err := DeployResources(conf, project, &testRunner{}); err != nil {
 				t.Fatalf("DeployResources: %v", err)
 			}
 
@@ -602,7 +628,6 @@ resources:
 }
 
 func TestVerifyProject(t *testing.T) {
-
 	tests := []struct {
 		name           string
 		projectID      string
@@ -727,14 +752,9 @@ func TestVerifyProject(t *testing.T) {
 		},
 	}
 
-	origCmdOutput := runner.CmdOutput
-	defer func() { runner.CmdOutput = origCmdOutput }()
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
-				return []byte(tc.resp), tc.err
-			}
-			gotProjectNum, gotErr := verifyProject(tc.projectID, tc.projectNum, tc.parentType, tc.parentID)
+			gotProjectNum, gotErr := verifyProject(tc.projectID, tc.projectNum, tc.parentType, tc.parentID, &testRunner{cmdOutput: tc.resp, cmdErr: tc.err})
 			if gotProjectNum != tc.wantProjectNum || (gotErr != nil) != tc.wantErr {
 				t.Fatalf("verifyProject(%s, %s, %s, %s) = %q, %v; want %q, error %t", tc.projectID, tc.projectNum, tc.parentType, tc.parentID, gotProjectNum, gotErr, tc.wantProjectNum, tc.wantErr)
 			}
@@ -767,24 +787,18 @@ func TestSetupBilling(t *testing.T) {
 			wantSubstring: "--billing-account default_billing_account",
 		},
 	}
-	origCmdRun := runner.CmdRun
-	defer func() { runner.CmdRun = origCmdRun }()
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := ""
-			runner.CmdRun = func(cmd *exec.Cmd) error {
-				if got != "" {
-					t.Fatal("cmdRun is called more than once")
-				}
-				got = strings.Join(cmd.Args, " ")
-				return nil
-			}
-			if err := setupBilling(tc.project, tc.defaultBA); err != nil {
+			r := &testRunner{}
+			if err := setupBilling(tc.project, tc.defaultBA, r); err != nil {
 				t.Fatalf("setupBilling = %v", err)
 			}
-			if !strings.Contains(got, tc.wantSubstring) {
-				t.Fatalf("command %q does not contain expected substring %q", got, tc.wantSubstring)
+			if len(r.called) > 1 {
+				t.Fatal("cmdRun is called more than once")
+			}
+			if !strings.Contains(r.called[0], tc.wantSubstring) {
+				t.Fatalf("command %q does not contain expected substring %q", r.called[0], tc.wantSubstring)
 			}
 		})
 	}
@@ -792,17 +806,17 @@ func TestSetupBilling(t *testing.T) {
 
 func TestCreateDeletionLien(t *testing.T) {
 	tests := []struct {
-		name            string
-		project         *config.Project
-		cmdOutput       string
-		wantEmptyCmdRun bool
+		name        string
+		project     *config.Project
+		cmdOutput   string
+		wantCmdCnts int
 	}{
 		{
 			name: "lien_not_requested",
 			project: &config.Project{
 				ID: "my_project",
 			},
-			wantEmptyCmdRun: true,
+			wantCmdCnts: 0,
 		},
 		{
 			name: "lien_requested_and_created",
@@ -810,6 +824,7 @@ func TestCreateDeletionLien(t *testing.T) {
 				ID:                 "my_project",
 				CreateDeletionLien: true,
 			},
+			wantCmdCnts: 2,
 		},
 		{
 			name: "lien_requested_and_already_exist",
@@ -817,35 +832,19 @@ func TestCreateDeletionLien(t *testing.T) {
 				ID:                 "my_project",
 				CreateDeletionLien: true,
 			},
-			cmdOutput:       "resourcemanager.projects.delete",
-			wantEmptyCmdRun: true,
+			cmdOutput:   "resourcemanager.projects.delete",
+			wantCmdCnts: 1,
 		},
 	}
-	origCmdRun := runner.CmdRun
-	origCmdOutput := runner.CmdOutput
-	defer func() {
-		runner.CmdRun = origCmdRun
-		runner.CmdOutput = origCmdOutput
-	}()
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			var got string
-			runner.CmdRun = func(cmd *exec.Cmd) error {
-				if got != "" {
-					t.Fatal("cmdRun is called more than once")
-				}
-				got = strings.Join(cmd.Args, " ")
-				return nil
-			}
-			runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
-				return []byte(tc.cmdOutput), nil
-			}
-			if err := createDeletionLien(tc.project); err != nil {
+			r := &testRunner{cmdOutput: tc.cmdOutput}
+			if err := createDeletionLien(tc.project, r); err != nil {
 				t.Fatalf("createDeletionLien = %v", err)
 			}
-			if (len(got) == 0) != tc.wantEmptyCmdRun {
-				t.Fatalf("createDeletionLien(%v) cmdRun args empty = %t; want %t", tc.project, len(got) == 0, tc.wantEmptyCmdRun)
+			if len(r.called) != tc.wantCmdCnts {
+				t.Fatalf("createDeletionLien(%v) cmd counts = %d; want %d", tc.project, len(r.called), tc.wantCmdCnts)
 			}
 		})
 	}
@@ -878,15 +877,9 @@ func TestStackdriverAccountExist(t *testing.T) {
 		},
 	}
 
-	origCmdCombinedOutput := runner.CmdCombinedOutput
-	defer func() { runner.CmdCombinedOutput = origCmdCombinedOutput }()
-
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			runner.CmdCombinedOutput = func(cmd *exec.Cmd) ([]byte, error) {
-				return []byte(tc.cmdOutput), tc.cmdError
-			}
-			exist, err := stackdriverAccountExists(projectID)
+			exist, err := stackdriverAccountExists(projectID, &testRunner{cmdOutput: tc.cmdOutput, cmdErr: tc.cmdError})
 			if exist != tc.wantExist || (err != nil) != tc.wantErr {
 				t.Fatalf("stackdriverAccountExists(%s) = %t, %v; want %t, error %t", projectID, exist, err, tc.wantExist, tc.wantErr)
 			}
@@ -896,7 +889,7 @@ func TestStackdriverAccountExist(t *testing.T) {
 
 func TestGetLogSinkServiceAccount(t *testing.T) {
 	_, project := testconf.ConfigAndProject(t, nil)
-	got, err := getLogSinkServiceAccount(project, "audit-logs-to-bigquery")
+	got, err := getLogSinkServiceAccount(project, "audit-logs-to-bigquery", &testRunner{})
 	want := "p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
 	if got != want || err != nil {
 		t.Errorf("getLogSinkServiceAccount(%v) = %q, %v; want %q, nil", project, got, err, want)
@@ -939,30 +932,4 @@ func abs(p string) string {
 		panic(err)
 	}
 	return a
-}
-
-func TestMain(m *testing.M) {
-	runner.StubFakeCmds()
-	const logSinkJSON = `{
-		"createTime": "2019-04-15T20:00:16.734389353Z",
-		"destination": "bigquery.googleapis.com/projects/my-project/datasets/audit_logs",
-		"filter": "logName:\"logs/cloudaudit.googleapis.com\"",
-		"name": "audit-logs-to-bigquery",
-		"outputVersionFormat": "V2",
-		"updateTime": "2019-04-15T20:00:16.734389353Z",
-		"writerIdentity": "serviceAccount:p12345-999999@gcp-sa-logging.iam.gserviceaccount.com"
-	}`
-
-	origCmdOutput := runner.CmdOutput
-	defer func() { runner.CmdOutput = origCmdOutput }()
-
-	runner.CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
-		args := []string{"gcloud", "logging", "sinks", "describe"}
-		if cmp.Equal(cmd.Args[:len(args)], args) {
-			return []byte(logSinkJSON), nil
-		}
-		return origCmdOutput(cmd)
-	}
-
-	os.Exit(m.Run())
 }

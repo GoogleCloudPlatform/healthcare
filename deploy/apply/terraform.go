@@ -23,6 +23,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
 
@@ -32,7 +33,7 @@ import (
 // This makes sure dependencies between base projects are handled correctly
 // (e.g. forseti project wants to store its audit logs in remote audit project while remote audit project wants to be monitored by the forseti project).
 // Then, all data hosting projects are deployed from beginning till end so one data project doesn't leave other data projects in a half deployed state.
-func Terraform(conf *config.Config, projectIDs []string, opts *Options) error {
+func Terraform(conf *config.Config, projectIDs []string, opts *Options, rn runner.Runner) error {
 	idSet := make(map[string]bool)
 	for _, p := range projectIDs {
 		idSet[p] = true
@@ -65,7 +66,7 @@ func Terraform(conf *config.Config, projectIDs []string, opts *Options) error {
 	if len(baseProjects) > 0 {
 		// Apply all base projects in a round-robin fashion.
 		log.Println("Applying base projects")
-		if err := projects(conf, baseProjects, opts); err != nil {
+		if err := projects(conf, baseProjects, opts, rn); err != nil {
 			return fmt.Errorf("failed to apply base projects: %v", err)
 		}
 	}
@@ -73,7 +74,7 @@ func Terraform(conf *config.Config, projectIDs []string, opts *Options) error {
 	// Apply each data hosting project from beginning to end.
 	for _, p := range dataProjects {
 		log.Printf("Applying project %q", p.ID)
-		if err := projects(conf, []*config.Project{p}, opts); err != nil {
+		if err := projects(conf, []*config.Project{p}, opts, rn); err != nil {
 			return fmt.Errorf("failed to apply %q: %v", p.ID, err)
 		}
 	}
@@ -82,33 +83,33 @@ func Terraform(conf *config.Config, projectIDs []string, opts *Options) error {
 
 // projects applies phases (one or more steps) to the given projects in a round-robin fashion.
 // The purpose behind the current process is to ensure dependencies between base projects are setup properly.
-func projects(conf *config.Config, projs []*config.Project, opts *Options) error {
+func projects(conf *config.Config, projs []*config.Project, opts *Options, rn runner.Runner) error {
 	for _, p := range projs {
 		log.Printf("Creating project and state bucket for %q", p.ID)
-		if err := createProjectTerraform(conf, p); err != nil {
+		if err := createProjectTerraform(conf, p, rn); err != nil {
 			return err
 		}
 	}
 
 	for _, p := range projs {
 		log.Printf("Appling project %q", p.ID)
-		if err := services(p); err != nil {
+		if err := services(p, rn); err != nil {
 			return fmt.Errorf("failed to apply services: %v", err)
 		}
-		if err := createStackdriverAccount(p); err != nil {
+		if err := createStackdriverAccount(p, rn); err != nil {
 			return err
 		}
-		if err := defaultTerraform(conf, p, opts); err != nil {
+		if err := defaultTerraform(conf, p, opts, rn); err != nil {
 			return fmt.Errorf("failed to apply resources for %q: %v", p.ID, err)
 		}
-		if err := collectGCEInfo(p); err != nil {
+		if err := collectGCEInfo(p, rn); err != nil {
 			return fmt.Errorf("failed to collect GCE instances info: %v", err)
 		}
 	}
 
 	for _, p := range projs {
 		log.Printf("Applying audit resources for %q", p.ID)
-		if err := auditResources(p, opts); err != nil {
+		if err := auditResources(p, opts, rn); err != nil {
 			return fmt.Errorf("failed to apply audit resources for %q: %v", p.ID, err)
 		}
 	}
@@ -121,7 +122,7 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options) error
 		// Deploy the forseti instance if forseti project is being requested.
 		if conf.Forseti.Project.ID == p.ID {
 			log.Printf("Applying Forseti instance in %q", conf.Forseti.Project.ID)
-			if err := forsetiConfig(conf); err != nil {
+			if err := forsetiConfig(conf, rn); err != nil {
 				return fmt.Errorf("failed to apply forseti instance in %q: %v", conf.Forseti.Project.ID, err)
 			}
 			break
@@ -134,14 +135,14 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options) error
 	}
 	for _, p := range projs {
 		log.Printf("Granting Forseti instance access to project %q", p.ID)
-		if err := GrantForsetiPermissions(p.ID, fsa); err != nil {
+		if err := GrantForsetiPermissions(p.ID, fsa, rn); err != nil {
 			return fmt.Errorf("failed to grant forseti access to project %q: %v", p.ID, err)
 		}
 	}
 	return nil
 }
 
-func createProjectTerraform(config *config.Config, project *config.Project) error {
+func createProjectTerraform(config *config.Config, project *config.Project, rn runner.Runner) error {
 	fid := project.FolderID
 	if fid == "" {
 		fid = config.Overall.FolderID
@@ -173,7 +174,7 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 	}
 	opts := &terraform.Options{}
 	// Since the project creation deployment is not linked to a remote state, always import the project and state bucket.
-	if err := addImports(opts, pr, project.DevopsConfig.StateBucket); err != nil {
+	if err := addImports(opts, rn, pr, project.DevopsConfig.StateBucket); err != nil {
 		return err
 	}
 
@@ -183,30 +184,30 @@ func createProjectTerraform(config *config.Config, project *config.Project) erro
 	}
 	defer os.RemoveAll(dir)
 
-	return terraformApply(tfConf, dir, opts)
+	return terraformApply(tfConf, dir, opts, rn)
 }
 
-func defaultTerraform(config *config.Config, project *config.Project, opts *Options) error {
+func defaultTerraform(config *config.Config, project *config.Project, opts *Options, rn runner.Runner) error {
 	// TODO: merge services with resources.
-	if err := services(project); err != nil {
+	if err := services(project, rn); err != nil {
 		return fmt.Errorf("failed to apply services: %v", err)
 	}
 
-	if err := resources(project, opts); err != nil {
+	if err := resources(project, opts, rn); err != nil {
 		return fmt.Errorf("failed to apply resources: %v", err)
 	}
 
 	// TODO: the user being used for terraform is actually set by gcloud auth application-default login.
 	// This user can differ than the one set by gcloud auth login which is what removeOwnerUser checks for.
 	// Fix this to remove the application-default owner.
-	if err := removeOwnerUser(project); err != nil {
+	if err := removeOwnerUser(project, rn); err != nil {
 		return fmt.Errorf("failed to remove authenticated user: %v", err)
 	}
 
 	return nil
 }
 
-func services(project *config.Project) error {
+func services(project *config.Project, rn runner.Runner) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.DevopsConfig.StateBucket.Name,
@@ -224,13 +225,13 @@ func services(project *config.Project) error {
 	}
 	defer os.RemoveAll(dir)
 
-	if err := terraformApply(tfConf, dir, nil); err != nil {
+	if err := terraformApply(tfConf, dir, nil, rn); err != nil {
 		return err
 	}
 	return nil
 }
 
-func auditResources(project *config.Project, opts *Options) error {
+func auditResources(project *config.Project, opts *Options, rn runner.Runner) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.DevopsConfig.StateBucket.Name,
@@ -259,7 +260,7 @@ func auditResources(project *config.Project, opts *Options) error {
 
 	tfOpts := &terraform.Options{}
 	if opts.ImportExisting {
-		if err := addImports(tfOpts, rs...); err != nil {
+		if err := addImports(tfOpts, rn, rs...); err != nil {
 			return err
 		}
 	}
@@ -270,18 +271,18 @@ func auditResources(project *config.Project, opts *Options) error {
 	}
 	defer os.RemoveAll(dir)
 
-	if err := terraformApply(tfConf, dir, tfOpts); err != nil {
+	if err := terraformApply(tfConf, dir, tfOpts, rn); err != nil {
 		return err
 	}
 
-	project.GeneratedFields.LogSinkServiceAccount, err = getLogSinkServiceAccount(project, project.BQLogSinkTF.Name)
+	project.GeneratedFields.LogSinkServiceAccount, err = getLogSinkServiceAccount(project, project.BQLogSinkTF.Name, rn)
 	if err != nil {
 		return fmt.Errorf("failed to get log sink service account: %v", err)
 	}
 	return nil
 }
 
-func resources(project *config.Project, opts *Options) error {
+func resources(project *config.Project, opts *Options, rn runner.Runner) error {
 	rs := project.TerraformResources()
 	tfConf := terraform.NewConfig()
 
@@ -318,7 +319,7 @@ func resources(project *config.Project, opts *Options) error {
 	}
 	tfOpts := &terraform.Options{}
 	if opts.ImportExisting {
-		if err := addImports(tfOpts, rs...); err != nil {
+		if err := addImports(tfOpts, rn, rs...); err != nil {
 			return err
 		}
 	}
@@ -329,7 +330,7 @@ func resources(project *config.Project, opts *Options) error {
 	}
 	defer os.RemoveAll(dir)
 
-	return terraformApply(tfConf, dir, tfOpts)
+	return terraformApply(tfConf, dir, tfOpts, rn)
 }
 
 type dependerTF interface {
@@ -356,13 +357,13 @@ func addResources(config *terraform.Config, resources ...tfconfig.Resource) erro
 
 // addImports updates the terraform options with the given resources' import IDs, so the resources are imported to the terraform state if they already exist.
 // The import ID for a resource can be found in terraform's documentation for the resource.
-func addImports(opts *terraform.Options, resources ...tfconfig.Resource) error {
+func addImports(opts *terraform.Options, rn runner.Runner, resources ...tfconfig.Resource) error {
 	type importer interface {
-		ImportID() (string, error)
+		ImportID(rn runner.Runner) (string, error)
 	}
 	for _, r := range resources {
 		if i, ok := r.(importer); ok {
-			id, err := i.ImportID()
+			id, err := i.ImportID(rn)
 			if err != nil {
 				return fmt.Errorf("failed to get import ID for %q %q: %v", r.ResourceType(), r.ID(), err)
 			}
@@ -375,7 +376,7 @@ func addImports(opts *terraform.Options, resources ...tfconfig.Resource) error {
 		}
 
 		if d, ok := r.(dependerTF); ok {
-			if err := addImports(opts, d.DependentResources()...); err != nil {
+			if err := addImports(opts, rn, d.DependentResources()...); err != nil {
 				return err
 			}
 		}

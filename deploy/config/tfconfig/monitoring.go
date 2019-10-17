@@ -70,12 +70,12 @@ func (c *MonitoringNotificationChannel) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (c *MonitoringNotificationChannel) ImportID() (string, error) {
+func (c *MonitoringNotificationChannel) ImportID(rn runner.Runner) (string, error) {
 	// Check channel existence and create if not.
 	cmd := exec.Command("gcloud", "--project", c.Project, "alpha", "monitoring", "channels", "list",
 		"--format", "json")
 
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to list existing monitoring channels: %v", err)
 	}
@@ -178,11 +178,11 @@ func (p *MonitoringAlertPolicy) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (p *MonitoringAlertPolicy) ImportID() (string, error) {
+func (p *MonitoringAlertPolicy) ImportID(rn runner.Runner) (string, error) {
 	// Get existing alerts.
 	cmd := exec.Command("gcloud", "--project", p.Project, "alpha", "monitoring", "policies", "list", "--format", "json")
 
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to list existing monitoring alert policies: %v", err)
 	}

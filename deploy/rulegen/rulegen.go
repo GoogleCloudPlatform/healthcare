@@ -37,7 +37,7 @@ import (
 // Run runs the rule generator to generate forseti rules.
 // outputPath should be empty or a path to either a local directory or a GCS bucket (starting with gs://).
 // If the outputPath is empty, then the rules will be written to the forseti server bucket.
-func Run(conf *config.Config, outputPath string) (err error) {
+func Run(conf *config.Config, outputPath string, rn runner.Runner) (err error) {
 	if conf.Forseti == nil {
 		return errors.New("forseti conf must be set when using the rule generator")
 	}
@@ -64,7 +64,7 @@ func Run(conf *config.Config, outputPath string) (err error) {
 			if err != nil {
 				return
 			}
-			err = copyRulesToBucket(local, outputPath)
+			err = copyRulesToBucket(local, outputPath, rn)
 		}()
 	} else {
 		local, err = config.NormalizePath(local)
@@ -135,7 +135,7 @@ func writeRules(conf *config.Config, outputPath string) error {
 }
 
 // copyRulesToBucket copies the rules from the local path to the remote GCS bucket path.
-func copyRulesToBucket(local, remote string) error {
+func copyRulesToBucket(local, remote string, rn runner.Runner) error {
 	u, err := url.Parse(remote)
 	if err != nil {
 		return fmt.Errorf("failed to parse %q: %v", remote, err)
@@ -143,7 +143,7 @@ func copyRulesToBucket(local, remote string) error {
 	u.Path = path.Join(u.Path, "rules")
 	log.Printf("Uploading rules to %q", u.String())
 	cmd := exec.Command("gsutil", "cp", filepath.Join(local, "*.yaml"), u.String())
-	if out, err := runner.CmdCombinedOutput(cmd); err != nil {
+	if out, err := rn.CmdCombinedOutput(cmd); err != nil {
 		return fmt.Errorf("failed to copy yaml files to forseti server bucket: %v, %v", err, string(out))
 	}
 	return nil

@@ -53,7 +53,7 @@ type Metadata struct {
 }
 
 // Upsert creates the deployment if it does not exist, else updates it.
-func Upsert(name string, deployment *Deployment, projectID string) error {
+func Upsert(name string, deployment *Deployment, projectID string, rn runner.Runner) error {
 	b, err := yaml.Marshal(deployment)
 	if err != nil {
 		return fmt.Errorf("failed to marshal deployment : %v", err)
@@ -73,7 +73,7 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 		return fmt.Errorf("failed to close temp file: %v", err)
 	}
 
-	exists, err := checkDeploymentExists(name, projectID)
+	exists, err := checkDeploymentExists(name, projectID, rn)
 	if err != nil {
 		return fmt.Errorf("failed to check if deployment exists: %v", err)
 	}
@@ -92,21 +92,21 @@ func Upsert(name string, deployment *Deployment, projectID string) error {
 	log.Printf("Running gcloud command with args: %v", args)
 
 	cmd := exec.Command("gcloud", args...)
-	if err := runner.CmdRun(cmd); err != nil {
+	if err := rn.CmdRun(cmd); err != nil {
 		return fmt.Errorf("failed to run command: %v", err)
 	}
 	return nil
 }
 
 // checkDeploymentExists determines whether the deployment with the given name exists in the given project.
-func checkDeploymentExists(name, projectID string) (bool, error) {
+func checkDeploymentExists(name, projectID string, rn runner.Runner) (bool, error) {
 	type deploymentInfo struct {
 		Name string `json:"name"`
 	}
 
 	cmd := exec.Command("gcloud", "deployment-manager", "deployments", "list", "--format", "json", "--project", projectID)
 
-	out, err := runner.CmdCombinedOutput(cmd)
+	out, err := rn.CmdCombinedOutput(cmd)
 	if err != nil {
 		return false, fmt.Errorf("failed to run command: %v\n%v", err, string(out))
 	}

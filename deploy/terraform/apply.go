@@ -37,7 +37,7 @@ type Options struct {
 // All imports in opts.Imports will be imported prior being applied.
 // Thus, if a resource exists it will be imported to the terraform state.
 // Without importing an existing resource terraform can fail with an "ALREADY EXISTS" error when it tries to create it.
-func Apply(config *Config, dir string, opts *Options) error {
+func Apply(config *Config, dir string, opts *Options, rn runner.Runner) error {
 	if opts == nil {
 		opts = new(Options)
 	}
@@ -54,7 +54,7 @@ func Apply(config *Config, dir string, opts *Options) error {
 		if err := os.MkdirAll(dst, os.ModePerm); err != nil {
 			return fmt.Errorf("failed to mkdir %q: %v", dst, err)
 		}
-		if err := runner.CmdRun(exec.Command("cp", "-r", m.Source, dst)); err != nil {
+		if err := rn.CmdRun(exec.Command("cp", "-r", m.Source, dst)); err != nil {
 			return fmt.Errorf("failed to copy %q to %q: %v", m.Source, dst, err)
 		}
 	}
@@ -62,7 +62,7 @@ func Apply(config *Config, dir string, opts *Options) error {
 	runCmd := func(args ...string) error {
 		cmd := exec.Command("terraform", args...)
 		cmd.Dir = dir
-		return runner.CmdRun(cmd)
+		return rn.CmdRun(cmd)
 	}
 	b, err := json.MarshalIndent(config, "", " ")
 	if err != nil {

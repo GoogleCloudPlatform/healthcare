@@ -77,11 +77,11 @@ func (*ResourceManagerLien) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (l *ResourceManagerLien) ImportID() (string, error) {
+func (l *ResourceManagerLien) ImportID(rn runner.Runner) (string, error) {
 	pid := strings.TrimPrefix(l.Parent, "projects/")
 	cmd := exec.Command("gcloud", "--project", pid, "alpha", "resource-manager", "liens", "list", "--format", "json")
 
-	out, err := runner.CmdOutput(cmd)
+	out, err := rn.CmdOutput(cmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to list existing liens: %v", err)
 	}

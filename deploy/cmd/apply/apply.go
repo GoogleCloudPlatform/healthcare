@@ -82,9 +82,7 @@ func applyConfigs() (err error) {
 	if *configPath == "" {
 		return errors.New("--config_path must be set")
 	}
-	if *dryRun {
-		runner.StubFakeCmds()
-	}
+
 	conf, err := config.Load(*configPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %v", err)
@@ -115,9 +113,15 @@ func applyConfigs() (err error) {
 	}()
 
 	opts := &apply.Options{DryRun: *dryRun, ImportExisting: *importExisting}
+	var rn runner.Runner
+	if *dryRun {
+		rn = &runner.Fake{}
+	} else {
+		rn = &runner.Default{}
+	}
 
 	if *enableTerraform {
-		return apply.Terraform(conf, projects, opts)
+		return apply.Terraform(conf, projects, opts, rn)
 	}
 
 	// DM ONLY CODE.
@@ -140,7 +144,7 @@ func applyConfigs() (err error) {
 	// Always deploy the remote audit logs project first (if present).
 	if enableRemoteAudit {
 		log.Printf("Applying config for remote audit log project %q", conf.AuditLogsProject.ID)
-		if err := apply.Default(conf, conf.AuditLogsProject, opts); err != nil {
+		if err := apply.Default(conf, conf.AuditLogsProject, rn); err != nil {
 			return fmt.Errorf("failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
 		}
 	}
@@ -149,7 +153,7 @@ func applyConfigs() (err error) {
 	if conf.Forseti != nil && wantProject(conf.Forseti.Project.ID) {
 		log.Printf("Applying config for Forseti project %q", conf.Forseti.Project.ID)
 		// Forseti for Forseti project itself is enabled at the end of apply.Forseti().
-		if err := apply.Forseti(conf, opts); err != nil {
+		if err := apply.Forseti(conf, rn); err != nil {
 			return fmt.Errorf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
 		}
 	}
@@ -161,7 +165,7 @@ func applyConfigs() (err error) {
 	// Use conf.AllGeneratedFields.Forseti.ServiceAccount to check if the Forseti project has been deployed or not.
 	if enableRemoteAudit && conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
 		// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
-		if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount); err != nil {
+		if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, rn); err != nil {
 			return fmt.Errorf("failed to grant Forseti permissions to remote audit logs project: %v", err)
 		}
 	}
@@ -171,7 +175,7 @@ func applyConfigs() (err error) {
 			continue
 		}
 		log.Printf("Applying config for project %q", p.ID)
-		if err := apply.Default(conf, p, opts); err != nil {
+		if err := apply.Default(conf, p, rn); err != nil {
 			return fmt.Errorf("failed to apply config for project %q: %v", p.ID, err)
 		}
 	}

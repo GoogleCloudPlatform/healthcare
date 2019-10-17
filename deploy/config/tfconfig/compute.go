@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // ComputeFirewall represents a Terraform GCE firewall.
@@ -51,7 +53,7 @@ func (*ComputeFirewall) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (f *ComputeFirewall) ImportID() (string, error) {
+func (f *ComputeFirewall) ImportID(runner.Runner) (string, error) {
 	return fmt.Sprintf("%s/%s", f.Project, f.Name), nil
 }
 
@@ -109,7 +111,7 @@ func (i *ComputeImage) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (i *ComputeImage) ImportID() (string, error) {
+func (i *ComputeImage) ImportID(runner.Runner) (string, error) {
 	return fmt.Sprintf("%s/%s", i.Project, i.Name), nil
 }
 
@@ -167,7 +169,7 @@ func (i *ComputeInstance) ResourceType() string {
 }
 
 // ImportID returns the ID to use for terraform imports.
-func (i *ComputeInstance) ImportID() (string, error) {
+func (i *ComputeInstance) ImportID(runner.Runner) (string, error) {
 	return fmt.Sprintf("%s/%s/%s", i.Project, i.Zone, i.Name), nil
 }
 
