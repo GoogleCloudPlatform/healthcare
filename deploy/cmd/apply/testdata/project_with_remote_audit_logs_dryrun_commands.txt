@@ -29,12 +29,5 @@ terraform init
 terraform apply
 gcloud --project my-forseti-project iam service-accounts list --format json --filter email:forseti-server-gcp-*
 gsutil ls -p my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/appengine.appViewer --project my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/bigquery.metadataViewer --project my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/browser --project my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/cloudasset.viewer --project my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/cloudsql.viewer --project my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/compute.networkViewer --project my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/iam.securityReviewer --project my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/servicemanagement.quotaViewer --project my-forseti-project
-gcloud projects add-iam-policy-binding my-forseti-project --member serviceAccount:forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com --role roles/serviceusage.serviceUsageConsumer --project my-forseti-project
+terraform init
+terraform apply

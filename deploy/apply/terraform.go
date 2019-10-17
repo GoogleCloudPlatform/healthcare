@@ -135,7 +135,7 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 	}
 	for _, p := range projs {
 		log.Printf("Granting Forseti instance access to project %q", p.ID)
-		if err := GrantForsetiPermissions(p.ID, fsa, rn); err != nil {
+		if err := GrantForsetiPermissions(p.ID, fsa, p.DevopsConfig.StateBucket.Name, rn); err != nil {
 			return fmt.Errorf("failed to grant forseti access to project %q: %v", p.ID, err)
 		}
 	}

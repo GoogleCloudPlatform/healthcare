@@ -112,7 +112,7 @@ func Default(conf *config.Config, project *config.Project, rn runner.Runner) err
 	}
 
 	if fsa := conf.AllGeneratedFields.Forseti.ServiceAccount; fsa != "" {
-		if err := GrantForsetiPermissions(project.ID, fsa, rn); err != nil {
+		if err := GrantForsetiPermissions(project.ID, fsa, "", rn); err != nil {
 			return fmt.Errorf("failed to grant forseti access: %v", err)
 		}
 	}

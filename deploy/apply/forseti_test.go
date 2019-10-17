@@ -16,7 +16,6 @@ package apply
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
@@ -35,62 +34,95 @@ func TestForsetiConfig(t *testing.T) {
 	}
 
 	if err := forsetiConfig(conf, &runner.Fake{}); err != nil {
-		t.Fatalf("Forseti = %v", err)
+		t.Errorf("Forseti = %v", err)
 	}
 
-	wantConfig := `{
-	"terraform": {
-		"required_version": ">= 0.12.0",
-		"backend": {
-			"gcs": {
-				"bucket": "my-forseti-project-state",
-				"prefix": "forseti"
-			}
-		}
-	},
-	"module": [{
-		"forseti": {
-			"source": "./external/terraform_google_forseti",
-			"composite_root_resources": [
-			  "organizations/12345678",
-				"folders/98765321"
-			 ],
-			 "domain": "my-domain.com",
-			 "project_id": "my-forseti-project",
-			 "storage_bucket_location": "us-east1"
-		}
-	}]
-}`
+	wantConfig := `
+terraform:
+  required_version: ">= 0.12.0"
+  backend:
+    gcs:
+      bucket: my-forseti-project-state
+      prefix: forseti
+module:
+- forseti:
+    source: "./external/terraform_google_forseti"
+    composite_root_resources:
+    - organizations/12345678
+    - folders/98765321
+    domain: my-domain.com
+    project_id: my-forseti-project
+    storage_bucket_location: us-east1
+`
 
-	var got, want interface{}
 	b, err := json.Marshal(gotTFConf)
 	if err != nil {
-		t.Fatalf("json.Marshal gotTFConf: %v", err)
+		t.Errorf("json.Marshal gotTFConf: %v", err)
 	}
-	if err := json.Unmarshal(b, &got); err != nil {
-		t.Fatalf("json.Unmarshal got = %v", err)
-	}
-	if err := json.Unmarshal([]byte(wantConfig), &want); err != nil {
-		t.Fatalf("json.Unmarshal want = %v", err)
-	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("terraform config differs (-got, +want):\n%v", diff)
+	if diff := cmp.Diff(unmarshal(t, string(b)), unmarshal(t, wantConfig)); diff != "" {
+		t.Errorf("terraform config differs (-got, +want):\n%v", diff)
 	}
 }
 
 func TestGrantForsetiPermissions(t *testing.T) {
-	wantCmdCnt := 9
-	wantCmdPrefix := "gcloud projects add-iam-policy-binding project1 --member serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com --role roles/"
-	r := &testRunner{}
-	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com", r); err != nil {
-		t.Fatalf("GrantForsetiPermissions = %v", err)
+	var gotTFConf *terraform.Config
+	terraformApply = func(config *terraform.Config, _ string, _ *terraform.Options, _ runner.Runner) error {
+		gotTFConf = config
+		return nil
 	}
-	if len(r.called) != wantCmdCnt {
-		t.Fatalf("number of permissions granted differ: got %d, want %d", len(r.called), wantCmdCnt)
+
+	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com", "my-forseti-project-state", &runner.Fake{}); err != nil {
+		t.Errorf("GrantForsetiPermissions = %v", err)
 	}
-	for _, cmd := range r.called {
-		if !strings.HasPrefix(cmd, wantCmdPrefix) {
-			t.Fatalf("command %q does not contain expected prefix %q", cmd, wantCmdPrefix)
-		}
+
+	wantConfig := `
+terraform:
+  required_version: ">= 0.12.0"
+  backend:
+    gcs:
+      bucket: my-forseti-project-state
+      prefix: forseti-access
+resource:
+- google_project_iam_member:
+    project:
+      role: "${each.value.role}"
+      member: "${each.value.member}"
+      for_each:
+        roles/appengine.appViewer serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/appengine.appViewer
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+        roles/bigquery.metadataViewer serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/bigquery.metadataViewer
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+        roles/browser serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/browser
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+        roles/cloudasset.viewer serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/cloudasset.viewer
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+        roles/cloudsql.viewer serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/cloudsql.viewer
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+        roles/compute.networkViewer serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/compute.networkViewer
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+        roles/iam.securityReviewer serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/iam.securityReviewer
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+        roles/servicemanagement.quotaViewer serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/servicemanagement.quotaViewer
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+        roles/serviceusage.serviceUsageConsumer serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com:
+          role: roles/serviceusage.serviceUsageConsumer
+          member: serviceAccount:forseti-sa@@forseti-project.iam.gserviceaccount.com
+      project: project1
+`
+
+	b, err := json.Marshal(gotTFConf)
+	if err != nil {
+		t.Errorf("json.Marshal gotTFConf: %v", err)
+	}
+	if diff := cmp.Diff(unmarshal(t, string(b)), unmarshal(t, wantConfig)); diff != "" {
+		t.Errorf("terraform config differs (-got, +want):\n%v", diff)
 	}
 }

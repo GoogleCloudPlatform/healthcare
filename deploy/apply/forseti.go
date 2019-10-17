@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
@@ -63,7 +64,7 @@ func Forseti(conf *config.Config, rn runner.Runner) error {
 		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
 
-	if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, rn); err != nil {
+	if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, project.DevopsConfig.StateBucket.Name, rn); err != nil {
 		return err
 	}
 	return nil
@@ -137,6 +138,39 @@ func stateBucket(project *config.Project, rn runner.Runner) error {
 	return terraformApply(tfConf, dir, opts, rn)
 }
 
+// GrantForsetiPermissions grants all necessary permissions to the given Forseti service account in the project.
+func GrantForsetiPermissions(projectID, serviceAccount, stateBucket string, rn runner.Runner) error {
+	iamMembers := new(tfconfig.ProjectIAMMembers)
+	if err := iamMembers.Init(projectID); err != nil {
+		return fmt.Errorf("failed to init IAM members resource: %v", err)
+	}
+	for _, r := range forsetiStandardRoles {
+		iamMembers.Members = append(iamMembers.Members,
+			&tfconfig.ProjectIAMMember{Role: "roles/" + r, Member: "serviceAccount:" + serviceAccount},
+		)
+	}
+
+	tfConf := terraform.NewConfig()
+	// TODO: Remove this check once TF is always enabled as the bucket should always be present then.
+	if stateBucket != "" {
+		tfConf.Terraform.Backend = &terraform.Backend{
+			Bucket: stateBucket,
+			Prefix: "forseti-access",
+		}
+	}
+
+	if err := addResources(tfConf, iamMembers); err != nil {
+		return err
+	}
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	return terraformApply(tfConf, dir, &terraform.Options{}, rn)
+}
+
 // forsetiServerServiceAccount gets the server instance service account of the give Forseti project.
 // TODO: Use Terraform state or output.
 func forsetiServerServiceAccount(projectID string, rn runner.Runner) (string, error) {
@@ -188,15 +222,4 @@ func forsetiServerBucket(projectID string, rn runner.Runner) (string, error) {
 	}
 
 	return bs[0], nil
-}
-
-// GrantForsetiPermissions grants all necessary permissions to the given Forseti service account in the project.
-// TODO: Use Terraform to deploy these.
-func GrantForsetiPermissions(projectID, serviceAccount string, rn runner.Runner) error {
-	for _, r := range forsetiStandardRoles {
-		if err := addBinding(projectID, serviceAccount, r, rn); err != nil {
-			return fmt.Errorf("failed to grant all necessary permissions to Forseti service account %q in project %q: %v", serviceAccount, projectID, err)
-		}
-	}
-	return nil
 }

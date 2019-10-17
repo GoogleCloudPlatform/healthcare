@@ -165,7 +165,7 @@ func applyConfigs() (err error) {
 	// Use conf.AllGeneratedFields.Forseti.ServiceAccount to check if the Forseti project has been deployed or not.
 	if enableRemoteAudit && conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
 		// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
-		if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, rn); err != nil {
+		if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, "", rn); err != nil {
 			return fmt.Errorf("failed to grant Forseti permissions to remote audit logs project: %v", err)
 		}
 	}

@@ -45,7 +45,7 @@ func main() {
 		log.Fatal("--forseti_service_account must be set")
 	}
 
-	if err := apply.GrantForsetiPermissions(*projectID, *forsetiServiceAccount, &runner.Default{}); err != nil {
+	if err := apply.GrantForsetiPermissions(*projectID, *forsetiServiceAccount, "", &runner.Default{}); err != nil {
 		log.Fatalf("failed to grant forseti permissions: %v", err)
 	}
 }
