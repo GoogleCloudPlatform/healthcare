@@ -641,7 +641,12 @@ resource:
       versioning:
         enabled: true
       depends_on:
-      - google_project.project`),
+      - google_project.project
+
+output:
+- project_number:
+    value: ${google_project.project.number}
+`),
 		Imports: []terraform.Import{
 			{Address: "google_project.project", ID: "my-project"},
 			{Address: "google_storage_bucket.my-project-state", ID: "my-project/my-project-state"},

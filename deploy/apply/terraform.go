@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
@@ -172,6 +173,10 @@ func createProjectTerraform(config *config.Config, project *config.Project, rn r
 	if err := addResources(tfConf, pr, project.DevopsConfig.StateBucket); err != nil {
 		return err
 	}
+	tfConf.Outputs = []*terraform.Output{{
+		Name:  "project_number",
+		Value: "${google_project.project.number}",
+	}}
 	opts := &terraform.Options{}
 	// Since the project creation deployment is not linked to a remote state, always import the project and state bucket.
 	if err := addImports(opts, rn, pr, project.DevopsConfig.StateBucket); err != nil {
@@ -184,7 +189,21 @@ func createProjectTerraform(config *config.Config, project *config.Project, rn r
 	}
 	defer os.RemoveAll(dir)
 
-	return terraformApply(tfConf, dir, opts, rn)
+	if err := terraformApply(tfConf, dir, opts, rn); err != nil {
+		return err
+	}
+	if project.GeneratedFields.ProjectNumber != "" {
+		return nil
+	}
+
+	pnCmd := exec.Command("terraform", "output", "project_number")
+	pnCmd.Dir = dir
+	out, err := rn.CmdOutput(pnCmd)
+	if err != nil {
+		return fmt.Errorf("failed to get terraform project number: %v", err)
+	}
+	project.GeneratedFields.ProjectNumber = string(out)
+	return nil
 }
 
 func defaultTerraform(config *config.Config, project *config.Project, opts *Options, rn runner.Runner) error {
