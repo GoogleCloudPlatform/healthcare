@@ -15,6 +15,7 @@
 package apply
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -192,17 +193,21 @@ func createProjectTerraform(config *config.Config, project *config.Project, rn r
 	if err := terraformApply(tfConf, dir, opts, rn); err != nil {
 		return err
 	}
+
 	if project.GeneratedFields.ProjectNumber != "" {
 		return nil
 	}
-
-	pnCmd := exec.Command("terraform", "output", "project_number")
+	pnCmd := exec.Command("terraform", "output", "-json", "project_number")
 	pnCmd.Dir = dir
 	out, err := rn.CmdOutput(pnCmd)
 	if err != nil {
 		return fmt.Errorf("failed to get terraform project number: %v", err)
 	}
-	project.GeneratedFields.ProjectNumber = string(out)
+	var pn string
+	if err := json.Unmarshal(out, &pn); err != nil {
+		return fmt.Errorf("failed to parse project number from terraform output: %v", err)
+	}
+	project.GeneratedFields.ProjectNumber = pn
 	return nil
 }
 
