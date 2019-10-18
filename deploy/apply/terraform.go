@@ -197,6 +197,8 @@ func createProjectTerraform(config *config.Config, project *config.Project, rn r
 	if project.GeneratedFields.ProjectNumber != "" {
 		return nil
 	}
+
+	// Output in JSON format so we don't need to handle extra spacing around the output.
 	pnCmd := exec.Command("terraform", "output", "-json", "project_number")
 	pnCmd.Dir = dir
 	out, err := rn.CmdOutput(pnCmd)
