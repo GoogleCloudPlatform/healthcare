@@ -24,6 +24,7 @@ import (
 	"text/template"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 )
 
 // EnableTerraform determines whether terraform will be enabled or not.
@@ -133,6 +134,8 @@ type Project struct {
 		LogsBigqueryDataset *tfconfig.BigqueryDataset `json:"logs_bigquery_dataset"`
 		LogsStorageBucket   *tfconfig.StorageBucket   `json:"logs_storage_bucket"`
 	} `json:"audit"`
+
+	ResourcesDeployment *terraform.Config `json:"resources_deployment"`
 
 	// The following vars are set through helpers and not directly through the user defined config.
 	GeneratedFields *GeneratedFields `json:"-"`

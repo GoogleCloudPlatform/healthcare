@@ -121,9 +121,9 @@ func (m *Module) MarshalJSON() ([]byte, error) {
 // Instead of creating a separate config for each IAM member, a single IAM member using a meta-argument
 // like for_each or count can be expanded by terraform to deploy all IAM members of a resource.
 type Resource struct {
-	Name       string
-	Type       string
-	Properties interface{}
+	Name       string      `json:"name"`
+	Type       string      `json:"type"`
+	Properties interface{} `json:"properties"`
 }
 
 // MarshalJSON implements a custom marshaller which marshals the resource to have the following hierarchy: type - name - properties.

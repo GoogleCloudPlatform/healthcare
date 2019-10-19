@@ -543,6 +543,41 @@ pubsub_topics:
 			},
 		},
 		{
+			name: "raw_resource",
+			data: &testconf.ConfigData{`
+storage_buckets:
+- name: foo-bucket
+  location: US
+
+resources_deployment:
+  resource:
+  - name: foo-dataproc-cluster
+    type: google_dataproc_cluster
+    properties:
+      name: foo-dataproc-cluster
+      project: my-project
+      region: us-central1`},
+			wantResources: `
+- google_storage_bucket:
+    foo-bucket:
+      name: foo-bucket
+      project: my-project
+      location: US
+      logging:
+        log_bucket:
+          my-project-logs
+      versioning:
+        enabled: true
+- google_dataproc_cluster:
+    foo-dataproc-cluster:
+      name: foo-dataproc-cluster
+      project: my-project
+      region: us-central1`,
+			wantImports: []terraform.Import{{
+				Address: "google_storage_bucket.foo-bucket", ID: "my-project/foo-bucket",
+			}},
+		},
+		{
 			name: "resource_manager_lien",
 			data: &testconf.ConfigData{`
 resource_manager_liens:

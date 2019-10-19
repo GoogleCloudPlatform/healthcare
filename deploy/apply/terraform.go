@@ -27,6 +27,7 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
+	"github.com/imdario/mergo"
 )
 
 // Terraform applies the project configs for each applicable project in the config to GCP.
@@ -347,6 +348,12 @@ func resources(project *config.Project, opts *Options, rn runner.Runner) error {
 	if opts.ImportExisting {
 		if err := addImports(tfOpts, rn, rs...); err != nil {
 			return err
+		}
+	}
+
+	if project.ResourcesDeployment != nil {
+		if err := mergo.Merge(tfConf, project.ResourcesDeployment, mergo.WithAppendSlice); err != nil {
+			return fmt.Errorf("failed to merge resources deployment: %v", err)
 		}
 	}
 
