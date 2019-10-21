@@ -17,6 +17,7 @@ go_library(
         "//apply:go_default_library",
         "//config:go_default_library",
         "//runner:go_default_library",
+        "//terraform:go_default_library",
     ],
 )
 

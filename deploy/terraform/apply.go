@@ -18,6 +18,7 @@ package terraform
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -108,4 +109,16 @@ func Apply(config *Config, dir string, opts *Options, rn runner.Runner) error {
 		return fmt.Errorf("failed to apply plan: %v", err)
 	}
 	return nil
+}
+
+// WorkDir creates and returns the directory path to run the current terraform commands.
+func WorkDir(base string, subdirs ...string) (string, error) {
+	if base == "" {
+		return "", errors.New("base directory path must not be empty")
+	}
+	dir := filepath.Join(append([]string{base}, subdirs...)...)
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return "", fmt.Errorf("failed to mkdir %q: %v", dir, err)
+	}
+	return dir, nil
 }

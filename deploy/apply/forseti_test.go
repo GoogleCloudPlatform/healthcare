@@ -16,6 +16,8 @@ package apply
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
@@ -33,7 +35,13 @@ func TestForsetiConfig(t *testing.T) {
 		return nil
 	}
 
-	if err := forsetiConfig(conf, &runner.Fake{}); err != nil {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	if err := forsetiConfig(conf, dir, &runner.Fake{}); err != nil {
 		t.Errorf("Forseti = %v", err)
 	}
 
@@ -71,7 +79,13 @@ func TestGrantForsetiPermissions(t *testing.T) {
 		return nil
 	}
 
-	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com", "my-forseti-project-state", &runner.Fake{}); err != nil {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com", "my-forseti-project-state", dir, &runner.Fake{}); err != nil {
 		t.Errorf("GrantForsetiPermissions = %v", err)
 	}
 

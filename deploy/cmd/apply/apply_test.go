@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
+	"os"
 	"regexp"
 	"testing"
 
@@ -43,6 +44,14 @@ func TestApplyConfigs(t *testing.T) {
 		*configPath = p
 		projects = arrayFlags{"my-forseti-project"}
 		*dryRun = true
+
+		dir, err := ioutil.TempDir("", "")
+		if err != nil {
+			t.Fatalf("ioutil.TempDir = %v", err)
+		}
+		defer os.RemoveAll(dir)
+		*terraformConfigsPath = dir
+
 		if err := applyConfigs(); err != nil {
 			t.Fatalf("applyConfigs = %v", err)
 		}

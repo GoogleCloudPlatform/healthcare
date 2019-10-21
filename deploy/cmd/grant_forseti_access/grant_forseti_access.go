@@ -21,7 +21,9 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
+	"os"
 
 	"flag"
 	
@@ -45,7 +47,13 @@ func main() {
 		log.Fatal("--forseti_service_account must be set")
 	}
 
-	if err := apply.GrantForsetiPermissions(*projectID, *forsetiServiceAccount, "", &runner.Default{}); err != nil {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		log.Fatalf("Failed to create a temporary directory: %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	if err := apply.GrantForsetiPermissions(*projectID, *forsetiServiceAccount, "", dir, &runner.Default{}); err != nil {
 		log.Fatalf("failed to grant forseti permissions: %v", err)
 	}
 }

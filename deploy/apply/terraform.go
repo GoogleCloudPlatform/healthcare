@@ -18,9 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 	"os/exec"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
@@ -88,20 +86,28 @@ func Terraform(conf *config.Config, projectIDs []string, opts *Options, rn runne
 func projects(conf *config.Config, projs []*config.Project, opts *Options, rn runner.Runner) error {
 	for _, p := range projs {
 		log.Printf("Creating project and state bucket for %q", p.ID)
-		if err := createProjectTerraform(conf, p, rn); err != nil {
+		workDir, err := terraform.WorkDir(opts.TerraformConfigsPath, p.ID)
+		if err != nil {
+			return err
+		}
+		if err := createProjectTerraform(conf, p, workDir, rn); err != nil {
 			return err
 		}
 	}
 
 	for _, p := range projs {
 		log.Printf("Appling project %q", p.ID)
-		if err := services(p, rn); err != nil {
+		workDir, err := terraform.WorkDir(opts.TerraformConfigsPath, p.ID)
+		if err != nil {
+			return err
+		}
+		if err := services(p, workDir, rn); err != nil {
 			return fmt.Errorf("failed to apply services: %v", err)
 		}
 		if err := createStackdriverAccount(p, rn); err != nil {
 			return err
 		}
-		if err := defaultTerraform(conf, p, opts, rn); err != nil {
+		if err := defaultTerraform(conf, p, opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to apply resources for %q: %v", p.ID, err)
 		}
 		if err := collectGCEInfo(p, rn); err != nil {
@@ -111,7 +117,11 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 
 	for _, p := range projs {
 		log.Printf("Applying audit resources for %q", p.ID)
-		if err := auditResources(p, opts, rn); err != nil {
+		workDir, err := terraform.WorkDir(opts.TerraformConfigsPath, p.ID)
+		if err != nil {
+			return err
+		}
+		if err := auditResources(p, opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to apply audit resources for %q: %v", p.ID, err)
 		}
 	}
@@ -124,7 +134,11 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		// Deploy the forseti instance if forseti project is being requested.
 		if conf.Forseti.Project.ID == p.ID {
 			log.Printf("Applying Forseti instance in %q", conf.Forseti.Project.ID)
-			if err := forsetiConfig(conf, rn); err != nil {
+			workDir, err := terraform.WorkDir(opts.TerraformConfigsPath, p.ID)
+			if err != nil {
+				return err
+			}
+			if err := forsetiConfig(conf, workDir, rn); err != nil {
 				return fmt.Errorf("failed to apply forseti instance in %q: %v", conf.Forseti.Project.ID, err)
 			}
 			break
@@ -137,14 +151,18 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 	}
 	for _, p := range projs {
 		log.Printf("Granting Forseti instance access to project %q", p.ID)
-		if err := GrantForsetiPermissions(p.ID, fsa, p.DevopsConfig.StateBucket.Name, rn); err != nil {
+		workDir, err := terraform.WorkDir(opts.TerraformConfigsPath, p.ID)
+		if err != nil {
+			return err
+		}
+		if err := GrantForsetiPermissions(p.ID, fsa, p.DevopsConfig.StateBucket.Name, workDir, rn); err != nil {
 			return fmt.Errorf("failed to grant forseti access to project %q: %v", p.ID, err)
 		}
 	}
 	return nil
 }
 
-func createProjectTerraform(config *config.Config, project *config.Project, rn runner.Runner) error {
+func createProjectTerraform(config *config.Config, project *config.Project, workDir string, rn runner.Runner) error {
 	fid := project.FolderID
 	if fid == "" {
 		fid = config.Overall.FolderID
@@ -184,11 +202,10 @@ func createProjectTerraform(config *config.Config, project *config.Project, rn r
 		return err
 	}
 
-	dir, err := ioutil.TempDir("", "")
+	dir, err := terraform.WorkDir(workDir, "project")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(dir)
 
 	if err := terraformApply(tfConf, dir, opts, rn); err != nil {
 		return err
@@ -213,13 +230,17 @@ func createProjectTerraform(config *config.Config, project *config.Project, rn r
 	return nil
 }
 
-func defaultTerraform(config *config.Config, project *config.Project, opts *Options, rn runner.Runner) error {
+func defaultTerraform(config *config.Config, project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
 	// TODO: merge services with resources.
-	if err := services(project, rn); err != nil {
+	dir, err := terraform.WorkDir(workDir, "default")
+	if err != nil {
+		return err
+	}
+	if err := services(project, dir, rn); err != nil {
 		return fmt.Errorf("failed to apply services: %v", err)
 	}
 
-	if err := resources(project, opts, rn); err != nil {
+	if err := resources(project, opts, dir, rn); err != nil {
 		return fmt.Errorf("failed to apply resources: %v", err)
 	}
 
@@ -233,7 +254,7 @@ func defaultTerraform(config *config.Config, project *config.Project, opts *Opti
 	return nil
 }
 
-func services(project *config.Project, rn runner.Runner) error {
+func services(project *config.Project, workDir string, rn runner.Runner) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.DevopsConfig.StateBucket.Name,
@@ -245,11 +266,10 @@ func services(project *config.Project, rn runner.Runner) error {
 		return err
 	}
 
-	dir, err := ioutil.TempDir("", "")
+	dir, err := terraform.WorkDir(workDir, "services")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(dir)
 
 	if err := terraformApply(tfConf, dir, nil, rn); err != nil {
 		return err
@@ -257,7 +277,7 @@ func services(project *config.Project, rn runner.Runner) error {
 	return nil
 }
 
-func auditResources(project *config.Project, opts *Options, rn runner.Runner) error {
+func auditResources(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.DevopsConfig.StateBucket.Name,
@@ -291,11 +311,10 @@ func auditResources(project *config.Project, opts *Options, rn runner.Runner) er
 		}
 	}
 
-	dir, err := ioutil.TempDir("", "")
+	dir, err := terraform.WorkDir(workDir, "audit")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(dir)
 
 	if err := terraformApply(tfConf, dir, tfOpts, rn); err != nil {
 		return err
@@ -308,7 +327,7 @@ func auditResources(project *config.Project, opts *Options, rn runner.Runner) er
 	return nil
 }
 
-func resources(project *config.Project, opts *Options, rn runner.Runner) error {
+func resources(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
 	rs := project.TerraformResources()
 	tfConf := terraform.NewConfig()
 
@@ -351,12 +370,10 @@ func resources(project *config.Project, opts *Options, rn runner.Runner) error {
 		}
 	}
 
-	dir, err := ioutil.TempDir("", "")
+	dir, err := terraform.WorkDir(workDir, "resources")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(dir)
-
 	return terraformApply(tfConf, dir, tfOpts, rn)
 }
 

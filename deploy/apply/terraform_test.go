@@ -16,6 +16,8 @@ package apply
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -586,6 +588,12 @@ service_accounts:
 		},
 	}
 
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			_, project := testconf.ConfigAndProject(t, tc.data)
@@ -596,7 +604,7 @@ service_accounts:
 				return nil
 			}
 
-			if err := resources(project, &Options{ImportExisting: true}, &tfTestRunner{}); err != nil {
+			if err := resources(project, &Options{ImportExisting: true}, dir, &tfTestRunner{}); err != nil {
 				t.Fatalf("deployTerraform: %v", err)
 			}
 
@@ -653,7 +661,13 @@ output:
 		},
 	}}
 
-	if err := createProjectTerraform(config, project, &tfTestRunner{}); err != nil {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	if err := createProjectTerraform(config, project, dir, &tfTestRunner{}); err != nil {
 		t.Fatalf("createProjectTerraform: %v", err)
 	}
 
@@ -730,7 +744,13 @@ resource:
 		},
 	}}
 
-	if err := auditResources(project, &Options{ImportExisting: true}, &tfTestRunner{}); err != nil {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	if err := auditResources(project, &Options{ImportExisting: true}, dir, &tfTestRunner{}); err != nil {
 		t.Fatalf("auditResources: %v", err)
 	}
 
@@ -768,7 +788,13 @@ resource:
       service: ${each.key}`),
 	}}
 
-	if err := services(project, &tfTestRunner{}); err != nil {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	if err := services(project, dir, &tfTestRunner{}); err != nil {
 		t.Fatalf("services: %v", err)
 	}
 
@@ -812,7 +838,12 @@ terraform_deployments:
 		got = opts.CustomConfig
 		return nil
 	}
-	if err := resources(project, &Options{}, &tfTestRunner{}); err != nil {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+	if err := resources(project, &Options{}, dir, &tfTestRunner{}); err != nil {
 		t.Fatalf("resources: %v", err)
 	}
 
