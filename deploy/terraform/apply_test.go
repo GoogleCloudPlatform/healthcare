@@ -63,13 +63,29 @@ func TestApply(t *testing.T) {
 		Source:     "foo-source",
 		Properties: map[string]interface{}{"prop2": "val2"},
 	}}
+
+	opts := &Options{}
+
+	customJSON := []byte(`{
+  "resource": [{
+     "custom_type": {
+		   "custom-name": {
+         "name": "custom-name",
+         "project": "my-project"
+			 }
+     }
+  }]
+}`)
+	if err := json.Unmarshal(customJSON, &opts.CustomConfig); err != nil {
+		t.Fatalf("json.Unmarshal custom JSON: %v", err)
+	}
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("ioutil.TempDir: %v", err)
 	}
 	defer os.RemoveAll(dir)
 	r := &testRunner{}
-	if err := Apply(conf, dir, nil, r); err != nil {
+	if err := Apply(conf, dir, opts, r); err != nil {
 		t.Fatalf("Forseti = %v", err)
 	}
 
@@ -83,13 +99,23 @@ func TestApply(t *testing.T) {
 			}
 		}
 	},
-	"resource": [{
-		"foo-type": {
-			"foo-resource": {
-				"prop1": "val1"
-			}
-		}
-	}],
+	"resource": [
+    {
+		  "foo-type": {
+		  	"foo-resource": {
+		  		"prop1": "val1"
+	  		}
+	  	}
+	  },
+    {
+      "custom_type": {
+        "custom-name": {
+          "name": "custom-name",
+          "project": "my-project"
+        }
+      }
+    }
+  ],
 	"module": [{
 		"foo-module": {
 			 "source": "foo-source",

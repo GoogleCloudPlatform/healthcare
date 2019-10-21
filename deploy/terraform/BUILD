@@ -1,8 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
-
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
@@ -13,6 +13,7 @@ go_library(
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/terraform",
     deps = [
         "//runner:go_default_library",
+        "@com_github_imdario_mergo//:go_default_library",
     ],
 )
 

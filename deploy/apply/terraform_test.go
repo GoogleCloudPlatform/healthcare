@@ -543,41 +543,6 @@ pubsub_topics:
 			},
 		},
 		{
-			name: "raw_resource",
-			data: &testconf.ConfigData{`
-storage_buckets:
-- name: foo-bucket
-  location: US
-
-resources_deployment:
-  resource:
-  - name: foo-dataproc-cluster
-    type: google_dataproc_cluster
-    properties:
-      name: foo-dataproc-cluster
-      project: my-project
-      region: us-central1`},
-			wantResources: `
-- google_storage_bucket:
-    foo-bucket:
-      name: foo-bucket
-      project: my-project
-      location: US
-      logging:
-        log_bucket:
-          my-project-logs
-      versioning:
-        enabled: true
-- google_dataproc_cluster:
-    foo-dataproc-cluster:
-      name: foo-dataproc-cluster
-      project: my-project
-      region: us-central1`,
-			wantImports: []terraform.Import{{
-				Address: "google_storage_bucket.foo-bucket", ID: "my-project/foo-bucket",
-			}},
-		},
-		{
 			name: "resource_manager_lien",
 			data: &testconf.ConfigData{`
 resource_manager_liens:
@@ -809,6 +774,79 @@ resource:
 
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Errorf("terraform calls differ (-got, +want):\n%v", diff)
+	}
+}
+
+func TestCustomTerraformDeployments(t *testing.T) {
+	_, project := testconf.ConfigAndProject(t, &testconf.ConfigData{`
+terraform_deployments:
+  resources:
+    config:
+      resource:
+      - google_sql_database_instance:
+          foo-sql-db-instance:
+            name: foo-sql-db-instance
+            project: my-project
+            region: us-central
+      - google_sql_database:
+          foo-sql-db:
+            name: foo-sql-db
+            instance: ${google_sql_database_instance.foo-sql-db-instance.name}
+      module:
+      - foo-network:
+          source: terraform-google-modules/network/google
+          version: ~> 1.0.0
+          network_name: foo-network
+          project_id: my-project
+          subnets:
+          - subnet_name: foo-subnet
+            subnet_ip: 10.10.10.0/24
+            subnet_region: us-central1
+          secondary_ranges:
+            foo-subnet:
+            - range_name: foo-range
+              ip_cidr_range: 192.168.64.0/24`})
+
+	var got map[string]interface{}
+	terraformApply = func(_ *terraform.Config, _ string, opts *terraform.Options, _ runner.Runner) error {
+		got = opts.CustomConfig
+		return nil
+	}
+	if err := resources(project, &Options{}, &tfTestRunner{}); err != nil {
+		t.Fatalf("resources: %v", err)
+	}
+
+	want := make(map[string]interface{})
+	wantYAML := []byte(`
+resource:
+- google_sql_database_instance:
+    foo-sql-db-instance:
+      name: foo-sql-db-instance
+      project: my-project
+      region: us-central
+- google_sql_database:
+    foo-sql-db:
+      name: foo-sql-db
+      instance: ${google_sql_database_instance.foo-sql-db-instance.name}
+module:
+- foo-network:
+    source: terraform-google-modules/network/google
+    version: ~> 1.0.0
+    network_name: foo-network
+    project_id: my-project
+    subnets:
+    - subnet_name: foo-subnet
+      subnet_ip: 10.10.10.0/24
+      subnet_region: us-central1
+    secondary_ranges:
+      foo-subnet:
+      - range_name: foo-range
+        ip_cidr_range: 192.168.64.0/24`)
+	if err := yaml.Unmarshal(wantYAML, &want); err != nil {
+		t.Fatalf("yaml.Unmarshal want: %v", err)
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("terraform configs differ (-got, +want):\n%v", diff)
 	}
 }
 

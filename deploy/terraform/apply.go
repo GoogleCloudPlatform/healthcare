@@ -26,11 +26,13 @@ import (
 	"path/filepath"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
+	"github.com/imdario/mergo"
 )
 
 // Options configure a terraform apply call.
 type Options struct {
-	Imports []Import
+	Imports      []Import
+	CustomConfig map[string]interface{}
 }
 
 // Apply applies the config. The config will be written as a .tf.json file in the given dir.
@@ -67,6 +69,20 @@ func Apply(config *Config, dir string, opts *Options, rn runner.Runner) error {
 	b, err := json.MarshalIndent(config, "", " ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal terraform config: %v", err)
+	}
+
+	if len(opts.CustomConfig) > 0 {
+		orig := make(map[string]interface{})
+		if err := json.Unmarshal(b, &orig); err != nil {
+			return fmt.Errorf("failed to marshal config to map: %v", err)
+		}
+		if err := mergo.Merge(&orig, opts.CustomConfig, mergo.WithAppendSlice); err != nil {
+			return fmt.Errorf("failed to merge original config with custom: %v", err)
+		}
+		b, err = json.MarshalIndent(orig, "", " ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal merged config: %v", err)
+		}
 	}
 
 	log.Printf("terraform config:\n%v", string(b))

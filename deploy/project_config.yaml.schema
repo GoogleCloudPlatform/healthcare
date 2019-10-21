@@ -782,41 +782,29 @@ definitions:
                           description:
                             Identities that will be granted the privilege in role.
 
-      resources_deployment:
+      terraform_deployments:
         type: object
         description: |
           TERRAFORM ONLY.
-          Configure the 'resources' deployment. Useful for adding resources that
-          are not natively supported by the toolkit.
+          Configure the terraform deployments in this project.
+          Useful for customizing the deployment to output values or add
+          unsupported resources/modules.
+          Currently, only the 'resources' deployment can be configured.
+          Any Terraform JSON syntax is supported:
+          https://www.terraform.io/docs/configuration/syntax-json.html.
           NOTE: This is an advanced feature and should be avoided if possible.
-          If the resources being configured here can be supported natively,
-          please reach out to the team and prefer to use that.
+          If the custom config can be supported natively, please reach out to
+          the team and prefer to use that.
         additionalProperties: false
         properties:
-          resource:
-            type: array
-            description: Additional terraform resources to deploy.
+          resources:
+            type: object
+            description: Customization for the resources deployment.
             additionalProperties: false
-            required:
-            - name
-            - type
-            - properties
             properties:
-              name:
-                type: string
-                description: |
-                  Terraform resource name. This should be unique among all
-                  resources of this type.
-              type:
-                type: string
-                description: |
-                  Terraform resource type.
-                  Supports any resource in https://www.terraform.io/docs/providers/google/index.html.
-              properties:
+              config:
                 type: object
-                description: |
-                  Terraform resource fields. All required fields should be
-                  set. The toolkit will not set any defaults or add any checks.
+                description: Additional config to attach to this deployment.
 
       resource_manager_liens:
         type: array

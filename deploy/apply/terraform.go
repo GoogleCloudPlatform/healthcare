@@ -27,7 +27,6 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
-	"github.com/imdario/mergo"
 )
 
 // Terraform applies the project configs for each applicable project in the config to GCP.
@@ -313,11 +312,12 @@ func resources(project *config.Project, opts *Options, rn runner.Runner) error {
 	rs := project.TerraformResources()
 	tfConf := terraform.NewConfig()
 
-	// Needed to work around issues like https://github.com/terraform-providers/terraform-provider-google/issues/4460.
-	// Also used if a resource does not explicitly set the project field.
 	tfConf.Providers = append(tfConf.Providers,
 		&terraform.Provider{
-			Name:       "google",
+			Name: "google",
+
+			// Needed to work around issues like https://github.com/terraform-providers/terraform-provider-google/issues/4460.
+			// Also used if a resource does not explicitly set the project field.
 			Properties: map[string]interface{}{"project": project.ID},
 		},
 		// Beta provider needed for some resources such as healthcare resources.
@@ -344,16 +344,10 @@ func resources(project *config.Project, opts *Options, rn runner.Runner) error {
 	if err := addResources(tfConf, rs...); err != nil {
 		return err
 	}
-	tfOpts := &terraform.Options{}
+	tfOpts := &terraform.Options{CustomConfig: project.TerraformDeployments.Resources.Config}
 	if opts.ImportExisting {
 		if err := addImports(tfOpts, rn, rs...); err != nil {
 			return err
-		}
-	}
-
-	if project.ResourcesDeployment != nil {
-		if err := mergo.Merge(tfConf, project.ResourcesDeployment, mergo.WithAppendSlice); err != nil {
-			return fmt.Errorf("failed to merge resources deployment: %v", err)
 		}
 	}
 
