@@ -107,8 +107,15 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err := createStackdriverAccount(p, rn); err != nil {
 			return err
 		}
-		if err := defaultTerraform(conf, p, opts, workDir, rn); err != nil {
-			return fmt.Errorf("failed to apply resources for %q: %v", p.ID, err)
+		if err := resources(p, opts, workDir, rn); err != nil {
+			return fmt.Errorf("failed to apply resources: %v", err)
+		}
+
+		// TODO: the user being used for terraform is actually set by gcloud auth application-default login.
+		// This user can differ than the one set by gcloud auth login which is what removeOwnerUser checks for.
+		// Fix this to remove the application-default owner.
+		if err := removeOwnerUser(p, rn); err != nil {
+			return fmt.Errorf("failed to remove authenticated user: %v", err)
 		}
 		if err := collectGCEInfo(p, rn); err != nil {
 			return fmt.Errorf("failed to collect GCE instances info: %v", err)
@@ -227,30 +234,6 @@ func createProjectTerraform(config *config.Config, project *config.Project, work
 		return fmt.Errorf("failed to parse project number from terraform output: %v", err)
 	}
 	project.GeneratedFields.ProjectNumber = pn
-	return nil
-}
-
-func defaultTerraform(config *config.Config, project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
-	// TODO: merge services with resources.
-	dir, err := terraform.WorkDir(workDir, "default")
-	if err != nil {
-		return err
-	}
-	if err := services(project, dir, rn); err != nil {
-		return fmt.Errorf("failed to apply services: %v", err)
-	}
-
-	if err := resources(project, opts, dir, rn); err != nil {
-		return fmt.Errorf("failed to apply resources: %v", err)
-	}
-
-	// TODO: the user being used for terraform is actually set by gcloud auth application-default login.
-	// This user can differ than the one set by gcloud auth login which is what removeOwnerUser checks for.
-	// Fix this to remove the application-default owner.
-	if err := removeOwnerUser(project, rn); err != nil {
-		return fmt.Errorf("failed to remove authenticated user: %v", err)
-	}
-
 	return nil
 }
 
