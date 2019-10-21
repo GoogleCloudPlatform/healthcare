@@ -21,6 +21,7 @@ fields/features for a period of time to allow users to migrate easily.
     *   [Disabled Unneeded APIs](#disabled-unneeded-apis)
 *   [Updates](#updates)
 *   [Resources](#resources)
+*   [Terraform](#terraform)
 *   [Debug](#debug)
 
 ## Setup Instructions
@@ -214,6 +215,8 @@ By default, the rules will be written to the Forseti server bucket.
 Alternatively, use `--output_path` to specify a local directory or a different
 Cloud Storage bucket to write the rules to.
 
+NOTE: this is currently not supported for Terraform configs.
+
 ## Resources
 
 Resources can be added in the config in a uniform way, but may use different
@@ -249,6 +252,87 @@ iam_policy              | [Deployment Manager (CFT)](https://github.com/GoogleCl
 pubsub                  | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
 vpc_network             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/network)
 service_account (ALPHA) | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)
+
+## Terraform
+
+NOTE: This section is only applicable if using `--enable_terraform`.
+
+DPT uses [Terraform](https://www.terraform.io/) as its primary deployment tool
+to apply a project's config to GCP.
+
+A project config is broken down to several phases which contain one or more
+Terraform deployments. This is used to handle dependencies and make logical
+groupings between projects and deployments. Details on each specific field in
+the project config can be found in the `project_config.yaml.schema` schema file.
+
+"Base" projects such as central `devops`, `audit` and `forseti` projects go
+through each phase as a group to handle dependencies among themselves. Once the
+base projects have been specified, each data hosting project is deployed from
+beginning till end.
+
+Additionally, individual deployments in a project can be customized with any
+valid [Terraform JSON](https://www.terraform.io/docs/configuration/syntax-json.html)
+configs through the `terraform_deployments` field. See the schema file for more
+details on supported deployments.
+
+### Phase 1: Project
+
+This phase contains a single deployment which creates the project and the bucket
+to store this project's remote state defined by the `state_storage_bucket`
+field. The state storage bucket will hold the states of deployments related to
+this project.
+
+NOTE: if a central `devops` field is set in the config, all state buckets will
+be created in the devops project.
+
+### Phase 2: Resources
+
+This phase contains several deployment which create both user defined and
+default resources in the project.
+
+**services**: This deployment contains default set of services based on the
+resources defined in the project config as well as the user defined services set
+by the `project_services` field in the project config.
+
+**resources**: This deployment contains deployment contains some preset
+defaults, such as default IAM permissions (to grant the `owners_group` owners
+access to the project), logging metrics and alert policies.
+
+It also contains user defined resources that can be set by the following fields
+in the project config:
+
+-   `bigquery_datasets`
+-   `compute_images`
+-   `compute_instances`
+-   `monitoring_notification_channels`
+-   `project_iam_custom_roles`
+-   `project_iam_members`
+-   `pubsub_topics`
+-   `resource_manager_liens`
+-   `service_accounts`
+-   `storage_buckets`
+
+Following this, the user who created the project is removed as an owner, thus
+going forward only those in the owners group can make changes to the project.
+
+### Phase 3: Audit
+
+This phase contains a single deployment which creates audit log resources
+defined in the `audit` block of a project (BigQuery Dataset and Cloud Storage
+Bucket) as well as logging sinks to export audit logs.
+
+NOTE: If a top-level `audit` block is set in the config, these resources will be
+created in the central audit project.
+
+### Phase 4: Forseti
+
+NOTE: This phase is only applicable if a `forseti` block is set in the config.
+
+**forseti**: If the Forseti project config is also being applied, a forseti
+instance is applied in the Forseti project at this point.
+
+**forseti-permissions**: The Forseti instance is granted the minimum necessary
+access to each project to monitor security violations in them.
 
 ## Debug
 
