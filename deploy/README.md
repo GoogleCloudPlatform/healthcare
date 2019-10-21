@@ -267,12 +267,12 @@ the project config can be found in the `project_config.yaml.schema` schema file.
 
 "Base" projects such as central `devops`, `audit` and `forseti` projects go
 through each phase as a group to handle dependencies among themselves. Once the
-base projects have been specified, each data hosting project is deployed from
+base projects have been deployed, each data hosting project is deployed from
 beginning till end.
 
 Additionally, individual deployments in a project can be customized with any
 valid [Terraform JSON](https://www.terraform.io/docs/configuration/syntax-json.html)
-configs through the `terraform_deployments` field. See the schema file for more
+syntax through the `terraform_deployments` field. See the schema file for more
 details on supported deployments.
 
 ### Phase 1: Project
