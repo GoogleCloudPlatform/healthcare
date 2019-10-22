@@ -14,13 +14,8 @@ Expect breaking changes. We ensure that we support both deprecated and new
 fields/features for a period of time to allow users to migrate easily.
 
 *   [Setup Instructions](#setup-instructions)
-    *   [Script Prerequisites](#script-prerequisites)
-    *   [Create Groups](#create-groups)
-    *   [Create a YAML config](#create-a-yaml-config)
-    *   [Create New Projects](#create-new-projects)
-    *   [Disabled Unneeded APIs](#disabled-unneeded-apis)
-*   [Updates](#updates)
-*   [Terraform](#terraform)
+*   [Phases](#phases)
+*   [Rule Generation](#rule-generation)
 *   [Legacy](#legacy)
 
 ## Setup Instructions
@@ -100,20 +95,19 @@ style configs will be deprecated. Old style config examples can be found
 
 ### Apply project configs
 
-Use the `cmd/apply/apply.go` script to create or update an audit logs project
-(if using remote audit logs) and one or more data hosting projects.
+Use the `cmd/apply/apply.go` script to create or update your projects.
 
 1.  Make sure the user running the script is in the owners group(s) of all
-    projects that will be created, including the audit logs project (if used).
+    projects that will be deployed, including the audit logs project (if used).
     You should remove the user from these groups after successful deployment.
 1.  If not already logged in, run `gcloud init` to log in as a user with
     permission to create projects under the specified organization and billing
     account.
-1.  If you provided a `stackdriver_alert_email` in any project, then when
-    prompted during the script, follow the instructions to create new
+1.  If you provided a `monitoring_notification_channels` in any project, then
+    when prompted during the script, follow the instructions to create new
     Stackdriver Accounts for these projects.
-1.  Optional: pass a `--projects` flag listing the projects you wish to deploy,
-    or omit this flag to deploy all projects.
+1.  Optional: pass a `--projects` flag explicitly listing the projects you wish
+    to deploy, or omit this flag to deploy all projects.
 
     NOTE: deploying a project that was previously deployed will trigger an
     update.
@@ -135,19 +129,109 @@ $ bazel run cmd/apply:apply -- \
 If the script fails at any point, try to correct the error in the input config
 file and try again.
 
-## Updates
+## Phases
 
-You may wish to modify a project to add additional resources or change an
-existing setting. The `cmd/apply/apply.go` script can be used to also update a
-project. Listing a previously deployed project in the `--projects` flag (or
-omitting the flag for all projects), will trigger an update.
+NOTE: This section is only applicable if using `--enable_terraform`.
 
-WARNING: Deployment Manager will run with deletion policy "ABANDON". Thus, if a
-resource is removed from a project, it will become unmonitored rather than
-deleted. It is the responsibility of the user to manually remove stale
-references including IAM bindings and enabled APIs.
+DPT uses [Terraform](https://www.terraform.io/) as its primary deployment tool
+to apply a project's config to GCP.
 
-## Steps
+A project config is broken down to several phases which contain one or more
+Terraform deployments. This is used to handle dependencies and make logical
+groupings between projects and deployments. Details on each specific field in
+the project config can be found in the `project_config.yaml.schema` schema file.
+
+"Base" projects such as central `devops`, `audit` and `forseti` projects go
+through each phase as a group to handle dependencies among themselves. Once the
+base projects have been deployed, each data hosting project is deployed from
+beginning till end.
+
+Additionally, individual deployments in a project can be customized with any
+valid [Terraform JSON](https://www.terraform.io/docs/configuration/syntax-json.html)
+syntax through the `terraform_deployments` field. See the schema file for more
+details on supported deployments.
+
+#### Phase 1: Project
+
+This phase contains a single deployment which creates the project and the bucket
+to store this project's remote state defined by the `state_storage_bucket`
+field. The state storage bucket will hold the states of deployments related to
+this project.
+
+NOTE: if a central `devops` field is set in the config, all state buckets will
+be created in the devops project.
+
+#### Phase 2: Resources
+
+This phase contains several deployment which create both user defined and
+default resources in the project.
+
+**services**: This deployment contains default set of services based on the
+resources defined in the project config as well as the user defined services set
+by the `project_services` field in the project config.
+
+**resources**: This deployment contains deployment contains some preset
+defaults, such as default IAM permissions (to grant the `owners_group` owners
+access to the project), logging metrics and alert policies.
+
+It also contains user defined resources that can be set by the following fields
+in the project config:
+
+-   `bigquery_datasets`
+-   `compute_firewalls`
+-   `compute_images`
+-   `compute_instances`
+-   `healthcare_datasets`
+-   `monitoring_notification_channels`
+-   `project_iam_custom_roles`
+-   `project_iam_members`
+-   `pubsub_topics`
+-   `resource_manager_liens`
+-   `service_accounts`
+-   `storage_buckets`
+
+Following this, the user who created the project is removed as an owner, thus
+going forward only those in the owners group can make changes to the project.
+
+#### Phase 3: Audit
+
+This phase contains a single deployment which creates audit log resources
+defined in the `audit` block of a project (BigQuery Dataset and Cloud Storage
+Bucket) as well as logging sinks to export audit logs.
+
+NOTE: If a top-level `audit` block is set in the config, these resources will be
+created in the central audit project.
+
+#### Phase 4: Forseti
+
+NOTE: This phase is only applicable if a `forseti` block is set in the config.
+
+**forseti**: If the Forseti project config is also being applied, a forseti
+instance is applied in the Forseti project at this point.
+
+**forseti-permissions**: The Forseti instance is granted the minimum necessary
+access to each project to monitor security violations in them.
+
+## Rule Generation
+
+NOTE: this is currently not supported for Terraform configs.
+
+To generate new rules specific to your config for the Forseti instance, run the
+following command:
+
+```shell
+$ bazel run cmd/rule_generator:rule_generator -- \
+  --config_path=${CONFIG_PATH?}
+```
+
+By default, the rules will be written to the Forseti server bucket.
+Alternatively, use `--output_path` to specify a local directory or a different
+Cloud Storage bucket to write the rules to.
+
+
+## Legacy
+
+### Steps
 
 The script `cmd/apply/apply.go` takes in YAML config files and creates one or
 more projects. It creates an audit logs project if `audit_logs_project` is
@@ -201,106 +285,7 @@ the script performs the following steps:
     *   Grants permissions for each project to the Forseti service account so
         they may be monitored.
 
-## Rule Generation
-
-To generate new rules for the Forseti instance, run the following command:
-
-```shell
-$ bazel run cmd/rule_generator:rule_generator -- \
-  --config_path=${CONFIG_PATH?}
-```
-
-By default, the rules will be written to the Forseti server bucket.
-Alternatively, use `--output_path` to specify a local directory or a different
-Cloud Storage bucket to write the rules to.
-
-NOTE: this is currently not supported for Terraform configs.
-
-## Terraform
-
-NOTE: This section is only applicable if using `--enable_terraform`.
-
-DPT uses [Terraform](https://www.terraform.io/) as its primary deployment tool
-to apply a project's config to GCP.
-
-A project config is broken down to several phases which contain one or more
-Terraform deployments. This is used to handle dependencies and make logical
-groupings between projects and deployments. Details on each specific field in
-the project config can be found in the `project_config.yaml.schema` schema file.
-
-"Base" projects such as central `devops`, `audit` and `forseti` projects go
-through each phase as a group to handle dependencies among themselves. Once the
-base projects have been deployed, each data hosting project is deployed from
-beginning till end.
-
-Additionally, individual deployments in a project can be customized with any
-valid [Terraform JSON](https://www.terraform.io/docs/configuration/syntax-json.html)
-syntax through the `terraform_deployments` field. See the schema file for more
-details on supported deployments.
-
-### Phase 1: Project
-
-This phase contains a single deployment which creates the project and the bucket
-to store this project's remote state defined by the `state_storage_bucket`
-field. The state storage bucket will hold the states of deployments related to
-this project.
-
-NOTE: if a central `devops` field is set in the config, all state buckets will
-be created in the devops project.
-
-### Phase 2: Resources
-
-This phase contains several deployment which create both user defined and
-default resources in the project.
-
-**services**: This deployment contains default set of services based on the
-resources defined in the project config as well as the user defined services set
-by the `project_services` field in the project config.
-
-**resources**: This deployment contains deployment contains some preset
-defaults, such as default IAM permissions (to grant the `owners_group` owners
-access to the project), logging metrics and alert policies.
-
-It also contains user defined resources that can be set by the following fields
-in the project config:
-
--   `bigquery_datasets`
--   `compute_firewalls`
--   `compute_images`
--   `compute_instances`
--   `healthcare_datasets`
--   `monitoring_notification_channels`
--   `project_iam_custom_roles`
--   `project_iam_members`
--   `pubsub_topics`
--   `resource_manager_liens`
--   `service_accounts`
--   `storage_buckets`
-
-Following this, the user who created the project is removed as an owner, thus
-going forward only those in the owners group can make changes to the project.
-
-### Phase 3: Audit
-
-This phase contains a single deployment which creates audit log resources
-defined in the `audit` block of a project (BigQuery Dataset and Cloud Storage
-Bucket) as well as logging sinks to export audit logs.
-
-NOTE: If a top-level `audit` block is set in the config, these resources will be
-created in the central audit project.
-
-### Phase 4: Forseti
-
-NOTE: This phase is only applicable if a `forseti` block is set in the config.
-
-**forseti**: If the Forseti project config is also being applied, a forseti
-instance is applied in the Forseti project at this point.
-
-**forseti-permissions**: The Forseti instance is granted the minimum necessary
-access to each project to monitor security violations in them.
-
-## Legacy
-
+### Resources
 This section is for the legacy Deployment Manager support. This is enabled
 by passing --enable_terraform=false. Deployment manager support will be shut
 down in the near future.
@@ -338,6 +323,18 @@ iam_policy              | [Deployment Manager (CFT)](https://github.com/GoogleCl
 pubsub                  | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
 vpc_network             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/network)
 service_account (ALPHA) | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)
+
+### Updates
+
+You may wish to modify a project to add additional resources or change an
+existing setting. The `cmd/apply/apply.go` script can be used to also update a
+project. Listing a previously deployed project in the `--projects` flag (or
+omitting the flag for all projects), will trigger an update.
+
+WARNING: Deployment Manager will run with deletion policy "ABANDON". Thus, if a
+resource is removed from a project, it will become unmonitored rather than
+deleted. It is the responsibility of the user to manually remove stale
+references including IAM bindings and enabled APIs.
 
 
 ### Debug
