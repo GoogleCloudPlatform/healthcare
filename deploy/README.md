@@ -20,9 +20,8 @@ fields/features for a period of time to allow users to migrate easily.
     *   [Create New Projects](#create-new-projects)
     *   [Disabled Unneeded APIs](#disabled-unneeded-apis)
 *   [Updates](#updates)
-*   [Resources](#resources)
 *   [Terraform](#terraform)
-*   [Debug](#debug)
+*   [Legacy](#legacy)
 
 ## Setup Instructions
 
@@ -217,42 +216,6 @@ Cloud Storage bucket to write the rules to.
 
 NOTE: this is currently not supported for Terraform configs.
 
-## Resources
-
-Resources can be added in the config in a uniform way, but may use different
-tools underneath to do the actual deployment. Since each resource may have a
-very large and complex schema, we cannot cover all of it in our tooling layers.
-Thus, we only implement a subset and allow the users to set additional allowed
-fields as they wish. This is done through the `properties` block available for
-most resources. See documentation below for each resource.
-
-See the `samples/` directory for sample resource definitions.
-
-NOTE: project_config.yaml.schema provides documentation on our subset. Please
-reference it before adding your resource to your config.
-
-NOTE: Dependencies can be set implicitly in deployment manager resource
-properties. See
-https://cloud.google.com/deployment-manager/docs/step-by-step-guide/using-references.
-Dependencies are only supported between deployment manager resources.
-
-Resource                | Deployment Tool
------------------------ | ---------------
-bq_dataset              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery)
-chc_datasets (ALPHA)    | [Deployment Manager](https://cloud.google.com/healthcare/docs/)
-enabled_api             | [Gcloud](https://cloud.google.com/sdk/gcloud/reference/services/enable)
-forseti                 | [Terraform (CFT)](https://github.com/forseti-security/terraform-google-forseti)
-gce_firewall            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall)
-gce_instance            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance)
-gcs_bucket              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket)
-gke_cluster             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke)
-gke_workload            | [Kubectl](https://kubernetes.io/docs/tutorials/configuration)
-iam_custom_role         | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role)
-iam_policy              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member)
-pubsub                  | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
-vpc_network             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/network)
-service_account (ALPHA) | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)
-
 ## Terraform
 
 NOTE: This section is only applicable if using `--enable_terraform`.
@@ -336,7 +299,48 @@ instance is applied in the Forseti project at this point.
 **forseti-permissions**: The Forseti instance is granted the minimum necessary
 access to each project to monitor security violations in them.
 
-## Debug
+## Legacy
+
+This section is for the legacy Deployment Manager support. This is enabled
+by passing --enable_terraform=false. Deployment manager support will be shut
+down in the near future.
+
+Resources can be added in the config in a uniform way, but may use different
+tools underneath to do the actual deployment. Since each resource may have a
+very large and complex schema, we cannot cover all of it in our tooling layers.
+Thus, we only implement a subset and allow the users to set additional allowed
+fields as they wish. This is done through the `properties` block available for
+most resources. See documentation below for each resource.
+
+See the `samples/` directory for sample resource definitions.
+
+NOTE: project_config.yaml.schema provides documentation on our subset. Please
+reference it before adding your resource to your config.
+
+NOTE: Dependencies can be set implicitly in deployment manager resource
+properties. See
+https://cloud.google.com/deployment-manager/docs/step-by-step-guide/using-references.
+Dependencies are only supported between deployment manager resources.
+
+Resource                | Deployment Tool
+----------------------- | ---------------
+bq_dataset              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery)
+chc_datasets (ALPHA)    | [Deployment Manager](https://cloud.google.com/healthcare/docs/)
+enabled_api             | [Gcloud](https://cloud.google.com/sdk/gcloud/reference/services/enable)
+forseti                 | [Terraform (CFT)](https://github.com/forseti-security/terraform-google-forseti)
+gce_firewall            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall)
+gce_instance            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance)
+gcs_bucket              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket)
+gke_cluster             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke)
+gke_workload            | [Kubectl](https://kubernetes.io/docs/tutorials/configuration)
+iam_custom_role         | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role)
+iam_policy              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member)
+pubsub                  | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
+vpc_network             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/network)
+service_account (ALPHA) | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)
+
+
+### Debug
 
 These are solutions to non-typical problems encountered:
 
