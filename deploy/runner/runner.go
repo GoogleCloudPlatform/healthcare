@@ -80,14 +80,23 @@ type Fake struct{}
 
 // CmdRun prints the command information.
 func (*Fake) CmdRun(cmd *exec.Cmd) error {
-	log.Printf("Dry run call: %s", strings.Join(cmd.Args, " "))
-	return nil
+	cmdStr := strings.Join(cmd.Args, " ")
+	switch {
+	case contains(cmdStr, "cp"):
+		// In dry_run mode, stil execute commands that copy Terraform modules and configs
+		// to the Terraform working directory so that users can find them.
+		return (&Default{}).CmdRun(cmd)
+	default:
+		log.Printf("Dry run call: %s", strings.Join(cmd.Args, " "))
+		return nil
+	}
 }
 
 // CmdOutput prints the command information.
 func (*Fake) CmdOutput(cmd *exec.Cmd) ([]byte, error) {
 	log.Printf("Dry run call: %s", strings.Join(cmd.Args, " "))
-	switch cmdStr := strings.Join(cmd.Args, " "); {
+	cmdStr := strings.Join(cmd.Args, " ")
+	switch {
 	case contains(cmdStr, "projects describe"):
 		return nil, errors.New("")
 	case contains(cmdStr, "logging sinks describe audit-logs-to-bigquery", "--format json"):
@@ -118,7 +127,8 @@ func (*Fake) CmdOutput(cmd *exec.Cmd) ([]byte, error) {
 // CmdCombinedOutput prints the command information.
 func (*Fake) CmdCombinedOutput(cmd *exec.Cmd) ([]byte, error) {
 	log.Printf("Dry run call: %s", strings.Join(cmd.Args, " "))
-	switch cmdStr := strings.Join(cmd.Args, " "); {
+	cmdStr := strings.Join(cmd.Args, " ")
+	switch {
 	case contains(cmdStr, "deployment-manager deployments list", "--format json"):
 		return []byte("[]"), nil
 	case contains(cmdStr, "monitoring policies list"):

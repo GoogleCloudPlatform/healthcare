@@ -57,7 +57,7 @@ func Apply(config *Config, dir string, opts *Options, rn runner.Runner) error {
 		if err := os.MkdirAll(dst, os.ModePerm); err != nil {
 			return fmt.Errorf("failed to mkdir %q: %v", dst, err)
 		}
-		if err := rn.CmdRun(exec.Command("cp", "-r", m.Source, dst)); err != nil {
+		if err := rn.CmdRun(exec.Command("cp", "-r", "-L", "--no-preserve=mode,ownership", m.Source, dst)); err != nil {
 			return fmt.Errorf("failed to copy %q to %q: %v", m.Source, dst, err)
 		}
 	}

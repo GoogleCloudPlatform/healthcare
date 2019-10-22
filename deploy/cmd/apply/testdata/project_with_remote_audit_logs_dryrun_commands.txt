@@ -24,7 +24,6 @@ gcloud --project my-forseti-project alpha monitoring policies create --policy={"
 terraform init
 terraform import -no-color google_storage_bucket.my-forseti-project-state my-forseti-project/my-forseti-project-state
 terraform apply
-cp -r ./external/terraform_google_forseti /tmp/xxxxxxxxx
 terraform init
 terraform apply
 gcloud --project my-forseti-project iam service-accounts list --format json --filter email:forseti-server-gcp-*
