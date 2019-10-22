@@ -70,6 +70,403 @@ definitions:
           Group to be granted access to audit logs and securityReviewer role in
           this project.
 
+      devops:
+        type: object
+        description: Configuration for devops related components like Terraform.
+        additionalProperties: false
+        required:
+        - state_storage_bucket
+        properties:
+          state_storage_bucket:
+            type: object
+            description: |
+              Bucket for Teraform to store its remote state
+              (https://www.terraform.io/docs/state/remote.html).
+              Wraps https://www.terraform.io/docs/providers/google/r/storage_bucket.html.
+
+      audit:
+        type: object
+        description: |
+          Configuration of the (local or remote) audit logs for this project.
+          This cannot be changed after the project has been deployed.
+        additionalProperties: false
+        required:
+        - logs_bigquery_dataset
+        properties:
+          logs_bigquery_dataset:
+            type: object
+            description: |
+              BigQuery dataset to hold audit logs.
+              Supports google_bigquery_dataset (https://www.terraform.io/docs/providers/google/r/bigquery_dataset.html).
+          logs_storage_bucket:
+            type: object
+            description: |
+              GCS bucket to hold GCS logs. Required only if the project contains
+              storage_buckets.
+
+      bigquery_datasets:
+        type: array
+        description: |
+          Supports google_bigquery_dataset (https://www.terraform.io/docs/providers/google/r/bigquery_dataset.html).
+        items:
+          type: object
+
+      compute_firewalls:
+        type: array
+        description: |
+          Supports google_compute_firewall (https://www.terraform.io/docs/providers/google/r/compute_firewall.html).
+        items:
+          type: object
+
+      compute_images:
+        type: array
+        description: |
+          Supports google_compute_image (https://www.terraform.io/docs/providers/google/r/compute_image.html).
+        items:
+          type: object
+
+      compute_instances:
+        type: array
+        description: |
+          Supports google_compute_instance (https://www.terraform.io/docs/providers/google/r/compute_instance.html).
+        items:
+          type: object
+
+      healthcare_datasets:
+        type: array
+        description: |
+          Supports google_healthcare_dataset (https://www.terraform.io/docs/providers/google/r/healthcare_dataset.html).
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              description: The resource name for the Dataset.
+            _iam_members:
+              type: array
+              description: |
+                Supports google_healthcare_dataset_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_dataset_iam.html).
+                Only the fields below are allowed.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - role
+                - member
+                properties:
+                  role:
+                    type: string
+                    description: The role that should be applied.
+                  member:
+                    type: string
+                    description: |
+                      Identities that will be granted the privilege in role.
+          _dicom_stores:
+            type: array
+            description: Supports google_healthcare_dicom_store (https://www.terraform.io/docs/providers/google/r/healthcare_dicom_store.html).
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: |
+                    The resource name for the DicomStore.
+                    ** Changing this property may recreate the Dicom store
+                    (removing all data) **
+                _iam_members:
+                  type: array
+                  description: |
+                    Supports google_healthcare_dicom_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_dicom_store_iam.html).
+                    Only the fields below are allowed.
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - role
+                    - member
+                    properties:
+                      role:
+                        type: string
+                        description: The role that should be applied.
+                      member:
+                        type: string
+                        description: |
+                          Identities that will be granted the privilege in role.
+          _fhir_stores:
+            type: array
+            description: Supports google_healthcare_fhir_store (https://www.terraform.io/docs/providers/google/r/healthcare_fhir_store.html).
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: |
+                    The resource name for the FhirStore.
+                    ** Changing this property may recreate the Dicom store
+                    (removing all data) **
+                _iam_members:
+                  type: array
+                  description: |
+                    Supports google_healthcare_fhir_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_fhir_store_iam.html).
+                    Only the fields below are allowed.
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - role
+                    - member
+                    properties:
+                      role:
+                        type: string
+                        description: The role that should be applied.
+                      member:
+                        type: string
+                        description: |
+                          Identities that will be granted the privilege in role.
+          _hl7_v2_stores:
+            type: array
+            description: Supports google_healthcare_hl7_v2_store (https://www.terraform.io/docs/providers/google/r/healthcare_hl7_v2_store.html).
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: |
+                    The resource name for the FhirStore.
+                    ** Changing this property may recreate the Dicom store
+                    (removing all data) **
+                _iam_members:
+                  type: array
+                  description: |
+                    Supports google_healthcare_hl7_v2_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_hl7_v2_store_iam.html).
+                    Only the fields below are allowed.
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                    - role
+                    - member
+                    properties:
+                      role:
+                        type: string
+                        description: The role that should be applied.
+                      member:
+                        type: string
+                        description: |
+                          Identities that will be granted the privilege in role.
+
+      monitoring_notification_channels:
+        type: array
+        description: |
+          Supports google_monitoring_notification_channel (https://www.terraform.io/docs/providers/google/r/monitoring_notification_channel.html).
+        items:
+          type: object
+          properties:
+            _email:
+              type: string
+              description: |
+                Helper to create an email notification channel.
+                Will set the `type` and `labels` fields (thus these fields must
+                not be set in conjunction with `_email`).
+
+      project_iam_custom_roles:
+        type: array
+        description: |
+          Supports google_project_iam_custom_role (https://www.terraform.io/docs/providers/google/r/google_project_iam_custom_role.html).
+
+      project_iam_members:
+        type: array
+        description: |
+          Project level IAM members.
+          Supports google_project_iam_member (https://www.terraform.io/docs/providers/google/r/google_project_iam.html).
+          Only the fields below are allowed.
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - role
+          - member
+          properties:
+            role:
+              type: string
+              description: The role that should be applied.
+            member:
+              type: string
+              description: |
+                Identities that will be granted the privilege in role.
+
+      project_services:
+        type: array
+        description: |
+          Supports google_project_service
+          (https://www.terraform.io/docs/providers/google/r/google_project_service.html).
+          Only the fields below can be set.
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - service
+          properties:
+            service:
+              type: string
+              descrpition: The service to enable.
+
+      pubsub_topics:
+        type: array
+        description: |
+          Supports google_pubsub_topic (https://www.terraform.io/docs/providers/google/r/pubsub_topic.html).
+        items:
+          type: object
+          properties:
+            _subscriptions:
+              type: array
+              description: |
+                Supports google_pubsub_subscription (https://www.terraform.io/docs/providers/google/r/pubsub_subscription.html).
+                items:
+                  type: object
+                  properties:
+                    _iam_members:
+                     type: array
+                     description: |
+                       Supports google_pubsub_subscription_iam_member (https://www.terraform.io/docs/providers/google/r/pubsub_subscription_iam.html).
+                       Only the fields below are allowed.
+                     items:
+                       type: object
+                       additionalProperties: false
+                       required:
+                       - role
+                       - member
+                       properties:
+                         role:
+                           type: string
+                           description: The role that should be applied.
+                         member:
+                          type: string
+                          description:
+                            Identities that will be granted the privilege in role.
+
+      terraform_deployments:
+        type: object
+        description: |
+          Configure the terraform deployments in this project.
+          Useful for customizing the deployment to output values or add
+          unsupported resources/modules.
+          Currently, only the 'resources' deployment can be configured.
+          Any Terraform JSON syntax is supported:
+          https://www.terraform.io/docs/configuration/syntax-json.html.
+          NOTE: This is an advanced feature and should be avoided if possible.
+          If the custom config can be supported natively, please reach out to
+          the team and prefer to use that.
+        additionalProperties: false
+        properties:
+          resources:
+            type: object
+            description: Customization for the resources deployment.
+            additionalProperties: false
+            properties:
+              config:
+                type: object
+                description: Additional config to attach to this deployment.
+
+      resource_manager_liens:
+        type: array
+        description: |
+          Supports google_resource_manager_lien (https://www.terraform.io/docs/providers/google/r/resource_manager_lien.html).
+          Only the fields below can be set.
+        items:
+          type: object
+          additionalProperties: false
+          properties:
+            _project_deletion:
+              type: boolean
+              description: |
+                Helper to create a project deletion lien. Set this to get a
+                default managed lien. Do not set any other fields.
+            reason:
+              type: string
+              description: |
+                Concise user-visible strings indicating why an action cannot be
+                performed on a resource. Maximum length of 200 characters.
+            origin:
+              type: string
+              description: |
+                A stable, user-visible/meaningful string identifying the origin
+                of the Lien, intended to be inspected programmatically. Maximum
+                length of 200 characters.
+            parent:
+              type: string
+              description: |
+                A reference to the resource this Lien is attached to. The server
+                will validate the parent against those for which Liens are
+                supported. Since a variety of objects can have Liens against
+                them, you must provide the type prefix
+                (e.g. "projects/my-project-name").
+            restrictions:
+              type: array
+              description: |
+                The types of operations which should be blocked as a result of this
+                Lien. Each value should correspond to an IAM permission. The
+                server will validate the permissions against those for which
+                Liens are supported. An empty list is meaningless and will be
+                rejected. e.g. ['resourcemanager.projects.delete']
+              items:
+                type: string
+
+      service_accounts:
+        type: array
+        description: |
+          Supports google_service_account (https://www.terraform.io/docs/providers/google/r/google_service_account.html).
+          Only the fields below are allowed.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - account_id
+            properties:
+              account_id:
+                type: string
+                description: |
+                  The account id that is used to generate the service account
+                  email address and a stable unique id.
+                  It is unique within a project, must be 6-30 characters long,
+                  and match the regular expression [a-z]([-a-z0-9]*[a-z0-9]) to
+                  comply with RFC1035.
+              display_name:
+                type: string
+                description: |
+                  The display name for the service account. Can be updated
+                  without creating a new resource.
+
+      storage_buckets:
+        type: array
+        description: |
+          Supports google_storage_bucket (https://www.terraform.io/docs/providers/google/r/storage_bucket.html).
+        items:
+          type: object
+          properties:
+            _iam_members:
+             type: array
+             description: |
+               Supports google_storage_iam_member (https://www.terraform.io/docs/providers/google/r/storage_bucket_iam.html).
+               Only the fields below are allowed.
+             items:
+               type: object
+               additionalProperties: false
+               required:
+               - role
+               - member
+               properties:
+                 role:
+                   type: string
+                   description: The role that should be applied.
+                 member:
+                  type: string
+                  description:
+                    Identities that will be granted the privilege in role.
+
+      # -----------------------------------------
+      # ------------- LEGACY FIELDS -------------
+      # -----------------------------------------
       data_readwrite_groups:
         type: array
         description: |
@@ -91,21 +488,6 @@ definitions:
           or per-resource permissions directly.
         items:
           $ref: '#/definitions/email_address'
-
-      devops:
-        type: object
-        description: TERRAFORM ONLY. Configuration for devops related components like Terraform.
-        additionalProperties: false
-        required:
-        - state_storage_bucket
-        properties:
-          state_storage_bucket:
-            type: object
-            description: |
-              Bucket for Teraform to store its remote state
-              (https://www.terraform.io/docs/state/remote.html).
-              Wraps https://www.terraform.io/docs/providers/google/r/storage_bucket.html.
-
       create_deletion_lien:
         type: boolean
         description: |
@@ -192,26 +574,6 @@ definitions:
                   storageClass:
                     type: string
                     description: Storage class of the bucket.
-      audit:
-        type: object
-        description: |
-          TERRAFORM ONLY.
-          Configuration of the (local or remote) audit logs for this project.
-          This cannot be changed after the project has been deployed.
-        additionalProperties: false
-        required:
-        - logs_bigquery_dataset
-        properties:
-          logs_bigquery_dataset:
-            type: object
-            description: |
-              BigQuery dataset to hold audit logs.
-              Supports google_bigquery_dataset (https://www.terraform.io/docs/providers/google/r/bigquery_dataset.html).
-          logs_storage_bucket:
-            type: object
-            description: |
-              GCS bucket to hold GCS logs. Required only if the project contains
-              storage_buckets.
 
       stackdriver_alert_email:
         $ref: '#/definitions/email_address'
@@ -532,378 +894,6 @@ definitions:
                   description: |
                     Wraps the CFT template vpn.py.
 
-      bigquery_datasets:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_bigquery_dataset (https://www.terraform.io/docs/providers/google/r/bigquery_dataset.html).
-        items:
-          type: object
-
-      compute_firewalls:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_compute_firewall (https://www.terraform.io/docs/providers/google/r/compute_firewall.html).
-        items:
-          type: object
-
-      compute_images:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_compute_image (https://www.terraform.io/docs/providers/google/r/compute_image.html).
-        items:
-          type: object
-
-      compute_instances:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_compute_instance (https://www.terraform.io/docs/providers/google/r/compute_instance.html).
-        items:
-          type: object
-
-      healthcare_datasets:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_healthcare_dataset (https://www.terraform.io/docs/providers/google/r/healthcare_dataset.html).
-        items:
-          type: object
-          properties:
-            name:
-              type: string
-              description: The resource name for the Dataset.
-            _iam_members:
-              type: array
-              description: |
-                Supports google_healthcare_dataset_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_dataset_iam.html).
-                Only the fields below are allowed.
-              items:
-                type: object
-                additionalProperties: false
-                required:
-                - role
-                - member
-                properties:
-                  role:
-                    type: string
-                    description: The role that should be applied.
-                  member:
-                    type: string
-                    description: |
-                      Identities that will be granted the privilege in role.
-          _dicom_stores:
-            type: array
-            description: Supports google_healthcare_dicom_store (https://www.terraform.io/docs/providers/google/r/healthcare_dicom_store.html).
-            items:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: |
-                    The resource name for the DicomStore.
-                    ** Changing this property may recreate the Dicom store
-                    (removing all data) **
-                _iam_members:
-                  type: array
-                  description: |
-                    Supports google_healthcare_dicom_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_dicom_store_iam.html).
-                    Only the fields below are allowed.
-                  items:
-                    type: object
-                    additionalProperties: false
-                    required:
-                    - role
-                    - member
-                    properties:
-                      role:
-                        type: string
-                        description: The role that should be applied.
-                      member:
-                        type: string
-                        description: |
-                          Identities that will be granted the privilege in role.
-          _fhir_stores:
-            type: array
-            description: Supports google_healthcare_fhir_store (https://www.terraform.io/docs/providers/google/r/healthcare_fhir_store.html).
-            items:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: |
-                    The resource name for the FhirStore.
-                    ** Changing this property may recreate the Dicom store
-                    (removing all data) **
-                _iam_members:
-                  type: array
-                  description: |
-                    Supports google_healthcare_fhir_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_fhir_store_iam.html).
-                    Only the fields below are allowed.
-                  items:
-                    type: object
-                    additionalProperties: false
-                    required:
-                    - role
-                    - member
-                    properties:
-                      role:
-                        type: string
-                        description: The role that should be applied.
-                      member:
-                        type: string
-                        description: |
-                          Identities that will be granted the privilege in role.
-          _hl7_v2_stores:
-            type: array
-            description: Supports google_healthcare_hl7_v2_store (https://www.terraform.io/docs/providers/google/r/healthcare_hl7_v2_store.html).
-            items:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: |
-                    The resource name for the FhirStore.
-                    ** Changing this property may recreate the Dicom store
-                    (removing all data) **
-                _iam_members:
-                  type: array
-                  description: |
-                    Supports google_healthcare_hl7_v2_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_hl7_v2_store_iam.html).
-                    Only the fields below are allowed.
-                  items:
-                    type: object
-                    additionalProperties: false
-                    required:
-                    - role
-                    - member
-                    properties:
-                      role:
-                        type: string
-                        description: The role that should be applied.
-                      member:
-                        type: string
-                        description: |
-                          Identities that will be granted the privilege in role.
-
-      monitoring_notification_channels:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_monitoring_notification_channel (https://www.terraform.io/docs/providers/google/r/monitoring_notification_channel.html).
-        items:
-          type: object
-          properties:
-            _email:
-              type: string
-              description: |
-                Helper to create an email notification channel.
-                Will set the `type` and `labels` fields (thus these fields must
-                not be set in conjunction with `_email`).
-
-      project_iam_custom_roles:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_project_iam_custom_role (https://www.terraform.io/docs/providers/google/r/google_project_iam_custom_role.html).
-
-      project_iam_members:
-        type: array
-        description: |
-          TERRAFORM ONLY. Project level IAM members.
-          Supports google_project_iam_member (https://www.terraform.io/docs/providers/google/r/google_project_iam.html).
-          Only the fields below are allowed.
-        items:
-          type: object
-          additionalProperties: false
-          required:
-          - role
-          - member
-          properties:
-            role:
-              type: string
-              description: The role that should be applied.
-            member:
-              type: string
-              description: |
-                Identities that will be granted the privilege in role.
-
-      project_services:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_project_service
-          (https://www.terraform.io/docs/providers/google/r/google_project_service.html).
-          Only the fields below can be set.
-        items:
-          type: object
-          additionalProperties: false
-          required:
-          - service
-          properties:
-            service:
-              type: string
-              descrpition: The service to enable.
-
-      pubsub_topics:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_pubsub_topic (https://www.terraform.io/docs/providers/google/r/pubsub_topic.html).
-        items:
-          type: object
-          properties:
-            _subscriptions:
-              type: array
-              description: |
-                Supports google_pubsub_subscription (https://www.terraform.io/docs/providers/google/r/pubsub_subscription.html).
-                items:
-                  type: object
-                  properties:
-                    _iam_members:
-                     type: array
-                     description: |
-                       Supports google_pubsub_subscription_iam_member (https://www.terraform.io/docs/providers/google/r/pubsub_subscription_iam.html).
-                       Only the fields below are allowed.
-                     items:
-                       type: object
-                       additionalProperties: false
-                       required:
-                       - role
-                       - member
-                       properties:
-                         role:
-                           type: string
-                           description: The role that should be applied.
-                         member:
-                          type: string
-                          description:
-                            Identities that will be granted the privilege in role.
-
-      terraform_deployments:
-        type: object
-        description: |
-          TERRAFORM ONLY.
-          Configure the terraform deployments in this project.
-          Useful for customizing the deployment to output values or add
-          unsupported resources/modules.
-          Currently, only the 'resources' deployment can be configured.
-          Any Terraform JSON syntax is supported:
-          https://www.terraform.io/docs/configuration/syntax-json.html.
-          NOTE: This is an advanced feature and should be avoided if possible.
-          If the custom config can be supported natively, please reach out to
-          the team and prefer to use that.
-        additionalProperties: false
-        properties:
-          resources:
-            type: object
-            description: Customization for the resources deployment.
-            additionalProperties: false
-            properties:
-              config:
-                type: object
-                description: Additional config to attach to this deployment.
-
-      resource_manager_liens:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_resource_manager_lien (https://www.terraform.io/docs/providers/google/r/resource_manager_lien.html).
-          Only the fields below can be set.
-        items:
-          type: object
-          additionalProperties: false
-          properties:
-            _project_deletion:
-              type: boolean
-              description: |
-                Helper to create a project deletion lien. Set this to get a
-                default managed lien. Do not set any other fields.
-            reason:
-              type: string
-              description: |
-                Concise user-visible strings indicating why an action cannot be
-                performed on a resource. Maximum length of 200 characters.
-            origin:
-              type: string
-              description: |
-                A stable, user-visible/meaningful string identifying the origin
-                of the Lien, intended to be inspected programmatically. Maximum
-                length of 200 characters.
-            parent:
-              type: string
-              description: |
-                A reference to the resource this Lien is attached to. The server
-                will validate the parent against those for which Liens are
-                supported. Since a variety of objects can have Liens against
-                them, you must provide the type prefix
-                (e.g. "projects/my-project-name").
-            restrictions:
-              type: array
-              description: |
-                The types of operations which should be blocked as a result of this
-                Lien. Each value should correspond to an IAM permission. The
-                server will validate the permissions against those for which
-                Liens are supported. An empty list is meaningless and will be
-                rejected. e.g. ['resourcemanager.projects.delete']
-              items:
-                type: string
-
-      service_accounts:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_service_account (https://www.terraform.io/docs/providers/google/r/google_service_account.html).
-          Only the fields below are allowed.
-          items:
-            type: object
-            additionalProperties: false
-            required:
-            - account_id
-            properties:
-              account_id:
-                type: string
-                description: |
-                  The account id that is used to generate the service account
-                  email address and a stable unique id.
-                  It is unique within a project, must be 6-30 characters long,
-                  and match the regular expression [a-z]([-a-z0-9]*[a-z0-9]) to
-                  comply with RFC1035.
-              display_name:
-                type: string
-                description: |
-                  The display name for the service account. Can be updated
-                  without creating a new resource.
-
-      storage_buckets:
-        type: array
-        description: |
-          TERRAFORM ONLY.
-          Supports google_storage_bucket (https://www.terraform.io/docs/providers/google/r/storage_bucket.html).
-        items:
-          type: object
-          properties:
-            _iam_members:
-             type: array
-             description: |
-               Supports google_storage_iam_member (https://www.terraform.io/docs/providers/google/r/storage_bucket_iam.html).
-               Only the fields below are allowed.
-             items:
-               type: object
-               additionalProperties: false
-               required:
-               - role
-               - member
-               properties:
-                 role:
-                   type: string
-                   description: The role that should be applied.
-                 member:
-                  type: string
-                  description:
-                    Identities that will be granted the privilege in role.
 required:
 - overall
 - generated_fields_path
