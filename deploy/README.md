@@ -302,8 +302,10 @@ It also contains user defined resources that can be set by the following fields
 in the project config:
 
 -   `bigquery_datasets`
+-   `compute_firewalls`
 -   `compute_images`
 -   `compute_instances`
+-   `healthcare_datasets`
 -   `monitoring_notification_channels`
 -   `project_iam_custom_roles`
 -   `project_iam_members`
