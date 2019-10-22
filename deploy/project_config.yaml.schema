@@ -94,7 +94,7 @@ definitions:
 
       devops:
         type: object
-        description: DEV ONLY. Configuration for devops related components like Terraform.
+        description: TERRAFORM ONLY. Configuration for devops related components like Terraform.
         additionalProperties: false
         required:
         - state_storage_bucket
@@ -195,7 +195,7 @@ definitions:
       audit:
         type: object
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Configuration of the (local or remote) audit logs for this project.
           This cannot be changed after the project has been deployed.
         additionalProperties: false
@@ -535,7 +535,7 @@ definitions:
       bigquery_datasets:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_bigquery_dataset (https://www.terraform.io/docs/providers/google/r/bigquery_dataset.html).
         items:
           type: object
@@ -543,7 +543,7 @@ definitions:
       compute_firewalls:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_compute_firewall (https://www.terraform.io/docs/providers/google/r/compute_firewall.html).
         items:
           type: object
@@ -551,7 +551,7 @@ definitions:
       compute_images:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_compute_image (https://www.terraform.io/docs/providers/google/r/compute_image.html).
         items:
           type: object
@@ -559,7 +559,7 @@ definitions:
       compute_instances:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_compute_instance (https://www.terraform.io/docs/providers/google/r/compute_instance.html).
         items:
           type: object
@@ -567,7 +567,7 @@ definitions:
       healthcare_datasets:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_healthcare_dataset (https://www.terraform.io/docs/providers/google/r/healthcare_dataset.html).
         items:
           type: object
@@ -691,7 +691,7 @@ definitions:
       monitoring_notification_channels:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_monitoring_notification_channel (https://www.terraform.io/docs/providers/google/r/monitoring_notification_channel.html).
         items:
           type: object
@@ -706,13 +706,13 @@ definitions:
       project_iam_custom_roles:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_project_iam_custom_role (https://www.terraform.io/docs/providers/google/r/google_project_iam_custom_role.html).
 
       project_iam_members:
         type: array
         description: |
-          DEV ONLY. Project level IAM members.
+          TERRAFORM ONLY. Project level IAM members.
           Supports google_project_iam_member (https://www.terraform.io/docs/providers/google/r/google_project_iam.html).
           Only the fields below are allowed.
         items:
@@ -733,7 +733,7 @@ definitions:
       project_services:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_project_service
           (https://www.terraform.io/docs/providers/google/r/google_project_service.html).
           Only the fields below can be set.
@@ -750,7 +750,7 @@ definitions:
       pubsub_topics:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_pubsub_topic (https://www.terraform.io/docs/providers/google/r/pubsub_topic.html).
         items:
           type: object
@@ -809,7 +809,7 @@ definitions:
       resource_manager_liens:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_resource_manager_lien (https://www.terraform.io/docs/providers/google/r/resource_manager_lien.html).
           Only the fields below can be set.
         items:
@@ -854,7 +854,7 @@ definitions:
       service_accounts:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_service_account (https://www.terraform.io/docs/providers/google/r/google_service_account.html).
           Only the fields below are allowed.
           items:
@@ -880,7 +880,7 @@ definitions:
       storage_buckets:
         type: array
         description: |
-          DEV ONLY (TERRAFORM).
+          TERRAFORM ONLY.
           Supports google_storage_bucket (https://www.terraform.io/docs/providers/google/r/storage_bucket.html).
         items:
           type: object
