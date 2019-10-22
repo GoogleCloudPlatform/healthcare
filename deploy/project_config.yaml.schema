@@ -906,7 +906,6 @@ definitions:
                     Identities that will be granted the privilege in role.
 required:
 - overall
-- projects
 - generated_fields_path
 
 properties:

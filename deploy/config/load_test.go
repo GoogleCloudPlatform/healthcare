@@ -63,7 +63,6 @@ projects: []
 			inputConf: []byte(`
 generated_fields_path: bar.yaml
 overall:
-  billing_account: 000000-000000-000000
   organization_id: '12345678'
   domain: foo.com
 `),
