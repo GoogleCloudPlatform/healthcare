@@ -3,10 +3,8 @@
 [![GoDoc](https://godoc.org/github.com/GoogleCloudPlatform/healthcare/deploy?status.svg)](https://godoc.org/github.com/GoogleCloudPlatform/healthcare/deploy)
 
 The Data Protection Toolkit (DPT) provides a CLI to configure GCP environments.
-It wraps existing tools such as Deployment Manager, Terraform, Gcloud and
-Kubectl to provide an end to end deployment solution. While it is developed for
-healthcare use cases, the tool can be applied to a wide variety of users wishing
-to use Google Cloud.
+It wraps existing tools such as Terraform and Gcloud to provide an end to end
+deployment solution.
 
 **Status:** ALPHA
 
@@ -47,38 +45,30 @@ already available.
 
 -   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
--   [Go 1.10+](https://golang.org/dl/)
-
 -   [Terraform 0.12](https://www.terraform.io/downloads.html)
 
 ### Create Groups
 
 Before using the setup scripts, you will need to create the following groups for
-your dataset projects. We also provide recommended names based on best
+your projects. We also provide recommended names based on best
 practices.
 
 *   *Owners Group*: `{PROJECT_ID}-owners@{DOMAIN}`. Provides owners role to the
     project, which allows members to do anything permitted by organization
     policies within the project. Users should only be added to the owners group
-    short term.
+    short term. Each project should typically has its own owners group.
+    When a project needs to be updated, the deployer should only temporarily
+    join the owners group of the project being deployed and should not have
+    access to other unrelated projects.
 *   *Auditors Group*: `{PROJECT_ID}-auditors@{DOMAIN}`. The auditors group has
     permission to list resources, view IAM configurations and view contents of
     audit logs, but not to view any hosted data. If you have multiple data
     projects, you may want a single auditors group across all projects.
-*   *Data Read-only Group*: `{PROJECT_ID}-readonly@{DOMAIN}`. Members of this
-    group have read-only access to the hosted data in the project.
-*   *Data Read/Write Group*: `{PROJECT_ID}-readwrite@{DOMAIN}`. Members of this
-    group have permission to read and write hosted data in the project.
-
-If you are using a separate Audit Logs project, then the audit logs project will
-also need its own Owners Group and an Auditors group, but no data groups.
 
 ### Create a YAML Config
 
-Edit a copy of the file `samples/project_with_remote_audit_logs.yaml` or
-`samples/project_with_local_audit_logs.yaml`, depending on whether you are using
-remote or local audit logs. The schema for these YAML files is in
-`project_config.yaml.schema`.
+View the schema for the config in `project_config.yaml.schema` and examples in
+the `samples` directory for sample YAML configs.
 
 *   The `overall` section contains organization and billing details applied to
     all projects. Omit the `organziation_id` if the projects are not being
@@ -86,12 +76,6 @@ remote or local audit logs. The schema for these YAML files is in
 *   If using remote audit logs, include the `audit_logs_project` section, which
     describes the project that will host audit logs.
 *   Under `projects`, list each data hosting project to create.
-
-WARNING: these samples use newer configuration that is incompatible with the
-previous and require `--enable_new_style_resources` to be passed to the
-`cmd/apply/apply.go` script. This flag will soon become default and the old
-style configs will be deprecated. Old style config examples can be found
-[here](https://github.com/GoogleCloudPlatform/healthcare/tree/5bfa6b72a8077028ead4ff8c498325915180c3b8/deploy/samples).
 
 ### Apply project configs
 
