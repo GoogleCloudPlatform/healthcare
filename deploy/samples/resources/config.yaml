@@ -67,7 +67,7 @@ projects:
     - name: example-hl7-v2-store
   monitoring_notification_channels:
   - display_name: email
-    _email: example@example.com
+    _email: example-auditors@example.com
   project_iam_members:
   - role: roles/editor
     member: user:example@example.com

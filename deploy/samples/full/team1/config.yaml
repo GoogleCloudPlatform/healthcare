@@ -43,3 +43,6 @@ projects:
       _iam_members:
       - role: roles/healthcare.fhirResourceEditor
         member: group:example-analysis-uploaders@example.com
+  monitoring_notification_channels:
+  - display_name: email
+    _email: example-auditors@example.com

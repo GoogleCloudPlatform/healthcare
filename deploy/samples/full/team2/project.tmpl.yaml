@@ -27,6 +27,9 @@ projects:
     state_storage_bucket:
       name: example-data-{{.DATA_ID}}-state
       location: US
+  monitoring_notification_channels:
+  - display_name: email
+    _email: example-auditors@example.com
   storage_buckets:
   - name: data-{{.DATA_ID}}
     location: US
