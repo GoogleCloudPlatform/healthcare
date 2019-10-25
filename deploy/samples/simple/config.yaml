@@ -1,0 +1,36 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This sample configuration provides the minimum configuration required by the DPT scripts.
+# Audit resources will be created locally in the project.
+
+overall:
+  organization_id: '12345678'
+  billing_account: 000000-000000-000000
+  domain: example.com
+
+generated_fields_path: ./generated_fields.yaml
+
+projects:
+- project_id: example-project
+  owners_group: example-project-owners@example.com
+  auditors_group: example-auditors-group@example.com
+  audit:
+    logs_bigquery_dataset:
+      dataset_id: example_project_logs  # Bigquery Dataset names must use underscores.
+      location: US
+  devops:
+    state_storage_bucket:
+      name: example-project-state
+      location: US
