@@ -98,7 +98,9 @@ func applyConfigs() (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to open %q to write: %v", conf.GeneratedFieldsPath, err)
 		}
-		file.Close()
+		if err := file.Close(); err != nil {
+      return fmt.Errorf("failed to close %q: %v", file.Name(), err)
+    }
 	}
 
 	// Write generated fields to the output file at the end.
