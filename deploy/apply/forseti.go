@@ -45,12 +45,12 @@ var forsetiStandardRoles = [...]string{
 }
 
 // Forseti applies project configuration to a Forseti project.
-func Forseti(conf *config.Config, terraformConfigsPath string, rn runner.Runner) error {
+func Forseti(conf *config.Config, terraformConfigsDir string, rn runner.Runner) error {
 	project := conf.Forseti.Project
-	if err := Default(conf, project, terraformConfigsPath, rn); err != nil {
+	if err := Default(conf, project, terraformConfigsDir, rn); err != nil {
 		return err
 	}
-	workDir, err := terraform.WorkDir(terraformConfigsPath, project.ID)
+	workDir, err := terraform.WorkDir(terraformConfigsDir, project.ID)
 	if err != nil {
 		return err
 	}

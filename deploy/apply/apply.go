@@ -74,7 +74,7 @@ type depender interface {
 }
 
 // Default applies project configurations to a default project.
-func Default(conf *config.Config, project *config.Project, terraformConfigsPath string, rn runner.Runner) error {
+func Default(conf *config.Config, project *config.Project, terraformConfigsDir string, rn runner.Runner) error {
 	if err := verifyOrCreateProject(conf, project, rn); err != nil {
 		return fmt.Errorf("failed to verify or create project: %v", err)
 	}
@@ -112,7 +112,7 @@ func Default(conf *config.Config, project *config.Project, terraformConfigsPath 
 	}
 
 	if fsa := conf.AllGeneratedFields.Forseti.ServiceAccount; fsa != "" {
-		workDir, err := terraform.WorkDir(terraformConfigsPath, project.ID)
+		workDir, err := terraform.WorkDir(terraformConfigsDir, project.ID)
 		if err != nil {
 			return err
 		}

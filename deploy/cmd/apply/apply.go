@@ -41,12 +41,12 @@ import (
 )
 
 var (
-	configPath           = flag.String("config_path", "", "Path to project config file")
-	dryRun               = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
-	enableTerraform      = flag.Bool("enable_terraform", false, "Whether terraform is preferred over deployment manager.")
-	importExisting       = flag.Bool("terraform_import_existing", false, "TERRAFORM ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
-	terraformConfigsPath = flag.String("terraform_configs_path", "", "TERRAFORM ONLY. Directory path to store generated Terraform configs. The configs are discarded if not specified.")
-	projects             arrayFlags
+	configPath          = flag.String("config_path", "", "Path to project config file")
+	dryRun              = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
+	enableTerraform     = flag.Bool("enable_terraform", false, "Whether terraform is preferred over deployment manager.")
+	importExisting      = flag.Bool("terraform_import_existing", false, "TERRAFORM ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
+	terraformConfigsDir = flag.String("terraform_configs_dir", "", "TERRAFORM ONLY. Directory path to store generated Terraform configs. The configs are discarded if not specified.")
+	projects            arrayFlags
 )
 
 type arrayFlags []string
@@ -99,8 +99,8 @@ func applyConfigs() (err error) {
 			return fmt.Errorf("failed to open %q to write: %v", conf.GeneratedFieldsPath, err)
 		}
 		if err := file.Close(); err != nil {
-      return fmt.Errorf("failed to close %q: %v", file.Name(), err)
-    }
+			return fmt.Errorf("failed to close %q: %v", file.Name(), err)
+		}
 	}
 
 	// Write generated fields to the output file at the end.
@@ -118,35 +118,35 @@ func applyConfigs() (err error) {
 		}
 	}()
 
-	if *terraformConfigsPath == "" {
-		if *terraformConfigsPath, err = ioutil.TempDir("", ""); err != nil {
+	if *terraformConfigsDir == "" {
+		if *terraformConfigsDir, err = ioutil.TempDir("", ""); err != nil {
 			return fmt.Errorf("failed to create temporary directory: %v", err)
 		}
-		defer os.RemoveAll(*terraformConfigsPath)
+		defer os.RemoveAll(*terraformConfigsDir)
 	}
 
-	*terraformConfigsPath, err = config.NormalizePath(*terraformConfigsPath)
+	*terraformConfigsDir, err = config.NormalizePath(*terraformConfigsDir)
 	if err != nil {
-		return fmt.Errorf("failed to normalize path %q: %v", *terraformConfigsPath, err)
+		return fmt.Errorf("failed to normalize path %q: %v", *terraformConfigsDir, err)
 	}
 
 	// Check if the directory exists and is empty.
-	f, err := os.Open(*terraformConfigsPath)
+	f, err := os.Open(*terraformConfigsDir)
 	if err != nil {
-		return fmt.Errorf("failed to open %q, if it does not exist, please create it: %v", *terraformConfigsPath, err)
+		return fmt.Errorf("failed to open %q, if it does not exist, please create it: %v", *terraformConfigsDir, err)
 	}
 	defer f.Close()
 
 	switch _, err := f.Readdirnames(1); err {
 	case nil:
-		return fmt.Errorf("%q is not empty", *terraformConfigsPath)
+		return fmt.Errorf("%q is not empty", *terraformConfigsDir)
 	case io.EOF:
 		// Do nothing.
 	default:
-		return fmt.Errorf("failed to check if directory %q is empty: %v", *terraformConfigsPath, err)
+		return fmt.Errorf("failed to check if directory %q is empty: %v", *terraformConfigsDir, err)
 	}
 
-	opts := &apply.Options{DryRun: *dryRun, ImportExisting: *importExisting, TerraformConfigsPath: *terraformConfigsPath}
+	opts := &apply.Options{DryRun: *dryRun, ImportExisting: *importExisting, TerraformConfigsPath: *terraformConfigsDir}
 	var rn runner.Runner
 	if *dryRun {
 		rn = &runner.Fake{}
@@ -178,7 +178,7 @@ func applyConfigs() (err error) {
 	// Always deploy the remote audit logs project first (if present).
 	if enableRemoteAudit {
 		log.Printf("Applying config for remote audit log project %q", conf.AuditLogsProject.ID)
-		if err := apply.Default(conf, conf.AuditLogsProject, *terraformConfigsPath, rn); err != nil {
+		if err := apply.Default(conf, conf.AuditLogsProject, *terraformConfigsDir, rn); err != nil {
 			return fmt.Errorf("failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
 		}
 	}
@@ -187,7 +187,7 @@ func applyConfigs() (err error) {
 	if conf.Forseti != nil && wantProject(conf.Forseti.Project.ID) {
 		log.Printf("Applying config for Forseti project %q", conf.Forseti.Project.ID)
 		// Forseti for Forseti project itself is enabled at the end of apply.Forseti().
-		if err := apply.Forseti(conf, *terraformConfigsPath, rn); err != nil {
+		if err := apply.Forseti(conf, *terraformConfigsDir, rn); err != nil {
 			return fmt.Errorf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
 		}
 	}
@@ -199,7 +199,7 @@ func applyConfigs() (err error) {
 	// Use conf.AllGeneratedFields.Forseti.ServiceAccount to check if the Forseti project has been deployed or not.
 	if enableRemoteAudit && conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
 		// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
-		workDir, err := terraform.WorkDir(*terraformConfigsPath, conf.AuditLogsProject.ID)
+		workDir, err := terraform.WorkDir(*terraformConfigsDir, conf.AuditLogsProject.ID)
 		if err != nil {
 			return err
 		}
@@ -213,7 +213,7 @@ func applyConfigs() (err error) {
 			continue
 		}
 		log.Printf("Applying config for project %q", p.ID)
-		if err := apply.Default(conf, p, *terraformConfigsPath, rn); err != nil {
+		if err := apply.Default(conf, p, *terraformConfigsDir, rn); err != nil {
 			return fmt.Errorf("failed to apply config for project %q: %v", p.ID, err)
 		}
 	}

@@ -50,7 +50,7 @@ func TestApplyConfigs(t *testing.T) {
 			t.Fatalf("ioutil.TempDir = %v", err)
 		}
 		defer os.RemoveAll(dir)
-		*terraformConfigsPath = dir
+		*terraformConfigsDir = dir
 
 		if err := applyConfigs(); err != nil {
 			t.Fatalf("applyConfigs = %v", err)
