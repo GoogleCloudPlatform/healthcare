@@ -28,49 +28,45 @@ import (
 )
 
 func TestApplyConfigs(t *testing.T) {
-	configPaths := []string{
-		"samples/project_with_remote_audit_logs.yaml",
-		"samples/spanned_configs/root.yaml",
-	}
-	cmdFilePath := "cmd/apply/testdata/project_with_remote_audit_logs_dryrun_commands.txt"
+	cmdFilePath := "cmd/apply/testdata/commands.txt"
 	excludeNonCommandLinesRe := regexp.MustCompile("(?m)^(.{0,2}|([^D]|D[^r]|Dr[^y]).*)\n")
 	replaceTmpDirNameRe := regexp.MustCompile("(?m)/tmp/.*$")
 
-	for _, p := range configPaths {
-		var b bytes.Buffer
-		log.SetOutput(&b)
-		log.SetFlags(0) // Remove timestamps.
+	var b bytes.Buffer
+	log.SetOutput(&b)
+	log.SetFlags(0) // Remove timestamps.
 
-		*configPath = p
-		projects = arrayFlags{"my-forseti-project"}
-		*dryRun = true
+	*configPath = "samples/full/team1/config.yaml"
+	projects = arrayFlags{"example-forseti"}
+	*dryRun = true
+	*enableTerraform = true
+	*importExisting = true
 
-		dir, err := ioutil.TempDir("", "")
-		if err != nil {
-			t.Fatalf("ioutil.TempDir = %v", err)
-		}
-		defer os.RemoveAll(dir)
-		*terraformConfigsDir = dir
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempDir = %v", err)
+	}
+	defer os.RemoveAll(dir)
+	*terraformConfigsDir = dir
 
-		if err := applyConfigs(); err != nil {
-			t.Fatalf("applyConfigs = %v", err)
-		}
+	if err := applyConfigs(); err != nil {
+		t.Fatalf("applyConfigs = %v", err)
+	}
 
-		got := b.Bytes()
-		// Remove lines that are not started with "Dry".
-		got = excludeNonCommandLinesRe.ReplaceAll(got, []byte{})
-		// Remove machine dependent and non-deterministic info.
-		got = replaceTmpDirNameRe.ReplaceAll(got, []byte("/tmp/xxxxxxxxx"))
-		// Remove "Dry run call: ".
-		got = bytes.ReplaceAll(got, []byte("Dry run call: "), []byte{})
+	got := b.Bytes()
+	// Remove lines that are not started with "Dry".
+	got = excludeNonCommandLinesRe.ReplaceAll(got, []byte{})
+	// Remove machine dependent and non-deterministic info.
+	got = replaceTmpDirNameRe.ReplaceAll(got, []byte("/tmp/xxxxxxxxx"))
+	// Remove "Dry run call: ".
+	got = bytes.ReplaceAll(got, []byte("Dry run call: "), []byte{})
 
-		want, err := ioutil.ReadFile(cmdFilePath)
-		if err != nil {
-			t.Fatalf("ioutil.ReadAll = %v", err)
-		}
+	want, err := ioutil.ReadFile(cmdFilePath)
+	if err != nil {
+		t.Fatalf("ioutil.ReadAll = %v", err)
+	}
 
-		if diff := cmp.Diff(string(got), string(want)); diff != "" {
-			t.Fatalf("logged commands differ (-got +want):\n%v\nIf you are sure the command changes are desired, copy/paste the following content (without indent) to %q:\n%s", diff, cmdFilePath, string(got))
-		}
+	if diff := cmp.Diff(string(got), string(want)); diff != "" {
+		t.Fatalf("logged commands differ (-got +want):\n%v\nIf you are sure the command changes are desired, copy/paste the following content (without indent) to %q:\n%s", diff, cmdFilePath, string(got))
 	}
 }

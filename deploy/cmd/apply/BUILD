@@ -1,8 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
-
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 go_binary(
     name = "apply",
@@ -27,8 +27,7 @@ go_test(
     srcs = ["apply_test.go"],
     data = [
         "//cmd/apply/testdata",
-        "//samples:configs",
-        "//samples/spanned_configs:configs",
+        "//samples/full:all_configs",
     ],
     embed = [":go_default_library"],
     # Override default run dir to make it easier to find test files.

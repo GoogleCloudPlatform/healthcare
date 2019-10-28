@@ -12,6 +12,16 @@ filegroup(
     ],
 )
 
+# Used by tests.
+filegroup(
+    name = "all_configs",
+    srcs = [
+        ":shared_configs",
+        "//samples/full/team1:configs",
+        "//samples/full/team2:configs",
+    ],
+)
+
 config_test(
     name = "shared_config_test",
     config = ":shared.yaml",

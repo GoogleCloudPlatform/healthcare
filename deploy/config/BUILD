@@ -1,8 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
-
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
@@ -64,8 +64,7 @@ go_test(
         "service_account_test.go",
     ],
     data = [
-        "//samples:configs",
-        "//samples/spanned_configs:configs",
+        "//samples/full:all_configs",
     ],
     # Override default run dir to make it easier to find test files.
     rundir = ".",

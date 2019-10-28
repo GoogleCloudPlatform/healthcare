@@ -20,23 +20,20 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestNormalizePath(t *testing.T) {
-	relativePath := "samples/project_with_remote_audit_logs.yaml"
+	relativePath := "samples/full/team1/config.yaml"
 	path, err := config.NormalizePath(relativePath)
 	if err != nil {
-		t.Fatalf("cannot normalizePath: %q", relativePath)
+		t.Fatalf("NormalizePath(%q): %v", relativePath, err)
 	}
-	if _, err = os.Stat(path); err != nil {
-		t.Fatalf("cannot find project_with_remote_audit_logs.yaml: %q", path)
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("os.Stat(%q): %v", path, err)
 	}
 }
 
@@ -79,53 +76,23 @@ overall:
 	}
 }
 
-func TestLoad(t *testing.T) {
-	tests := []struct {
-		name                string
-		inputPath           string
-		wantPath            string
-		wantGenfieldsSuffix string
-	}{
-		{
-			name:                "spanned_configs",
-			inputPath:           "samples/spanned_configs/root.yaml",
-			wantPath:            "samples/project_with_remote_audit_logs.yaml",
-			wantGenfieldsSuffix: "samples/spanned_configs/generated_fields.yaml",
-		},
-		{
-			name:                "template",
-			inputPath:           "samples/template/input.yaml",
-			wantPath:            "samples/minimal.yaml",
-			wantGenfieldsSuffix: "samples/generated_fields.yaml",
-		},
+func TestLoadConfig(t *testing.T) {
+	config.EnableTerraform = true
+	c, err := config.Load("samples/full/team2/config.yaml")
+	if err != nil {
+		t.Fatal("config.Load: %v", err)
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := config.Load(tc.inputPath)
-			if err != nil {
-				t.Fatalf("config.Load = %v", err)
-			}
-			want, err := config.Load(tc.wantPath)
-			if err != nil {
-				t.Fatalf("config.Load = %v", err)
-			}
-			allowUnexported := cmp.AllowUnexported(
-				config.BigqueryDataset{}, config.DefaultResource{}, config.ForsetiProperties{},
-				config.GCSBucket{}, config.LifecycleRule{}, config.IAMPolicy{}, config.Metric{},
-				config.Pubsub{}, config.Subscription{}, tfconfig.StorageBucket{},
-			)
-			opts := []cmp.Option{
-				allowUnexported,
-				cmpopts.SortSlices(func(a, b *config.Project) bool { return a.ID < b.ID }),
-			}
-			if !strings.Contains(got.GeneratedFieldsPath, tc.wantGenfieldsSuffix) {
-				t.Fatalf("generated fields path %q does not contain suffix %q", got.GeneratedFieldsPath, tc.wantGenfieldsSuffix)
-			}
-			if diff := cmp.Diff(got, want, opts...); diff != "" {
-				t.Fatalf("yaml differs (-got +want):\n%v", diff)
-			}
-		})
+	// Check if the projects were parsed properly by checking their project IDs.
+	// The project IDs in the config are also set by templates for the data projects, so this covers testing
+	// templates as well.
+	want := []string{"example-devops", "example-audit", "example-forseti", "example-data-123", "example-data-456"}
+	var got []string
+	for _, p := range c.AllProjects() {
+		got = append(got, p.ID)
+	}
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Errorf("loaded project IDs differ (-got +want):\n%s", diff)
 	}
 }
 
