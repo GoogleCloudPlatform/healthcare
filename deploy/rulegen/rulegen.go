@@ -72,7 +72,23 @@ func Run(conf *config.Config, outputPath string, rn runner.Runner) (err error) {
 			return fmt.Errorf("failed to normalize path %q: %v", local, err)
 		}
 	}
-	return writeRules(conf, local)
+	if err := writeRules(conf, local); err != nil {
+		return fmt.Errorf("failed to write rules: %v")
+	}
+	return writeAuditConfig(conf, local)
+}
+
+func writeAuditConfig(conf *config.Config, outputPath string) error {
+	b, err := yaml.Marshal(conf)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config file: %v", err)
+	}
+	p := filepath.Join(outputPath, "audit_config.yaml")
+	log.Println("Writing audit config", p)
+	if err := ioutil.WriteFile(p, b, 0644); err != nil {
+		return fmt.Errorf("failed to write audit config to %q: %v", p, err)
+	}
+	return nil
 }
 
 func writeRules(conf *config.Config, outputPath string) error {
