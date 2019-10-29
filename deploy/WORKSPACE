@@ -2,17 +2,17 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "ce1afed0075e01bd883cfbafbbcc26bfab392eb24854e07a20be78ab13f9e15e",
+    sha256 = "842ec0e6b4fbfdd3de6150b61af92901eeb73681fd4d185746644c338f51d4c0",
     urls = [
-        "https://storage.googleapis.com/bazel-mirror/github.com/bazelbuild/rules_go/releases/download/0.17.7/rules_go-0.17.7.tar.gz",
-        "https://github.com/bazelbuild/rules_go/releases/download/0.17.7/rules_go-0.17.7.tar.gz",
+        "https://storage.googleapis.com/bazel-mirror/github.com/bazelbuild/rules_go/releases/download/v0.20.1/rules_go-v0.20.1.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.20.1/rules_go-v0.20.1.tar.gz",
     ],
 )
 
 http_archive(
     name = "bazel_gazelle",
-    sha256 = "3c681998538231a2d24d0c07ed5a7658cb72bfb5fd4bf9911157c0e9ac6a2687",
-    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.17.0/bazel-gazelle-0.17.0.tar.gz"],
+    sha256 = "7fc87f4170011201b1690326e8c16c5d802836e3a0d617d8f75c3af2b23180c4",
+    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.18.2/bazel-gazelle-0.18.2.tar.gz"],
 )
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
@@ -24,6 +24,27 @@ go_register_toolchains()
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 
 gazelle_dependencies()
+
+http_archive(
+    name = "io_bazel_rules_docker",
+    sha256 = "14ac30773fdb393ddec90e158c9ec7ebb3f8a4fd533ec2abbfd8789ad81a284b",
+    strip_prefix = "rules_docker-0.12.1",
+    urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.12.1/rules_docker-v0.12.1.tar.gz"],
+)
+
+load(
+    "@io_bazel_rules_docker//repositories:repositories.bzl",
+    container_repositories = "repositories",
+)
+
+container_repositories()
+
+load(
+    "@io_bazel_rules_docker//go:image.bzl",
+    go_image_repos = "repositories",
+)
+
+go_image_repos()
 
 go_repository(
     name = "com_github_google_cmp",
@@ -90,4 +111,29 @@ filegroup(
     sha256 = "e9d5d669a395b68d15118d74b96544fca0e5d19aed6aa2362eee4cb9040fba47",
     strip_prefix = "terraform-google-forseti-3.0.0",
     urls = ["https://github.com/forseti-security/terraform-google-forseti/archive/v3.0.0.tar.gz"],
+)
+
+load("@io_bazel_rules_docker//container:container.bzl", "container_pull")
+
+# Cloud Build team maintained gcloud image.
+# https://github.com/GoogleCloudPlatform/cloud-builders/tree/master/gcloud
+container_pull(
+    name = "gcloud",
+    digest = "sha256:1180ba5e78259cce05f0fe4b7d2f711af6a051af612d3f92938b6d7a1acf3992",
+    registry = "gcr.io",
+    repository = "cloud-builders/gcloud",
+)
+
+TERRAFORM_VERSION = "0.12.10"
+
+http_archive(
+    name = "terraform",
+    build_file_content = """
+filegroup(
+  name = "executable",
+  srcs = ["terraform"],
+  visibility = ["//visibility:public"],
+)""",
+    sha256 = "2215208822f1a183fb57e24289de417c9b3157affbe8a5e520b768edbcb420b4",
+    urls = ["https://releases.hashicorp.com/terraform/" + TERRAFORM_VERSION + "/terraform_" + TERRAFORM_VERSION + "_linux_amd64.zip"],
 )
