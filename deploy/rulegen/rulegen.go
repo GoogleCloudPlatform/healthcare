@@ -34,10 +34,13 @@ import (
 	"gopkg.in/yaml.v2" // don't use ghodss/yaml as it does not preserve key ordering
 )
 
+// DefaultAuditConfigFile is the default file name of the audit config.
+const DefaultAuditConfigFile = "audit_config.yaml"
+
 // Run runs the rule generator to generate forseti rules.
 // outputPath should be empty or a path to either a local directory or a GCS bucket (starting with gs://).
 // If the outputPath is empty, then the rules will be written to the forseti server bucket.
-func Run(conf *config.Config, outputPath string, rn runner.Runner) (err error) {
+func Run(conf *config.Config, outputPath, auditConfigFile string, rn runner.Runner) (err error) {
 	if conf.Forseti == nil {
 		return errors.New("forseti conf must be set when using the rule generator")
 	}
@@ -72,7 +75,23 @@ func Run(conf *config.Config, outputPath string, rn runner.Runner) (err error) {
 			return fmt.Errorf("failed to normalize path %q: %v", local, err)
 		}
 	}
-	return writeRules(conf, local)
+	if err := writeRules(conf, local); err != nil {
+		return fmt.Errorf("failed to write rules: %v", err)
+	}
+	return writeAuditConfig(conf, local, auditConfigFile)
+}
+
+func writeAuditConfig(conf *config.Config, outputPath, auditConfigFile string) error {
+	b, err := yaml.Marshal(conf)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config file: %v", err)
+	}
+	p := filepath.Join(outputPath, auditConfigFile)
+	log.Println("Writing audit config", p)
+	if err := ioutil.WriteFile(p, b, 0644); err != nil {
+		return fmt.Errorf("failed to write audit config to %q: %v", p, err)
+	}
+	return nil
 }
 
 func writeRules(conf *config.Config, outputPath string) error {
