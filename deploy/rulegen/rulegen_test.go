@@ -57,7 +57,7 @@ func TestRunOutputPath(t *testing.T) {
 		t.Fatalf("ioutil.TempDir = %v", err)
 	}
 
-	if err := Run(conf, tmpDir, &testRunner{}); err != nil {
+	if err := Run(conf, tmpDir, DefaultAuditConfigFile, &testRunner{}); err != nil {
 		t.Fatalf("Run = %v", err)
 	}
 
@@ -67,7 +67,7 @@ func TestRunOutputPath(t *testing.T) {
 func TestRunServerBucket(t *testing.T) {
 	conf, _ := testconf.ConfigAndProject(t, nil)
 	r := &testRunner{}
-	if err := Run(conf, "", r); err != nil {
+	if err := Run(conf, "", DefaultAuditConfigFile, r); err != nil {
 		t.Fatalf("Run = %v", err)
 	}
 	wantRE, err := regexp.Compile(`gsutil cp .*\*\.yaml gs://my-forseti-project-server/rules`)
