@@ -75,6 +75,19 @@ func Run(conf *config.Config, outputPath string, rn runner.Runner) (err error) {
 	return writeRules(conf, local)
 }
 
+func writeAuditConfig(conf *config.Config, outputPath, auditConfigFile string) error {
+	b, err := yaml.Marshal(conf)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config file: %v", err)
+	}
+	p := filepath.Join(outputPath, auditConfigFile)
+	log.Println("Writing audit config", p)
+	if err := ioutil.WriteFile(p, b, 0644); err != nil {
+		return fmt.Errorf("failed to write audit config to %q: %v", p, err)
+	}
+	return nil
+}
+
 func writeRules(conf *config.Config, outputPath string) error {
 	filenameToRules := make(map[string]interface{})
 

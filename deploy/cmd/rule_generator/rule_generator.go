@@ -33,6 +33,8 @@ var (
 	outputPath = flag.String("output_path", "",
 		"Path to local directory or GCS bucket to write forseti rules. "+
 			"If unset, directly writes to the Forseti server bucket")
+	auditConfig = flag.String("audit_config", "audit_config.yaml",
+		"Audit config file name")
 )
 
 func main() {
