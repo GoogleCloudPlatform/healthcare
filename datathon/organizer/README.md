@@ -71,14 +71,9 @@ If you do not have one yet, please visit the billing account
 create a Google Cloud billing account. It is of the form `01ABCD-234E56-F7890G1`
 and needed for the project setup below.
 
-## Billing and Cloning Repository
+## Cloning Repository
 
-```shell
-# The billing account ID will be like the following format.
-export BILLING_ACCOUNT=01ABCD-234E56-F7890G1
-```
-
-Finally, you need to clone the open source toolkit from
+Clone the open source toolkit from
 [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare)
 and checkout a verified version.
 
