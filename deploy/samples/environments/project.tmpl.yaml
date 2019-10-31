@@ -1,0 +1,17 @@
+projects:
+- project_id: {{.PROJECT_ID}}
+  owners_group: example-owners-{{.SUFFIX}}@example.com
+  auditors_group: example-auditors@example.com
+  audit:
+    logs_bigquery_dataset:
+      dataset_id: {{.AUDIT_DATASET_NAME}}
+      location: US
+  devops:
+    state_storage_bucket:
+      name: {{.STATE_BUCKET_NAME}}
+      location: US
+  healthcare_datasets:
+  - name: example-dataset-{{.SUFFIX}}
+    _fhir_stores:
+    - name: example-fhir-{{.SUFFIX}}
+      location: us-central1

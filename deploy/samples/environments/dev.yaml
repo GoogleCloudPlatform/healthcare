@@ -1,0 +1,8 @@
+imports:
+- path: overall.yaml
+- path: project.tmpl.yaml
+  data:
+    PROJECT_ID: example-dev
+    SUFFIX: dev
+    AUDIT_DATASET_NAME: example_dev_logs
+    STATE_BUCKET_NAME: example-dev-state

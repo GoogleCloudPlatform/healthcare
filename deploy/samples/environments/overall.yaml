@@ -1,0 +1,7 @@
+generated_fields_path: ./generated_fields.yaml
+
+overall:
+  billing_account: 000000-000000-000000
+  domain: example.com
+  folder_id: '1111111111'
+  organization_id: '2222222222'
