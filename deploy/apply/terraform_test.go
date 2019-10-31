@@ -439,7 +439,7 @@ storage_buckets:
       type: SetStorageClass
       storage_class: COLDLINE
     condition:
-      age: 99
+      created_before: 2017-06-13
       with_state: ANY`},
 			wantResources: `
 - google_storage_bucket:
@@ -452,7 +452,7 @@ storage_buckets:
           type: SetStorageClass
           storage_class: COLDLINE
         condition:
-          age: 99
+          created_before: 2017-06-13
           with_state: ANY
       - action:
           type: Delete
