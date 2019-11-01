@@ -178,7 +178,7 @@ $ bazel run cmd/apply:apply -- \
 ```
 
 You can now investigate the Terraform configs DPT will deploy under
-`/tmp/dpt_output` and also see all the commands it will run. It will alsop run
+`/tmp/dpt_output` and also see all the commands it will run. It will also run
 some basic validation on your configs.
 
 ### Apply project configs
