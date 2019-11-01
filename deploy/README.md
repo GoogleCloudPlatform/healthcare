@@ -1,28 +1,77 @@
 # Google Cloud Healthcare Data Protection Toolkit
 
-[![GoDoc](https://godoc.org/github.com/GoogleCloudPlatform/healthcare/deploy?status.svg)](https://godoc.org/github.com/GoogleCloudPlatform/healthcare/deploy)
-
-The Data Protection Toolkit (DPT) provides a CLI to configure GCP environments.
-It wraps existing tools such as Terraform and Gcloud to provide an end to end
-deployment solution.
-
 **Status:** ALPHA
 
-Expect breaking changes. We ensure that we support both deprecated and new
-fields/features for a period of time to allow users to migrate easily.
-
+*   [Features](#features)
+*   [Use Cases](#use-cases)
 *   [Setup Instructions](#setup-instructions)
 *   [Phases](#phases)
 *   [Rule Generation](#rule-generation)
 *   [Legacy](#legacy)
 
+## Features
+
+DPT provides an end-to-end framework for deploying your entire organizational
+structure including central devops, auditing, monitoring and data hosting
+projects.
+
+[GCP projects](https://cloud.google.com/docs/enterprise/best-practices-for-enterprise-organizations)
+delineate clear boundaries between resources and functions of an organization
+and DPT makes it easy to create these projects in a secure and repeatable
+manner.
+
+DPT uses existing tools like [Terraform](https://www.terraform.io/) and
+[GCloud](https://cloud.google.com/sdk/gcloud/) to work. It can generate multiple
+Terraform deployments for a single GCP project and deploy them in the right
+order.
+
+DPT can be used to completely manage an organization's projects by creating and
+managing all resources within the projects or only handle a subset. For example,
+if an organization has a highly custom solution or needs many resources that DPT
+does not support natively, they can still use DPT to setup the foundational
+pieces such as data projects + centralized auditing, devops and monitoring.
+Resources within the project could then be managed through another process,
+such as direct use of Terraform or Deployment Manager.
+
+## Use Cases
+
+- **Macro quickstart**: Package tutorials/quickstarts as deployable templates
+  to bring up all necessary projects and resources with one command.
+
+- **Customer onboarding**: Define templates containing all base resources needed
+  to get a minimal footprint up and running on GCP quickly.
+  Accelerate customer adoption in a security/governance-forward approach.
+
+- **Data analysis/R&D**: Quickly provision multiple identical environments and
+  sandboxes for researchers and analysts to use for experimenting on the data
+  lake without disrupting production usage. Built in central governance layer
+  helps IT and security teams manage their organization's resources.
+
+- **HIPAA/GxP/GDPR alignment**: Build compliance requirements and guidelines
+  into templates to ensure that resources are deployed appropriately from the
+  beginning. No need to worry about bolting on security monitoring after the
+  fact.
+
+- **Repeatable & reproducible deployments**: Define identical
+  [environments](samples/environments)
+  (e.g. dev, test, and prod) and/or reproducible deployments. This includes
+  GxP workloads, medical devices, and other Healthcare scenarios. Use DPT to
+  define a template once and deploy it consistently as many times as needed for
+  projects handling various Healthcare scenarios.
+
+- **Democratize GCP development**: Share templates across teams and
+  organizations, including the open source community. This can then become the
+  "easy button" for provisioning and managing GCP resources for common use
+  cases.
+
+
 ## Setup Instructions
 
-When creating a DPT config, you have the option to have audit logs saved in the
-same project as the hosted data (local audit logs), or in a separate project
-(remote audit logs). Remote audit logs can be especially beneficial if you have
-several data projects and want a centralized place to aggregate them. This
-cannot be changed afterwards.
+When creating a DPT config, you have the option to have audit and devops
+resources saved in the same project as the hosted data (local), or in a central
+project (remote). Remote audit and devops resources can be especially beneficial
+if you have several data projects and want a centralized place to aggregate
+them. This cannot be changed afterwards.
 
 1.  [Complete Script Prerequisites](#script-prerequisites) the first time using
     these scripts.
@@ -47,6 +96,14 @@ already available.
 
 -   [Terraform 0.12](https://www.terraform.io/downloads.html)
 
+You will also need to checkout the DPT source code:
+
+```shell
+$ git clone https://github.com/GoogleCloudPlatform/healthcare
+$ cd healthcare/deploy
+# git checkout a commit different from HEAD if necessary.
+```
+
 ### Create Groups
 
 Before using the setup scripts, you will need to create the following groups for
@@ -65,6 +122,36 @@ practices.
     audit logs, but not to view any hosted data. If you have multiple data
     projects, you may want a single auditors group across all projects.
 
+#### Supported Resources
+
+DPT natively supports many resources by either using the native
+[Terraform Google provider](https://www.terraform.io/docs/providers/google/index.html),
+or for more complex resources, such as Forseti, best practices modules from
+the [Cloud Foundation Toolkit](https://cloud.google.com/foundation-toolkit/).
+
+For resources using the native Terraform Google provider, DPT will often set
+recommended defaults and provide helper fields. These would commonly need a
+custom module to be standardized. DPT can instead directly use the native
+resource, allowing users to set any field the native resource supports while
+still getting the benefits of best practices and standardization.
+
+**Example: Storage Buckets**
+
+Storage buckets are created using the native google provider
+[resource](https://www.terraform.io/docs/providers/google/r/storage_bucket.html).
+
+They can be created through DPT by adding a `storage_buckets` field under a
+project definition in their DPT config. Any possible bucket field can be set
+here.
+
+A user may wish to set custom IAM members on this bucket. DPT provides a helper
+field, `_iam_members` to create
+[IAM members](https://www.terraform.io/docs/providers/google/r/storage_bucket_iam.html)
+on this bucket.
+
+By default, versioning will be enabled and access logs will be exported to the
+audit bucket, if set the project `audit.logs_storage_bucket`) field.
+
 ### Create a YAML Config
 
 View the schema for the config in `project_config.yaml.schema` and examples in
@@ -76,6 +163,23 @@ the `samples` directory for sample YAML configs.
 *   If using remote audit logs, include the `audit_logs_project` section, which
     describes the project that will host audit logs.
 *   Under `projects`, list each data hosting project to create.
+
+
+At this point you are ready to deploy it. However, we recommend getting familiar
+with what your config will do before proceeding.
+
+```
+$ mkdir /tmp/dpt_output
+$ bazel run cmd/apply:apply -- \
+  --config_path=${CONFIG_PATH?} \
+  --projects=${PROJECTS?}
+  --dry_run
+  --terraform_configs_dir=/tmp/dpt_output
+```
+
+You can now investigate the Terraform configs DPT will deploy under
+`/tmp/dpt_output` and also see all the commands it will run. It will alsop run
+some basic validation on your configs.
 
 ### Apply project configs
 
@@ -102,9 +206,6 @@ Use the `cmd/apply/apply.go` script to create or update your projects.
     monitoring rules.
 
 ```shell
-$ git clone https://github.com/GoogleCloudPlatform/healthcare
-$ cd healthcare/deploy
-# git checkout a commit different from HEAD if necessary.
 $ bazel run cmd/apply:apply -- \
   --config_path=${CONFIG_PATH?} \
   --projects=${PROJECTS?}
@@ -141,6 +242,10 @@ This phase contains a single deployment which creates the project and the bucket
 to store this project's remote state defined by the `state_storage_bucket`
 field. The state storage bucket will hold the states of deployments related to
 this project.
+
+DPT can bootstrap projects and remote state buckets to avoid the
+[chicken and egg problem](https://www.google.com/search?q=terraform+remote+state+chicken+and+egg+problem&oq=terraform+remote+state+chicken+and+egg+problem)
+which usually need a separate solution.
 
 NOTE: if a central `devops` field is set in the config, all state buckets will
 be created in the devops project.
