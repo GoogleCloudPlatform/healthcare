@@ -102,6 +102,7 @@ You will also need to checkout the DPT source code:
 $ git clone https://github.com/GoogleCloudPlatform/healthcare
 $ cd healthcare/deploy
 # git checkout a commit different from HEAD if necessary.
+# All bazel commands will be run from this directory.
 ```
 
 ### Create Groups
