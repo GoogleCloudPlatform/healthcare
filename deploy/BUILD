@@ -5,6 +5,7 @@ package(default_visibility = ["//visibility:public"])
 licenses(["notice"])
 
 load("@bazel_gazelle//:def.bzl", "gazelle")
+
 # gazelle:prefix github.com/GoogleCloudPlatform/healthcare/deploy
 gazelle(name = "gazelle")
 
