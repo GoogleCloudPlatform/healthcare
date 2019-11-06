@@ -53,7 +53,7 @@ func main() {
 	}
 	defer os.RemoveAll(dir)
 
-	if err := apply.GrantForsetiPermissions(*projectID, *forsetiServiceAccount, "", dir, &runner.Default{}); err != nil {
+	if err := apply.GrantForsetiPermissions(*projectID, *forsetiServiceAccount, "", &apply.Options{}, dir, &runner.Default{}); err != nil {
 		log.Fatalf("failed to grant forseti permissions: %v", err)
 	}
 }

@@ -667,7 +667,7 @@ output:
 	}
 	defer os.RemoveAll(dir)
 
-	if err := createProjectTerraform(config, project, dir, &tfTestRunner{}); err != nil {
+	if err := createProjectTerraform(config, project, &Options{}, dir, &tfTestRunner{}); err != nil {
 		t.Fatalf("createProjectTerraform: %v", err)
 	}
 
@@ -794,7 +794,7 @@ resource:
 	}
 	defer os.RemoveAll(dir)
 
-	if err := services(project, dir, &tfTestRunner{}); err != nil {
+	if err := services(project, &Options{}, dir, &tfTestRunner{}); err != nil {
 		t.Fatalf("services: %v", err)
 	}
 

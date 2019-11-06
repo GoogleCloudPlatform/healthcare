@@ -25,4 +25,6 @@ type Options struct {
 	ImportExisting bool
 	// Normalized directory path to store generated Terraform configs.
 	TerraformConfigsPath string
+	// Extra flags to pass to terraform apply command.
+	TerraformApplyFlags []string
 }

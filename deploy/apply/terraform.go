@@ -90,7 +90,7 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err != nil {
 			return err
 		}
-		if err := createProjectTerraform(conf, p, workDir, rn); err != nil {
+		if err := createProjectTerraform(conf, p, opts, workDir, rn); err != nil {
 			return err
 		}
 	}
@@ -101,7 +101,7 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err != nil {
 			return err
 		}
-		if err := services(p, workDir, rn); err != nil {
+		if err := services(p, opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to apply services: %v", err)
 		}
 		if err := createStackdriverAccount(p, rn); err != nil {
@@ -145,7 +145,7 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 			if err != nil {
 				return err
 			}
-			if err := forsetiConfig(conf, workDir, rn); err != nil {
+			if err := forsetiConfig(conf, opts, workDir, rn); err != nil {
 				return fmt.Errorf("failed to apply forseti instance in %q: %v", conf.Forseti.Project.ID, err)
 			}
 			break
@@ -162,14 +162,14 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err != nil {
 			return err
 		}
-		if err := GrantForsetiPermissions(p.ID, fsa, p.DevopsConfig.StateBucket.Name, workDir, rn); err != nil {
+		if err := GrantForsetiPermissions(p.ID, fsa, p.DevopsConfig.StateBucket.Name, opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to grant forseti access to project %q: %v", p.ID, err)
 		}
 	}
 	return nil
 }
 
-func createProjectTerraform(config *config.Config, project *config.Project, workDir string, rn runner.Runner) error {
+func createProjectTerraform(config *config.Config, project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
 	fid := project.FolderID
 	if fid == "" {
 		fid = config.Overall.FolderID
@@ -203,9 +203,9 @@ func createProjectTerraform(config *config.Config, project *config.Project, work
 		Name:  "project_number",
 		Value: "${google_project.project.number}",
 	}}
-	opts := &terraform.Options{}
+	tfOpts := &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}
 	// Since the project creation deployment is not linked to a remote state, always import the project and state bucket.
-	if err := addImports(opts, rn, pr, project.DevopsConfig.StateBucket); err != nil {
+	if err := addImports(tfOpts, rn, pr, project.DevopsConfig.StateBucket); err != nil {
 		return err
 	}
 
@@ -214,7 +214,7 @@ func createProjectTerraform(config *config.Config, project *config.Project, work
 		return err
 	}
 
-	if err := terraformApply(tfConf, dir, opts, rn); err != nil {
+	if err := terraformApply(tfConf, dir, tfOpts, rn); err != nil {
 		return err
 	}
 
@@ -237,7 +237,7 @@ func createProjectTerraform(config *config.Config, project *config.Project, work
 	return nil
 }
 
-func services(project *config.Project, workDir string, rn runner.Runner) error {
+func services(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.DevopsConfig.StateBucket.Name,
@@ -254,10 +254,7 @@ func services(project *config.Project, workDir string, rn runner.Runner) error {
 		return err
 	}
 
-	if err := terraformApply(tfConf, dir, nil, rn); err != nil {
-		return err
-	}
-	return nil
+	return terraformApply(tfConf, dir, &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}, rn)
 }
 
 func auditResources(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
@@ -287,7 +284,7 @@ func auditResources(project *config.Project, opts *Options, workDir string, rn r
 		return err
 	}
 
-	tfOpts := &terraform.Options{}
+	tfOpts := &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}
 	if opts.ImportExisting {
 		if err := addImports(tfOpts, rn, rs...); err != nil {
 			return err
@@ -346,7 +343,7 @@ func resources(project *config.Project, opts *Options, workDir string, rn runner
 	if err := addResources(tfConf, rs...); err != nil {
 		return err
 	}
-	tfOpts := &terraform.Options{CustomConfig: project.TerraformDeployments.Resources.Config}
+	tfOpts := &terraform.Options{ApplyFlags: opts.TerraformApplyFlags, CustomConfig: project.TerraformDeployments.Resources.Config}
 	if opts.ImportExisting {
 		if err := addImports(tfOpts, rn, rs...); err != nil {
 			return err

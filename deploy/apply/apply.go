@@ -74,7 +74,7 @@ type depender interface {
 }
 
 // Default applies project configurations to a default project.
-func Default(conf *config.Config, project *config.Project, terraformConfigsDir string, rn runner.Runner) error {
+func Default(conf *config.Config, project *config.Project, opts *Options, rn runner.Runner) error {
 	if err := verifyOrCreateProject(conf, project, rn); err != nil {
 		return fmt.Errorf("failed to verify or create project: %v", err)
 	}
@@ -112,11 +112,11 @@ func Default(conf *config.Config, project *config.Project, terraformConfigsDir s
 	}
 
 	if fsa := conf.AllGeneratedFields.Forseti.ServiceAccount; fsa != "" {
-		workDir, err := terraform.WorkDir(terraformConfigsDir, project.ID)
+		workDir, err := terraform.WorkDir(opts.TerraformConfigsPath, project.ID)
 		if err != nil {
 			return err
 		}
-		if err := GrantForsetiPermissions(project.ID, fsa, "", workDir, rn); err != nil {
+		if err := GrantForsetiPermissions(project.ID, fsa, "", opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to grant forseti access: %v", err)
 		}
 	}

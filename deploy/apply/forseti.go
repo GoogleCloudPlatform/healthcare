@@ -45,9 +45,9 @@ var forsetiStandardRoles = [...]string{
 }
 
 // Forseti applies project configuration to a Forseti project.
-func Forseti(conf *config.Config, terraformConfigsDir string, rn runner.Runner) error {
+func Forseti(conf *config.Config, opts *Options, terraformConfigsDir string, rn runner.Runner) error {
 	project := conf.Forseti.Project
-	if err := Default(conf, project, terraformConfigsDir, rn); err != nil {
+	if err := Default(conf, project, opts, rn); err != nil {
 		return err
 	}
 	workDir, err := terraform.WorkDir(terraformConfigsDir, project.ID)
@@ -61,11 +61,11 @@ func Forseti(conf *config.Config, terraformConfigsDir string, rn runner.Runner) 
 		return fmt.Errorf("failed to deploy terraform state: %v", err)
 	}
 
-	if err := forsetiConfig(conf, workDir, rn); err != nil {
+	if err := forsetiConfig(conf, opts, workDir, rn); err != nil {
 		return fmt.Errorf("failed to apply forseti config: %v", err)
 	}
 
-	if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, project.DevopsConfig.StateBucket.Name, workDir, rn); err != nil {
+	if err := GrantForsetiPermissions(project.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, project.DevopsConfig.StateBucket.Name, opts, workDir, rn); err != nil {
 		return err
 	}
 	return nil
@@ -73,7 +73,7 @@ func Forseti(conf *config.Config, terraformConfigsDir string, rn runner.Runner) 
 
 // forsetiConfig applies the forseti config, if it exists. It does not configure
 // other settings such as billing account, deletion lien, etc.
-func forsetiConfig(conf *config.Config, workDir string, rn runner.Runner) error {
+func forsetiConfig(conf *config.Config, opts *Options, workDir string, rn runner.Runner) error {
 	if conf.Forseti == nil {
 		log.Println("no forseti config, nothing to do")
 		return nil
@@ -95,7 +95,7 @@ func forsetiConfig(conf *config.Config, workDir string, rn runner.Runner) error 
 	if err != nil {
 		return err
 	}
-	if err := terraformApply(tfConf, workDir, nil, rn); err != nil {
+	if err := terraformApply(tfConf, workDir, &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}, rn); err != nil {
 		return err
 	}
 
@@ -134,7 +134,7 @@ func stateBucket(project *config.Project, workDir string, rn runner.Runner) erro
 }
 
 // GrantForsetiPermissions grants all necessary permissions to the given Forseti service account in the project.
-func GrantForsetiPermissions(projectID, serviceAccount, stateBucket, workDir string, rn runner.Runner) error {
+func GrantForsetiPermissions(projectID, serviceAccount, stateBucket string, opts *Options, workDir string, rn runner.Runner) error {
 	iamMembers := new(tfconfig.ProjectIAMMembers)
 	if err := iamMembers.Init(projectID); err != nil {
 		return fmt.Errorf("failed to init IAM members resource: %v", err)
@@ -163,7 +163,7 @@ func GrantForsetiPermissions(projectID, serviceAccount, stateBucket, workDir str
 		return err
 	}
 
-	return terraformApply(tfConf, workDir, &terraform.Options{}, rn)
+	return terraformApply(tfConf, workDir, &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}, rn)
 }
 
 // forsetiServerServiceAccount gets the server instance service account of the give Forseti project.

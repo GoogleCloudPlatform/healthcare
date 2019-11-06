@@ -41,7 +41,7 @@ func TestForsetiConfig(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	if err := forsetiConfig(conf, dir, &runner.Fake{}); err != nil {
+	if err := forsetiConfig(conf, &Options{}, dir, &runner.Fake{}); err != nil {
 		t.Errorf("Forseti = %v", err)
 	}
 
@@ -85,7 +85,7 @@ func TestGrantForsetiPermissions(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com", "my-forseti-project-state", dir, &runner.Fake{}); err != nil {
+	if err := GrantForsetiPermissions("project1", "forseti-sa@@forseti-project.iam.gserviceaccount.com", "my-forseti-project-state", &Options{}, dir, &runner.Fake{}); err != nil {
 		t.Errorf("GrantForsetiPermissions = %v", err)
 	}
 

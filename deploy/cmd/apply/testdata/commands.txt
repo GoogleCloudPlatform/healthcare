@@ -1,25 +1,25 @@
 terraform init
 terraform import -no-color google_project.project example-forseti
 terraform import -no-color google_storage_bucket.example-forseti-state example-devops/example-forseti-state
-terraform apply
+terraform apply -auto-approve
 terraform output -json project_number
 terraform init
-terraform apply
+terraform apply -auto-approve
 terraform init
 terraform import -no-color google_logging_metric.bigquery-settings-change-count bigquery-settings-change-count
 terraform import -no-color google_logging_metric.bucket-permission-change-count bucket-permission-change-count
 terraform import -no-color google_logging_metric.iam-policy-change-count iam-policy-change-count
-terraform apply
+terraform apply -auto-approve
 gcloud config get-value account --format json --project example-forseti
 gcloud projects get-iam-policy example-forseti --project example-forseti --format json
 terraform init
 terraform import -no-color google_logging_project_sink.audit-logs-to-bigquery projects/example-forseti/sinks/audit-logs-to-bigquery
 terraform import -no-color google_bigquery_dataset.example_forseti_logs example-audit:example_forseti_logs
-terraform apply
+terraform apply -auto-approve
 gcloud logging sinks describe audit-logs-to-bigquery --format json --project example-forseti
 terraform init
-terraform apply
+terraform apply -auto-approve
 gcloud --project example-forseti iam service-accounts list --format json --filter email:forseti-server-gcp-*
 gsutil ls -p example-forseti
 terraform init
-terraform apply
+terraform apply -auto-approve

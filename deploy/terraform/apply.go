@@ -34,6 +34,7 @@ import (
 type Options struct {
 	Imports      []Import
 	CustomConfig map[string]interface{}
+	ApplyFlags   []string
 }
 
 // Apply applies the config. The config will be written as a .tf.json file in the given dir.
@@ -105,7 +106,7 @@ func Apply(config *Config, dir string, opts *Options, rn runner.Runner) error {
 		}
 	}
 
-	if err := runCmd("apply"); err != nil {
+	if err := runCmd(append([]string{"apply"}, opts.ApplyFlags...)...); err != nil {
 		return fmt.Errorf("failed to apply plan: %v", err)
 	}
 	return nil

@@ -38,6 +38,7 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
+	"google3/third_party/golang/shlex/shlex"
 )
 
 var (
@@ -46,6 +47,7 @@ var (
 	enableTerraform     = flag.Bool("enable_terraform", false, "Whether terraform is preferred over deployment manager.")
 	importExisting      = flag.Bool("terraform_import_existing", false, "TERRAFORM ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
 	terraformConfigsDir = flag.String("terraform_configs_dir", "", "TERRAFORM ONLY. Directory path to store generated Terraform configs. The configs are discarded if not specified.")
+	terraformApplyFlags = flag.String("terraform_apply_flags", "", "TERRAFORM ONLY. Extra option flags to pass to apply command.")
 	projects            arrayFlags
 )
 
@@ -147,6 +149,14 @@ func applyConfigs() (err error) {
 	}
 
 	opts := &apply.Options{DryRun: *dryRun, ImportExisting: *importExisting, TerraformConfigsPath: *terraformConfigsDir}
+	if *terraformApplyFlags != "" {
+		var err error
+		opts.TerraformApplyFlags, err = shlex.Split(*terraformApplyFlags)
+		if err != nil {
+			return fmt.Errorf("failed to shell split terraform apply options: %v", err)
+		}
+	}
+
 	var rn runner.Runner
 	if *dryRun {
 		rn = &runner.Fake{}
@@ -178,7 +188,7 @@ func applyConfigs() (err error) {
 	// Always deploy the remote audit logs project first (if present).
 	if enableRemoteAudit {
 		log.Printf("Applying config for remote audit log project %q", conf.AuditLogsProject.ID)
-		if err := apply.Default(conf, conf.AuditLogsProject, *terraformConfigsDir, rn); err != nil {
+		if err := apply.Default(conf, conf.AuditLogsProject, opts, rn); err != nil {
 			return fmt.Errorf("failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
 		}
 	}
@@ -187,7 +197,7 @@ func applyConfigs() (err error) {
 	if conf.Forseti != nil && wantProject(conf.Forseti.Project.ID) {
 		log.Printf("Applying config for Forseti project %q", conf.Forseti.Project.ID)
 		// Forseti for Forseti project itself is enabled at the end of apply.Forseti().
-		if err := apply.Forseti(conf, *terraformConfigsDir, rn); err != nil {
+		if err := apply.Forseti(conf, opts, *terraformConfigsDir, rn); err != nil {
 			return fmt.Errorf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
 		}
 	}
@@ -203,7 +213,7 @@ func applyConfigs() (err error) {
 		if err != nil {
 			return err
 		}
-		if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, "", workDir, rn); err != nil {
+		if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, "", opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to grant Forseti permissions to remote audit logs project: %v", err)
 		}
 	}
@@ -213,7 +223,7 @@ func applyConfigs() (err error) {
 			continue
 		}
 		log.Printf("Applying config for project %q", p.ID)
-		if err := apply.Default(conf, p, *terraformConfigsDir, rn); err != nil {
+		if err := apply.Default(conf, p, opts, rn); err != nil {
 			return fmt.Errorf("failed to apply config for project %q: %v", p.ID, err)
 		}
 	}

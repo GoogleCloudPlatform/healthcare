@@ -41,6 +41,7 @@ func TestApplyConfigs(t *testing.T) {
 	*dryRun = true
 	*enableTerraform = true
 	*importExisting = true
+	*terraformApplyFlags = "-auto-approve"
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
