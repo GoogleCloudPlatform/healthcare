@@ -20,6 +20,7 @@ go_library(
         "//config:go_default_library",
         "//runner:go_default_library",
         "//terraform:go_default_library",
+        "@com_github_google_shlex//:go_default_library",
     ],
 )
 

@@ -38,7 +38,7 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
-	"google3/third_party/golang/shlex/shlex"
+	"github.com/google/shlex"
 )
 
 var (

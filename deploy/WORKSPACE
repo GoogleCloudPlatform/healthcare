@@ -53,6 +53,12 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_google_shlex",
+    commit = "c34317bd91bf98fab745d77b03933cf8769299fe",
+    importpath = "github.com/google/shlex",
+)
+
+go_repository(
     name = "com_github_mitchellh_hashstructure",
     importpath = "github.com/mitchellh/hashstructure",
     tag = "v1.0.0",
