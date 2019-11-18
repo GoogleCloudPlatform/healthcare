@@ -49,7 +49,7 @@ terraform:
       prefix: resources
 data:
 - google_project:
-    my-project:
+    project:
       project_id: my-project
 resource:
 - google_project_iam_audit_config:

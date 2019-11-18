@@ -333,7 +333,7 @@ func resources(project *config.Project, opts *Options, workDir string, rn runner
 
 	// Allow user resources to access project runtime info such as project number.
 	tfConf.Data = []*terraform.Resource{{
-		Name: project.ID,
+		Name: "project",
 		Type: "google_project",
 		Properties: map[string]interface{}{
 			"project_id": project.ID,
