@@ -48,7 +48,7 @@ export class TravelItemComponent {
   editing = false;
   loading = false;
 
-  @ViewChild(TravelFormComponent, {static: true})
+  @ViewChild(TravelFormComponent, {static: false})
   private travelForm: TravelFormComponent|undefined;
 
   constructor(private readonly resourceService: ResourceService) {}

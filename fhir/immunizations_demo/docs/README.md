@@ -669,7 +669,7 @@ These BigQuery schemas are lossless schemas. They include all the data, but
 structurally they are somewhat cumbersome to query. We are collaborating
 closely with the FHIR community to refine the [desired SQL projection of FHIR
 resources](https://github.com/rbrush/sql-on-fhir/blob/master/sql-on-fhir.md)
-that are suitable for analytical work. We have prepared a sample BigQuery
+that are suitable for analystics work. We have prepared a sample BigQuery
 dataset in the analytics schemas for you to explore.
 
 The query for the analytics schemas will be slightly simplified:
