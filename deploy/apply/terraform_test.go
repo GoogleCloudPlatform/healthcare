@@ -355,6 +355,9 @@ healthcare_datasets:
       member: ${each.value.member}
       hl7_v2_store_id: ${google_healthcare_hl7_v2_store.foo-dataset_foo-hl7-v2-store.id}
       provider: google-beta`,
+			wantImports: []terraform.Import{
+				{Address: "google_healthcare_dataset.foo-dataset", ID: "projects/my-project/locations/us-central1/datasets/foo-dataset"},
+			},
 		},
 		{
 			name: "monitoring_notification_channel",

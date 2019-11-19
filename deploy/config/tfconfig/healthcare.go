@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
 // HealthcareDataset represents a terraform healthcare dataset.
@@ -25,6 +27,7 @@ type HealthcareDataset struct {
 	Name     string `json:"name"`
 	Project  string `json:"project"`
 	Provider string `json:"provider,omitempty"`
+	Location string `json:"location"`
 
 	IAMMembers []*HealthcareDatasetIAMMember `json:"_iam_members"`
 
@@ -39,6 +42,9 @@ type HealthcareDataset struct {
 func (d *HealthcareDataset) Init(projectID string) error {
 	if d.Name == "" {
 		return errors.New("name must be set")
+	}
+	if d.Location == "" {
+		return errors.New("location must be set")
 	}
 	d.Project = projectID
 	d.Provider = "google-beta"
@@ -76,6 +82,11 @@ func (d *HealthcareDataset) ID() string {
 // ResourceType returns the resource terraform provider type.
 func (*HealthcareDataset) ResourceType() string {
 	return "google_healthcare_dataset"
+}
+
+// ImportID returns the ID to use for terraform imports.
+func (d *HealthcareDataset) ImportID(runner.Runner) (string, error) {
+	return fmt.Sprintf("projects/%s/locations/%s/datasets/%s", d.Project, d.Location, d.Name), nil
 }
 
 // DependentResources returns the child resources of this resource.

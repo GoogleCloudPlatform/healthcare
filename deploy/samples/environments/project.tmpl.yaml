@@ -12,6 +12,6 @@ projects:
       location: US
   healthcare_datasets:
   - name: example-dataset-{{.SUFFIX}}
+    location: us-central1
     _fhir_stores:
     - name: example-fhir-{{.SUFFIX}}
-      location: us-central1
