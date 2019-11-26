@@ -38,6 +38,11 @@ const projectConfigSchema = "project_config.yaml.schema"
 // generatedFieldsSchema is the path of the generated fields schema template relative to the repo root.
 const generatedFieldsSchema = "generated_fields.yaml.schema"
 
+// templateFuncs are functions passed to the config template.
+var templateFuncs = template.FuncMap{
+	"replace": strings.Replace,
+}
+
 // NormalizePath normalizes paths specified through a local run or Bazel invocation.
 func NormalizePath(path string) (string, error) {
 	path, err := homedir.Expand(path)
@@ -170,7 +175,7 @@ func loadMap(path string, data map[string]interface{}) (map[string]interface{}, 
 	}
 
 	if len(data) > 0 {
-		tmpl, err := template.New(path).Option("missingkey=error").Parse(string(b))
+		tmpl, err := template.New(path).Funcs(templateFuncs).Option("missingkey=error").Parse(string(b))
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse %q into template: %v", path, err)
 		}

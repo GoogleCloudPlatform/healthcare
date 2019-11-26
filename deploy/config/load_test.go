@@ -70,7 +70,7 @@ overall:
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := config.ValidateConf(tc.inputConf); (err == nil) != tc.ok {
-				t.Fatalf("config.Validate = %t, want %t", err == nil, tc.ok)
+				t.Fatalf("config.Validate = %v", err)
 			}
 		})
 	}
@@ -93,6 +93,29 @@ func TestLoadConfig(t *testing.T) {
 	}
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Errorf("loaded project IDs differ (-got +want):\n%s", diff)
+	}
+}
+
+func TestLoadFuncs(t *testing.T) {
+	config.EnableTerraform = true
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("ioutil.TempFile = %v", err)
+	}
+	f.Write([]byte(`
+generated_fields_path: ./foo.yaml
+overall:
+  billing_account: {{replace "000000_000000_000000" "_" "-"}}
+  organization_id: '12345678'
+  domain: foo.com
+projects: []`))
+	c, err := config.Load("samples/full/team2/config.yaml")
+	if err != nil {
+		t.Fatal("config.Load: %v", err)
+	}
+
+	if got, want := c.Overall.BillingAccount, "000000-000000-000000"; got != want {
+		t.Errorf("billing account from replace call: got %q, want %q", got, want)
 	}
 }
 
