@@ -466,6 +466,7 @@ storage_buckets:
         log_bucket: my-project-logs
       versioning:
         enabled: true
+      bucket_policy_only: true
 - google_storage_bucket_iam_member:
     foo-bucket:
       for_each:
@@ -651,6 +652,7 @@ resource:
       location: US
       versioning:
         enabled: true
+      bucket_policy_only: true
       depends_on:
       - google_project.project
 
@@ -724,6 +726,7 @@ resource:
       storage_class: MULTI_REGIONAL
       versioning:
         enabled: true
+      bucket_policy_only: true
 - google_storage_bucket_iam_member:
     my-project-logs:
       for_each:

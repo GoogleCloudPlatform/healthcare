@@ -24,12 +24,13 @@ import (
 
 // StorageBucket represents a Terraform GCS bucket.
 type StorageBucket struct {
-	Name           string           `json:"name"`
-	Project        string           `json:"project"`
-	Location       string           `json:"location"`
-	LifecycleRules []*LifecycleRule `json:"lifecycle_rule,omitempty"`
-	Logging        *Logging         `json:"logging,omitempty"`
-	Versioning     versioning       `json:"versioning,omitempty"`
+	Name             string           `json:"name"`
+	Project          string           `json:"project"`
+	Location         string           `json:"location"`
+	LifecycleRules   []*LifecycleRule `json:"lifecycle_rule,omitempty"`
+	Logging          *Logging         `json:"logging,omitempty"`
+	Versioning       versioning       `json:"versioning,omitempty"`
+	BucketPolicyOnly *bool            `json:"bucket_policy_only"`
 
 	DependsOn []string `json:"depends_on,omitempty"`
 
@@ -101,8 +102,12 @@ func (b *StorageBucket) Init(projectID string) error {
 	if b.Versioning.Enabled != nil && !*b.Versioning.Enabled {
 		return errors.New("versioning must not be disabled")
 	}
+
 	t := true
 	b.Versioning.Enabled = &t
+	if b.BucketPolicyOnly == nil {
+		b.BucketPolicyOnly = &t
+	}
 
 	if b.TTLDays > 0 {
 		b.LifecycleRules = append(b.LifecycleRules, &LifecycleRule{
