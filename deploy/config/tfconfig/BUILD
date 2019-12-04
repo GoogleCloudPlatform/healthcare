@@ -10,6 +10,7 @@ go_library(
         "bigquery.go",
         "compute.go",
         "config.go",
+        "data_fusion.go",
         "healthcare.go",
         "iam.go",
         "logging.go",

@@ -269,6 +269,36 @@ compute_instances:
 			}},
 		},
 		{
+			name: "data_fusion_instance",
+			data: &testconf.ConfigData{`
+data_fusion_instances:
+- name: foo-instance
+  type: ENTERPRISE
+  provider: google-beta
+  region: us-central1-a
+  enable_stackdriver_logging: true
+  enable_stackdriver_monitoring: true
+  labels:
+    example_key: example_value
+`},
+			wantResources: `
+- google_data_fusion_instance:
+    foo-instance:
+      name: foo-instance
+      type: ENTERPRISE
+      provider: google-beta
+      project: my-project
+      region: us-central1-a
+      enable_stackdriver_logging: true
+      enable_stackdriver_monitoring: true
+      labels:
+        example_key: example_value`,
+			wantImports: []terraform.Import{{
+				Address: "google_data_fusion_instance.foo-instance",
+				ID:      "projects/my-project/locations/us-central1-a/instances/foo-instance",
+			}},
+		},
+		{
 			name: "healthcare_dataset",
 			data: &testconf.ConfigData{`
 healthcare_datasets:

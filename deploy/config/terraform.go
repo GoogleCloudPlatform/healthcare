@@ -281,6 +281,9 @@ func (p *Project) TerraformResources() []tfconfig.Resource {
 	for _, r := range p.ComputeInstances {
 		rs = append(rs, r)
 	}
+	for _, r := range p.DataFusionInstances {
+		rs = append(rs, r)
+	}
 	for _, r := range p.HealthcareDatasets {
 		rs = append(rs, r)
 	}

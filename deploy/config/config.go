@@ -111,6 +111,7 @@ type Project struct {
 	ComputeFirewalls     []*tfconfig.ComputeFirewall               `json:"compute_firewalls"`
 	ComputeImages        []*tfconfig.ComputeImage                  `json:"compute_images"`
 	ComputeInstances     []*tfconfig.ComputeInstance               `json:"compute_instances"`
+	DataFusionInstances  []*tfconfig.DataFusionInstance            `json:"data_fusion_instances"`
 	HealthcareDatasets   []*tfconfig.HealthcareDataset             `json:"healthcare_datasets"`
 	IAMCustomRoles       []*tfconfig.ProjectIAMCustomRole          `json:"project_iam_custom_roles"`
 	IAMMembers           *tfconfig.ProjectIAMMembers               `json:"project_iam_members"`

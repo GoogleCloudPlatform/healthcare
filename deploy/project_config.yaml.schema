@@ -132,6 +132,24 @@ definitions:
         items:
           type: object
 
+      data_fusion_instances:
+        type: array
+        description: |
+          Supports data_fusion_instance (https://www.terraform.io/docs/providers/google/r/data_fusion_instance.html).
+        items:
+          type: object
+          required:
+          - name
+          - type
+          - region
+          properties:
+            name:
+              type: string
+              description: The name of the Data Fusion instance.
+            type:
+              type: string
+              description: The type of the Data Fusion instance.
+
       healthcare_datasets:
         type: array
         description: |
