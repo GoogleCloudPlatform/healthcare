@@ -619,6 +619,9 @@ service_accounts:
       account_id: foo-account
       project: my-project
       display_name: Foo account`,
+			wantImports: []terraform.Import{{
+				Address: "google_service_account.foo-account", ID: "projects/my-project/serviceAccounts/foo-account@my-project.iam.gserviceaccount.com",
+			}},
 		},
 	}
 

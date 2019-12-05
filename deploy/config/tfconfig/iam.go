@@ -195,3 +195,8 @@ func (a *ServiceAccount) ID() string {
 func (a *ServiceAccount) ResourceType() string {
 	return "google_service_account"
 }
+
+// ImportID returns the ID to use for terraform imports.
+func (a *ServiceAccount) ImportID(runner.Runner) (string, error) {
+	return fmt.Sprintf("projects/%s/serviceAccounts/%s@%s.iam.gserviceaccount.com", a.Project, a.AccountID, a.Project), nil
+}
