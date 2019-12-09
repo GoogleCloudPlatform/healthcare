@@ -29,6 +29,10 @@ type DataFusionInstance struct {
 	Type    string `json:"type"`
 	Region  string `json:"region"`
 
+	Provider                    string `json:"provider,omitempty"`
+	EnableStackdriverLogging    bool   `json:"enable_stackdriver_logging,omitempty"`
+	EnableStackdriverMonitoring bool   `json:"enable_stackdriver_monitoring,omitempty"`
+
 	raw json.RawMessage
 }
 
@@ -47,6 +51,9 @@ func (i *DataFusionInstance) Init(projectID string) error {
 		return fmt.Errorf("project must be unset: %v", i.Project)
 	}
 	i.Project = projectID
+	i.Provider = "google-beta"
+	i.EnableStackdriverLogging = true
+	i.EnableStackdriverMonitoring = true
 	return nil
 }
 

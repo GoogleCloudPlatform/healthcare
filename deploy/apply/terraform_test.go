@@ -274,10 +274,7 @@ compute_instances:
 data_fusion_instances:
 - name: foo-instance
   type: ENTERPRISE
-  provider: google-beta
   region: us-central1-a
-  enable_stackdriver_logging: true
-  enable_stackdriver_monitoring: true
   labels:
     example_key: example_value
 `},
