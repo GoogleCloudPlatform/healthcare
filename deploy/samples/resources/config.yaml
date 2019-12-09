@@ -50,6 +50,13 @@ projects:
         image: debian-cloud/debian-9
     network_interface:
       network: default
+  data_fusion_instances:
+  - name: foo-instance
+    type: ENTERPRISE
+    region: us-central1-a
+    enable_stackdriver_monitoring: false
+    labels:
+      example_key: example_value
   healthcare_datasets:
   - name: example-dataset
     location: us-central1

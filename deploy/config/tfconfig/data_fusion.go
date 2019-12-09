@@ -30,8 +30,8 @@ type DataFusionInstance struct {
 	Region  string `json:"region"`
 
 	Provider                    string `json:"provider,omitempty"`
-	EnableStackdriverLogging    bool   `json:"enable_stackdriver_logging,omitempty"`
-	EnableStackdriverMonitoring bool   `json:"enable_stackdriver_monitoring,omitempty"`
+	EnableStackdriverLogging    *bool  `json:"enable_stackdriver_logging,omitempty"`
+	EnableStackdriverMonitoring *bool  `json:"enable_stackdriver_monitoring,omitempty"`
 
 	raw json.RawMessage
 }
@@ -52,8 +52,13 @@ func (i *DataFusionInstance) Init(projectID string) error {
 	}
 	i.Project = projectID
 	i.Provider = "google-beta"
-	i.EnableStackdriverLogging = true
-	i.EnableStackdriverMonitoring = true
+	t := true
+	if i.EnableStackdriverLogging == nil {
+		i.EnableStackdriverLogging = &t
+	}
+	if i.EnableStackdriverMonitoring == nil {
+		i.EnableStackdriverMonitoring = &t
+	}
 	return nil
 }
 

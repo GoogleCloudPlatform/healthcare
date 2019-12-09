@@ -275,6 +275,7 @@ data_fusion_instances:
 - name: foo-instance
   type: ENTERPRISE
   region: us-central1-a
+  enable_stackdriver_monitoring: false
   labels:
     example_key: example_value
 `},
@@ -287,7 +288,7 @@ data_fusion_instances:
       project: my-project
       region: us-central1-a
       enable_stackdriver_logging: true
-      enable_stackdriver_monitoring: true
+      enable_stackdriver_monitoring: false
       labels:
         example_key: example_value`,
 			wantImports: []terraform.Import{{
