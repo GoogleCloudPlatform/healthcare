@@ -151,6 +151,9 @@ func (i *ComputeInstance) Init(projectID string) error {
 	if i.Name == "" {
 		return errors.New("name must be set")
 	}
+	if i.Zone == "" {
+		return errors.New("zone must be set")
+	}
 	if i.Project != "" {
 		return fmt.Errorf("project must not be set: %q", i.Project)
 	}

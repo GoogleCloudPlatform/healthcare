@@ -111,6 +111,24 @@ definitions:
         items:
           type: object
 
+      # To set up triggers for GitHub, manual steps in the UI to connect GitHub repositories are still required.
+      cloudbuild_triggers:
+        type: array
+        description: |
+          Supports google_cloudbuild_trigger (https://www.terraform.io/docs/providers/google/r/cloudbuild_trigger.html).
+        items:
+          type: object
+          required:
+          - name
+          - github
+          properties:
+            name:
+              type: string
+              description: The name of the Cloudbuild Trigger. Must be unique within the project.
+            github:
+              type: object
+              description: The configuration of a trigger that creates a build whenever a GitHub event is received.
+
       compute_firewalls:
         type: array
         description: |
@@ -149,6 +167,9 @@ definitions:
             type:
               type: string
               description: The type of the Data Fusion instance.
+            region:
+              type: string
+              description: The region of the Data Fusion instance.
 
       healthcare_datasets:
         type: array

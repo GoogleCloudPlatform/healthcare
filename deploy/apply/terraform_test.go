@@ -197,6 +197,69 @@ bigquery_datasets:
 			}},
 		},
 		{
+			name: "cloudbuild_triggers",
+			data: &testconf.ConfigData{`
+cloudbuild_triggers:
+- name: pr-trigger
+  filename: presubmit.yaml
+  substitutions:
+    _KEY_1: VALUE_1
+    _KEY_2: VALUE_2
+  ignored_files:
+  - a.txt
+  - b.txt
+  github:
+    owner: googlecloudplatform
+    name: cloud-builders
+    pull_request:
+      branch: master
+      comment_control: COMMENTS_ENABLED
+- name: submit-trigger
+  filename: postsubmit.yaml
+  disabled: true
+  substitutions:
+    _KEY_1: VALUE_1
+    _KEY_2: VALUE_2
+  github:
+    owner: googlecloudplatform
+    name: cloud-builders
+    push:
+      tag: release
+`},
+			wantResources: `
+- google_cloudbuild_trigger:
+    pr-trigger:
+      name: pr-trigger
+      project: my-project
+      filename: presubmit.yaml
+      substitutions:
+        _KEY_1: VALUE_1
+        _KEY_2: VALUE_2
+      ignored_files:
+        - a.txt
+        - b.txt
+      github:
+        owner: googlecloudplatform
+        name: cloud-builders
+        pull_request:
+          branch: master
+          comment_control: COMMENTS_ENABLED
+- google_cloudbuild_trigger:
+    submit-trigger:
+      name: submit-trigger
+      project: my-project
+      filename: postsubmit.yaml
+      disabled: true
+      substitutions:
+        _KEY_1: VALUE_1
+        _KEY_2: VALUE_2
+      github:
+        owner: googlecloudplatform
+        name: cloud-builders
+        push:
+          tag: release`,
+		},
+		{
 			name: "compute_firewall",
 			data: &testconf.ConfigData{`
 compute_firewalls:

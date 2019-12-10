@@ -41,6 +41,32 @@ projects:
   storage_buckets:
   - name: example-project-data
     location: US
+  cloudbuild_triggers:
+  - name: pr-trigger
+    filename: presubmit.yaml
+    substitutions:
+      _KEY_1: VALUE_1
+      _KEY_2: VALUE_2
+    ignored_files:
+    - a.txt
+    - b.txt
+    github:
+      owner: googlecloudplatform
+      name: cloud-builders
+      pull_request:
+        branch: master
+        comment_control: COMMENTS_ENABLED
+  - name: submit-trigger
+    filename: postsubmit.yaml
+    disabled: true
+    substitutions:
+      _KEY_1: VALUE_1
+      _KEY_2: VALUE_2
+    github:
+      owner: googlecloudplatform
+      name: cloud-builders
+      push:
+        tag: release
   compute_instances:
   - name: example-instance
     zone: us-central1-a

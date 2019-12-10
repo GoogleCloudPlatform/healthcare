@@ -108,6 +108,7 @@ type Project struct {
 
 	// Terraform resources
 	BigqueryDatasets     []*tfconfig.BigqueryDataset               `json:"bigquery_datasets"`
+	CloudBuildTriggers   []*tfconfig.CloudBuildTrigger             `json:"cloudbuild_triggers"`
 	ComputeFirewalls     []*tfconfig.ComputeFirewall               `json:"compute_firewalls"`
 	ComputeImages        []*tfconfig.ComputeImage                  `json:"compute_images"`
 	ComputeInstances     []*tfconfig.ComputeInstance               `json:"compute_instances"`

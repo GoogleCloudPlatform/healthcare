@@ -272,6 +272,9 @@ func (p *Project) TerraformResources() []tfconfig.Resource {
 	for _, r := range p.BigqueryDatasets {
 		rs = append(rs, r)
 	}
+	for _, r := range p.CloudBuildTriggers {
+		rs = append(rs, r)
+	}
 	for _, r := range p.ComputeFirewalls {
 		rs = append(rs, r)
 	}

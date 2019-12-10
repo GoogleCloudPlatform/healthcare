@@ -8,6 +8,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "bigquery.go",
+        "cloudbuild.go",
         "compute.go",
         "config.go",
         "data_fusion.go",
