@@ -98,7 +98,7 @@ func (p *Project) initServices() error {
 	}
 
 	svcs := []string{
-		"bigquery-json.googleapis.com", // For bigquery audit logs and datasets.
+		"bigquery.googleapis.com", // For bigquery audit logs and datasets.
 		"bigquerystorage.googleapis.com",
 		"cloudresourcemanager.googleapis.com", // For project level iam policy updates.
 		"logging.googleapis.com",              // For default logging metrics.

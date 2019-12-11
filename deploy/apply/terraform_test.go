@@ -880,7 +880,7 @@ resource:
 - google_project_service:
     project:
       for_each:
-        'bigquery-json.googleapis.com': true
+        'bigquery.googleapis.com': true
         'bigquerystorage.googleapis.com': true
         'cloudresourcemanager.googleapis.com': true
         'logging.googleapis.com': true
