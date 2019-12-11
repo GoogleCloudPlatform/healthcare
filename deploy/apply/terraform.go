@@ -241,7 +241,7 @@ func services(project *config.Project, opts *Options, workDir string, rn runner.
 	tfConf := terraform.NewConfig()
 	tfConf.Terraform.Backend = &terraform.Backend{
 		Bucket: project.DevopsConfig.StateBucket.Name,
-		Prefix: "services",
+		Prefix: "services-v2",
 	}
 
 	// Services don't need to be imported since they can be re-created even if they already exist.
