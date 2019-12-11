@@ -44,7 +44,7 @@ import (
 var (
 	configPath          = flag.String("config_path", "", "Path to project config file")
 	dryRun              = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
-	enableTerraform     = flag.Bool("enable_terraform", false, "Whether terraform is preferred over deployment manager.")
+	enableTerraform     = flag.Bool("enable_terraform", true, "Whether terraform is preferred over deployment manager.")
 	importExisting      = flag.Bool("terraform_import_existing", false, "TERRAFORM ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
 	terraformConfigsDir = flag.String("terraform_configs_dir", "", "TERRAFORM ONLY. Directory path to store generated Terraform configs. The configs are discarded if not specified.")
 	terraformApplyFlags = flag.String("terraform_apply_flags", "", "TERRAFORM ONLY. Extra option flags to pass to apply command.")
