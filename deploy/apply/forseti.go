@@ -16,7 +16,6 @@ package apply
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os/exec"
@@ -57,7 +56,7 @@ func Forseti(conf *config.Config, opts *Options, terraformConfigsDir string, rn 
 	// Always deploy state bucket, otherwise a forseti installation that failed half way through
 	// will be left in a partial state and every following attempt will install a fresh instance.
 	// TODO: once terraform is launched and default just let the Default take care of deploying the state bucket and remove this block.
-	if err := stateBucket(project, workDir, rn); err != nil {
+	if err := stateBucket(project, opts, workDir, rn); err != nil {
 		return fmt.Errorf("failed to deploy terraform state: %v", err)
 	}
 
@@ -111,26 +110,6 @@ func forsetiConfig(conf *config.Config, opts *Options, workDir string, rn runner
 	}
 	conf.AllGeneratedFields.Forseti.ServiceBucket = serverBucket
 	return nil
-}
-
-func stateBucket(project *config.Project, workDir string, rn runner.Runner) error {
-	if project.DevopsConfig.StateBucket == nil {
-		return errors.New("state_storage_bucket must not be nil")
-	}
-
-	tfConf := terraform.NewConfig()
-	if err := addResources(tfConf, project.DevopsConfig.StateBucket); err != nil {
-		return err
-	}
-	opts := &terraform.Options{}
-	if err := addImports(opts, rn, project.DevopsConfig.StateBucket); err != nil {
-		return err
-	}
-	workDir, err := terraform.WorkDir(workDir, "state")
-	if err != nil {
-		return err
-	}
-	return terraformApply(tfConf, workDir, opts, rn)
 }
 
 // GrantForsetiPermissions grants all necessary permissions to the given Forseti service account in the project.

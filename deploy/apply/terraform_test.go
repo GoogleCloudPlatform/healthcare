@@ -727,8 +727,9 @@ func TestCreateProject(t *testing.T) {
 		return nil
 	}
 
-	want := []applyCall{{
-		Config: unmarshal(t, `
+	want := []applyCall{
+		{
+			Config: unmarshal(t, `
 terraform:
   required_version: ">= 0.12.0"
 
@@ -739,6 +740,20 @@ resource:
       name: my-project
       folder_id: '98765321'
       billing_account: 000000-000000-000000
+
+output:
+- project_number:
+    value: ${google_project.project.number}
+`),
+			Imports: []terraform.Import{
+				{Address: "google_project.project", ID: "my-project"},
+			},
+		},
+		{
+			Config: unmarshal(t, `
+terraform:
+  required_version: ">= 0.12.0"
+resource:
 - google_storage_bucket:
     my-project-state:
       name: my-project-state
@@ -746,19 +761,12 @@ resource:
       location: US
       versioning:
         enabled: true
-      bucket_policy_only: true
-      depends_on:
-      - google_project.project
-
-output:
-- project_number:
-    value: ${google_project.project.number}
-`),
-		Imports: []terraform.Import{
-			{Address: "google_project.project", ID: "my-project"},
-			{Address: "google_storage_bucket.my-project-state", ID: "my-project/my-project-state"},
+      bucket_policy_only: true`),
+			Imports: []terraform.Import{
+				{Address: "google_storage_bucket.my-project-state", ID: "my-project/my-project-state"},
+			},
 		},
-	}}
+	}
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -768,6 +776,9 @@ output:
 
 	if err := createProjectTerraform(config, project, &Options{}, dir, &tfTestRunner{}); err != nil {
 		t.Fatalf("createProjectTerraform: %v", err)
+	}
+	if err := stateBucket(project, &Options{}, dir, &tfTestRunner{}); err != nil {
+		t.Fatalf("stateBucket: %v", err)
 	}
 
 	if diff := cmp.Diff(got, want); diff != "" {

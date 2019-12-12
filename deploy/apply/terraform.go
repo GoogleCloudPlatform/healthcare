@@ -93,6 +93,9 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err := createProjectTerraform(conf, p, opts, workDir, rn); err != nil {
 			return err
 		}
+		if err := stateBucket(p, opts, workDir, rn); err != nil {
+			return err
+		}
 	}
 
 	for _, p := range projs {
@@ -196,7 +199,9 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 	}
 
 	tfConf := terraform.NewConfig()
-	if err := addResources(tfConf, pr, project.DevopsConfig.StateBucket); err != nil {
+	// TODO: add project.DevopsConfig.StateBucket here once
+	// https://github.com/terraform-providers/terraform-provider-google/issues/3429 is fixed.
+	if err := addResources(tfConf, pr); err != nil {
 		return err
 	}
 	tfConf.Outputs = []*terraform.Output{{
@@ -205,7 +210,7 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 	}}
 	tfOpts := &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}
 	// Since the project creation deployment is not linked to a remote state, always import the project and state bucket.
-	if err := addImports(tfOpts, rn, pr, project.DevopsConfig.StateBucket); err != nil {
+	if err := addImports(tfOpts, rn, pr); err != nil {
 		return err
 	}
 
@@ -235,6 +240,28 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 	}
 	project.GeneratedFields.ProjectNumber = pn
 	return nil
+}
+
+// TODO: merge this with project creation deployment once
+// https://github.com/terraform-providers/terraform-provider-google/issues/3429 is fixed.
+func stateBucket(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
+	tfConf := terraform.NewConfig()
+
+	if err := addResources(tfConf, project.DevopsConfig.StateBucket); err != nil {
+		return err
+	}
+	tfOpts := &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}
+	// Since the state bucket deployment is not linked to a remote state, always import the project and state bucket.
+	if err := addImports(tfOpts, rn, project.DevopsConfig.StateBucket); err != nil {
+		return err
+	}
+
+	dir, err := terraform.WorkDir(workDir, "state")
+	if err != nil {
+		return err
+	}
+
+	return terraformApply(tfConf, dir, tfOpts, rn)
 }
 
 func services(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
