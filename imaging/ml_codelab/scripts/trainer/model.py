@@ -268,10 +268,10 @@ def _export_model(label_list, export_model_path):
     builder = tf.saved_model.builder.SavedModelBuilder(export_model_path)
     builder.add_meta_graph_and_variables(
         sess, [tf.saved_model.tag_constants.SERVING],
+        assets_collection=tf.get_collection(tf.GraphKeys.ASSET_FILEPATHS),
         signature_def_map=signature_def_map,
         main_op=tf.group(tf.tables_initializer(), name='main_op'))
     builder.save()
-
 
 def _create_dense_and_softmax_layers(bottleneck_tensor, class_count):
   # type: (tf.Tensor, int) -> (tf.Tensor, tf.Tensor, tf.Tensor)
@@ -374,7 +374,7 @@ def main(_):
   class_count = len(label_list)
   logging.info('=== IMAGE STATISTICS ===')
   logging.info('Number of classes: %s', class_count)
-  for k, v in dataset_counter.iteritems():
+  for k, v in dataset_counter.items():
     logging.info('Number of images for %s dataset: %s', k, v)
 
   # Maps from labels to index and vice-versa.
@@ -385,7 +385,7 @@ def main(_):
   training_dataset, validation_dataset, testing_dataset = (
       _get_training_validation_testing_dataset(
           FLAGS.bottleneck_dir, label_to_index_table,
-          dataset_counter[constants.TESTING_DATASET]))
+          dataset_counter[constants.TESTING_DATASET.encode()]))
 
   # Create iterators for the training, validation and testing dataset.
   bottleneck_input = tf.placeholder(tf.string)
