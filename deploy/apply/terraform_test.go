@@ -193,7 +193,7 @@ bigquery_datasets:
         group_by_email: my-project-owners@my-domain.com`,
 			wantImports: []terraform.Import{{
 				Address: "google_bigquery_dataset.foo_dataset",
-				ID:      "my-project:foo_dataset",
+				ID:      "projects/my-project/datasets/foo_dataset",
 			}},
 		},
 		{
@@ -850,7 +850,7 @@ resource:
 `),
 		Imports: []terraform.Import{
 			{Address: "google_logging_project_sink.audit-logs-to-bigquery", ID: "projects/my-project/sinks/audit-logs-to-bigquery"},
-			{Address: "google_bigquery_dataset.audit_logs", ID: "my-project:audit_logs"},
+			{Address: "google_bigquery_dataset.audit_logs", ID: "projects/my-project/datasets/audit_logs"},
 			{Address: "google_storage_bucket.my-project-logs", ID: "my-project/my-project-logs"},
 		},
 	}}
