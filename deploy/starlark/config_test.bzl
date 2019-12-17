@@ -2,11 +2,19 @@
 
 def _impl(ctx):
     """Core implementation of _config_test rule."""
-    content = "{config_loader} --config_path {path} --enable_terraform={enable_terraform}".format(
-        config_loader = ctx.executable._config_loader.short_path,
-        path = ctx.file.config.short_path,
-        enable_terraform = ctx.attr.enable_terraform,
-    )
+    if ctx.attr.projects:
+        content = "{apply} --dry_run --config_path={config_path} --enable_terraform={enable_terraform} --projects={projects} --terraform_configs_dir=$TEST_UNDECLARED_OUTPUTS_DIR".format(
+            apply = ctx.executable._apply.short_path,
+            config_path = ctx.file.config.short_path,
+            enable_terraform = ctx.attr.enable_terraform,
+            projects = ",".join(ctx.attr.projects),
+        )
+    else:
+        content = "{apply} --dry_run --config_path={config_path} --enable_terraform={enable_terraform} --terraform_configs_dir=$TEST_UNDECLARED_OUTPUTS_DIR".format(
+            apply = ctx.executable._apply.short_path,
+            config_path = ctx.file.config.short_path,
+            enable_terraform = ctx.attr.enable_terraform,
+        )
 
     ctx.actions.write(
         content = content,
@@ -15,11 +23,11 @@ def _impl(ctx):
     )
 
     runfiles = [
-        ctx.file._config_loader,
+        ctx.file._apply,
         ctx.file._generated_fields_schema,
         ctx.file._project_config_schema,
         ctx.file.config,
-    ] + ctx.files.deps
+    ] + ctx.files.deps + ctx.files._terraform_google_forseti
 
     return [DefaultInfo(runfiles = ctx.runfiles(files = runfiles))]
 
@@ -38,12 +46,21 @@ _config_test = rule(
             default = False,
             doc = "Whether to enable Terraform.",
         ),
-        "_config_loader": attr.label(
-            default = Label("//cmd/load_config"),
+        "projects": attr.string_list(
+            mandatory = False,
+            doc = "Comma separeted project IDs to test, or leave unspecified to test all projects.",
+        ),
+        "_apply": attr.label(
+            default = Label("//cmd/apply"),
             doc = "The config loader binary. Internal attribute and should not be set by users.",
             cfg = "host",
             executable = True,
             allow_single_file = True,
+        ),
+        "_terraform_google_forseti": attr.label(
+            default = Label("//external/terraform_google_forseti:forseti"),
+            doc = "The generated fields schema. Internal attribute and should not be set by users.",
+            cfg = "host",
         ),
         # The following attributes are added purely for the purpose of making
         # schema files available in the runfiles tree.
