@@ -15,7 +15,7 @@ config_test(
     config = ":project_with_local_audit_logs.yaml",
     deps = [
         ":generated_fields.yaml",
-        "//external/terraform_google_forseti:forseti",
+        "@terraform_google_forseti//:all_files",
     ],
 )
 
@@ -24,6 +24,6 @@ config_test(
     config = ":project_with_remote_audit_logs.yaml",
     deps = [
         ":generated_fields.yaml",
-        "//external/terraform_google_forseti:forseti",
+        "@terraform_google_forseti//:all_files",
     ],
 )

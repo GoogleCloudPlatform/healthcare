@@ -13,7 +13,7 @@ licenses(["notice"])
             ":generated_fields.yaml",
             ":overall.yaml",
             ":project.tmpl.yaml",
-            "//external/terraform_google_forseti:forseti",
+            "@terraform_google_forseti//:all_files",
         ],
     )
     for env in [
