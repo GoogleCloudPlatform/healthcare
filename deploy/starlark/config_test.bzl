@@ -27,7 +27,7 @@ def _impl(ctx):
         ctx.file._generated_fields_schema,
         ctx.file._project_config_schema,
         ctx.file.config,
-    ] + ctx.files.deps + ctx.files._terraform_google_forseti
+    ] + ctx.files.deps
 
     return [DefaultInfo(runfiles = ctx.runfiles(files = runfiles))]
 
@@ -56,11 +56,6 @@ _config_test = rule(
             cfg = "host",
             executable = True,
             allow_single_file = True,
-        ),
-        "_terraform_google_forseti": attr.label(
-            default = Label("//external/terraform_google_forseti:forseti"),
-            doc = "The generated fields schema. Internal attribute and should not be set by users.",
-            cfg = "host",
         ),
         # The following attributes are added purely for the purpose of making
         # schema files available in the runfiles tree.

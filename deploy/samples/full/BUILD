@@ -9,6 +9,7 @@ filegroup(
     srcs = [
         ":generated_fields.yaml",
         ":shared.yaml",
+        "//external/terraform_google_forseti:forseti",
     ],
 )
 
@@ -26,5 +27,8 @@ config_test(
     name = "shared_config_test",
     config = ":shared.yaml",
     enable_terraform = True,
-    deps = [":generated_fields.yaml"],
+    deps = [
+        ":generated_fields.yaml",
+        "//external/terraform_google_forseti:forseti",
+    ],
 )

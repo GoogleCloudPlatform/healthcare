@@ -13,11 +13,17 @@ config_test(
 config_test(
     name = "sample_project_with_local_audit_logs_config_test",
     config = ":project_with_local_audit_logs.yaml",
-    deps = [":generated_fields.yaml"],
+    deps = [
+        ":generated_fields.yaml",
+        "//external/terraform_google_forseti:forseti",
+    ],
 )
 
 config_test(
     name = "sample_project_with_remote_audit_logs_config_test",
     config = ":project_with_remote_audit_logs.yaml",
-    deps = [":generated_fields.yaml"],
+    deps = [
+        ":generated_fields.yaml",
+        "//external/terraform_google_forseti:forseti",
+    ],
 )
