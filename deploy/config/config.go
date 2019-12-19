@@ -121,6 +121,7 @@ type Project struct {
 	Services             *tfconfig.ProjectServices                 `json:"project_services"`
 	ResourceManagerLiens []*tfconfig.ResourceManagerLien           `json:"resource_manager_liens"`
 	ServiceAccounts      []*tfconfig.ServiceAccount                `json:"service_accounts"`
+	SpannerInstances     []*tfconfig.SpannerInstance               `json:"spanner_instances"`
 	StorageBuckets       []*tfconfig.StorageBucket                 `json:"storage_buckets"`
 
 	BinauthzPolicy *BinAuthz `json:"binauthz"`

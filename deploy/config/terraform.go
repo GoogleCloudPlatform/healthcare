@@ -305,6 +305,9 @@ func (p *Project) TerraformResources() []tfconfig.Resource {
 	for _, r := range p.ServiceAccounts {
 		rs = append(rs, r)
 	}
+	for _, r := range p.SpannerInstances {
+		rs = append(rs, r)
+	}
 	for _, r := range p.StorageBuckets {
 		rs = append(rs, r)
 	}

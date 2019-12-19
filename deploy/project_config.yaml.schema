@@ -200,99 +200,99 @@ definitions:
                     type: string
                     description: |
                       Identities that will be granted the privilege in role.
-          _dicom_stores:
-            type: array
-            description: Supports google_healthcare_dicom_store (https://www.terraform.io/docs/providers/google/r/healthcare_dicom_store.html).
-            items:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: |
-                    The resource name for the DicomStore.
-                    ** Changing this property may recreate the Dicom store
-                    (removing all data) **
-                _iam_members:
-                  type: array
-                  description: |
-                    Supports google_healthcare_dicom_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_dicom_store_iam.html).
-                    Only the fields below are allowed.
-                  items:
-                    type: object
-                    additionalProperties: false
-                    required:
-                    - role
-                    - member
-                    properties:
-                      role:
-                        type: string
-                        description: The role that should be applied.
-                      member:
-                        type: string
-                        description: |
-                          Identities that will be granted the privilege in role.
-          _fhir_stores:
-            type: array
-            description: Supports google_healthcare_fhir_store (https://www.terraform.io/docs/providers/google/r/healthcare_fhir_store.html).
-            items:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: |
-                    The resource name for the FhirStore.
-                    ** Changing this property may recreate the Dicom store
-                    (removing all data) **
-                _iam_members:
-                  type: array
-                  description: |
-                    Supports google_healthcare_fhir_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_fhir_store_iam.html).
-                    Only the fields below are allowed.
-                  items:
-                    type: object
-                    additionalProperties: false
-                    required:
-                    - role
-                    - member
-                    properties:
-                      role:
-                        type: string
-                        description: The role that should be applied.
-                      member:
-                        type: string
-                        description: |
-                          Identities that will be granted the privilege in role.
-          _hl7_v2_stores:
-            type: array
-            description: Supports google_healthcare_hl7_v2_store (https://www.terraform.io/docs/providers/google/r/healthcare_hl7_v2_store.html).
-            items:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: |
-                    The resource name for the FhirStore.
-                    ** Changing this property may recreate the Dicom store
-                    (removing all data) **
-                _iam_members:
-                  type: array
-                  description: |
-                    Supports google_healthcare_hl7_v2_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_hl7_v2_store_iam.html).
-                    Only the fields below are allowed.
-                  items:
-                    type: object
-                    additionalProperties: false
-                    required:
-                    - role
-                    - member
-                    properties:
-                      role:
-                        type: string
-                        description: The role that should be applied.
-                      member:
-                        type: string
-                        description: |
-                          Identities that will be granted the privilege in role.
+            _dicom_stores:
+              type: array
+              description: Supports google_healthcare_dicom_store (https://www.terraform.io/docs/providers/google/r/healthcare_dicom_store.html).
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: |
+                      The resource name for the DicomStore.
+                      ** Changing this property may recreate the Dicom store
+                      (removing all data) **
+                  _iam_members:
+                    type: array
+                    description: |
+                      Supports google_healthcare_dicom_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_dicom_store_iam.html).
+                      Only the fields below are allowed.
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                      - role
+                      - member
+                      properties:
+                        role:
+                          type: string
+                          description: The role that should be applied.
+                        member:
+                          type: string
+                          description: |
+                            Identities that will be granted the privilege in role.
+            _fhir_stores:
+              type: array
+              description: Supports google_healthcare_fhir_store (https://www.terraform.io/docs/providers/google/r/healthcare_fhir_store.html).
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: |
+                      The resource name for the FhirStore.
+                      ** Changing this property may recreate the Dicom store
+                      (removing all data) **
+                  _iam_members:
+                    type: array
+                    description: |
+                      Supports google_healthcare_fhir_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_fhir_store_iam.html).
+                      Only the fields below are allowed.
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                      - role
+                      - member
+                      properties:
+                        role:
+                          type: string
+                          description: The role that should be applied.
+                        member:
+                          type: string
+                          description: |
+                            Identities that will be granted the privilege in role.
+            _hl7_v2_stores:
+              type: array
+              description: Supports google_healthcare_hl7_v2_store (https://www.terraform.io/docs/providers/google/r/healthcare_hl7_v2_store.html).
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: |
+                      The resource name for the FhirStore.
+                      ** Changing this property may recreate the Dicom store
+                      (removing all data) **
+                  _iam_members:
+                    type: array
+                    description: |
+                      Supports google_healthcare_hl7_v2_store_iam_member (https://www.terraform.io/docs/providers/google/r/healthcare_hl7_v2_store_iam.html).
+                      Only the fields below are allowed.
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                      - role
+                      - member
+                      properties:
+                        role:
+                          type: string
+                          description: The role that should be applied.
+                        member:
+                          type: string
+                          description: |
+                            Identities that will be granted the privilege in role.
 
       monitoring_notification_channels:
         type: array
@@ -475,6 +475,69 @@ definitions:
               description: |
                 The display name for the service account. Can be updated
                 without creating a new resource.
+
+      spanner_instances:
+        type: array
+        description: |
+          Supports google_spanner_instance (https://www.terraform.io/docs/providers/google/r/spanner_instance.html).
+        items:
+          type: object
+          required:
+          - name
+          properties:
+            name:
+              type: string
+              description: The resource name for the Dataset.
+            _iam_members:
+              type: array
+              description: |
+                Supports google_spanner_instance_iam_member (https://www.terraform.io/docs/providers/google/r/spanner_instance_iam.html).
+                Only the fields below are allowed.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - role
+                - member
+                properties:
+                  role:
+                    type: string
+                    description: The role that should be applied.
+                  member:
+                    type: string
+                    description: |
+                      Identities that will be granted the privilege in role.
+            _databases:
+              type: array
+              description: Supports google_spanner_database (https://www.terraform.io/docs/providers/google/r/spanner_database.html).
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: |
+                      The resource name for the DicomStore.
+                      ** Changing this property may recreate the Dicom store
+                      (removing all data) **
+                  _iam_members:
+                    type: array
+                    description: |
+                      Supports google_spanner_database_iam_member (https://www.terraform.io/docs/providers/google/r/spanner_database_iam.html).
+                      Only the fields below are allowed.
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required:
+                      - role
+                      - member
+                      properties:
+                        role:
+                          type: string
+                          description: The role that should be applied.
+                        member:
+                          type: string
+                          description: |
+                            Identities that will be granted the privilege in role.
 
       storage_buckets:
         type: array

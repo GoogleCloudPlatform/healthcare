@@ -684,6 +684,61 @@ service_accounts:
 				Address: "google_service_account.foo-account", ID: "projects/my-project/serviceAccounts/foo-account@my-project.iam.gserviceaccount.com",
 			}},
 		},
+		{
+			name: "spanner_instance",
+			data: &testconf.ConfigData{`
+spanner_instances:
+- name: example-instance
+  config: regional-us-central1
+  display_name: example spanner instance
+  _iam_members:
+  - role: roles/editor
+    member: user:example-editor@example.com
+  _databases:
+  - name: example-database
+    ddl:
+    - CREATE TABLE t1 (t1 INT64 NOT NULL,) PRIMARY KEY(t1)
+    _iam_members:
+    - role: roles/viewer
+      member: user:example-viewer@example.com`},
+			wantResources: `
+- google_spanner_instance:
+    example-instance:
+      name: example-instance
+      project: my-project
+      config: regional-us-central1
+      display_name: example spanner instance
+- google_spanner_database:
+    example-database:
+      name: example-database
+      project: my-project
+      instance: ${google_spanner_instance.example-instance.name}
+      ddl:
+      - CREATE TABLE t1 (t1 INT64 NOT NULL,) PRIMARY KEY(t1)
+- google_spanner_database_iam_member:
+    example-instance_example-database:
+      for_each:
+        "roles/viewer user:example-viewer@example.com":
+          role: roles/viewer
+          member: user:example-viewer@example.com
+      instance: example-instance
+      database: ${google_spanner_database.example-database.name}
+      role: ${each.value.role}
+      member: ${each.value.member}
+- google_spanner_instance_iam_member:
+    example-instance:
+      for_each:
+        "roles/editor user:example-editor@example.com":
+          role: roles/editor
+          member: user:example-editor@example.com
+      instance: ${google_spanner_instance.example-instance.name}
+      role: ${each.value.role}
+      member: ${each.value.member}`,
+			wantImports: []terraform.Import{
+				{Address: "google_spanner_instance.example-instance", ID: "projects/my-project/instances/example-instance"},
+				{Address: "google_spanner_database.example-database", ID: "projects/my-project/instances/example-instance/databases/example-database"},
+			},
+		},
 	}
 
 	dir, err := ioutil.TempDir("", "")
