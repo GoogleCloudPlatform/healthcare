@@ -36,7 +36,6 @@ import csv
 import logging
 import os
 import random
-import StringIO
 import sys
 import threading
 import apache_beam as beam
@@ -56,7 +55,7 @@ _BREAST_DENSITY_2_LABEL = '2'
 _BREAST_DENSITY_3_LABEL = '3'
 
 
-class PreprocessGraph(object):
+class PreprocessGraph:
   """ Creates a TF graph to preprocess an image and to calculate bottlenecks.
   Example usage:
   # Create the Tensorflow graph.
@@ -120,7 +119,7 @@ def _to_tfrecord(dataset, image_path, label, bottleneck):
   """
 
   def _bytes_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value.encode()]))
 
   def _float_feature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
@@ -202,9 +201,9 @@ def _get_study_uid_to_image_path_map(input_path):
 
 def _partition_fn(element, unused_num_partitions):
   dataset = element.features.feature['dataset'].bytes_list.value[0]
-  if dataset == constants.TRAINING_DATASET:
+  if dataset == constants.TRAINING_DATASET.encode():
     return 0
-  elif dataset == constants.VALIDATION_DATASET:
+  elif dataset == constants.VALIDATION_DATASET.encode():
     return 1
   return 2
 
@@ -231,7 +230,7 @@ def configure_pipeline(p, opt):
   logging.info('Number of images in testing dataset: %s', testing_size)
 
   count = 0
-  for k, v in study_uid_to_label.iteritems():
+  for k, v in study_uid_to_label.items():
     if k not in study_uid_to_image_path:
       logging.warning('Could not find image with study_uid %s in GCS', k)
       continue
@@ -346,7 +345,7 @@ def default_args(argv):
         'runner': 'DirectRunner',
     }
 
-  for kk, vv in default_values.iteritems():
+  for kk, vv in default_values.items():
     if kk not in parsed_args or not vars(parsed_args)[kk]:
       vars(parsed_args)[kk] = vv
 

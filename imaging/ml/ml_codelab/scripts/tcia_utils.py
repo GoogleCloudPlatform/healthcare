@@ -14,7 +14,7 @@
 """Utility functions for dealing with TCIA data."""
 
 import csv
-import StringIO
+import io
 import httplib2
 
 # Labels files that contain breast density labels and UIDs.
@@ -61,8 +61,8 @@ def _GetStudyUIDMaps(has_study_uid=None):
   for path in _LABEL_PATHS:
     resp, content = http.request(path, method="GET")
     assert resp.status == 200, "Failed to download label files from: " + path
-    r = csv.reader(StringIO.StringIO(content), delimiter=",")
-    header = r.next()
+    r = csv.reader(content.decode("utf-8").splitlines(), delimiter=",")
+    header = next(r)
     breast_density_column = -1
     image_file_path_column = -1
     for idx, h in enumerate(header):
