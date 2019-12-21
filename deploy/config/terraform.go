@@ -142,14 +142,10 @@ func (p *Project) addDefaultIAM() {
 
 	p.IAMMembers.Members = append(p.IAMMembers.Members,
 		&tfconfig.ProjectIAMMember{Role: "roles/owner", Member: "group:" + p.OwnersGroup},
+		// roles/owner does not grant storage.buckets.setIamPolicy and other storage permissions, so we need to grant storage admin as well.
+		&tfconfig.ProjectIAMMember{Role: "roles/storage.admin", Member: "group:" + p.OwnersGroup},
 		&tfconfig.ProjectIAMMember{Role: "roles/iam.securityReviewer", Member: "group:" + p.AuditorsGroup},
 	)
-	if p.Audit.LogsStorageBucket != nil || len(p.StorageBuckets) > 0 {
-		// roles/owner does not grant storage.buckets.setIamPolicy, so we need to add storage admin role on the owners group.
-		p.IAMMembers.Members = append(p.IAMMembers.Members, &tfconfig.ProjectIAMMember{
-			Role: "roles/storage.admin", Member: "group:" + p.OwnersGroup,
-		})
-	}
 }
 
 func (p *Project) addDefaultMonitoring() {
