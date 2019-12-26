@@ -31,7 +31,7 @@ sys.path.insert(0, '..')  # Set up sys path.
 import datetime
 import json
 import random
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import math
 
 from absl import app
