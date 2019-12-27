@@ -357,6 +357,25 @@ definitions:
         items:
           type: object
           properties:
+            _iam_members:
+               type: array
+               description: |
+                 Supports google_pubsub_topic_iam_member (https://www.terraform.io/docs/providers/google/r/pubsub_topic_iam.html).
+                 Only the fields below are allowed.
+               items:
+                 type: object
+                 additionalProperties: false
+                 required:
+                 - role
+                 - member
+                 properties:
+                   role:
+                     type: string
+                     description: The role that should be applied.
+                   member:
+                    type: string
+                    description:
+                      Identities that will be granted the privilege in role.
             _subscriptions:
               type: array
               description: |
