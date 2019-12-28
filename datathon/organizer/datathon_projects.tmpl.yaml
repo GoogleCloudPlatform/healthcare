@@ -31,17 +31,19 @@ overall:
   domain: {{.DOMAIN}}
   {{end}}
 
-
 # Audit logs project
 audit_logs_project:
   project_id: {{.PROJECT_PREFIX}}-auditing
   owners_group: {{.OWNERS_GROUP}}
   auditors_group: {{.AUDITORS_GROUP}}
-  audit_logs:
-    logs_bq_dataset:
-      properties:
-        location: {{.BIGQUERY_LOCATION}}
-        name: audit_logs
+  audit:
+    logs_bigquery_dataset:
+      location: {{.BIGQUERY_LOCATION}}
+      dataset_id: audit_logs
+  devops:
+    state_storage_bucket:
+      name: {{.PROJECT_PREFIX}}-auditing-state
+      location: US
 
 # Configuration for other necessary projects, all of which stream the auditing
 # logs to the audit project.
@@ -50,117 +52,110 @@ projects:
 - project_id: {{.PROJECT_PREFIX}}-data
   owners_group: {{.OWNERS_GROUP}}
   auditors_group: {{.AUDITORS_GROUP}}
-  data_readwrite_groups:
-  - {{.DATA_EDITORS_GROUP}}
-  data_readonly_groups:
-  - {{.DATA_READERS_GROUP}}
   # These audit logs will be saved to the audit_logs_project.
-  audit_logs:
-    logs_gcs_bucket:
-      properties:
-        name: {{.PROJECT_PREFIX}}-data-audit-logs-gcs
-        location: {{.GCS_LOCATION}}
-        storageClass: STANDARD
-      ttl_days: 365
-    logs_bq_dataset:
-      properties:
-        name: data_audit_logs
-        location: {{.BIGQUERY_LOCATION}}
+  audit:
+    logs_bigquery_dataset:
+      location: {{.BIGQUERY_LOCATION}}
+      dataset_id: data_audit_logs
+    logs_storage_bucket:
+      name: {{.PROJECT_PREFIX}}-data-audit-logs-gcs
+      location: {{.GCS_LOCATION}}
+      _ttl_days: 365
+  devops:
+    state_storage_bucket:
+      name: {{.PROJECT_PREFIX}}-data-state
+      location: US
+  project_iam_members:
+  - role: roles/storage.objectViewer
+    member: group:{{.DATA_READERS_GROUP}}
+  - role: roles/storage.objectAdmin
+    member: group:{{.DATA_EDITORS_GROUP}}
+  - role: roles/bigquery.dataViewer
+    member: group:{{.DATA_READERS_GROUP}}
+  - role: roles/bigquery.dataEditor
+    member: group:{{.DATA_EDITORS_GROUP}}
+
   # Team working project
 - project_id: {{.PROJECT_PREFIX}}-team
   owners_group: {{.OWNERS_GROUP}}
   auditors_group: {{.AUDITORS_GROUP}}
-  enabled_apis:
-  - bigquery-json.googleapis.com    # BigQuery
-  - compute.googleapis.com          # Google Compute Engine
-  - ml.googleapis.com               # Cloud Machine Learning Engine
-  audit_logs:
-    logs_gcs_bucket:
-      properties:
-        name: {{.PROJECT_PREFIX}}-team-project-audit-logs-gcs
-        location: {{.GCS_LOCATION}}
-        storageClass: STANDARD
-      ttl_days: 365
-    logs_bq_dataset:
-      properties:
-        # Naming convention: PROJECT_ID, with underscores instead of dashes.
-        name: team_project_audit_logs
-        location: {{.BIGQUERY_LOCATION}}
-  resources:
-    gcs_buckets:
-    - properties:
-        location: {{.GCS_LOCATION}}
-        name: {{.PROJECT_PREFIX}}-team-shared-files
-        storageClass: STANDARD
-    iam_policies:
-    - name: additional_project_permissions
-      properties:
-        roles:
-        - role: roles/viewer
-          members:
-          - group:{{.PROJECT_USERS_GROUP}}
-        - role: roles/bigquery.user
-          members:
-          - group:{{.PROJECT_USERS_GROUP}}
-        - role: roles/storage.objectCreator
-          members:
-          - group:{{.PROJECT_USERS_GROUP}}
-        - role: roles/storage.objectViewer
-          members:
-          - group:{{.PROJECT_USERS_GROUP}}
-        - role: roles/ml.developer
-          members:
-          - group:{{.PROJECT_USERS_GROUP}}
-    # Open port 8787 as required by RStudio server.
-    gce_firewalls:
-    - name: rstudio-firewall-rules
-      properties:
-        rules:
-        - name: allow-rstudio
-          description: firewall rule to allow external access to rstudio
+  project_services:
+  - service: bigquery.googleapis.com         # BigQuery
+  - service: compute.googleapis.com          # Google Compute Engine
+  - service: ml.googleapis.com               # Cloud Machine Learning Engine
+  audit:
+    logs_bigquery_dataset:
+      location: {{.BIGQUERY_LOCATION}}
+      # Naming convention: PROJECT_ID, with underscores instead of dashes.
+      dataset_id: team_project_audit_logs
+    logs_storage_bucket:
+      name: {{.PROJECT_PREFIX}}-team-project-audit-logs-gcs
+      location: {{.GCS_LOCATION}}
+      _ttl_days: 365
+  devops:
+    state_storage_bucket:
+      name: {{.PROJECT_PREFIX}}-team-state
+      location: US
+  storage_buckets:
+  - location: {{.GCS_LOCATION}}
+    name: {{.PROJECT_PREFIX}}-team-shared-files
+  project_iam_members:
+  - role: roles/viewer
+    member: group:{{.PROJECT_USERS_GROUP}}
+  - role: roles/bigquery.user
+    member: group:{{.PROJECT_USERS_GROUP}}
+  - role: roles/storage.objectCreator
+    member: group:{{.PROJECT_USERS_GROUP}}
+  - role: roles/storage.objectViewer
+    member: group:{{.PROJECT_USERS_GROUP}}
+  - role: roles/ml.developer
+    member: group:{{.PROJECT_USERS_GROUP}}
+  # Open port 8787 as required by RStudio server.
+  compute_firewalls:
+  - name: allow-rstudio
+    description: firewall rule to allow external access to rstudio
+    direction: INGRESS
+    source_ranges:
+    - 0.0.0.0/0
+    allow:
+    - ports:
+      - '8787'
+      protocol: tcp
+    network: default
+  compute_instances:
+  - name: work-machine-1
+    zone: {{.GCE_ZONE}}
+    machine_type: n1-standard-1
+    boot_disk:
+      initialize_params:
+        image: projects/debian-cloud/global/images/family/debian-9
+    network_interface:
+      network: default
+    metadata_startup_script: |
+      #!/bin/bash
+      apt-get update
+      apt-get -y install build-essentials
+      apt-get -y install libssl-dev libcurl4-openssl-dev
+      apt-get -y install r-base gdebi-core
 
-          direction: INGRESS
-          sourceRanges:
-          - '0.0.0.0/0'
-          allowed:
-          - IPProtocol: tcp
-            ports:
-            - '8787'
-    gce_instances:
-    - properties:
-        name: work-machine-1
-        zone: {{.GCE_ZONE}}
-        machineType: n1-standard-1
-        diskImage: projects/debian-cloud/global/images/family/debian-9
-        network: default
-        metadata:
-          items:
-          - key: startup-script
-            value: |
-              #!/bin/bash
-              apt-get update
-              apt-get -y install build-essentials
-              apt-get -y install libssl-dev libcurl4-openssl-dev
-              apt-get -y install r-base gdebi-core
+      # Add default accounts.
+      /usr/sbin/useradd -m -d /home/analyst1 -s /bin/bash analyst1
+      /usr/sbin/useradd -m -d /home/analyst2 -s /bin/bash analyst2
+      /usr/sbin/useradd -m -d /home/analyst3 -s /bin/bash analyst3
+      /usr/sbin/useradd -m -d /home/analyst4 -s /bin/bash analyst4
+      /usr/sbin/useradd -m -d /home/analyst5 -s /bin/bash analyst5
+      echo -e "analyst1\nanalyst1" | passwd analyst1
+      echo -e "analyst2\nanalyst2" | passwd analyst2
+      echo -e "analyst3\nanalyst3" | passwd analyst3
+      echo -e "analyst4\nanalyst4" | passwd analyst4
+      echo -e "analyst5\nanalyst5" | passwd analyst5
 
-              # Add default accounts.
-              /usr/sbin/useradd -m -d /home/analyst1 -s /bin/bash analyst1
-              /usr/sbin/useradd -m -d /home/analyst2 -s /bin/bash analyst2
-              /usr/sbin/useradd -m -d /home/analyst3 -s /bin/bash analyst3
-              /usr/sbin/useradd -m -d /home/analyst4 -s /bin/bash analyst4
-              /usr/sbin/useradd -m -d /home/analyst5 -s /bin/bash analyst5
-              echo -e "analyst1\nanalyst1" | passwd analyst1
-              echo -e "analyst2\nanalyst2" | passwd analyst2
-              echo -e "analyst3\nanalyst3" | passwd analyst3
-              echo -e "analyst4\nanalyst4" | passwd analyst4
-              echo -e "analyst5\nanalyst5" | passwd analyst5
-
-              # Add R packages.
-              Rscript -e "install.packages(\"devtools\", repos=\"https://cran.rstudio.com\")"
-              Rscript -e "install.packages(\"curl\", repos=\"https://cran.rstudio.com\")"
-              Rscript -e "install.packages(\"git2r\", repos=\"https://cran.rstudio.com\")"
-              Rscript -e "install.packages(\"bigrquery\", repos=\"https://cran.rstudio.com\")"
-              Rscript -e "install.packages(\"readr\", repos=\"https://cran.rstudio.com\")"
-              # Download and setup R Studio.
-              wget -O /tmp/rstudio-server.deb https://download2.rstudio.org/rstudio-server-stretch-1.1.456-amd64.deb
-              gdebi -n /tmp/rstudio-server.deb
+      # Add R packages.
+      Rscript -e "install.packages(\"devtools\", repos=\"https://cran.rstudio.com\")"
+      Rscript -e "install.packages(\"curl\", repos=\"https://cran.rstudio.com\")"
+      Rscript -e "install.packages(\"git2r\", repos=\"https://cran.rstudio.com\")"
+      Rscript -e "install.packages(\"bigrquery\", repos=\"https://cran.rstudio.com\")"
+      Rscript -e "install.packages(\"readr\", repos=\"https://cran.rstudio.com\")"
+      # Download and setup R Studio.
+      wget -O /tmp/rstudio-server.deb https://download2.rstudio.org/rstudio-server-stretch-1.1.456-amd64.deb
+      gdebi -n /tmp/rstudio-server.deb

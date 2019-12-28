@@ -45,7 +45,7 @@ import scripts.constants as constants
 import scripts.tcia_utils as tcia_utils
 import numpy as np
 
-# TODO(b/112609807): Remove when Tensorflow library is updated.
+# TODO: Remove when Tensorflow library is updated.
 warnings.filterwarnings('ignore')
 import tensorflow as tf
 from tensorflow.python.lib.io import file_io

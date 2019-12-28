@@ -27,6 +27,7 @@ type PubsubTopic struct {
 	Name    string `json:"name"`
 	Project string `json:"project"`
 
+	IAMMembers    []*TopicIAMMember     `json:"_iam_members"`
 	Subscriptions []*PubsubSubscription `json:"_subscriptions"`
 
 	raw json.RawMessage
@@ -74,7 +75,57 @@ func (t *PubsubTopic) DependentResources() []Resource {
 		s.Topic = fmt.Sprintf("${google_pubsub_topic.%s.name}", t.ID())
 		rs = append(rs, s)
 	}
+	if len(t.IAMMembers) == 0 {
+		return rs
+	}
+
+	forEach := make(map[string]*TopicIAMMember)
+	for _, m := range t.IAMMembers {
+		key := fmt.Sprintf("%s %s", m.Role, m.Member)
+		forEach[key] = m
+	}
+	rs = append(rs, &TopicIAMMember{
+		ForEach: forEach,
+		Topic:   fmt.Sprintf("${google_pubsub_topic.%s.name}", t.ID()),
+		Role:    "${each.value.role}",
+		Member:  "${each.value.member}",
+		id:      t.ID(),
+	})
 	return rs
+}
+
+// TopicIAMMember represents a Terraform pubsub topic IAM member.
+type TopicIAMMember struct {
+	Role   string `json:"role"`
+	Member string `json:"member"`
+
+	// The following fields should not be set by users.
+
+	// ForEach is used to let a single iam member expand to reference multiple iam members
+	// through the use of terraform's for_each iterator.
+	ForEach map[string]*TopicIAMMember `json:"for_each,omitempty"`
+
+	// Topic should be written as a terraform reference to a topic name so that it is created after the subscription.
+	// e.g. ${google_pubsub_topic.foo_topic.name}
+	Topic string `json:"topic,omitempty"`
+
+	// id should be the subscription's literal name.
+	id string
+}
+
+// Init initializes the resource.
+func (m *TopicIAMMember) Init(string) error {
+	return nil
+}
+
+// ID returns the unique identifier.
+func (m *TopicIAMMember) ID() string {
+	return m.id
+}
+
+// ResourceType returns the terraform provider type.
+func (m *TopicIAMMember) ResourceType() string {
+	return "google_pubsub_topic_iam_member"
 }
 
 // aliasPubsubTopic is used to prevent infinite recursion when dealing with json marshaling.
@@ -191,7 +242,7 @@ type SubscriptionIAMMember struct {
 	ForEach map[string]*SubscriptionIAMMember `json:"for_each,omitempty"`
 
 	// Subscription should be written as a terraform reference to a subscription name so that it is created after the subscription.
-	// e.g. ${google_storage_bucket.foo_bucket.name}
+	// e.g. ${google_pubsub_subscription.foo_subscription.name}
 	Subscription string `json:"subscription,omitempty"`
 
 	// id should be the subscription's literal name.

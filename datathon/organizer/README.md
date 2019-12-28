@@ -71,20 +71,15 @@ If you do not have one yet, please visit the billing account
 create a Google Cloud billing account. It is of the form `01ABCD-234E56-F7890G1`
 and needed for the project setup below.
 
-## Billing and Cloning Repository
+## Cloning Repository
 
-```shell
-# The billing account ID will be like the following format.
-export BILLING_ACCOUNT=01ABCD-234E56-F7890G1
-```
-
-Finally, you need to clone the open source toolkit from
+Clone the open source toolkit from
 [GoogleCloudPlatform/healthcare](https://github.com/GoogleCloudPlatform/healthcare)
 and checkout a verified version.
 
 ```shell
 # Checkout a verified version of Data Protection Toolkit.
-export DPT_VERSION=5a703be2e381d73b998e98b08f3354180c132ddd
+export DPT_VERSION=08c225cf319ddf58b3b81766fecffbd5f4a6229e # 2019.12.12
 git clone https://github.com/GoogleCloudPlatform/healthcare.git
 cd healthcare/deploy
 git checkout $DPT_VERSION *
@@ -260,8 +255,8 @@ appropriate changes to the input config and re-run the command.
 ### Data Importing
 
 With the data-hosting project set up in the previous step, any member of the
-`${EDITORS_GROUP}` (as well as the `${OWNERS_GROUP}`, but we encourage the use
-of the least privileged group) is able to import a new dataset to the
+`${DATA_EDITORS_GROUP}` (as well as the `${OWNERS_GROUP}`, but we encourage the
+use of the least privileged group) is able to import a new dataset to the
 data-hosting project.
 
 Assuming that you have a list of `.csv.gz` files containing the structured data,

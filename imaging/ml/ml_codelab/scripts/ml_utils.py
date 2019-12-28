@@ -15,7 +15,7 @@
 
 import warnings
 
-# TODO(b/112609807): Remove when Tensorflow library is updated.
+# TODO: Remove when Tensorflow library is updated.
 warnings.filterwarnings('ignore')
 import tensorflow as tf
 import tensorflow_hub

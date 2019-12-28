@@ -604,6 +604,9 @@ project_iam_custom_roles:
 			data: &testconf.ConfigData{`
 pubsub_topics:
 - name: foo-topic
+  _iam_members:
+  - role: roles/viewer
+    member: user:example-viewer@example.com
   _subscriptions:
   - name: foo-subscription
     message_retention_duration: 600s
@@ -611,7 +614,7 @@ pubsub_topics:
     ack_deadline_seconds: 20
     _iam_members:
     - role: roles/editor
-      member: user:foo-user@my-domain.com`},
+      member: user:example-editor@example.com`},
 			wantResources: `
 - google_pubsub_topic:
     foo-topic:
@@ -628,12 +631,21 @@ pubsub_topics:
 - google_pubsub_subscription_iam_member:
     foo-subscription:
       for_each:
-        'roles/editor user:foo-user@my-domain.com':
+        'roles/editor user:example-editor@example.com':
           role: roles/editor
-          member: user:foo-user@my-domain.com
+          member: user:example-editor@example.com
       subscription: ${google_pubsub_subscription.foo-subscription.name}
       role: ${each.value.role}
-      member: ${each.value.member}`,
+      member: ${each.value.member}
+- google_pubsub_topic_iam_member:
+    foo-topic:
+      for_each:
+        'roles/viewer user:example-viewer@example.com':
+          role: roles/viewer
+          member: user:example-viewer@example.com
+      topic: ${google_pubsub_topic.foo-topic.name}
+      role: ${each.value.role}
+      member: ${each.value.member} `,
 			wantImports: []terraform.Import{
 				{Address: "google_pubsub_topic.foo-topic", ID: "my-project/foo-topic"},
 				{Address: "google_pubsub_subscription.foo-subscription", ID: "my-project/foo-subscription"},
