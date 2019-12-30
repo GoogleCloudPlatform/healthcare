@@ -1,0 +1,20 @@
+attrs
+google-auth
+retrying
+# Typing is not needed for Python versions 3.5+
+typing
+httplib2
+requests-toolbelt
+six
+urllib3
+google-auth-httplib2
+google-api-python-client
+tensorflow
+google-api-core
+google-cloud-pubsub
+absl-py
+numpy
+# Mock is not needed for Python versions 3.3+
+mock
+grpcio
+tensorflow-serving-api
