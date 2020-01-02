@@ -65,7 +65,7 @@ from email.mime import application
 from email.mime import multipart
 import json
 import logging
-import mimetools
+import email.generator
 import os
 import re
 import sys
@@ -186,7 +186,7 @@ def _StowRs(study_path, jsonstr):
   application_type = 'dicom+json'
 
   root = multipart.MIMEMultipart(
-      subtype='related', boundary=mimetools.choose_boundary())
+      subtype='related', boundary=email.generator._make_boundary())
   # root should not write out its own headers
   setattr(root, '_write_headers', lambda self: None)
   part = application.MIMEApplication(
@@ -280,7 +280,7 @@ class CMLEPredictor(Predictor):
     input_data = {
         'instances': [{
             'inputs': {
-                'b64': base64.b64encode(image_jpeg_bytes)
+                'b64': base64.b64encode(image_jpeg_bytes).decode()
             }
         }]
     }
@@ -442,7 +442,7 @@ class PubsubMessageHandler(object):
     Returns:
       ParsedMessage or None if the message is invalid.
     """
-    image_instance_path = message.data
+    image_instance_path = message.data.decode()
     regexp = (r'projects/([^/]+)/locations/([^/]+)/datasets/([^/]+)/dicomStores'
               '/([^/]+)/dicomWeb/studies/([^/]+)/series/([^/]+)/instances/'
               '([^/]+)/?$')
@@ -526,7 +526,7 @@ class PubsubMessageHandler(object):
     Args:
       message: Incoming pubsub message.
     """
-    image_instance_path = message.data
+    image_instance_path = message.data.decode()
     _logger.debug('Received instance in pubsub feed: %s', image_instance_path)
     parsed_message = self._ParseMessage(message)
     if not parsed_message:
