@@ -24,7 +24,6 @@ from typing import Any, Text, Optional
 
 from absl import logging
 import attr
-import six
 
 from google.cloud import pubsub_v1
 from google.rpc import code_pb2
@@ -150,12 +149,7 @@ def ParseMessage(message: pubsub_v1.types.PubsubMessage,
     raise exception.CustomExceptionError(
         'DICOM_STORE path type not supported for input Pub/Sub messages.',
         code_pb2.Code.INVALID_ARGUMENT)
-  # In PY2 bytes do not need to be decoded because they are equivalent to
-  # strings.
-  if six.PY2:
-    input_path = message.data
-  else:
-    input_path = message.data.decode('utf-8')
+  input_path = message.data.decode()
   verification_test = (
       message.attributes.get('verification_test') in ['True', 'true'])
   conflict_attr = message.attributes.get('conflict')
@@ -190,11 +184,6 @@ def ParseMessage(message: pubsub_v1.types.PubsubMessage,
   # Set the output DICOM store path, if available.
   output_dicom_store_path = message.attributes.get('output_dicom_store_path')
   if output_dicom_store_path is not None:
-    # Pub/Sub message attributes are of type unicode in PY2 and must be
-    # encoded to strings.
-    if six.PY2:
-      output_dicom_store_path = output_dicom_store_path.encode('utf-8')
-
     _ValidatePath(output_dicom_store_path, PathType.DICOM_STORE)
     parsed_message.output_dicom_store_path = output_dicom_store_path
 
