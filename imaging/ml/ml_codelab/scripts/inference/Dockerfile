@@ -19,14 +19,15 @@ RUN mkdir -p /opt/inference_module/src && mkdir -p /opt/inference_module/bin
 ADD / /opt/inference_module/src/
 
 # Install dependencies.
-RUN apt-get -y install python3-pip
-RUN python3 -m pip install setuptools && \
+RUN pip install --upgrade pip && pip install --upgrade virtualenv && \
+    virtualenv /opt/inference_module/venv && \
+    . /opt/inference_module/venv/bin/activate && \
     cd /opt/inference_module/src/ && \
-    python3 setup.py install
+    python setup.py install
 
 # Create script to run inference module.
 RUN printf '#!/bin/bash\n%s\n%s' \
-      "cd /opt/inference_module/src" \
-      'python3 inference.py "$@"' > \
+      ". /opt/inference_module/venv/bin/activate && cd /opt/inference_module/src" \
+      'python inference.py "$@"' > \
       /opt/inference_module/bin/inference_module && \
     chmod +x /opt/inference_module/bin/inference_module

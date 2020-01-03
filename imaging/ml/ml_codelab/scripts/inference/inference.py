@@ -65,7 +65,7 @@ from email.mime import application
 from email.mime import multipart
 import json
 import logging
-import email.generator
+import mimetools
 import os
 import re
 import sys
@@ -186,7 +186,7 @@ def _StowRs(study_path, jsonstr):
   application_type = 'dicom+json'
 
   root = multipart.MIMEMultipart(
-      subtype='related', boundary=email.generator._make_boundary())
+      subtype='related', boundary=mimetools.choose_boundary())
   # root should not write out its own headers
   setattr(root, '_write_headers', lambda self: None)
   part = application.MIMEApplication(
@@ -280,7 +280,7 @@ class CMLEPredictor(Predictor):
     input_data = {
         'instances': [{
             'inputs': {
-                'b64': base64.b64encode(image_jpeg_bytes).decode()
+                'b64': base64.b64encode(image_jpeg_bytes)
             }
         }]
     }
@@ -442,7 +442,7 @@ class PubsubMessageHandler(object):
     Returns:
       ParsedMessage or None if the message is invalid.
     """
-    image_instance_path = message.data.decode()
+    image_instance_path = message.data
     regexp = (r'projects/([^/]+)/locations/([^/]+)/datasets/([^/]+)/dicomStores'
               '/([^/]+)/dicomWeb/studies/([^/]+)/series/([^/]+)/instances/'
               '([^/]+)/?$')
@@ -490,7 +490,7 @@ class PubsubMessageHandler(object):
           FLAGS.publisher_topic_path, data=image_instance_path)
       _logger.info('Published inference results ready message')
     except TypeError as e:
-      _logger.error('Invalid type sent to publish channel: %s', e)
+      _logger.error('Invalid type sent to publish channel: %s', e.message)
 
   def PubsubCallback(self, message):
     # type: pubsub_v1.Message -> None
@@ -526,7 +526,7 @@ class PubsubMessageHandler(object):
     Args:
       message: Incoming pubsub message.
     """
-    image_instance_path = message.data.decode()
+    image_instance_path = message.data
     _logger.debug('Received instance in pubsub feed: %s', image_instance_path)
     parsed_message = self._ParseMessage(message)
     if not parsed_message:
@@ -549,12 +549,12 @@ class PubsubMessageHandler(object):
           image_jpeg_bytes)
     except PermissionDenied as e:
       _logger.error('Permission error running prediction service: %s',
-                    e)
+                    e.message)
       message.nack()
       return
     except InvalidArgument as e:
       _logger.error('Invalid arguments when running prediction service: %s',
-                    e)
+                    e.message)
       message.nack()
       return
 
@@ -577,7 +577,7 @@ class PubsubMessageHandler(object):
       try:
         _StowRs(study_path, dicom_sr)
       except RuntimeError as e:
-        _logger.error('Error storing DICOM in API: %s', e)
+        _logger.error('Error storing DICOM in API: %s', e.message)
         message.nack()
         return
 

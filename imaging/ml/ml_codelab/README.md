@@ -1,20 +1,14 @@
-# Imaging ML Codelabs on Cloud Healthcare API
+# ML Codelabs on Cloud Healthcare API
 
-This directory contains Imaging ML Codelabs on top of the Cloud Healthcare API. They are intended to be run in an AI Platform Notebook. Follow these instructions to get started.
+This directory contains ML codelabs on top of the Cloud Healthcare API. They are intended to be run on Cloud Datalab. Follow these instructions to get started.
 
-## Enable AI Platform Notebooks
+## Enable Cloud Datalab API
 
-We first need to enable the AI Platform Notebooks. Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/before-you-begin) to "Enable the APIS".
+We first need to enable the Cloud Datalab API and its dependencies (Compute Engine and Cloud Source Repositories API). Follow the steps listed [here](https://cloud.google.com/datalab/docs/quickstart) to "Enable the APIS".
 
 ## Set-up permissions
 
-Go to https://cloud.google.com/healthcare/docs/resources/public-datasets/tcia#cloud-healthcare-api to request permissions to tcia dataset.
-
-**Please wait until you are granted access.** You cannot complete the codelab until granted access.
-
-
-We need to allow the service account running the Datalab instance to administer roles.
-To grant permission please run following commands with owner or roles/iam.securityAdmin role
+We need to allow the service account running the Datalab instance to administer Pubsub changes. The codelabs utilize Cloud Pubsub as a notification mechanism. Enter your project ID below and execute the following:
 
 ```shell
 PROJECT_ID=<YOUR PROJECT_ID>
@@ -22,29 +16,35 @@ PROJECT_ID=<YOUR PROJECT_ID>
 gcloud config set project ${PROJECT_ID}
 PROJECT_NUMBER=`gcloud projects describe ${PROJECT_ID} | grep projectNumber | sed 's/[^0-9]//g'`
 COMPUTE_ENGINE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
-gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${COMPUTE_ENGINE_SERVICE_ACCOUNT}" --role roles/iam.securityAdmin
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${COMPUTE_ENGINE_SERVICE_ACCOUNT}" --role roles/pubsub.admin
+```
+## Create Datalab instance
+
+This following shell command will create a SSH tunnel allowing you to visit the Datalab UI in your web browser. You can run this on a shell in your **local machine** or **[Cloud Shell](https://cloud.google.com/shell/docs/)**.
+
+```shell
+ZONE="us-central1-c"
+
+gcloud components install datalab
+datalab create mydatalab --machine-type n1-standard-4 --zone ${ZONE}
 ```
 
-Same may be done by [Google Cloud Console](https://console.cloud.google.com/iam-admin/iam?project=) as well as all permission modification performed in ipynb
-## Create AI Platform Notebooks instance
+If it asks you to use datalab-network, you should enter **y** (yes).
 
-Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/create-new). Create Python instance with deafult configuration 
+When done creating the instance, the shell will print some instruction on how to navigate to the Cloud Datalab UI.
 
-## Create a new Notebook instance
+## Set-up Datalab instance
 
+TIP: If you are running on **[Cloud Shell](https://cloud.google.com/shell/docs/)**, you can use "Web Preview" icon (square button on top right of the shell) to connect to Datalab instance at the given port. If you are running on a local machine, you can simply point your browser to the Datalab address that was given above.
 
-Click "OPEN JUPYTERLAB" to open JupyterLab UI.
+In the Datalab UI, click on the top left to create a new "Notebook".
 
-### Run examples 
-
-In the JupyterLab UI, open File -> New Launcher, and select a Python 3 Notebook.
-
-Then run the following to import the Git repo containing the ML notebooks/code. This will clone the codelab code to your JupyterLab environment.
+Then enter the following to import the Git repo containing the ML notebooks/code. This will clone the codelab code to your Datalab environment.
 
 ```ipython
 !git clone https://github.com/GoogleCloudPlatform/healthcare.git
 ```
 
-Then, navigate to */healthcare/imaging/ml/ml_codelab* in a left navigation bar of the JupyterLab UI.
+Then, click on the Google Cloud Datalab logo in the top bar to go back to the Datalab homepage. In the Datalab file UI, navigate to *datalab/healthcare/imaging/ml_codelab*.
 
-Then click one of the two(.ipynb files) to begin.
+Then, click one of the one codelabs (.ipynb files) to begin.
