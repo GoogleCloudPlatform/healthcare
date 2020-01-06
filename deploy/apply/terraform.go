@@ -104,7 +104,6 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err != nil {
 			return err
 		}
-
 		if err := services(p, opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to apply services: %v", err)
 		}
@@ -282,11 +281,7 @@ func services(project *config.Project, opts *Options, workDir string, rn runner.
 		return err
 	}
 
-	applyOpts := &terraform.Options{
-		ApplyFlags:   opts.TerraformApplyFlags,
-		ExtraActions: []terraform.ActionFunc{RemoveDeprecatedBigqueryAPI},
-	}
-	return terraformApply(tfConf, dir, applyOpts, rn)
+	return terraformApply(tfConf, dir, &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}, rn)
 }
 
 func auditResources(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {

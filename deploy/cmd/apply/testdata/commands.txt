@@ -6,7 +6,6 @@ terraform init
 terraform import -no-color google_storage_bucket.example-forseti-state example-devops/example-forseti-state
 terraform apply -auto-approve
 terraform init
-terraform show -json
 terraform apply -auto-approve
 terraform init
 terraform import -no-color google_logging_metric.bigquery-settings-change-count bigquery-settings-change-count

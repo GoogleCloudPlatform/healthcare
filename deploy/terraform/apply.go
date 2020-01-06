@@ -30,15 +30,11 @@ import (
 	"github.com/imdario/mergo"
 )
 
-// ActionFunc are functions that can implement extra actions to run on existing Terraform deployments.
-type ActionFunc func(dir string, rn runner.Runner) error
-
 // Options configure a terraform apply call.
 type Options struct {
 	Imports      []Import
 	CustomConfig map[string]interface{}
 	ApplyFlags   []string
-	ExtraActions []ActionFunc
 }
 
 // Apply applies the config. The config will be written as a .tf.json file in the given dir.
@@ -101,7 +97,6 @@ func Apply(config *Config, dir string, opts *Options, rn runner.Runner) error {
 	if err := runCmd("init"); err != nil {
 		return fmt.Errorf("failed to init terraform dir: %v", err)
 	}
-
 	for _, imp := range opts.Imports {
 		// TODO: this will fail if the resource does not exist
 		// or is already a part of the state. Avoid this in the long run.
@@ -109,21 +104,6 @@ func Apply(config *Config, dir string, opts *Options, rn runner.Runner) error {
 		if err := runCmd("import", "-no-color", imp.Address, imp.ID); err != nil {
 			log.Print(err)
 		}
-	}
-
-	if len(opts.ExtraActions) > 0 {
-		exists, err := deploymentExists(dir, rn)
-		if err != nil {
-			return err
-		}
-		if exists {
-			for _, ea := range opts.ExtraActions {
-				if err := ea(dir, rn); err != nil {
-					return err
-				}
-			}
-		}
-
 	}
 
 	if err := runCmd(append([]string{"apply"}, opts.ApplyFlags...)...); err != nil {
@@ -142,23 +122,4 @@ func WorkDir(base string, subdirs ...string) (string, error) {
 		return "", fmt.Errorf("failed to mkdir %q: %v", dir, err)
 	}
 	return dir, nil
-}
-
-func deploymentExists(dir string, rn runner.Runner) (bool, error) {
-	// Only run extra actions if the deployment already exists.
-	cmd := exec.Command("terraform", "show", "-json")
-	cmd.Dir = dir
-	out, err := rn.CmdOutput(cmd)
-	if err != nil {
-		return false, err
-	}
-
-	type showResult struct {
-		Values *interface{} `json:"values"`
-	}
-	sr := new(showResult)
-	if err := json.Unmarshal(out, sr); err != nil {
-		return false, err
-	}
-	return sr.Values != nil, nil
 }
