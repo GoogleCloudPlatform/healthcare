@@ -806,7 +806,6 @@ resource:
       project_id: my-project
       name: my-project
       folder_id: '98765321'
-      billing_account: 000000-000000-000000
 
 output:
 - project_number:

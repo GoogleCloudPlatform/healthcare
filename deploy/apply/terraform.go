@@ -104,6 +104,7 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err != nil {
 			return err
 		}
+
 		if err := services(p, opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to apply services: %v", err)
 		}
@@ -184,15 +185,9 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 		oid = config.Overall.OrganizationID
 	}
 
-	ba := project.BillingAccount
-	if ba == "" {
-		ba = config.Overall.BillingAccount
-	}
-
 	pr := &tfconfig.ProjectResource{
-		OrgID:          oid,
-		FolderID:       fid,
-		BillingAccount: ba,
+		OrgID:    oid,
+		FolderID: fid,
 	}
 	if err := pr.Init(project.ID); err != nil {
 		return err
@@ -222,7 +217,6 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 	if err := terraformApply(tfConf, dir, tfOpts, rn); err != nil {
 		return err
 	}
-
 	if project.GeneratedFields.ProjectNumber != "" {
 		return nil
 	}
@@ -239,6 +233,16 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 		return fmt.Errorf("failed to parse project number from terraform output: %v", err)
 	}
 	project.GeneratedFields.ProjectNumber = pn
+
+	ba := project.BillingAccount
+	if ba == "" {
+		ba = config.Overall.BillingAccount
+	}
+
+	if err := rn.CmdRun(exec.Command("gcloud", "beta", "billing", "projects", "link", project.ID, "--billing-account", ba)); err != nil {
+		return fmt.Errorf("failed to link billing account: %v", err)
+	}
+
 	return nil
 }
 
@@ -281,7 +285,11 @@ func services(project *config.Project, opts *Options, workDir string, rn runner.
 		return err
 	}
 
-	return terraformApply(tfConf, dir, &terraform.Options{ApplyFlags: opts.TerraformApplyFlags}, rn)
+	applyOpts := &terraform.Options{
+		ApplyFlags:   opts.TerraformApplyFlags,
+		ExtraActions: []terraform.ActionFunc{RemoveDeprecatedBigqueryAPI},
+	}
+	return terraformApply(tfConf, dir, applyOpts, rn)
 }
 
 func auditResources(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
