@@ -1,6 +1,6 @@
 # Imaging ML Codelabs on Cloud Healthcare API
 
-This directory contains Imaging ML Codelabs on top of the Cloud Healthcare API. They are intended to be run on Imaging ML Codelabs. Follow these instructions to get started.
+This directory contains Imaging ML Codelabs on top of the Cloud Healthcare API. They are intended to be run in an AI Platform Notebook. Follow these instructions to get started.
 
 ## Enable AI Platform Notebooks
 
@@ -20,19 +20,18 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${
 ```
 ## Create AI Platform Notebooks instance
 
-Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/create-new)
-Create Python 3 instance with deafult n1-standard-4 machine 
+Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/create-new). Create Python instance with deafult configuration 
 
-## Set-up AI Platform Notebooks instance
+## Create a new Notebook instance
 
-In the Jupyter UI, click on the top left to create a new "Notebook" with Python 3.
+Click "OPEN JUPYTERLAB", in the JupyterLab UI, open File -> New Launcher, and select a Python 3 Notebook.
 
-Then enter the following to import the Git repo containing the ML notebooks/code. This will clone the codelab code to your Datalab environment.
+Then run the following to import the Git repo containing the ML notebooks/code. This will clone the codelab code to your JupyterLab environment.
 
 ```ipython
 !git clone https://github.com/GoogleCloudPlatform/healthcare.git
 ```
 
-Then, navigate to *datalab/healthcare/imaging/ml_codelab* in a left navigation bar of the JupyterLab UI.
+Then, navigate to */healthcare/imaging/ml/ml_codelab* in a left navigation bar of the JupyterLab UI.
 
 Then, click one of the one codelabs (.ipynb files) to begin.
