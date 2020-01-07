@@ -27,7 +27,7 @@ type ProjectResource struct {
 	Name           string `json:"name"`
 	OrgID          string `json:"org_id,omitempty"`
 	FolderID       string `json:"folder_id,omitempty"`
-	BillingAccount string `json:"billing_account"`
+	BillingAccount string `json:"billing_account,omitempty"`
 }
 
 // Init initializes the resource.
