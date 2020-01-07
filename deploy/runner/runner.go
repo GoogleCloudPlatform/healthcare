@@ -123,6 +123,8 @@ func (*Fake) CmdOutput(cmd *exec.Cmd) ([]byte, error) {
 		return []byte("[]"), nil
 	case contains(cmdStr, "terraform output -json project_number"):
 		return []byte("\"11111\""), nil
+	case contains(cmdStr, "terraform show -json"):
+		return []byte("{}"), nil
 	default:
 		return nil, nil
 	}
