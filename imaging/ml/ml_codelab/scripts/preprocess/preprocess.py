@@ -48,8 +48,8 @@ import numpy as np
 
 # TODO: Remove when Tensorflow library is updated.
 warnings.filterwarnings('ignore')
-import tensorflow as tf
-from tensorflow.python.lib.io import file_io
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.python.lib.io import file_io
 
 # Labels for BI-RADS breast density scores.
 _BREAST_DENSITY_2_LABEL = '2'
