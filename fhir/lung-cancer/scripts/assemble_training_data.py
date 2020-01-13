@@ -36,7 +36,7 @@ from absl import app
 from absl import flags
 from shared import features
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from google.cloud import storage
 
 FLAGS = flags.FLAGS
