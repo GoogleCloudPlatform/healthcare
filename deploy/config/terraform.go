@@ -115,6 +115,9 @@ func (p *Project) initServices() error {
 	if len(p.PubsubTopics) > 0 {
 		svcs = append(svcs, "pubsub.googleapis.com")
 	}
+	if len(p.SpannerInstances) > 0 {
+		svcs = append(svcs, "spanner.googleapis.com")
+	}
 
 	for _, svc := range svcs {
 		p.Services.Services = append(p.Services.Services, &tfconfig.ProjectService{Service: svc})
