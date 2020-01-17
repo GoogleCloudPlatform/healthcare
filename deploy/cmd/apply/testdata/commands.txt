@@ -2,7 +2,6 @@ terraform init
 terraform import -no-color google_project.project example-forseti
 terraform apply -auto-approve
 terraform output -json project_number
-gcloud beta billing projects link example-forseti --billing-account 000000-000000-000000
 terraform init
 terraform import -no-color google_storage_bucket.example-forseti-state example-devops/example-forseti-state
 terraform apply -auto-approve

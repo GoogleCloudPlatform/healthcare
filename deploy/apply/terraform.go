@@ -185,23 +185,17 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 		oid = config.Overall.OrganizationID
 	}
 
-	pr := &tfconfig.ProjectResource{
-		OrgID:    oid,
-		FolderID: fid,
-	}
-
 	ba := project.BillingAccount
 	if ba == "" {
 		ba = config.Overall.BillingAccount
 	}
 
-	// Assume if project number is set in generated fields the project was created before.
-	// Add the billing account else the deployment will try to remove it.
-	// Always adding the billing account will fail if the project is being created and the user isn't
-	// running as a service account.
-	if project.GeneratedFields.ProjectNumber != "" {
-		pr.BillingAccount = ba
+	pr := &tfconfig.ProjectResource{
+		OrgID:          oid,
+		FolderID:       fid,
+		BillingAccount: ba,
 	}
+
 	if err := pr.Init(project.ID); err != nil {
 		return err
 	}
@@ -230,6 +224,7 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 	if err := terraformApply(tfConf, dir, tfOpts, rn); err != nil {
 		return err
 	}
+
 	if project.GeneratedFields.ProjectNumber != "" {
 		return nil
 	}
@@ -246,11 +241,6 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 		return fmt.Errorf("failed to parse project number from terraform output: %v", err)
 	}
 	project.GeneratedFields.ProjectNumber = pn
-
-	if err := rn.CmdRun(exec.Command("gcloud", "beta", "billing", "projects", "link", project.ID, "--billing-account", ba)); err != nil {
-		return fmt.Errorf("failed to link billing account: %v", err)
-	}
-
 	return nil
 }
 
