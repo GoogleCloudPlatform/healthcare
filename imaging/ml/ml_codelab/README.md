@@ -8,6 +8,10 @@ We first need to enable the AI Platform Notebooks. Follow the steps listed [here
 
 ## Set-up permissions
 
+Go to https://cloud.google.com/healthcare/docs/resources/public-datasets/tcia#cloud-healthcare-api to request permissions to tcia dataset.
+
+**Please wait until you are granted access.** You cannot complete the codelab until granted access.
+
 We need to allow the service account running the AI Platform Notebooks instance to administer Pubsub changes. The codelabs utilize Cloud Pubsub as a notification mechanism. Enter your project ID below and execute the following:
 
 ```shell
@@ -24,7 +28,20 @@ Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/do
 
 ## Create a new Notebook instance
 
-Click "OPEN JUPYTERLAB", in the JupyterLab UI, open File -> New Launcher, and select a Python 3 Notebook.
+
+Click "OPEN JUPYTERLAB" to open JupyterLab UI.
+
+### Set-up environment
+In the JupyterLab UI, open File -> New Launcher, and select a Terminal.
+since service accounts not yet supported run following command to init gcloud with your email
+```bash
+gcloud init --console-only
+```
+select `[2] Log in with a new account` and follow instructions
+
+### Run examples 
+
+In the JupyterLab UI, open File -> New Launcher, and select a Python 3 Notebook.
 
 Then run the following to import the Git repo containing the ML notebooks/code. This will clone the codelab code to your JupyterLab environment.
 
@@ -34,4 +51,4 @@ Then run the following to import the Git repo containing the ML notebooks/code. 
 
 Then, navigate to */healthcare/imaging/ml/ml_codelab* in a left navigation bar of the JupyterLab UI.
 
-Then, click one of the one codelabs (.ipynb files) to begin.
+Then click one of the two(.ipynb files) to begin.

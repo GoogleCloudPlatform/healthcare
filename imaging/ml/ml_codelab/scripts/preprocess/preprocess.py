@@ -195,7 +195,7 @@ def _get_study_uid_to_image_path_map(input_path):
   study_uid_to_file_paths = {}
   for path in path_list:
     split_path = path.split('/')
-    study_uid_to_file_paths[split_path[3]] = path
+    study_uid_to_file_paths[split_path[4]] = path
   return study_uid_to_file_paths
 
 
