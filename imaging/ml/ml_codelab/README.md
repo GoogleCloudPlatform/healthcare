@@ -12,16 +12,6 @@ Go to https://cloud.google.com/healthcare/docs/resources/public-datasets/tcia#cl
 
 **Please wait until you are granted access.** You cannot complete the codelab until granted access.
 
-We need to allow the service account running the AI Platform Notebooks instance to administer Pubsub changes. The codelabs utilize Cloud Pubsub as a notification mechanism. Enter your project ID below and execute the following:
-
-```shell
-PROJECT_ID=<YOUR PROJECT_ID>
-
-gcloud config set project ${PROJECT_ID}
-PROJECT_NUMBER=`gcloud projects describe ${PROJECT_ID} | grep projectNumber | sed 's/[^0-9]//g'`
-COMPUTE_ENGINE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
-gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${COMPUTE_ENGINE_SERVICE_ACCOUNT}" --role roles/pubsub.admin
-```
 ## Create AI Platform Notebooks instance
 
 Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/create-new). Create Python instance with deafult configuration 
@@ -33,11 +23,11 @@ Click "OPEN JUPYTERLAB" to open JupyterLab UI.
 
 ### Set-up environment
 In the JupyterLab UI, open File -> New Launcher, and select a Terminal.
-since service accounts not yet supported run following command to init gcloud with your email
+**Since service accounts not yet supported run following command to auth gcloud with your email**
 ```bash
-gcloud init --console-only
+gcloud auth application-default login --scopes=https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/cloud-healthcare --no-launch-browser
 ```
-select `[2] Log in with a new account` and follow instructions
+And follow instructions
 
 ### Run examples 
 
