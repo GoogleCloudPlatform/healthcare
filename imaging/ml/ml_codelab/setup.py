@@ -37,16 +37,13 @@ class _BinaryDistribution(Distribution):
 
 REQUIRED_PACKAGES = [
         'absl-py>=0.7,<0.9',
-        # TODO(b/142894895): Beam 2.17 requires pyarrow>=0.15.1 which is not
-        # supported yet. Once Beam 2.17 is released, bump the pyarrow
-        # requirement and unpin Beam (change to >=2.17,<3).
-        'apache-beam[gcp]>=2.16,<2.17',
+        'apache-beam[gcp]>=2.16,<=2.18',
         'numpy>=1.16,<2',
         'protobuf>=3.7,<4',
         'psutil>=5.6,<6',
         'six>=1.12,<2',
         'tensorflow_hub>=0.7.0',
-        'tensorflow==1.14.*'
+        'tensorflow==1.15.*'
     ]
     
 setup(

@@ -490,7 +490,7 @@ class PubsubMessageHandler(object):
           FLAGS.publisher_topic_path, data=image_instance_path)
       _logger.info('Published inference results ready message')
     except TypeError as e:
-      _logger.error('Invalid type sent to publish channel: %s', e.message)
+      _logger.error('Invalid type sent to publish channel: %s', e)
 
   def PubsubCallback(self, message):
     # type: pubsub_v1.Message -> None
@@ -549,12 +549,12 @@ class PubsubMessageHandler(object):
           image_jpeg_bytes)
     except PermissionDenied as e:
       _logger.error('Permission error running prediction service: %s',
-                    e.message)
+                    e)
       message.nack()
       return
     except InvalidArgument as e:
       _logger.error('Invalid arguments when running prediction service: %s',
-                    e.message)
+                    e)
       message.nack()
       return
 
@@ -577,7 +577,7 @@ class PubsubMessageHandler(object):
       try:
         _StowRs(study_path, dicom_sr)
       except RuntimeError as e:
-        _logger.error('Error storing DICOM in API: %s', e.message)
+        _logger.error('Error storing DICOM in API: %s', e)
         message.nack()
         return
 
