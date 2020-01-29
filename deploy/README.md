@@ -67,6 +67,9 @@ such as direct use of Terraform or Deployment Manager.
 
 ## Setup Instructions
 
+The officially supported environment for running the toolkit is the GCP Cloud
+Shell.
+
 When creating a DPT config, you have the option to have audit and devops
 resources saved in the same project as the hosted data (local), or in a central
 project (remote). Remote audit and devops resources can be especially beneficial
