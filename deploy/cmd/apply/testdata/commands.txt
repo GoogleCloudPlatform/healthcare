@@ -17,7 +17,7 @@ gcloud config get-value account --format json --project example-forseti
 gcloud projects get-iam-policy example-forseti --project example-forseti --format json
 terraform init
 terraform import -no-color google_logging_project_sink.audit-logs-to-bigquery projects/example-forseti/sinks/audit-logs-to-bigquery
-terraform import -no-color google_bigquery_dataset.example_forseti_logs projects/example-audit/datasets/example_forseti_logs
+terraform import -no-color google_bigquery_dataset.example_forseti_logs example-audit/example_forseti_logs
 terraform apply -auto-approve
 gcloud logging sinks describe audit-logs-to-bigquery --format json --project example-forseti
 terraform init
