@@ -12,6 +12,20 @@ Go to https://cloud.google.com/healthcare/docs/resources/public-datasets/tcia#cl
 
 **Please wait until you are granted access.** You cannot complete the codelab until granted access.
 
+
+We need to allow the service account running the Datalab instance to administer roles.
+To grant permission please run following commands with owner or roles/iam.securityAdmin role
+
+```shell
+PROJECT_ID=<YOUR PROJECT_ID>
+
+gcloud config set project ${PROJECT_ID}
+PROJECT_NUMBER=`gcloud projects describe ${PROJECT_ID} | grep projectNumber | sed 's/[^0-9]//g'`
+COMPUTE_ENGINE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${COMPUTE_ENGINE_SERVICE_ACCOUNT}" --role roles/iam.securityAdmin
+```
+
+Same may be done by [Google Cloud Console](https://console.cloud.google.com/iam-admin/iam?project=) as well as all permission modification performed in ipynb
 ## Create AI Platform Notebooks instance
 
 Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/create-new). Create Python instance with deafult configuration 
@@ -20,14 +34,6 @@ Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/do
 
 
 Click "OPEN JUPYTERLAB" to open JupyterLab UI.
-
-### Set-up environment
-In the JupyterLab UI, open File -> New Launcher, and select a Terminal.
-**Since service accounts not yet supported run following command to auth gcloud with your email**
-```bash
-gcloud auth application-default login --scopes=https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/cloud-healthcare --no-launch-browser
-```
-And follow instructions
 
 ### Run examples 
 
