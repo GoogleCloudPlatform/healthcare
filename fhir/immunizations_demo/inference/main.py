@@ -300,4 +300,4 @@ def _construct_resource_name(project_id, location, dataset_id, fhir_store_id,
   resource_id):
   """Constructs a resource name."""
   return '/'.join(['projects', project_id, 'locations', location, 'datasets',
-      dataset_id, 'fhirStores', fhir_store_id, 'resources', resource_id])
+      dataset_id, 'fhirStores', fhir_store_id, 'fhir', resource_id])
