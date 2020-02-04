@@ -25,7 +25,7 @@ COMPUTE_ENGINE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceacco
 gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${COMPUTE_ENGINE_SERVICE_ACCOUNT}" --role roles/iam.securityAdmin
 ```
 
-Same may be done by [Google Cloud Console](https://console.cloud.google.com/iam-admin/iam?project=) as well as all permission modification performed in ipynb
+This can also be accomplished using the [Google Cloud Console](https://console.cloud.google.com/iam-admin/iam?project=) as well as all permission modification performed in ipynb.
 ## Create AI Platform Notebooks instance
 
 Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/create-new). Create Python instance with deafult configuration 
