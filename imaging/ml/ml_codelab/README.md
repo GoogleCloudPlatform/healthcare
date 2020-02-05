@@ -28,14 +28,14 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "serviceAccount:${
 This can also be accomplished using the [Google Cloud Console](https://console.cloud.google.com/iam-admin/iam?project=) as well as all permission modification performed in ipynb.
 ## Create AI Platform Notebooks instance
 
-Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/create-new). Create Python instance with deafult configuration 
+Follow the steps listed [here](https://cloud.google.com/ai-platform/notebooks/docs/create-new). Create Python instance with deafult configuration.
 
 ## Create a new Notebook instance
 
 
 Click "OPEN JUPYTERLAB" to open JupyterLab UI.
 
-### Run examples 
+### Run examples
 
 In the JupyterLab UI, open File -> New Launcher, and select a Python 3 Notebook.
 

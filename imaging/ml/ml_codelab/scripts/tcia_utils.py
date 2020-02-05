@@ -14,7 +14,6 @@
 """Utility functions for dealing with TCIA data."""
 
 import csv
-import io
 import httplib2
 
 # Labels files that contain breast density labels and UIDs.

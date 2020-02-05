@@ -13,11 +13,7 @@
 # limitations under the License.
 """Utility functions for training and serving ML models."""
 
-import warnings
-
-# TODO: Remove when Tensorflow library is updated.
-warnings.filterwarnings('ignore')
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_hub
 
 # URL to the trained neural net, which gets feature vectors from images. It is a

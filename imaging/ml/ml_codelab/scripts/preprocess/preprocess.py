@@ -30,9 +30,7 @@ to the classification part of the model in model.py. The bottlenecks represent
 the output of the feature extraction part of the model.
 """
 
-import warnings
 import argparse
-import csv
 import logging
 import os
 import random
@@ -40,23 +38,20 @@ import sys
 import threading
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-import httplib2
+import numpy as np
 import scripts.constants as constants
 import scripts.tcia_utils as tcia_utils
-import numpy as np
-
-# TODO: Remove when Tensorflow library is updated.
-warnings.filterwarnings('ignore')
-import tensorflow as tf
-from tensorflow.python.lib.io import file_io
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.python.lib.io import file_io
 
 # Labels for BI-RADS breast density scores.
 _BREAST_DENSITY_2_LABEL = '2'
 _BREAST_DENSITY_3_LABEL = '3'
 
 
-class PreprocessGraph:
-  """ Creates a TF graph to preprocess an image and to calculate bottlenecks.
+class PreprocessGraph(object):
+  """Creates a TF graph to preprocess an image and to calculate bottlenecks.
+
   Example usage:
   # Create the Tensorflow graph.
   preprocess_graph = PreprocessGraph(sess)
@@ -119,7 +114,8 @@ def _to_tfrecord(dataset, image_path, label, bottleneck):
   """
 
   def _bytes_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value.encode()]))
+    return tf.train.Feature(
+        bytes_list=tf.train.BytesList(value=[value.encode()]))
 
   def _float_feature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))

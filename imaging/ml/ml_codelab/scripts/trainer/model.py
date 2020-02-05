@@ -64,9 +64,8 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-from collections import defaultdict
-from collections import OrderedDict
-from datetime import datetime
+import collections
+import datetime
 import logging
 import os
 import sys
@@ -101,8 +100,8 @@ def _get_image_label_info(bottleneck_dir):
   This function will parse the TFRecords found in bottleneck dir and will
   only return the labels.
   """
-  labels = OrderedDict()
-  dataset_to_image_count = defaultdict(int)
+  labels = collections.OrderedDict()
+  dataset_to_image_count = collections.defaultdict(int)
   bottleneck_files = file_io.get_matching_files(
       os.path.join(bottleneck_dir, '*'))
   for bottleneck_file in bottleneck_files:
@@ -273,6 +272,7 @@ def _export_model(label_list, export_model_path):
         main_op=tf.group(tf.tables_initializer(), name='main_op'))
     builder.save()
 
+
 def _create_dense_and_softmax_layers(bottleneck_tensor, class_count):
   # type: (tf.Tensor, int) -> (tf.Tensor, tf.Tensor, tf.Tensor)
   """Creates a dense and softmax layer.
@@ -433,14 +433,14 @@ def main(_):
         training_accuracy, cross_entropy_value = sess.run(
             [evaluation_step, cross_entropy_mean],
             feed_dict={bottleneck_input: training_handle})
-        logging.info('%s: Step %d: Train accuracy = %.1f%%', datetime.now(), i,
-                     training_accuracy * 100)
-        logging.info('%s: Step %d: Cross entropy = %f', datetime.now(),
+        logging.info('%s: Step %d: Train accuracy = %.1f%%',
+                     datetime.datetime.now(), i, training_accuracy * 100)
+        logging.info('%s: Step %d: Cross entropy = %f', datetime.datetime.now(),
                      i, cross_entropy_value)
         validation_accuracy = sess.run(
             evaluation_step, feed_dict={bottleneck_input: validation_handle})
         logging.info('%s: Step %d: Validation accuracy = %.1f%%',
-                     datetime.now(), i, validation_accuracy * 100)
+                     datetime.datetime.now(), i, validation_accuracy * 100)
 
     # Save the model variables.
     train_saver.save(sess, _CHECKPOINT_FILE)

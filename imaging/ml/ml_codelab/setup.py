@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
-# This setup.py is used to setup dependencies and environment in Dataflow instances used for data preprocessing
+"""Module used to setup Dataflow depenedencies for data preprocessing."""
 
 from setuptools import find_packages
 from setuptools import setup
 from setuptools.command.install import install
 from setuptools.dist import Distribution
+
 
 class _InstallPlatlib(install):
 
@@ -35,17 +35,18 @@ class _BinaryDistribution(Distribution):
   def has_ext_modules(self):
     return True
 
+
 REQUIRED_PACKAGES = [
-        'absl-py>=0.7,<0.9',
-        'apache-beam[gcp]>=2.16,<=2.18',
-        'numpy>=1.16,<2',
-        'protobuf>=3.7,<4',
-        'psutil>=5.6,<6',
-        'six>=1.12,<2',
-        'tensorflow_hub>=0.7.0',
-        'tensorflow==1.15.*'
-    ]
-    
+    'absl-py>=0.7,<0.9',
+    'apache-beam[gcp]>=2.16,<=2.18',
+    'numpy>=1.16,<2',
+    'protobuf>=3.7,<4',
+    'psutil>=5.6,<6',
+    'six>=1.12,<2',
+    'tensorflow_hub>=0.7.0',
+    'tensorflow==1.15.*'
+]
+
 setup(
     name='breast_density_model',
     version='0.1',

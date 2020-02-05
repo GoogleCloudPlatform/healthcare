@@ -65,7 +65,6 @@ from email.mime import application
 from email.mime import multipart
 import json
 import logging
-import email.generator
 import os
 import re
 import sys
@@ -185,8 +184,8 @@ def _StowRs(study_path, jsonstr):
   http = _CREDENTIALS.authorize(http)
   application_type = 'dicom+json'
 
-  root = multipart.MIMEMultipart(
-      subtype='related', boundary=email.generator._make_boundary())
+  boundary = str(uuid.uuid4())
+  root = multipart.MIMEMultipart(subtype='related', boundary=boundary)
   # root should not write out its own headers
   setattr(root, '_write_headers', lambda self: None)
   part = application.MIMEApplication(
@@ -418,13 +417,15 @@ class PubsubMessageHandler(object):
 
   Attributes:
     publisher: PublisherClient used to publish pubsub messages.
-
-  Args:
-    predictor: Object used to get prediction results.
-    dicom_store_path: DICOM store used to store inference results.
   """
 
   def __init__(self, predictor, dicom_store_path):
+    """Inits PubsubMessageHandler with args.
+
+    Args:
+      predictor: Object used to get prediction results.
+      dicom_store_path: DICOM store used to store inference results.
+    """
     self._predictor = predictor
     self._dicom_store_path = dicom_store_path
     self._success_count = 0
@@ -548,13 +549,11 @@ class PubsubMessageHandler(object):
       predicted_class, predicted_score = self._predictor.Predict(
           image_jpeg_bytes)
     except PermissionDenied as e:
-      _logger.error('Permission error running prediction service: %s',
-                    e)
+      _logger.error('Permission error running prediction service: %s', e)
       message.nack()
       return
     except InvalidArgument as e:
-      _logger.error('Invalid arguments when running prediction service: %s',
-                    e)
+      _logger.error('Invalid arguments when running prediction service: %s', e)
       message.nack()
       return
 
