@@ -3,14 +3,14 @@
 def _impl(ctx):
     """Core implementation of _config_test rule."""
     if ctx.attr.projects:
-        content = "{apply} --dry_run --config_path={config_path} --enable_terraform={enable_terraform} --projects={projects} --terraform_configs_dir=$TEST_UNDECLARED_OUTPUTS_DIR".format(
+        content = "{apply} --dry_run --config_path={config_path} --enable_terraform={enable_terraform} --projects={projects} --terraform_configs_dir=$TEST_UNDECLARED_OUTPUTS_DIR/dpt".format(
             apply = ctx.executable._apply.short_path,
             config_path = ctx.file.config.short_path,
             enable_terraform = ctx.attr.enable_terraform,
             projects = ",".join(ctx.attr.projects),
         )
     else:
-        content = "{apply} --dry_run --config_path={config_path} --enable_terraform={enable_terraform} --terraform_configs_dir=$TEST_UNDECLARED_OUTPUTS_DIR".format(
+        content = "{apply} --dry_run --config_path={config_path} --enable_terraform={enable_terraform} --terraform_configs_dir=$TEST_UNDECLARED_OUTPUTS_DIR/dpt".format(
             apply = ctx.executable._apply.short_path,
             config_path = ctx.file.config.short_path,
             enable_terraform = ctx.attr.enable_terraform,
