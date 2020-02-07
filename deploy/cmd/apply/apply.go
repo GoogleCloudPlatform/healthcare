@@ -26,7 +26,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -132,20 +131,8 @@ func applyConfigs() (err error) {
 		return fmt.Errorf("failed to normalize path %q: %v", *terraformConfigsDir, err)
 	}
 
-	// Check if the directory exists and is empty.
-	f, err := os.Open(*terraformConfigsDir)
-	if err != nil {
-		return fmt.Errorf("failed to open %q, if it does not exist, please create it: %v", *terraformConfigsDir, err)
-	}
-	defer f.Close()
-
-	switch _, err := f.Readdirnames(1); err {
-	case nil:
-		return fmt.Errorf("%q is not empty", *terraformConfigsDir)
-	case io.EOF:
-		// Do nothing.
-	default:
-		return fmt.Errorf("failed to check if directory %q is empty: %v", *terraformConfigsDir, err)
+	if err := os.MkdirAll(*terraformConfigsDir, 0755); err != nil {
+		return fmt.Errorf("failed to mkdir %q: %v", *terraformConfigsDir, err)
 	}
 
 	opts := &apply.Options{DryRun: *dryRun, ImportExisting: *importExisting, TerraformConfigsPath: *terraformConfigsDir}
