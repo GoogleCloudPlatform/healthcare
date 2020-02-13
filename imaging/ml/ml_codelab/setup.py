@@ -15,7 +15,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 REQUIRED_PACKAGES = [
-    'tensorflow==1.9.0',
+    'tensorflow==1.15.2',
     'tensorflow-hub',
 ]
 
