@@ -17,3 +17,7 @@
 TRAINING_DATASET = 'training'
 VALIDATION_DATASET = 'validation'
 TESTING_DATASET = 'testing'
+
+# Tensors used in Explainable AI feature.
+INPUT_PIXELS_TENSOR_NAME = 'input_pixels'
+OUTPUT_SOFTMAX_TENSOR_NAME = 'output_softmax'

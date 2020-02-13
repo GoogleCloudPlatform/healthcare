@@ -85,7 +85,8 @@ class PreprocessGraph(object):
     # bit easier.
     # https://cloud.google.com/dataflow/faq
     import scripts.ml_utils as ml_utils
-    bottleneck_tensor = ml_utils.get_bottleneck_tensor(input_jpeg_str)
+    (input_jpeg_str,
+     bottleneck_tensor) = ml_utils.create_fixed_weight_input_graph()
     return input_jpeg_str, bottleneck_tensor
 
   def calculate_bottleneck(self, image_bytes):
@@ -94,7 +95,7 @@ class PreprocessGraph(object):
 
     bottleneck = self._tf_session.run(
         self._bottleneck_tensor,
-        feed_dict={self._input_jpeg_tensor: image_bytes})
+        feed_dict={self._input_jpeg_tensor: [[image_bytes]]})
     return np.squeeze(bottleneck)
 
 

@@ -273,13 +273,18 @@ def _export_model(label_list, export_model_path):
     builder.save()
 
 
-def _create_dense_and_softmax_layers(bottleneck_tensor, class_count):
-  # type: (tf.Tensor, int) -> (tf.Tensor, tf.Tensor, tf.Tensor)
+def _create_dense_and_softmax_layers(
+    bottleneck_tensor,
+    class_count,
+    output_softmax_tensor_name=constants.OUTPUT_SOFTMAX_TENSOR_NAME):
+  # type: (tf.Tensor, int, str) -> (tf.Tensor, tf.Tensor, tf.Tensor)
   """Creates a dense and softmax layer.
 
   Args:
     bottleneck_tensor: Bottleneck values fed into dense layer.
     class_count: Number of classes used for classification.
+    output_softmax_tensor_name: Name of softmax output tensor. This is used by
+      the Explainable AI feature to show how output changes with input.
 
   Returns:
     (logits, final_tensor, prediction_index) tuple.
@@ -289,7 +294,7 @@ def _create_dense_and_softmax_layers(bottleneck_tensor, class_count):
     prediction_index is the index of final_tensor that has highest score.
   """
   logits = tf.layers.dense(bottleneck_tensor, units=class_count)
-  final_tensor = tf.nn.softmax(logits)
+  final_tensor = tf.nn.softmax(logits, name=output_softmax_tensor_name)
   prediction_index = tf.argmax(final_tensor, 1)
   return logits, final_tensor, prediction_index
 
@@ -303,31 +308,21 @@ def _create_inference_graph(index_to_label_table, class_count):
     class_count: Number of classes used for classification.
 
   Returns:
-    (input_jpeg_str, prediction, score) tuple.
+    (img_bytes, prediction, score) tuple.
 
-    input_jpeg_str is the input JPEG image.
+    img_bytes is the input JPEG image.
     prediction is the predicted label.
     score is the score for the predicted label.
   """
 
-  # Cloud ML requires dynamic batch sizes, so set shape to [None].
-  input_jpeg_str = tf.placeholder(tf.string, shape=[None])
-  # For each instance in batch, calculate the bottleneck.
-  bottleneck_tensor = tf.map_fn(
-      ml_utils.get_bottleneck_tensor,
-      input_jpeg_str,
-      back_prop=False,
-      dtype=tf.float32)
-  # Reduce dimension in bottleneck - we want to feed a BATCH_SIZE x 2048 tensor
-  # to dense layer, to produce a BATCH_SIZE x NUMBER_OF_CLASSES tensor.
-  bottleneck_tensor = tf.squeeze(bottleneck_tensor, [1])
+  img_bytes, bottleneck_tensor = ml_utils.create_fixed_weight_input_graph()
   _, normalized_tensor, prediction_index = _create_dense_and_softmax_layers(
       bottleneck_tensor, class_count)
   # Get the prediction (label) for a given tensor index.
   prediction = index_to_label_table.lookup(prediction_index)
   # Get the score for the predicted class.
   score = tf.squeeze(tf.gather(normalized_tensor, prediction_index, axis=1))
-  return input_jpeg_str, prediction, score
+  return img_bytes, prediction, score
 
 
 def _create_training_graph(bottleneck_tensor, label_index_tensor, class_count,
@@ -346,7 +341,8 @@ def _create_training_graph(bottleneck_tensor, label_index_tensor, class_count,
 
     cross_entropy_mean is Tensor that holds cross entropy mean.
     train_step is a Tensorflow operation that runs training step.
-    prediction_index is a Tensor that holds index with the largest value across axes.
+    prediction_index is a Tensor that holds index with the largest value across
+    axes.
     evaluation_step is a Tensor that computes the mean of elements across
      dimensions of a tensor, used when evaluating the model.
   """

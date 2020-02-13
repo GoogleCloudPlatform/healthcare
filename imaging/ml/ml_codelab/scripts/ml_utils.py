@@ -14,6 +14,7 @@
 """Utility functions for training and serving ML models."""
 
 import warnings
+import scripts.constants as constants
 
 # TODO: Remove when Tensorflow library is updated.
 warnings.filterwarnings('ignore')
@@ -26,32 +27,64 @@ import tensorflow_hub
 _FEATURE_VECTORS_MODULE_URL = 'https://tfhub.dev/google/imagenet/inception_v3/feature_vector/1'
 
 
-def get_bottleneck_tensor(input_jpeg_str):
-  # type: tf.Tensor -> tf.Tensor
-  """Calculates the bottleneck tensor for input JPEG string tensor.
+def create_fixed_weight_input_graph(
+    input_pixels_tensor_name=constants.INPUT_PIXELS_TENSOR_NAME):
+  # type: str -> (tf.Tensor, tf.Tensor)
+  """Creates the input graph (with fixed weights) using TF Hub.
 
-  This function will resize/encode the image as required by Inception V3 model.
-  Then it will run it through the InceptionV3 checkpoint to calculate
-  bottleneck values.
+  This function will create the input graph consisting of nodes that are
+  used to resize/encode the image followed by the nodes of the Inception V3
+  model. The classification head is not added in this function.
 
   Args:
-    input_jpeg_str: Tensor for input JPEG image.
+    input_pixels_tensor_name: Name of input tensor.
 
   Returns:
-    bottleneck_tensor: Tensor for output bottleneck Tensor.
+    img_bytes: Tensor for input bytes.
+    bottleneck_tensor: Tensor for output bottleneck.
   """
-  module_spec = tensorflow_hub.load_module_spec(_FEATURE_VECTORS_MODULE_URL)
-  input_height, input_width = tensorflow_hub.get_expected_image_size(
-      module_spec)
-  input_depth = tensorflow_hub.get_num_image_channels(module_spec)
-  decoded_image = tf.image.decode_jpeg(input_jpeg_str, channels=input_depth)
-  decoded_image_as_float = tf.image.convert_image_dtype(decoded_image,
-                                                        tf.float32)
-  decoded_image_4d = tf.expand_dims(decoded_image_as_float, 0)
-  resize_shape = tf.stack([input_height, input_width])
-  resize_shape_as_int = tf.cast(resize_shape, dtype=tf.int32)
-  resized_image_4d = tf.image.resize_bilinear(decoded_image_4d,
-                                              resize_shape_as_int)
-  m = tensorflow_hub.Module(module_spec)
-  bottleneck_tensor = m(resized_image_4d)
-  return bottleneck_tensor
+
+  def decode_and_resize_img(img_bytes, height, width, depth):
+    # type: (tf.Tensor, int, int, int) -> tf.Tensor
+    """Decodes and resizes input image to return a float representation.
+
+    Args:
+      img_bytes: tensor for input bytes.
+      height: Desired height of image.
+      width: Desired width of image.
+      depth: Desired bit depth of image.
+
+    Returns:
+      float_pixels: Tensor storing the image as float. This is the input tensor
+      that we'll reference in the Explainable AI feature to show how output
+      changes with input.
+    """
+    features = tf.squeeze(img_bytes, axis=1, name='input_squeeze')
+    float_pixels = tf.map_fn(
+        # pylint: disable=g-long-lambda
+        lambda img: tf.image.resize_with_crop_or_pad(
+            tf.io.decode_image(img, channels=depth, dtype=tf.float32), height,
+            width),
+        features,
+        dtype=tf.float32,
+        name='input_convert')
+    float_pixels = tf.ensure_shape(float_pixels, (None, height, width, depth))
+    float_pixels = tf.identity(float_pixels, name=input_pixels_tensor_name)
+    return float_pixels
+
+  def download_image_model(mdl_url):
+    # type: str -> (tensorflow_hub.Module, int, int, int)
+    """Returns the Tensorflow Hub model used to process images."""
+    module_spec = tensorflow_hub.load_module_spec(mdl_url)
+    input_height, input_width = tensorflow_hub.get_expected_image_size(
+        module_spec)
+    input_depth = tensorflow_hub.get_num_image_channels(module_spec)
+    m = tensorflow_hub.Module(module_spec)
+    return (m, input_height, input_width, input_depth)
+
+  m, height, width, color_depth = download_image_model(
+      _FEATURE_VECTORS_MODULE_URL)
+  img_bytes = tf.placeholder(tf.string, shape=(None, 1))
+  img_float = decode_and_resize_img(img_bytes, height, width, color_depth)
+  bottleneck_tensor = m(img_float)
+  return img_bytes, bottleneck_tensor
