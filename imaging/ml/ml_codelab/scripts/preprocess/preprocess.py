@@ -30,26 +30,18 @@ to the classification part of the model in model.py. The bottlenecks represent
 the output of the feature extraction part of the model.
 """
 
-import warnings
 import argparse
-import csv
 import logging
 import os
 import random
-import StringIO
 import sys
 import threading
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-import httplib2
+import numpy as np
 import scripts.constants as constants
 import scripts.tcia_utils as tcia_utils
-import numpy as np
-
-# TODO: Remove when Tensorflow library is updated.
-warnings.filterwarnings('ignore')
 import tensorflow.compat.v1 as tf
-from tensorflow.compat.v1.python.lib.io import file_io
 
 # Labels for BI-RADS breast density scores.
 _BREAST_DENSITY_2_LABEL = '2'
@@ -57,7 +49,8 @@ _BREAST_DENSITY_3_LABEL = '3'
 
 
 class PreprocessGraph(object):
-  """ Creates a TF graph to preprocess an image and to calculate bottlenecks.
+  """Creates a TF graph to preprocess an image and to calculate bottlenecks.
+
   Example usage:
   # Create the Tensorflow graph.
   preprocess_graph = PreprocessGraph(sess)
@@ -120,7 +113,8 @@ def _to_tfrecord(dataset, image_path, label, bottleneck):
   """
 
   def _bytes_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+    return tf.train.Feature(
+        bytes_list=tf.train.BytesList(value=[value.encode()]))
 
   def _float_feature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
@@ -146,7 +140,6 @@ class PreprocessImage(beam.DoFn):
   """
 
   # Synchronization for Beam variables that can be called from multiple threads.
-  # https://groups.google.com/a/google.com/forum/#!msg/dataflow-beam-portability/MQ4UqpDhwyg/Cal4yAniAgAJ
   _preprocess_graph_lock = threading.Lock()
   _preprocess_graph = None
 
@@ -175,7 +168,7 @@ class PreprocessImage(beam.DoFn):
       RuntimeError: If _preprocess_graph is not initialized.
     """
     (dataset, image_path, label) = element
-    image_data = file_io.FileIO(image_path, 'rb').read()
+    image_data = tf.io.gfile.GFile(image_path, 'rb').read()
     if self._preprocess_graph is None:
       raise RuntimeError('self._preprocess_graph not initialized')
     bottleneck = self._preprocess_graph.calculate_bottleneck(image_data)
@@ -192,19 +185,19 @@ def _get_study_uid_to_image_path_map(input_path):
   Returns:
     study_uid_to_file_paths: Dictionary mapping study_uid to image path.
   """
-  path_list = file_io.get_matching_files(os.path.join(input_path, '*/*/*'))
+  path_list = tf.io.gfile.glob(os.path.join(input_path, '*/*/*'))
   study_uid_to_file_paths = {}
   for path in path_list:
     split_path = path.split('/')
-    study_uid_to_file_paths[split_path[3]] = path
+    study_uid_to_file_paths[split_path[4]] = path
   return study_uid_to_file_paths
 
 
 def _partition_fn(element, unused_num_partitions):
   dataset = element.features.feature['dataset'].bytes_list.value[0]
-  if dataset == constants.TRAINING_DATASET:
+  if dataset == constants.TRAINING_DATASET.encode():
     return 0
-  elif dataset == constants.VALIDATION_DATASET:
+  elif dataset == constants.VALIDATION_DATASET.encode():
     return 1
   return 2
 
@@ -231,7 +224,7 @@ def configure_pipeline(p, opt):
   logging.info('Number of images in testing dataset: %s', testing_size)
 
   count = 0
-  for k, v in study_uid_to_label.iteritems():
+  for k, v in study_uid_to_label.items():
     if k not in study_uid_to_image_path:
       logging.warning('Could not find image with study_uid %s in GCS', k)
       continue
@@ -346,7 +339,7 @@ def default_args(argv):
         'runner': 'DirectRunner',
     }
 
-  for kk, vv in default_values.iteritems():
+  for kk, vv in default_values.items():
     if kk not in parsed_args or not vars(parsed_args)[kk]:
       vars(parsed_args)[kk] = vv
 
