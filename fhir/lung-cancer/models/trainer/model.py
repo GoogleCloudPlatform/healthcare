@@ -30,7 +30,7 @@ itself is not a natural machine learning task.
 """
 
 import functools
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 # Input data specific flags.
 tf.flags.DEFINE_string(

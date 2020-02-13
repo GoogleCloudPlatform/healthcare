@@ -33,7 +33,7 @@ to finish data analysis and machine learning tasks. This problem
 itself is not a natural machine learning task.
 """
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from functools import reduce
 
