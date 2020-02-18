@@ -71,8 +71,8 @@ import os
 import sys
 import scripts.constants as constants
 import scripts.ml_utils as ml_utils
-import tensorflow as tf
-from tensorflow.python.lib.io import file_io
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.python.lib.io import file_io
 
 FLAGS = None
 
