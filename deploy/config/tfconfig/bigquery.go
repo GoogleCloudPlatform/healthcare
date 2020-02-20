@@ -42,6 +42,7 @@ type Access struct {
 	Role         string `json:"role"`
 	UserByEmail  string `json:"user_by_email,omitempty"`
 	GroupByEmail string `json:"group_by_email,omitempty"`
+	Domain       string `json:"domain,omitempty"`
 
 	// Unsupported roles.
 	SpecialGroup string      `json:"special_group,omitempty"`
