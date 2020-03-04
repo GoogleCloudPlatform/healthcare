@@ -1,0 +1,5 @@
+owners = [
+  {{range .OWNERS -}}
+  "{{.}}",
+  {{end -}}
+]

@@ -1,0 +1,97 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+templates_dir: "../templates"
+
+data:
+  ORG_ID: "123"
+  BILLING_ACCOUNT: "000-000-000"
+
+templates:
+# Base sets up foundational pieces, devops, etc.
+- input_dir: "./base"
+  data:
+    DEVOPS_PROJECT_ID: "example-devops"
+    STATE_BUCKET: "example-central-state"
+- input_dir: "./devops_project"
+  output_dir: "prod/org/project-{{.PROJECT_ID}}/project"
+  data:
+    PROJECT_ID: "example-devops"
+
+# Audit project and config.
+- input_dir: "./project"
+  output_dir: "prod/org/project-{{.PROJECT_ID}}/project"
+  data:
+    PROJECT_ID: "example-audit"
+- input_dir: "./audit"
+  output_dir: "prod/org/audit"
+  data:
+    PROJECT_ID: "example-audit"
+    DATASET_NAME: "1yr_org_audit_logs"
+    BUCKET_NAME: "7yr-org-audit-logs-example"
+    AUDITORS: "group:example-dev-auditors@google.com"
+
+# Monitoring project and config.
+- input_dir: "./project"
+  output_dir: "prod/org/project-{{.PROJECT_ID}}/project"
+  data:
+    PROJECT_ID: "example-monitor"
+- input_dir: "/forseti_network"
+  output_dir: "prod/org/project-{{.PROJECT_ID}}/network"
+  data:
+    PROJECT_ID: "example-monitor"
+- input_dir: "./monitor"
+  output_dir: "prod/org/monitor"
+  data:
+    PROJECT_ID: "example-monitor"
+    DOMAIN: "example.com"
+
+# Multiple layers of sample folders and a sample data project.
+- input_dir: "./folder"
+  output_dir: "prod/org/folder-{{.DISPLAY_NAME}}/folder"
+  data:
+    DISPLAY_NAME: "example-outer"
+    PARENT: "organizations/123"
+- input_dir: "./folder"
+  output_dir: "prod/org/folder-example-outer/folder-{{.DISPLAY_NAME}}/folder"
+  data:
+    DISPLAY_NAME: "example-inner"
+- input_dir: "./project"
+  output_dir: "prod/org/folder-example-outer/folder-example-inner/project-{{.PROJECT_ID}}/project"
+  data:
+    PROJECT_ID: "example-data"
+    PARENT_TYPE: "FOLDER"
+
+# To override the owners of the projects, uncomment the following:
+# - input_dir: "./owners"
+#   output_dir: "prod/org/project-example-devops/project"
+#   data:
+#     PROJECT_ID: "example-devops"
+#     OWNERS:
+#     - "user:example@example.com"
+# - input_dir: "./owners"
+#   output_dir: "prod/org/project-example-monitor/project"
+#   data:
+#     OWNERS:
+#     - "user:example@example.com"
+# - input_dir: "./owners"
+#   output_dir: "prod/org/project-example-audit/project"
+#   data:
+#     OWNERS:
+#     - "user:example@example.com"
+# - input_dir: "./owners"
+#   output_dir: "prod/org/folder-example-outer/folder-example-inner/project-example-data/project"
+#   data:
+#     OWNERS:
+#     - "user:example@example.com"
