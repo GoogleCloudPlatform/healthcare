@@ -26,7 +26,7 @@ into a complete environment.
 - [Terraform 0.12+](https://www.terraform.io/downloads.html)
 - [Terragrunt](https://github.com/gruntwork-io/terragrunt/releases)
 - [Go](https://golang.org/dl/)
-- [Bazel] (https://bazel.build/)
+- [Bazel](https://bazel.build/)
 
 ## Usage
 
