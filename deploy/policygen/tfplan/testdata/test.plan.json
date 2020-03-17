@@ -1,0 +1,226 @@
+{
+  "format_version": "0.1",
+  "terraform_version": "0.12.20",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "google_storage_bucket.image-store",
+          "mode": "managed",
+          "type": "google_storage_bucket",
+          "name": "image-store",
+          "provider_name": "google",
+          "schema_version": 0,
+          "values": {
+            "cors": [],
+            "default_event_based_hold": null,
+            "encryption": [],
+            "force_destroy": false,
+            "labels": null,
+            "lifecycle_rule": [],
+            "location": "EU",
+            "logging": [],
+            "name": "test-bucket",
+            "requester_pays": null,
+            "retention_policy": [],
+            "storage_class": "STANDARD",
+            "versioning": [],
+            "website": []
+          }
+        }
+      ],
+      "child_modules": [
+        {
+          "address": "module.project",
+          "child_modules": [
+            {
+              "resources": [
+                {
+                  "address": "module.project.module.project-factory.data.null_data_source.default_service_account",
+                  "mode": "data",
+                  "type": "null_data_source",
+                  "name": "default_service_account",
+                  "provider_name": "null",
+                  "schema_version": 0,
+                  "values": {
+                    "inputs": {}
+                  }
+                },
+                {
+                  "address": "module.project.module.project-factory.google_project.main",
+                  "mode": "managed",
+                  "type": "google_project",
+                  "name": "main",
+                  "provider_name": "google",
+                  "schema_version": 1,
+                  "values": {
+                    "auto_create_network": false,
+                    "billing_account": "ABC-DEF",
+                    "folder_id": "456",
+                    "labels": null,
+                    "name": "test-project",
+                    "project_id": "test-project",
+                    "timeouts": null
+                  }
+                },
+                {
+                  "address": "module.project.module.project-factory.google_resource_manager_lien.lien[0]",
+                  "mode": "managed",
+                  "type": "google_resource_manager_lien",
+                  "name": "lien",
+                  "index": 0,
+                  "provider_name": "google",
+                  "schema_version": 0,
+                  "values": {
+                    "origin": "project-factory",
+                    "reason": "Project Factory lien",
+                    "restrictions": [
+                      "resourcemanager.projects.delete"
+                    ],
+                    "timeouts": null
+                  }
+                },
+                {
+                  "address": "module.project.module.project-factory.google_service_account.default_service_account",
+                  "mode": "managed",
+                  "type": "google_service_account",
+                  "name": "default_service_account",
+                  "provider_name": "google",
+                  "schema_version": 0,
+                  "values": {
+                    "account_id": "project-service-account",
+                    "description": null,
+                    "display_name": "test-project Project Service Account",
+                    "project": "test-project"
+                  }
+                },
+                {
+                  "address": "module.project.module.project-factory.null_resource.preconditions",
+                  "mode": "managed",
+                  "type": "null_resource",
+                  "name": "preconditions",
+                  "provider_name": "null",
+                  "schema_version": 0,
+                  "values": {
+                    "triggers": {
+                      "billing_account": "ABC-DEF",
+                      "credentials_path": "",
+                      "folder_id": "456",
+                      "org_id": "123",
+                      "shared_vpc": ""
+                    }
+                  }
+                },
+                {
+                  "address": "module.project.module.project-factory.null_resource.shared_vpc_subnet_invalid_name[0]",
+                  "mode": "managed",
+                  "type": "null_resource",
+                  "name": "shared_vpc_subnet_invalid_name",
+                  "index": 0,
+                  "provider_name": "null",
+                  "schema_version": 0,
+                  "values": {
+                    "triggers": {
+                      "name": ""
+                    }
+                  }
+                },
+                {
+                  "address": "module.project.module.project-factory.random_id.random_project_id_suffix",
+                  "mode": "managed",
+                  "type": "random_id",
+                  "name": "random_project_id_suffix",
+                  "provider_name": "random",
+                  "schema_version": 0,
+                  "values": {
+                    "byte_length": 2,
+                    "keepers": null,
+                    "prefix": null
+                  }
+                }
+              ],
+              "address": "module.project.module.project-factory",
+              "child_modules": [
+                {
+                  "resources": [
+                    {
+                      "address": "module.project.module.project-factory.module.gcloud_delete.random_id.cache",
+                      "mode": "managed",
+                      "type": "random_id",
+                      "name": "cache",
+                      "provider_name": "random",
+                      "schema_version": 0,
+                      "values": {
+                        "byte_length": 4,
+                        "keepers": null,
+                        "prefix": null
+                      }
+                    }
+                  ],
+                  "address": "module.project.module.project-factory.module.gcloud_delete"
+                },
+                {
+                  "resources": [
+                    {
+                      "address": "module.project.module.project-factory.module.gcloud_deprivilege.random_id.cache",
+                      "mode": "managed",
+                      "type": "random_id",
+                      "name": "cache",
+                      "provider_name": "random",
+                      "schema_version": 0,
+                      "values": {
+                        "byte_length": 4,
+                        "keepers": null,
+                        "prefix": null
+                      }
+                    }
+                  ],
+                  "address": "module.project.module.project-factory.module.gcloud_deprivilege"
+                },
+                {
+                  "resources": [
+                    {
+                      "address": "module.project.module.project-factory.module.gcloud_disable.random_id.cache",
+                      "mode": "managed",
+                      "type": "random_id",
+                      "name": "cache",
+                      "provider_name": "random",
+                      "schema_version": 0,
+                      "values": {
+                        "byte_length": 4,
+                        "keepers": null,
+                        "prefix": null
+                      }
+                    }
+                  ],
+                  "address": "module.project.module.project-factory.module.gcloud_disable"
+                },
+                {
+                  "resources": [
+                    {
+                      "address": "module.project.module.project-factory.module.project_services.google_project_service.project_services[\"compute.googleapis.com\"]",
+                      "mode": "managed",
+                      "type": "google_project_service",
+                      "name": "project_services",
+                      "index": "compute.googleapis.com",
+                      "provider_name": "google",
+                      "schema_version": 0,
+                      "values": {
+                        "disable_dependent_services": true,
+                        "disable_on_destroy": true,
+                        "project": "test-project",
+                        "service": "compute.googleapis.com",
+                        "timeouts": null
+                      }
+                    }
+                  ],
+                  "address": "module.project.module.project-factory.module.project_services"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
