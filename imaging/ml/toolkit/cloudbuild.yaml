@@ -1,0 +1,23 @@
+# Executes unit tests on Cloud Build
+#
+# This testing will happen automatically on any changes, but you can also run it
+# manually:
+#
+# To execute on Google Cloud Build:
+# cd healthcare/imaging/ml/toolkit/
+# gcloud builds submit --config cloudbuild.yaml .
+#
+# To execute using a local builder:
+# sudo apt-get install google-cloud-sdk-cloud-build-local
+# cloud-build-local --config cloudbuild.yaml --dryrun=false .
+steps:
+- name: 'python:3.7'
+  id: 'Install package and run all unit tests'
+  entrypoint: 'bash'
+  args:
+  - -c
+  - |
+    python3 -m venv testenv
+    source testenv/bin/activate
+    pip install .
+    python3 -m  unittest discover -v -p *_test.py
