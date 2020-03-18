@@ -31,7 +31,7 @@ import (
 	"flag"
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/policygen/tfplan"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/policygen/terraform"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
 )
 
@@ -106,7 +106,7 @@ func run() error {
 		return fmt.Errorf("terraform show: %v", err)
 	}
 
-	resources, err := tfplan.ReadJSONResources(b)
+	resources, err := terraform.ReadPlanResources(b)
 	if err != nil {
 		return fmt.Errorf("unmarshal json: %v", err)
 	}

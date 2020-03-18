@@ -4,18 +4,22 @@ licenses(["notice"])  # Apache 2.0
 
 go_library(
     name = "go_default_library",
-    srcs = ["tfplan.go"],
-    importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/policygen/tfplan",
+    srcs = ["json.go"],
+    importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/policygen/terraform",
     visibility = ["//visibility:public"],
 )
 
 go_test(
     name = "go_default_test",
-    srcs = ["tfplan_test.go"],
+    srcs = ["json_test.go"],
     data = [
-        "//policygen/tfplan/testdata",
+        "//policygen/terraform/testdata",
     ],
     embed = [":go_default_library"],
     # Override default run dir to make it easier to find test files.
     rundir = ".",
+    deps = [
+        "@com_github_google_cmp//cmp:go_default_library",
+        "@com_github_google_cmp//cmp/cmpopts:go_default_library",
+    ],
 )

@@ -9,7 +9,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//config:go_default_library",
-        "//policygen/tfplan:go_default_library",
+        "//policygen/terraform:go_default_library",
         "//runner:go_default_library",
     ],
 )

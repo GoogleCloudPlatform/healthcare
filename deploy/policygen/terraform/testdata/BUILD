@@ -7,6 +7,7 @@ licenses(["notice"])  # Apache 2.0
 filegroup(
     name = "testdata",
     srcs = [
-        "test.plan.json",
+        "plan.json",
+        "state.json",
     ],
 )
