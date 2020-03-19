@@ -17,7 +17,7 @@
 // Policy Generator automate generation of Google-recommended Policy Library constraints based on your Terraform configs.
 //
 // Usage:
-// $ bazel run :policygen -- --config_path=/path/to/config --output_dir=/tmp/constraints
+// $ bazel run :policygen -- --output_dir=/tmp/constraints {--input_dir=/path/to/configs/dir|--input_plan=/path/to/plan/json|--input_state=/path/to/state/json}
 package main
 
 import (
@@ -36,17 +36,29 @@ import (
 )
 
 var (
-	// TODO: make it work with Terraform Engine configs.
-	configPath = flag.String("config_path", "", "Path to Terraform config")
-	outputDir  = flag.String("output_dir", "", "Path to directory to generate constraints")
+	inputDir   = flag.String("input_dir", "", "Path to Terraform configs root directory. Cannot be specified together with other types of inputs.")
+	inputPlan  = flag.String("input_plan", "", "Path to Terraform plan in json format, Cannot be specified together with other types of inputs.")
+	inputState = flag.String("input_state", "", "Path to Terraform state in json format. Cannot be specified together with other types of inputs.")
+	outputDir  = flag.String("output_dir", "", "Path to directory to write generated policies")
 )
 
 func main() {
 	flag.Parse()
 
-	if *configPath == "" {
-		log.Fatal("--config_path must be set")
+	isOneNonEmpty := func(ss ...string) bool {
+		var n int
+		for _, s := range ss {
+			if s != "" {
+				n++
+			}
+		}
+		return n == 1
 	}
+
+	if !isOneNonEmpty(*inputDir, *inputPlan, *inputState) {
+		log.Fatal("exactly one of --input_dir, --input_plan or --input_state must be specified")
+	}
+
 	if *outputDir == "" {
 		log.Fatal("--output_dir must be set")
 	}
@@ -59,19 +71,48 @@ func main() {
 func run() error {
 
 	var err error
-	*configPath, err = config.NormalizePath(*configPath)
-	if err != nil {
-		return fmt.Errorf("normalize path %q: %v", *configPath, err)
-	}
-
 	*outputDir, err = config.NormalizePath(*outputDir)
 	if err != nil {
 		return fmt.Errorf("normalize path %q: %v", *outputDir, err)
 	}
 
+	var resources []terraform.Resource
+
+	switch {
+	case *inputDir != "":
+		if resources, err = resourcesFromDir(*inputDir); err != nil {
+			return fmt.Errorf("read resources from configs directory: %v", err)
+
+		}
+	case *inputPlan != "":
+		if resources, err = resourcesFromPlan(*inputPlan); err != nil {
+			return fmt.Errorf("read resources from plan: %v", err)
+		}
+	case *inputState != "":
+		if resources, err = resourcesFromState(*inputState); err != nil {
+			return fmt.Errorf("read resources from state: %v", err)
+		}
+	}
+
+	for _, r := range resources {
+		log.Printf("%+v", r)
+	}
+
+	// TODO: generate policies that do not rely on input config.
+	// TODO: generate policies that rely on input config.
+
+	return nil
+}
+
+func resourcesFromDir(path string) ([]terraform.Resource, error) {
+	path, err := config.NormalizePath(path)
+	if err != nil {
+		return nil, fmt.Errorf("normalize path %q: %v", path, err)
+	}
+
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer os.RemoveAll(tmpDir)
 
@@ -87,36 +128,64 @@ func run() error {
 		return rn.CmdOutput(cmd)
 	}
 
-	cp := exec.Command("cp", *configPath, tmpDir)
+	fs, err := filepath.Glob(filepath.Join(path, "*"))
+	if err != nil {
+		return nil, err
+	}
+	cp := exec.Command("cp", append([]string{"-a", "-t", tmpDir}, fs...)...)
 	if err := rn.CmdRun(cp); err != nil {
-		return fmt.Errorf("copy configs to temp directory: %v", err)
+		return nil, fmt.Errorf("copy configs to temp directory: %v", err)
 	}
 
 	if err := tfCmd("init"); err != nil {
-		return fmt.Errorf("terraform init: %v", err)
+		return nil, fmt.Errorf("terraform init: %v", err)
 	}
 
 	planPath := filepath.Join(tmpDir, "plan.tfplan")
 	if err := tfCmd("plan", "-out", planPath); err != nil {
-		return fmt.Errorf("terraform plan: %v", err)
+		return nil, fmt.Errorf("terraform plan: %v", err)
 	}
 
 	b, err := tfCmdOutput("show", "-json", planPath)
 	if err != nil {
-		return fmt.Errorf("terraform show: %v", err)
+		return nil, fmt.Errorf("terraform show: %v", err)
 	}
 
 	resources, err := terraform.ReadPlanResources(b)
 	if err != nil {
-		return fmt.Errorf("unmarshal json: %v", err)
+		return nil, fmt.Errorf("unmarshal json: %v", err)
 	}
+	return resources, nil
+}
 
-	for _, r := range resources {
-		log.Printf("%+v", r)
+func resourcesFromPlan(path string) ([]terraform.Resource, error) {
+	path, err := config.NormalizePath(path)
+	if err != nil {
+		return nil, fmt.Errorf("normalize path %q: %v", path, err)
 	}
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read json: %v", err)
+	}
+	resources, err := terraform.ReadPlanResources(b)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal json: %v", err)
+	}
+	return resources, nil
+}
 
-	// TODO: generate policies that do not rely on input config.
-	// TODO: generate policies that rely on input config.
-
-	return nil
+func resourcesFromState(path string) ([]terraform.Resource, error) {
+	path, err := config.NormalizePath(path)
+	if err != nil {
+		return nil, fmt.Errorf("normalize path %q: %v", path, err)
+	}
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read json: %v", err)
+	}
+	resources, err := terraform.ReadStateResources(b)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal json: %v", err)
+	}
+	return resources, nil
 }
