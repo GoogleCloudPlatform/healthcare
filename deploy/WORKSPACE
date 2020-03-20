@@ -114,9 +114,9 @@ filegroup(
   srcs = glob(["**/*"]),
   visibility = ["//visibility:public"],
 )""",
-    sha256 = "3b52f460d63aa7f0f82c5f5945595665a09e0e4246548a439b947f12ce810db2",
-    strip_prefix = "terraform-google-forseti-5.1.0",
-    urls = ["https://github.com/forseti-security/terraform-google-forseti/archive/v5.1.0.tar.gz"],
+    sha256 = "5a06dfd181477786f11977bc0af23d5455e67c635c4159c97d0a1762effa40b7",
+    strip_prefix = "terraform-google-forseti-5.2.0",
+    urls = ["https://github.com/forseti-security/terraform-google-forseti/archive/v5.2.0.tar.gz"],
 )
 
 load("@io_bazel_rules_docker//container:container.bzl", "container_pull")

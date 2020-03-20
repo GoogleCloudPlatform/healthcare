@@ -10,14 +10,14 @@ provider "google" {
 // TODO: Incorporate latest features once 5.2.0 is released.
 module "forseti" {
   source  = "terraform-google-modules/forseti/google"
-  version = "~> 5.1.0"
+  version = "~> 5.2.0"
 
   domain           = var.domain
   project_id       = var.project_id
   org_id           = var.org_id
   network          = "forseti-vpc"
   subnetwork       = "forseti-subnet"
-  client_private   = true
+  client_enabled   = false
   server_private   = true
   cloudsql_private = true
 }
