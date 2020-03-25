@@ -105,12 +105,6 @@ func (*Fake) CmdOutput(cmd *exec.Cmd) ([]byte, error) {
 		return []byte(`"dryrun@dryrun.com"`), nil
 	case contains(cmdStr, "projects get-iam-policy"):
 		return []byte("{}"), nil
-	case contains(cmdStr, "service-accounts list", "--filter email:forseti-server-gcp-*", "--format json"):
-		return []byte(`[{"email": "forseti-server-gcp-dryrun@dryrun.iam.gserviceaccount.com"}]`), nil
-	case contains(cmdStr, "gsutil ls"):
-		return []byte("gs://forseti-server-dryrun"), nil
-	case contains(cmdStr, "iam service-accounts list --format json --filter email:forseti-server-gcp-*"):
-		return []byte(`[{"email": forseti-sa@@forseti-project.iam.gserviceaccount.com"}]`), nil
 	case contains(cmdStr, "monitoring channels list"):
 		return []byte("[]"), nil
 	case contains(cmdStr, "monitoring channels create"):
@@ -123,6 +117,10 @@ func (*Fake) CmdOutput(cmd *exec.Cmd) ([]byte, error) {
 		return []byte("[]"), nil
 	case contains(cmdStr, "terraform output -json project_number"):
 		return []byte("\"11111\""), nil
+	case contains(cmdStr, "terraform output -json forseti_server_service_account"):
+		return []byte("\"forseti-sa@@forseti-project.iam.gserviceaccount.com\""), nil
+	case contains(cmdStr, "terraform output -json forseti_server_bucket"):
+		return []byte("\"gs://forseti-server-dryrun\""), nil
 	case contains(cmdStr, "terraform show -json"):
 		return []byte("{}"), nil
 	default:

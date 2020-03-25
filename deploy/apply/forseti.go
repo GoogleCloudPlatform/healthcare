@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
-	"strings"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
@@ -77,7 +76,6 @@ func forsetiConfig(conf *config.Config, opts *Options, workDir string, rn runner
 		log.Println("no forseti config, nothing to do")
 		return nil
 	}
-	project := conf.Forseti.Project
 	tfConf := terraform.NewConfig()
 	tfConf.Modules = []*terraform.Module{{
 		Name:       "forseti",
@@ -90,6 +88,17 @@ func forsetiConfig(conf *config.Config, opts *Options, workDir string, rn runner
 		Prefix: "forseti",
 	}
 
+	tfConf.Outputs = []*terraform.Output{
+		{
+			Name:  "forseti_server_service_account",
+			Value: "${module.forseti.forseti-server-service-account}",
+		},
+		{
+			Name:  "forseti_server_bucket",
+			Value: "${module.forseti.forseti-server-storage-bucket}",
+		},
+	}
+
 	workDir, err := terraform.WorkDir(workDir, "forseti")
 	if err != nil {
 		return err
@@ -98,13 +107,13 @@ func forsetiConfig(conf *config.Config, opts *Options, workDir string, rn runner
 		return err
 	}
 
-	serviceAccount, err := forsetiServerServiceAccount(project.ID, rn)
+	serviceAccount, err := forsetiServerServiceAccount(workDir, rn)
 	if err != nil {
 		return fmt.Errorf("failed to set Forseti server service account: %v", err)
 	}
 	conf.AllGeneratedFields.Forseti.ServiceAccount = serviceAccount
 
-	serverBucket, err := forsetiServerBucket(project.ID, rn)
+	serverBucket, err := forsetiServerBucket(workDir, rn)
 	if err != nil {
 		return fmt.Errorf("failed to set Forseti server bucket: %v", err)
 	}
@@ -146,54 +155,31 @@ func GrantForsetiPermissions(projectID, serviceAccount, stateBucket string, opts
 }
 
 // forsetiServerServiceAccount gets the server instance service account of the give Forseti project.
-// TODO: Use Terraform state or output.
-func forsetiServerServiceAccount(projectID string, rn runner.Runner) (string, error) {
-	cmd := exec.Command(
-		"gcloud", "--project", projectID,
-		"iam", "service-accounts", "list", "--format", "json",
-		"--filter", "email:forseti-server-gcp-*",
-	)
-
+func forsetiServerServiceAccount(dir string, rn runner.Runner) (string, error) {
+	cmd := exec.Command("terraform", "output", "-json", "forseti_server_service_account")
+	cmd.Dir = dir
 	out, err := rn.CmdOutput(cmd)
 	if err != nil {
-		return "", fmt.Errorf("failed to obtain Forseti server service account: %v", err)
+		return "", fmt.Errorf("failed to get forseti-server-service-account Terraform output: %v", err)
 	}
-
-	type serviceAccount struct {
-		Email string `json:"email"`
+	var sa string
+	if err := json.Unmarshal(out, &sa); err != nil {
+		return "", fmt.Errorf("failed to parse Forseti server service account from terraform output: %v", err)
 	}
-
-	var serviceAccounts []serviceAccount
-	if err := json.Unmarshal(out, &serviceAccounts); err != nil {
-		return "", fmt.Errorf("failed to unmarshal service accounts output: %v", err)
-	}
-	if len(serviceAccounts) != 1 {
-		return "", fmt.Errorf("unexpected number of Forseti server service accounts: got %d, want 1", len(serviceAccounts))
-	}
-
-	return serviceAccounts[0].Email, nil
+	return sa, nil
 }
 
 // forsetiServerBucket gets the bucket holding the Forseti server instance's configuration.
-// TODO: Use Terraform state or output.
-func forsetiServerBucket(projectID string, rn runner.Runner) (string, error) {
-	cmd := exec.Command("gsutil", "ls", "-p", projectID)
-
+func forsetiServerBucket(dir string, rn runner.Runner) (string, error) {
+	cmd := exec.Command("terraform", "output", "-json", "forseti_server_bucket")
+	cmd.Dir = dir
 	out, err := rn.CmdOutput(cmd)
 	if err != nil {
-		return "", fmt.Errorf("failed to obtain Forseti server bucket: %v", err)
+		return "", fmt.Errorf("failed to get forseti-server-storage-bucket Terraform output: %v", err)
 	}
-
-	var bs []string
-	for _, b := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		if strings.HasPrefix(b, "gs://forseti-server-") {
-			bs = append(bs, b)
-		}
+	var bn string
+	if err := json.Unmarshal(out, &bn); err != nil {
+		return "", fmt.Errorf("failed to parse Forseti server storage bucket from terraform output: %v", err)
 	}
-
-	if len(bs) != 1 {
-		return "", fmt.Errorf("unexpected number of Forseti server buckets: got %d, want 1", len(bs))
-	}
-
-	return bs[0], nil
+	return fmt.Sprintf("gs://%s/", bn), nil
 }

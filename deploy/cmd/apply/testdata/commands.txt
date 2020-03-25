@@ -22,7 +22,7 @@ terraform apply -auto-approve
 gcloud logging sinks describe audit-logs-to-bigquery --format json --project example-forseti
 terraform init
 terraform apply -auto-approve
-gcloud --project example-forseti iam service-accounts list --format json --filter email:forseti-server-gcp-*
-gsutil ls -p example-forseti
+terraform output -json forseti_server_service_account
+terraform output -json forseti_server_bucket
 terraform init
 terraform apply -auto-approve

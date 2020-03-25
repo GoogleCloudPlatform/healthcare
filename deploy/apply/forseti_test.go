@@ -61,6 +61,11 @@ module:
     domain: my-domain.com
     project_id: my-forseti-project
     storage_bucket_location: us-east1
+output:
+- forseti_server_service_account:
+    value: "${module.forseti.forseti-server-service-account}"
+- forseti_server_bucket:
+    value: "${module.forseti.forseti-server-storage-bucket}"
 `
 
 	b, err := json.Marshal(gotTFConf)
