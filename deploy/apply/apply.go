@@ -749,7 +749,7 @@ func stackdriverAccountExists(projectID string, rn runner.Runner) (bool, error) 
 	cmd := exec.Command("gcloud", "--project", projectID, "alpha", "monitoring", "policies", "list")
 	out, err := rn.CmdCombinedOutput(cmd)
 	if err != nil {
-		if strings.Contains(string(out), "not a Stackdriver workspace") {
+		if strings.Contains(string(out), "is not a workspace") {
 			return false, nil
 		}
 		return false, fmt.Errorf("failed to check stackdriver account existence: %v [%s]", err, string(out))

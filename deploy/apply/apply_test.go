@@ -867,7 +867,7 @@ func TestStackdriverAccountExist(t *testing.T) {
 		{
 			name:      "account_does_not_exist",
 			cmdError:  errors.New(""),
-			cmdOutput: fmt.Sprintf("INVALID_ARGUMENT: 'projects/%s' is not a Stackdriver workspace.", projectID),
+			cmdOutput: fmt.Sprintf("INVALID_ARGUMENT: 'projects/%s' is not a workspace", projectID),
 		},
 		{
 			name:      "unexpected_cmd_error",
