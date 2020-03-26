@@ -5,12 +5,16 @@ licenses(["notice"])  # Apache 2.0
 go_library(
     name = "go_default_library",
     srcs = ["main.go"],
+    data = [
+        "//policygen/templates",
+    ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/policygen",
     visibility = ["//visibility:private"],
     deps = [
         "//config:go_default_library",
         "//policygen/terraform:go_default_library",
         "//runner:go_default_library",
+        "//template:go_default_library",
     ],
 )
 

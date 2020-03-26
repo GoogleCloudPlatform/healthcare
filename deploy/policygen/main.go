@@ -33,6 +33,7 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/policygen/terraform"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
+	"github.com/GoogleCloudPlatform/healthcare/deploy/template"
 )
 
 var (
@@ -40,7 +41,11 @@ var (
 	inputPlan  = flag.String("input_plan", "", "Path to Terraform plan in json format, Cannot be specified together with other types of inputs.")
 	inputState = flag.String("input_state", "", "Path to Terraform state in json format. Cannot be specified together with other types of inputs.")
 	outputDir  = flag.String("output_dir", "", "Path to directory to write generated policies")
+	// TODO: Consider getting the org ID using `gcloud` commands.
+	orgID = flag.String("org_id", "", "ID of the organization to apply the policies to")
 )
+
+const templateDir = "policygen/templates"
 
 func main() {
 	flag.Parse()
@@ -63,6 +68,10 @@ func main() {
 		log.Fatal("--output_dir must be set")
 	}
 
+	if *orgID == "" {
+		log.Fatal("--org_id must be set")
+	}
+
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
@@ -76,8 +85,16 @@ func run() error {
 		return fmt.Errorf("normalize path %q: %v", *outputDir, err)
 	}
 
-	var resources []terraform.Resource
+	if err := os.MkdirAll(*outputDir, 0755); err != nil {
+		return fmt.Errorf("mkdir %q: %v", *outputDir, err)
+	}
 
+	// Generate organization level policies that do not rely on Terraform resources.
+	if err := generateOrgLevelPolicies(*outputDir, *orgID); err != nil {
+		return fmt.Errorf("generate organization level policies: %v", err)
+	}
+
+	var resources []terraform.Resource
 	switch {
 	case *inputDir != "":
 		if resources, err = resourcesFromDir(*inputDir); err != nil {
@@ -98,9 +115,20 @@ func run() error {
 		log.Printf("%+v", r)
 	}
 
-	// TODO: generate policies that do not rely on input config.
 	// TODO: generate policies that rely on input config.
 
+	return nil
+}
+
+func generateOrgLevelPolicies(outputDir, orgID string) error {
+	data := map[string]interface{}{
+		"ORG_ID": orgID,
+	}
+	in := filepath.Join(templateDir, "org")
+	out := filepath.Join(outputDir, fmt.Sprintf("org.%s", orgID))
+	if err := template.WriteDir(in, out, data); err != nil {
+		return err
+	}
 	return nil
 }
 

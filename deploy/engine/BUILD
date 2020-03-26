@@ -14,6 +14,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/GoogleCloudPlatform/healthcare/engine",
     deps = [
+        "//template:go_default_library",
         "@com_github_imdario_mergo//:go_default_library",
         "@in_ghodss_yaml//:go_default_library",
     ],

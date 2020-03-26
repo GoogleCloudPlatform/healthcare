@@ -21,17 +21,16 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"text/template"
 
 	"flag"
 	
+	"github.com/GoogleCloudPlatform/healthcare/deploy/template"
 	"github.com/ghodss/yaml"
 	"github.com/imdario/mergo"
 )
@@ -101,66 +100,16 @@ func run() error {
 
 func dump(conf *config, root string, outputDir string) error {
 	for _, t := range conf.Templates {
-		in := filepath.Join(root, conf.TemplatesDir, t.InputDir)
-		out := filepath.Join(outputDir, t.OutputDir)
 		if err := mergo.Merge(&t.Data, conf.Data); err != nil {
 			return err
 		}
-		if err := writeTemplate(in, out, t.Data); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func writeTemplate(in, out string, data map[string]interface{}) error {
-	fs, err := ioutil.ReadDir(in)
-	if err != nil {
-		return fmt.Errorf("failed to read dir %q: %v", in, err)
-	}
-
-	for _, f := range fs {
-		in := filepath.Join(in, f.Name())
-
-		var buf bytes.Buffer
-		nameTmpl, err := template.New(in).Option("missingkey=error").Parse(filepath.Join(out, f.Name()))
+		out, err := template.WriteString(filepath.Join(outputDir, t.OutputDir), t.Data)
 		if err != nil {
 			return err
 		}
-		if err := nameTmpl.Execute(&buf, data); err != nil {
+		in := filepath.Join(root, conf.TemplatesDir, t.InputDir)
+		if err := template.WriteDir(in, out, t.Data); err != nil {
 			return err
-		}
-		out := buf.String()
-
-		if err := os.MkdirAll(filepath.Dir(out), 0755); err != nil {
-			return fmt.Errorf("failed to mkdir %q: %v", out, err)
-		}
-
-		if f.IsDir() {
-			if err := writeTemplate(in, out, data); err != nil {
-				return err
-			}
-			continue
-		}
-
-		b, err := ioutil.ReadFile(in)
-		if err != nil {
-			return fmt.Errorf("failed to read %q: %v", in, err)
-		}
-
-		tmpl, err := template.New(in).Option("missingkey=error").Parse(string(b))
-		if err != nil {
-			return fmt.Errorf("failed to parse template %q: %v", in, err)
-		}
-
-		outFile, err := os.OpenFile(out, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return err
-		}
-		defer outFile.Close()
-
-		if err := tmpl.Execute(outFile, data); err != nil {
-			return fmt.Errorf("failed to execute template %q: %v", in, err)
 		}
 	}
 	return nil
