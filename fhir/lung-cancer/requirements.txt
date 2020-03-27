@@ -1,5 +1,5 @@
 absl-py==0.7.1
-tensorflow==1.13.1
+tensorflow==1.15.2
 google-cloud-storage==1.16.0
 google-api-python-client==1.7.8
 oauth2client==4.1.3
