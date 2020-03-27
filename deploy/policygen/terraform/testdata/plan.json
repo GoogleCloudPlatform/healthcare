@@ -1,6 +1,20 @@
 {
   "format_version": "0.1",
   "terraform_version": "0.12.20",
+  "variables": {
+    "bucket_name": {
+      "value": "test-bucket"
+    },
+    "project": {
+      "value": "test-project"
+    },
+    "region": {
+      "value": "us-central1"
+    },
+    "zone": {
+      "value": "us-central1-c"
+    }
+  },
   "planned_values": {
     "root_module": {
       "resources": [
@@ -219,6 +233,143 @@
               ]
             }
           ]
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "google_storage_bucket.gcs_tf_bucket",
+      "mode": "managed",
+      "type": "google_storage_bucket",
+      "name": "gcs_tf_bucket",
+      "provider_name": "google",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "cors": [],
+          "encryption": [],
+          "force_destroy": false,
+          "labels": null,
+          "lifecycle_rule": [],
+          "location": "US",
+          "logging": [],
+          "name": "test-bucket",
+          "requester_pays": null,
+          "retention_policy": [],
+          "storage_class": "STANDARD",
+          "versioning": [],
+          "website": [
+            {
+              "main_page_suffix": "index.html",
+              "not_found_page": "404.html"
+            }
+          ]
+        },
+        "after_unknown": {
+          "bucket_policy_only": true,
+          "cors": [],
+          "encryption": [],
+          "id": true,
+          "lifecycle_rule": [],
+          "logging": [],
+          "project": true,
+          "retention_policy": [],
+          "self_link": true,
+          "url": true,
+          "versioning": [],
+          "website": [
+            {}
+          ]
+        }
+      }
+    },
+    {
+      "address": "google_project_service.enable_container_registry",
+      "mode": "managed",
+      "type": "google_project_service",
+      "name": "enable_container_registry",
+      "provider_name": "google",
+      "change": {
+        "actions": [
+          "delete",
+          "create"
+        ],
+        "before": null,
+        "after": {
+          "disable_dependent_services": null,
+          "disable_on_destroy": true,
+          "project": "test-project",
+          "service": "containerregistry.googleapis.com",
+          "timeouts": null
+        },
+        "after_unknown": {
+          "id": true
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "provider_config": {
+      "google": {
+        "name": "google",
+        "version_constraint": "3.5.0",
+        "alias": "myprovider",
+        "expressions": {
+          "credentials": {},
+          "location": {
+            "constant_value": "US"
+          },
+          "project": {
+            "references": [
+              "var.project"
+            ]
+          },
+          "region": {
+            "references": [
+              "var.region"
+            ]
+          },
+          "zone": {
+            "references": [
+              "var.zone"
+            ]
+          }
+        }
+      }
+    },
+    "root_module": {
+      "resources": [
+        {
+          "address": "google_storage_bucket.gcs_tf_bucket",
+          "mode": "managed",
+          "type": "google_storage_bucket",
+          "name": "gcs_tf_bucket",
+          "provider_config_key": "google",
+          "expressions": {
+            "location": {
+              "constant_value": "US"
+            },
+            "name": {
+              "references": [
+                "var.bucket_name"
+              ]
+            },
+            "website": [
+              {
+                "main_page_suffix": {
+                  "constant_value": "index.html"
+                },
+                "not_found_page": {
+                  "constant_value": "404.html"
+                }
+              }
+            ]
+          },
+          "schema_version": 0
         }
       ]
     }
