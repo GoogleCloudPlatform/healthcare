@@ -17,3 +17,10 @@ templates:
   flatten:
   - "MONITOR"
 {{end}}
+{{if index . "ORG_POLICIES"}}
+- name: "org_policies"
+  recipe_path: "./org_policies.yaml"
+  output_path: "./org"
+  flatten:
+  - "ORG_POLICIES"
+{{end}}

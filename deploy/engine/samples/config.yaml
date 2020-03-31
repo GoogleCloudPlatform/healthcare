@@ -31,6 +31,9 @@ templates:
     MONITOR:
       PROJECT_ID: "example-monitor"
       DOMAIN: "example.com"
+    ORG_POLICIES:
+      # TODO: remove this redundant attribute
+      ENABLE: true
 
 # Prod
 - name: "folder-prod"
