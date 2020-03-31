@@ -30,6 +30,7 @@ import (
 
 	"flag"
 	
+	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/template"
 	"github.com/ghodss/yaml"
 )
@@ -39,7 +40,8 @@ var (
 	outputDir  = flag.String("output_path", "", "Path to directory dump output")
 )
 
-type config struct {
+// Config is the user supplied config for the engine.
+type Config struct {
 	Data      map[string]interface{} `json:"data"`
 	Templates []*templateInfo        `json:"templates"`
 }
@@ -62,6 +64,12 @@ func main() {
 	}
 	if *outputDir == "" {
 		log.Fatal("--output_path must be set")
+	}
+
+	var err error
+	*configPath, err = config.NormalizePath(*configPath)
+	if err != nil {
+		log.Fatalf("normalize path %q: %v", *configPath, err)
 	}
 
 	if err := run(); err != nil {
@@ -101,7 +109,7 @@ func run() error {
 	return cp.Run()
 }
 
-func loadConfig(path string, data map[string]interface{}) (*config, error) {
+func loadConfig(path string, data map[string]interface{}) (*Config, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -110,14 +118,14 @@ func loadConfig(path string, data map[string]interface{}) (*config, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := new(config)
+	c := new(Config)
 	if err := yaml.Unmarshal(buf.Bytes(), c); err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-func dump(conf *config, root string, outputRefs map[string]string, parentKey string) error {
+func dump(conf *Config, root string, outputRefs map[string]string, parentKey string) error {
 	for _, ti := range conf.Templates {
 		if ti.Name == "" {
 			return fmt.Errorf("template name cannot be empty: %+v", ti)
@@ -144,19 +152,25 @@ func dump(conf *config, root string, outputRefs map[string]string, parentKey str
 
 		switch {
 		case ti.RecipePath != "":
-			rp := filepath.Join(root, ti.RecipePath)
+			rp := ti.RecipePath
+			if !filepath.IsAbs(rp) {
+				rp = filepath.Join(root, rp)
+			}
 			rc, err := loadConfig(rp, ti.Data)
 			if err != nil {
-				return err
+				return fmt.Errorf("load recipe: %v", err)
 			}
 			rc.Data = ti.Data
 			if err := dump(rc, filepath.Dir(rp), outputRefs, outputKey); err != nil {
 				return fmt.Errorf("recipe %q: %v", rp, err)
 			}
 		case ti.ComponentPath != "":
-			in := filepath.Join(root, ti.ComponentPath)
-			if err := template.WriteDir(in, outputPath, ti.Data); err != nil {
-				return fmt.Errorf("template %q: %v", in, err)
+			cp := ti.ComponentPath
+			if !filepath.IsAbs(cp) {
+				cp = filepath.Join(root, cp)
+			}
+			if err := template.WriteDir(cp, outputPath, ti.Data); err != nil {
+				return fmt.Errorf("component %q: %v", cp, err)
 			}
 		}
 	}
