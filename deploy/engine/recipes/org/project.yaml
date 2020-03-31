@@ -1,0 +1,13 @@
+templates:
+- name: "dir"
+  output_path: "./project.{{.PROJECT_ID}}"
+- name: "project"
+  component_path: "../../components/project/project"
+  output_ref: "dir"
+  output_path: "./project"
+{{if index . "PROJECT_OWNERS"}}
+- name: "owners"
+  component_path: "../../components/project/owners"
+  output_ref: "dir"
+  output_path: "./project"
+{{end}}

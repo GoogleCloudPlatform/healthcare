@@ -1,0 +1,9 @@
+templates:
+- name: "project"
+  recipe_path: "./project.yaml"
+- name: "network"
+  component_path: "../../components/org/monitor/forseti_network"
+  output_path: "./project.{{.PROJECT_ID}}/network"
+- name: "forseti"
+  component_path: "../../components/org/monitor/forseti"
+  output_path: "./monitor/forseti"

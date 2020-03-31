@@ -1,0 +1,10 @@
+templates:
+- name: "project"
+  recipe_path: "./project.yaml"
+  data:
+    APIS:
+    - "bigquery.googleapis.com"
+    - "logging.googleapis.com"
+- name: "audit"
+  component_path: "../../components/org/audit"
+  output_path: "./audit"

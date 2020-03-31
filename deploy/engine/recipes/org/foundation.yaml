@@ -1,0 +1,19 @@
+templates:
+- name: "base"
+  recipe_path: "./base.yaml"
+  flatten:
+  - "DEVOPS"
+{{if index . "AUDIT"}}
+- name: "audit"
+  recipe_path: "./audit.yaml"
+  output_path: "./org"
+  flatten:
+  - "AUDIT"
+{{end}}
+{{if index . "MONITOR"}}
+- name: "monitor"
+  recipe_path: "./monitor.yaml"
+  output_path: "./org"
+  flatten:
+  - "MONITOR"
+{{end}}

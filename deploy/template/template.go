@@ -19,11 +19,14 @@ package template
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"github.com/imdario/mergo"
 )
 
 // WriteDir generates files to directory `outputDir` based on templates from directory `inputDir` and `data`.
@@ -31,6 +34,9 @@ func WriteDir(inputDir, outputDir string, data map[string]interface{}) error {
 	fs, err := ioutil.ReadDir(inputDir)
 	if err != nil {
 		return fmt.Errorf("read dir %q: %v", inputDir, err)
+	}
+	if len(fs) == 0 {
+		return fmt.Errorf("found no files in %q to write", inputDir)
 	}
 
 	for _, f := range fs {
@@ -71,15 +77,41 @@ func WriteDir(inputDir, outputDir string, data map[string]interface{}) error {
 	return nil
 }
 
-// WriteString generates a string with template `text` filled with values from `data`.
-func WriteString(text string, data map[string]interface{}) (string, error) {
+// WriteBuffer creates a buffer with template `text` filled with values from `data`.
+func WriteBuffer(text string, data map[string]interface{}) (*bytes.Buffer, error) {
 	var buf bytes.Buffer
 	tmpl, err := template.New("").Option("missingkey=error").Parse(text)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", err
+		return nil, err
 	}
-	return buf.String(), nil
+	return &buf, nil
+}
+
+// MergeData merges template data from src to dst.
+// For all keys in flatten it will pop the key and merge back into dst.
+func MergeData(dst map[string]interface{}, src map[string]interface{}, flatten []string) error {
+	if dst == nil {
+		return errors.New("dst must not be nil")
+	}
+	if err := mergo.Merge(&dst, src); err != nil {
+		return err
+	}
+	for _, key := range flatten {
+		v, ok := dst[key]
+		if !ok {
+			return fmt.Errorf("flatten key %q not found in data: %v", key, dst)
+		}
+		delete(dst, key)
+		m, ok := v.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("flatten key %q is not a map, got type %T, value %v", key, v, v)
+		}
+		if err := mergo.Merge(&dst, m); err != nil {
+			return err
+		}
+	}
+	return nil
 }

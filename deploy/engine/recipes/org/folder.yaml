@@ -1,0 +1,10 @@
+templates:
+- name: "dir"
+  output_path: "./folder.{{.DISPLAY_NAME}}"
+- name: "folder"
+  component_path: "../../components/folder/folder"
+  output_ref: "dir"
+  output_path: "./folder"
+  data:
+    DISPLAY_NAME: "{{.DISPLAY_NAME}}"
+    PARENT: "organizations/{{.ORG_ID}}"

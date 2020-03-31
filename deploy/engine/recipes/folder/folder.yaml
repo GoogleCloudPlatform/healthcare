@@ -1,0 +1,21 @@
+templates:
+- name: "dir"
+  output_path: "./folder.{{.DISPLAY_NAME}}"
+- name: "folder"
+  component_path: "../../components/folder/folder"
+  output_ref: "dir"
+  output_path: "./folder"
+  data:
+    DISPLAY_NAME: {{.DISPLAY_NAME}}
+- name: "parent_dep"
+  component_path: "../../components/terragrunt/dependency"
+  output_ref: "dir"
+  output_path: "./folder"
+  data:
+    DEPENDENCIES:
+    - NAME: "parent_folder"
+      PATH: "../../folder"
+      MOCK_OUTPUTS:
+        name: '"mock-folder"'
+    INPUTS:
+      parent: "dependency.parent_folder.outputs.name"

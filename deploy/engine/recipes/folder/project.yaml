@@ -1,0 +1,17 @@
+templates:
+- name: "dir"
+  output_path: "./project.{{.PROJECT_ID}}"
+- name: "project"
+  recipe_path: "../org/project.yaml"
+- name: "parent_dep"
+  component_path: "../../components/terragrunt/dependency"
+  output_ref: "dir"
+  output_path: "./project"
+  data:
+    DEPENDENCIES:
+    - NAME: "parent_folder"
+      PATH: "../../folder"
+      MOCK_OUTPUTS:
+        name: '"mock-folder"'
+    INPUTS:
+      folder_id: dependency.parent_folder.outputs.name

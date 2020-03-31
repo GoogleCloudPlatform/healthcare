@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -8,4 +8,12 @@ go_library(
     name = "go_default_library",
     srcs = ["template.go"],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/template",
+)
+
+go_test(
+    name = "template_test",
+    size = "small",
+    srcs = ["template_test.go"],
+    library = ":template",
+    deps = ["@com_github_google_cmp//cmp:go_default_library"],
 )

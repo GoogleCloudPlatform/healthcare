@@ -12,86 +12,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-templates_dir: "../templates"
-
 data:
   ORG_ID: "123"
   BILLING_ACCOUNT: "000-000-000"
 
 templates:
-# Base sets up foundational pieces, devops, etc.
-- input_dir: "./base"
+- name: "foundation"
+  recipe_path: "../recipes/org/foundation.yaml"
   data:
-    DEVOPS_PROJECT_ID: "example-devops"
-    STATE_BUCKET: "example-central-state"
-- input_dir: "./devops_project"
-  output_dir: "prod/org/project.{{.PROJECT_ID}}/project"
-  data:
-    PROJECT_ID: "example-devops"
+    DEVOPS:
+      PROJECT_ID: "example-devops"
+      STATE_BUCKET: "example-state-bucket"
+    AUDIT:
+      PROJECT_ID: "example-audit"
+      DATASET_NAME: "1yr_org_audit_logs"
+      BUCKET_NAME: "7yr-org-audit-logs"
+      AUDITORS: "group:example-dev-auditors@google.com"
+    MONITOR:
+      PROJECT_ID: "example-monitor"
+      DOMAIN: "example.com"
 
-# Audit project and config.
-- input_dir: "./project"
-  output_dir: "prod/org/project.{{.PROJECT_ID}}/project"
+# Prod
+- name: "folder-prod"
+  recipe_path: "../recipes/org/folder.yaml"
+  output_ref: "foundation.base.root"
   data:
-    PROJECT_ID: "example-audit"
-- input_dir: "./audit"
-  output_dir: "prod/org/audit"
+    DISPLAY_NAME: "prod"
+- name: "folder-prod-team1"
+  recipe_path: "../recipes/folder/folder.yaml"
+  output_ref: "folder-prod.dir"
   data:
-    PROJECT_ID: "example-audit"
-    DATASET_NAME: "1yr_org_audit_logs"
-    BUCKET_NAME: "7yr-org-audit-logs-example"
-    AUDITORS: "group:example-dev-auditors@google.com"
+    DISPLAY_NAME: "team1"
+- name: "project-example-prod-data"
+  recipe_path: "../recipes/folder/project.yaml"
+  output_ref: "folder-prod-team1.dir"
+  data:
+    PROJECT_ID: "example-prod-data"
 
-# Monitoring project and config.
-- input_dir: "./project"
-  output_dir: "prod/org/project.{{.PROJECT_ID}}/project"
+# Dev
+- name: "folder-dev"
+  recipe_path: "../recipes/org/folder.yaml"
+  output_ref: "foundation.base.root"
   data:
-    PROJECT_ID: "example-monitor"
-- input_dir: "/forseti_network"
-  output_dir: "prod/org/project.{{.PROJECT_ID}}/network"
+    DISPLAY_NAME: "dev"
+- name: "folder-dev-team1"
+  recipe_path: "../recipes/folder/folder.yaml"
+  output_ref: "folder-dev.dir"
   data:
-    PROJECT_ID: "example-monitor"
-- input_dir: "./monitor"
-  output_dir: "prod/org/monitor"
+    DISPLAY_NAME: "team1"
+- name: "project-example-dev-data"
+  recipe_path: "../recipes/folder/project.yaml"
+  output_ref: "folder-dev-team1.dir"
   data:
-    PROJECT_ID: "example-monitor"
-    DOMAIN: "example.com"
-
-# Multiple layers of sample folders and a sample data project.
-- input_dir: "./folder"
-  output_dir: "prod/org/folder.{{.DISPLAY_NAME}}/folder"
-  data:
-    DISPLAY_NAME: "example-outer"
-    PARENT: "organizations/123"
-- input_dir: "./folder"
-  output_dir: "prod/org/folder.example-outer/folder.{{.DISPLAY_NAME}}/folder"
-  data:
-    DISPLAY_NAME: "example-inner"
-- input_dir: "./project"
-  output_dir: "prod/org/folder.example-outer/folder.example-inner/project.{{.PROJECT_ID}}/project"
-  data:
-    PROJECT_ID: "example-data"
-    PARENT_TYPE: "FOLDER"
-
-# To override the owners of the projects, uncomment the following:
-# - input_dir: "./owners"
-#   output_dir: "prod/org/project.example-devops/project"
-#   data:
-#     PROJECT_ID: "example-devops"
-#     OWNERS:
-#     - "user:example@example.com"
-# - input_dir: "./owners"
-#   output_dir: "prod/org/project.example-monitor/project"
-#   data:
-#     OWNERS:
-#     - "user:example@example.com"
-# - input_dir: "./owners"
-#   output_dir: "prod/org/project.example-audit/project"
-#   data:
-#     OWNERS:
-#     - "user:example@example.com"
-# - input_dir: "./owners"
-#   output_dir: "prod/org/folder.example-outer/folder.example-inner/project.example-data/project"
-#   data:
-#     OWNERS:
-#     - "user:example@example.com"
+    PROJECT_ID: "example-dev-data"

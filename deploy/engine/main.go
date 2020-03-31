@@ -32,22 +32,26 @@ import (
 	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/template"
 	"github.com/ghodss/yaml"
-	"github.com/imdario/mergo"
 )
 
 var (
-	configPath = flag.String("config_path", "", "Path to config")
-	outputDir  = flag.String("output_dir", "", "Path to dump output")
+	configPath = flag.String("config_path", "", "Path to config file")
+	outputDir  = flag.String("output_path", "", "Path to directory dump output")
 )
 
 type config struct {
-	TemplatesDir string                 `json:"templates_dir"`
-	Data         map[string]interface{} `json:"data"`
-	Templates    []*struct {
-		InputDir  string                 `json:"input_dir"`
-		OutputDir string                 `json:"output_dir"`
-		Data      map[string]interface{} `json:"data"`
-	} `json:"templates"`
+	Data      map[string]interface{} `json:"data"`
+	Templates []*templateInfo        `json:"templates"`
+}
+
+type templateInfo struct {
+	Name          string                 `json:"name"`
+	ComponentPath string                 `json:"component_path"`
+	RecipePath    string                 `json:"recipe_path"`
+	OutputRef     string                 `json:"output_ref"`
+	OutputPath    string                 `json:"output_path"`
+	Flatten       []string               `json:"flatten"`
+	Data          map[string]interface{} `json:"data"`
 }
 
 func main() {
@@ -57,7 +61,7 @@ func main() {
 		log.Fatal("--config_path must be set")
 	}
 	if *outputDir == "" {
-		log.Fatal("--outputdir must be set")
+		log.Fatal("--output_path must be set")
 	}
 
 	if err := run(); err != nil {
@@ -66,12 +70,8 @@ func main() {
 }
 
 func run() error {
-	b, err := ioutil.ReadFile(*configPath)
+	c, err := loadConfig(*configPath, nil)
 	if err != nil {
-		return err
-	}
-	c := new(config)
-	if err := yaml.Unmarshal(b, c); err != nil {
 		return err
 	}
 
@@ -81,7 +81,10 @@ func run() error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	if err := dump(c, filepath.Dir(*configPath), tmpDir); err != nil {
+	outputRefs := map[string]string{
+		"": tmpDir,
+	}
+	if err := dump(c, filepath.Dir(*configPath), outputRefs, ""); err != nil {
 		return err
 	}
 
@@ -98,19 +101,71 @@ func run() error {
 	return cp.Run()
 }
 
-func dump(conf *config, root string, outputDir string) error {
-	for _, t := range conf.Templates {
-		if err := mergo.Merge(&t.Data, conf.Data); err != nil {
+func loadConfig(path string, data map[string]interface{}) (*config, error) {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	buf, err := template.WriteBuffer(string(b), data)
+	if err != nil {
+		return nil, err
+	}
+	c := new(config)
+	if err := yaml.Unmarshal(buf.Bytes(), c); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func dump(conf *config, root string, outputRefs map[string]string, parentKey string) error {
+	for _, ti := range conf.Templates {
+		if ti.Name == "" {
+			return fmt.Errorf("template name cannot be empty: %+v", ti)
+		}
+		if ti.Data == nil {
+			ti.Data = make(map[string]interface{})
+		}
+		if err := template.MergeData(ti.Data, conf.Data, ti.Flatten); err != nil {
 			return err
 		}
-		out, err := template.WriteString(filepath.Join(outputDir, t.OutputDir), t.Data)
-		if err != nil {
-			return err
+
+		tp := parentKey
+		if ti.OutputRef != "" {
+			tp = buildOutputKey(parentKey, ti.OutputRef)
 		}
-		in := filepath.Join(root, conf.TemplatesDir, t.InputDir)
-		if err := template.WriteDir(in, out, t.Data); err != nil {
-			return err
+		parentPath, ok := outputRefs[tp]
+		if !ok {
+			return fmt.Errorf("output reference for %q not found: %v", tp, outputRefs)
+		}
+
+		outputPath := filepath.Join(parentPath, ti.OutputPath)
+		outputKey := buildOutputKey(parentKey, ti.Name)
+		outputRefs[outputKey] = outputPath
+
+		switch {
+		case ti.RecipePath != "":
+			rp := filepath.Join(root, ti.RecipePath)
+			rc, err := loadConfig(rp, ti.Data)
+			if err != nil {
+				return err
+			}
+			rc.Data = ti.Data
+			if err := dump(rc, filepath.Dir(rp), outputRefs, outputKey); err != nil {
+				return fmt.Errorf("recipe %q: %v", rp, err)
+			}
+		case ti.ComponentPath != "":
+			in := filepath.Join(root, ti.ComponentPath)
+			if err := template.WriteDir(in, outputPath, ti.Data); err != nil {
+				return fmt.Errorf("template %q: %v", in, err)
+			}
 		}
 	}
 	return nil
+}
+
+func buildOutputKey(parent, child string) string {
+	if parent == "" {
+		return child
+	}
+	return parent + "." + child
 }
