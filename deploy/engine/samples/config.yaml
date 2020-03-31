@@ -38,7 +38,7 @@ templates:
 # Prod
 - name: "folder-prod"
   recipe_path: "../recipes/org/folder.yaml"
-  output_ref: "foundation.base.root"
+  output_ref: "foundation.org_dir"
   data:
     DISPLAY_NAME: "prod"
 - name: "folder-prod-team1"
@@ -55,7 +55,7 @@ templates:
 # Dev
 - name: "folder-dev"
   recipe_path: "../recipes/org/folder.yaml"
-  output_ref: "foundation.base.root"
+  output_ref: "foundation.org_dir"
   data:
     DISPLAY_NAME: "dev"
 - name: "folder-dev-team1"

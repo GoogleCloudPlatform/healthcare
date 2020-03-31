@@ -3,17 +3,19 @@ templates:
   recipe_path: "./base.yaml"
   flatten:
   - "DEVOPS"
+- name: "org_dir"
+  output_path: "./org"
 {{if index . "AUDIT"}}
 - name: "audit"
   recipe_path: "./audit.yaml"
-  output_path: "./org"
+  output_ref: "org_dir"
   flatten:
   - "AUDIT"
 {{end}}
 {{if index . "MONITOR"}}
 - name: "monitor"
   recipe_path: "./monitor.yaml"
-  output_path: "./org"
+  output_ref: "org_dir"
   flatten:
   - "MONITOR"
 {{end}}
