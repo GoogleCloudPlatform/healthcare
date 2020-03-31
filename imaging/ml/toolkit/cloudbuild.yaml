@@ -18,5 +18,6 @@ steps:
   - |
     python3 -m venv testenv
     source testenv/bin/activate
-    pip install imaging/ml/toolkit/.
+    cd imaging/ml/toolkit
+    pip install .
     python3 -m  unittest discover -v -p *_test.py
