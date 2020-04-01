@@ -2,7 +2,6 @@ terraform {
   backend "gcs" {}
 }
 
-// TODO: Incorporate latest features once 5.2.0 is released.
 module "forseti" {
   source  = "terraform-google-modules/forseti/google"
   version = "~> 5.2.0"
