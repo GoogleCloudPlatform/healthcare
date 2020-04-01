@@ -4,7 +4,7 @@ Status: ALPHA
 
 Terraform Engine is a framework to jump start your organization onto GCP.
 It is a Terraform module generator that puts together Terraform resources and
-modules into a complete deployment complete with values for your infrastructure.
+modules into deployments complete with values for your infrastructure.
 
 ## Why?
 
