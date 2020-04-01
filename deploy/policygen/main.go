@@ -50,18 +50,18 @@ const templateDir = "policygen/templates"
 func main() {
 	flag.Parse()
 
-	isOneNonEmpty := func(ss ...string) bool {
+	maxOneNonEmpty := func(ss ...string) bool {
 		var n int
 		for _, s := range ss {
 			if s != "" {
 				n++
 			}
 		}
-		return n == 1
+		return n <= 1
 	}
 
-	if !isOneNonEmpty(*inputDir, *inputPlan, *inputState) {
-		log.Fatal("exactly one of --input_dir, --input_plan or --input_state must be specified")
+	if !maxOneNonEmpty(*inputDir, *inputPlan, *inputState) {
+		log.Fatal("maximum one of --input_dir, --input_plan or --input_state must be specified")
 	}
 
 	if *outputDir == "" {
@@ -109,11 +109,11 @@ func run() error {
 		if resources, err = resourcesFromState(*inputState); err != nil {
 			return fmt.Errorf("read resources from state: %v", err)
 		}
+	default:
+		log.Println("No input Terraform resources given")
 	}
 
-	for _, r := range resources {
-		log.Printf("%+v", r)
-	}
+	log.Printf("Found %d resources from input Terraform resources", len(resources))
 
 	// TODO: generate policies that rely on input config.
 
