@@ -1,0 +1,3 @@
+output "{{.NAME}}" {
+  value = {{.VALUE}}
+}
