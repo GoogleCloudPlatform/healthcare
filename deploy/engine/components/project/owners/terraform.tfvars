@@ -1,5 +1,5 @@
 owners = [
-  {{range .OWNERS -}}
+  {{range .PROJECT_OWNERS -}}
   "{{.}}",
   {{end -}}
 ]
