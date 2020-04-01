@@ -1,25 +1,31 @@
 # Terraform Engine
 
-WARNING: This is a pre-alpha version of the future backend of DPT. There will
-likely be several iterations before a stable launch.
+Status: ALPHA
 
-Terraform Engine is a framework that puts together Terraform resources and
-modules into a complete deployment. Users hosting any type of sensitive data on
-GCP typically need to go through a few common processes like setting up auditing
-and monitoring for a secure environment. By using our out of the box complete
-end-to-end examples that implement these steps for you, you can quickly get
-to the parts of the infrastructure that drive your business.
+Terraform Engine is a framework to jump start your organization onto GCP.
+It is a Terraform module generator that puts together Terraform resources and
+modules into a complete deployment complete with values for your infrastructure.
+
+## Why?
+
+Users hosting any type of sensitive data on GCP typically need to go through a
+few common and repetitive processes such as setting up devops, auditing and
+monitoring. By using our out of the box complete end-to-end configs that
+implement these steps for you, you can quickly setup a secure and compliant
+environment and focus on the parts of the infrastructure that drive your
+business.
 
 This tool will help you follow Terraform
 [best practices](https://www.hashicorp.com/resources/evolving-infrastructure-terraform-opencredo),
-by defining smaller modular configs rather than monolithic modules that quickly
-get out of hand.
+by using the popular open source tool
+[Terragrunt](https://terragrunt.gruntwork.io/)
+to define smaller modular configs rather than monolithic modules that quickly
+get out of hand or need a custom pipeline to manage.
 
-Our [templates](./templates) use Google recommended best practice modules from
-the [Cloud Foundation Toolkit](https://cloud.google.com/foundation-toolkit).
+Our templates use Google's best practice modules from the
+[Cloud Foundation Toolkit](https://cloud.google.com/foundation-toolkit).
 
-Our [sample](./samples) configs will show you how to put the templates together
-into a complete environment.
+Use our [sample](./samples) configs to quickly get started.
 
 ## Requirements
 
@@ -30,27 +36,37 @@ into a complete environment.
 
 ## Usage
 
-```
-$ bazel run :main -- --config_path=$PWD/samples/config.yaml --output_dir=/tmp/engine
-```
+Replace the values in [samples/config.yaml](./samples/config.yaml) with values
+for your infrastructure, then run the following commands:
 
-You should now have directories to bootstrap your environment and place your
-prod configs.
+```
+# Generate Terraform configs.
+$ OUTPUT_DIR=/tmp/engine
+$ bazel run :main -- --config_path=$PWD/samples/config.yaml --output_path=$OUTPUT_DIR
+
+# Run one time bootstrap to setup devops project to host Terraform state.
+# Backup any local state files manually.
+$ cd $OUTPUT_DIR/bootstrap
+$ terraform init
+$ terraform plan
+$ terraform apply
+
+# Deploy org infrastructure.
+$ cd $OUTPUT_DIR/org
+$ terragrunt init-all
+$ terragrunt plan-all
+$ terragrunt apply-all
+
+# Modify and add additional deployments as needed...
+```
 
 ## Tips
 
-- Each template should be defined so that it is independent or depends on a
-  previous template (the one exception being the 'base' template which should
-  always be independent and used first).
-
-  This means users can comment out and incrementally uncomment one template and
-  deploy. This avoids having to deploy the entire infra all at once.
-
-  Once https://github.com/gruntwork-io/terragrunt/pull/636 is fixed, you
-  should also pass `--terragrunt-parallelism=1`.
-
 - Before running `terragrunt apply-all` always run `terragrunt plan-all` and
-  carefully review the output.
+  carefully review the output. Look for the values of the known fields to ensure
+  they are what you expect. You may see some values with the word "mock" in
+  them. These values are coming from other deployments and will be filled with
+  the real value once Terragrunt runs the dependent deployment.
 
 - `terragrunt apply-all` should be used at least once, or while the org level
   resources are being setup. After that, only subsets should be deployed. This
