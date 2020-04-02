@@ -19,7 +19,15 @@ import (
 )
 
 var funcMap = map[string]interface{}{
+	"get":          get,
 	"resourceName": resourceName,
+}
+
+func get(d map[string]interface{}, key string) interface{} {
+	if val, ok := d[key]; ok {
+		return val
+	}
+	return nil
 }
 
 func resourceName(s string) string {

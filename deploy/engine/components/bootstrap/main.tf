@@ -1,14 +1,13 @@
 // TODO: replace with https://github.com/terraform-google-modules/terraform-google-bootstrap
 
-# TODO: uncomment this block after the initial deployment and run
-# `terraform init` again to back up the state to its own state bucket.
-#
-# terraform {
-#   backend "gcs" {
-#     bucket = "{{.STATE_BUCKET}}"
-#     prefix = "bootstrap"
-#   }
-# }
+{{if get . "ENABLE_BOOTSTRAP_GCS_BACKEND"}}
+terraform {
+  backend "gcs" {
+    bucket = "{{.STATE_BUCKET}}"
+    prefix = "bootstrap"
+  }
+}
+{{end}}
 
 module "project" {
   source  = "terraform-google-modules/project-factory/google"
