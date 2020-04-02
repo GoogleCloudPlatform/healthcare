@@ -17,11 +17,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# SOP Class UID for Basic Text Structured Reports.
+# SOP Class UIDs.
+# http://dicom.nema.org/medical/dicom/current/output/chtml/part04/sect_B.5.html
+#
+# Basic Text Structured Reports.
 BASIC_TEXT_SR_CUID = '1.2.840.10008.5.1.4.1.1.88.11'
-
-# SOP Class UID for Secondary Capture.
+# Secondary Capture.
 SECONDARY_CAPTURE_CUID = '1.2.840.10008.5.1.4.1.1.7'
+# Digital Mammography X-Ray Image Storage - For Presentation.
+MAMMO_XRAY_PRESENTATION_CUID = '1.2.840.10008.5.1.4.1.1.1.2'
 
 # Modality values.
 CT_MODALITY = 'CT'
