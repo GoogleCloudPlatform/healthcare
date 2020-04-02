@@ -25,7 +25,7 @@ func TestMergeData(t *testing.T) {
 		name    string
 		dst     map[string]interface{}
 		src     map[string]interface{}
-		flatten []string
+		flatten []*FlattenInfo
 		want    map[string]interface{}
 	}{
 		{
@@ -78,7 +78,7 @@ func TestMergeData(t *testing.T) {
 			},
 		},
 		{
-			name: "flatten",
+			name: "flatten_map",
 			dst: map[string]interface{}{
 				"a": 1,
 			},
@@ -87,7 +87,23 @@ func TestMergeData(t *testing.T) {
 					"c": 1,
 				},
 			},
-			flatten: []string{"b"},
+			flatten: []*FlattenInfo{{Key: "b"}},
+			want: map[string]interface{}{
+				"a": 1,
+				"c": 1,
+			},
+		},
+		{
+			name: "flatten_list",
+			dst: map[string]interface{}{
+				"a": 1,
+			},
+			src: map[string]interface{}{
+				"bs": []interface{}{
+					map[string]interface{}{"c": 1},
+				},
+			},
+			flatten: []*FlattenInfo{{Key: "bs", Index: intPointer(0)}},
 			want: map[string]interface{}{
 				"a": 1,
 				"c": 1,
@@ -105,4 +121,8 @@ func TestMergeData(t *testing.T) {
 			}
 		})
 	}
+}
+
+func intPointer(i int) *int {
+	return &i
 }

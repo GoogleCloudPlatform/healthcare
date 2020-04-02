@@ -1,5 +1,5 @@
 variable "{{.NAME}}" {
-  type = "{{.TYPE}}"
+  type = {{.TYPE}}
   {{if index . "DEFAULT"}}
   default = {{.DEFAULT}}
   {{end}}

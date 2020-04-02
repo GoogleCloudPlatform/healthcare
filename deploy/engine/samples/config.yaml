@@ -15,6 +15,7 @@
 data:
   ORG_ID: "123"
   BILLING_ACCOUNT: "000-000-000"
+  STORAGE_LOCATION: "us-central1"
 
 templates:
 - name: "foundation"
@@ -51,6 +52,16 @@ templates:
   output_ref: "folder-prod-team1.dir"
   data:
     PROJECT_ID: "example-prod-data"
+- name: "project-example-prod-data-resources"
+  recipe_path: "../recipes/project/data.yaml"
+  output_ref: "project-example-prod-data.dir"
+  data:
+    PROJECT_ID: "example-prod-data"
+    STORAGE_BUCKETS:
+    - NAME: "example-bucket"
+      IAM_MEMBERS:
+      - ROLE: "roles/storage.objectViewer"
+        MEMBER: "group:example-readers@example.com"
 
 # Dev
 - name: "folder-dev"

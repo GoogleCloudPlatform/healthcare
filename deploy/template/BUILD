@@ -1,19 +1,17 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
-
-package(default_visibility = ["//visibility:public"])
-
-licenses(["notice"])  # Apache 2.0
-
 go_library(
     name = "go_default_library",
-    srcs = ["template.go"],
+    srcs = [
+        "funcmap.go",
+        "template.go",
+    ],
     importpath = "github.com/GoogleCloudPlatform/healthcare/deploy/template",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_imdario_mergo//:go_default_library"],
 )
 
 go_test(
-    name = "template_test",
-    size = "small",
+    name = "go_default_test",
     srcs = ["template_test.go"],
-    library = ":template",
+    embed = [":go_default_library"],
     deps = ["@com_github_google_cmp//cmp:go_default_library"],
 )

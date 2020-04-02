@@ -47,13 +47,13 @@ type Config struct {
 }
 
 type templateInfo struct {
-	Name          string                 `json:"name"`
-	ComponentPath string                 `json:"component_path"`
-	RecipePath    string                 `json:"recipe_path"`
-	OutputRef     string                 `json:"output_ref"`
-	OutputPath    string                 `json:"output_path"`
-	Flatten       []string               `json:"flatten"`
-	Data          map[string]interface{} `json:"data"`
+	Name          string                  `json:"name"`
+	ComponentPath string                  `json:"component_path"`
+	RecipePath    string                  `json:"recipe_path"`
+	OutputRef     string                  `json:"output_ref"`
+	OutputPath    string                  `json:"output_path"`
+	Flatten       []*template.FlattenInfo `json:"flatten"`
+	Data          map[string]interface{}  `json:"data"`
 }
 
 func main() {
@@ -158,11 +158,11 @@ func dump(conf *Config, root string, outputRefs map[string]string, parentKey str
 			}
 			rc, err := loadConfig(rp, ti.Data)
 			if err != nil {
-				return fmt.Errorf("load recipe: %v", err)
+				return fmt.Errorf("load recipe %q: %v", ti.Name, err)
 			}
 			rc.Data = ti.Data
 			if err := dump(rc, filepath.Dir(rp), outputRefs, outputKey); err != nil {
-				return fmt.Errorf("recipe %q: %v", rp, err)
+				return fmt.Errorf("recipe %q: %v", ti.Name, err)
 			}
 		case ti.ComponentPath != "":
 			cp := ti.ComponentPath
@@ -170,7 +170,7 @@ func dump(conf *Config, root string, outputRefs map[string]string, parentKey str
 				cp = filepath.Join(root, cp)
 			}
 			if err := template.WriteDir(cp, outputPath, ti.Data); err != nil {
-				return fmt.Errorf("component %q: %v", cp, err)
+				return fmt.Errorf("component %q: %v", ti.Name, err)
 			}
 		}
 	}

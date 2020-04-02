@@ -29,6 +29,13 @@ import (
 	"github.com/imdario/mergo"
 )
 
+// FlattenInfo describes keys to flatten. If index is not a nil pointer then it is assumed the
+// value is a list that must be flattened at the specific index.
+type FlattenInfo struct {
+	Key   string `json:"key"`
+	Index *int   `json:"index"`
+}
+
 // WriteDir generates files to directory `outputDir` based on templates from directory `inputDir` and `data`.
 func WriteDir(inputDir, outputDir string, data map[string]interface{}) error {
 	fs, err := ioutil.ReadDir(inputDir)
@@ -59,7 +66,7 @@ func WriteDir(inputDir, outputDir string, data map[string]interface{}) error {
 			return fmt.Errorf("read %q: %v", in, err)
 		}
 
-		tmpl, err := template.New(in).Option("missingkey=error").Parse(string(b))
+		tmpl, err := template.New(in).Funcs(funcMap).Option("missingkey=error").Parse(string(b))
 		if err != nil {
 			return fmt.Errorf("parse template %q: %v", in, err)
 		}
@@ -92,22 +99,32 @@ func WriteBuffer(text string, data map[string]interface{}) (*bytes.Buffer, error
 
 // MergeData merges template data from src to dst.
 // For all keys in flatten it will pop the key and merge back into dst.
-func MergeData(dst map[string]interface{}, src map[string]interface{}, flatten []string) error {
+func MergeData(dst map[string]interface{}, src map[string]interface{}, flatten []*FlattenInfo) error {
 	if dst == nil {
 		return errors.New("dst must not be nil")
 	}
 	if err := mergo.Merge(&dst, src); err != nil {
 		return err
 	}
-	for _, key := range flatten {
-		v, ok := dst[key]
+	for _, fi := range flatten {
+		v, ok := dst[fi.Key]
 		if !ok {
-			return fmt.Errorf("flatten key %q not found in data: %v", key, dst)
+			return fmt.Errorf("flatten key %q not found in data: %v", fi.Key, dst)
 		}
-		delete(dst, key)
+		delete(dst, fi.Key)
+
+		// If index is set assume value is a list and the index is being flattened.
+		if i := fi.Index; i != nil {
+			vs := v.([]interface{})
+			if *i >= len(vs) {
+				return fmt.Errorf("flatten index for key %q out of range: got %v, want value between 0 and %v", fi.Key, fi.Index, len(vs))
+			}
+			v = vs[*i]
+		}
+
 		m, ok := v.(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("flatten key %q is not a map, got type %T, value %v", key, v, v)
+			return fmt.Errorf("flatten key %q is not a map, got type %T, value %v", fi.Key, v, v)
 		}
 		if err := mergo.Merge(&dst, m); err != nil {
 			return err

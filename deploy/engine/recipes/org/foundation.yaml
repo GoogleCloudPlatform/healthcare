@@ -2,7 +2,7 @@ templates:
 - name: "base"
   recipe_path: "./base.yaml"
   flatten:
-  - "DEVOPS"
+  - key: "DEVOPS"
 - name: "org_dir"
   output_path: "./org"
 {{if index . "AUDIT"}}
@@ -10,19 +10,19 @@ templates:
   recipe_path: "./audit.yaml"
   output_ref: "org_dir"
   flatten:
-  - "AUDIT"
+  - key: "AUDIT"
 {{end}}
 {{if index . "MONITOR"}}
 - name: "monitor"
   recipe_path: "./monitor.yaml"
   output_ref: "org_dir"
   flatten:
-  - "MONITOR"
+  - key: "MONITOR"
 {{end}}
 {{if index . "ORG_POLICIES"}}
 - name: "org_policies"
   recipe_path: "./org_policies.yaml"
   output_path: "./org"
   flatten:
-  - "ORG_POLICIES"
+  - key: "ORG_POLICIES"
 {{end}}

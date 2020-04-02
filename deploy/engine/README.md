@@ -36,6 +36,11 @@ Use our [sample](./samples) configs to quickly get started.
 
 ## Usage
 
+The engine takes a path to an input config and a path to output the generated
+Terraform configs. After the output has been generated, there is no dependency
+on the engine any longer, and the user can directly use the `terraform` and
+`terragrunt` binaries to deploy the infrastructure.
+
 Replace the values in [samples/config.yaml](./samples/config.yaml) with values
 for your infrastructure, then run the following commands:
 
@@ -45,11 +50,15 @@ $ OUTPUT_DIR=/tmp/engine
 $ bazel run :main -- --config_path=$PWD/samples/config.yaml --output_path=$OUTPUT_DIR
 
 # Run one time bootstrap to setup devops project to host Terraform state.
-# Backup any local state files manually.
 $ cd $OUTPUT_DIR/bootstrap
 $ terraform init
 $ terraform plan
 $ terraform apply
+
+# Optional: Backup bootstrap state.
+$ nano main.tf
+# Uncomment GCS backend block...
+$ terraform init
 
 # Deploy org infrastructure.
 $ cd $OUTPUT_DIR/org
@@ -57,7 +66,11 @@ $ terragrunt init-all
 $ terragrunt plan-all
 $ terragrunt apply-all
 
-# Modify and add additional deployments as needed...
+# Optional: Modify and/or add deployments as needed...
+$ cd $OUTPUT_DIR/org/.../example-deployment
+$ terragrunt init
+$ terragrunt plan
+$ terragrunt apply
 ```
 
 ## Tips
@@ -68,7 +81,8 @@ $ terragrunt apply-all
   them. These values are coming from other deployments and will be filled with
   the real value once Terragrunt runs the dependent deployment.
 
-- `terragrunt apply-all` should be used at least once, or while the org level
-  resources are being setup. After that, only subsets should be deployed. This
-  reduces the chances of a bad apply affecting multiple parts of your infra.
+- `terragrunt apply-all` should be used at least once to deploy your baseline
+  org. After that, individual deployments should only be deployed one at a time
+  using `terragrunt apply`. This reduces the chances of a bad apply affecting
+  multiple parts of your infra and reduces the permissions needed.
 

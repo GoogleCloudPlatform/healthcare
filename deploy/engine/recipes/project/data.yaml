@@ -1,0 +1,35 @@
+templates:
+- name: "dir"
+  output_path: "./data"
+- name: "parent_dep"
+  component_path: "../../components/terragrunt/dependency"
+  output_ref: "dir"
+  data:
+    DEPENDENCIES:
+    - NAME: "project"
+      PATH: "../project"
+- name: "var_project_id"
+  component_path: "../../components/terraform/variable"
+  output_ref: "dir"
+  data:
+    NAME: "project_id"
+    TYPE: "string"
+    VALUE: '"{{.PROJECT_ID}}"'
+
+{{if index . "STORAGE_BUCKETS"}}
+- name: "var_storage_location"
+  component_path: "../../components/terraform/variable"
+  output_ref: "dir"
+  data:
+    NAME: "storage_location"
+    TYPE: "string"
+    VALUE: '"{{.STORAGE_LOCATION}}"'
+{{range $i, $_ := .STORAGE_BUCKETS}}
+- name: "bucket-{{.NAME}}"
+  component_path: "../../components/project/storage"
+  output_ref: "dir"
+  flatten:
+  - key: "STORAGE_BUCKETS"
+    index: {{$i}}
+{{end}}
+{{end}}
