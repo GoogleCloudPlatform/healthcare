@@ -1,3 +1,7 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+licenses(["notice"])  # Apache 2.0
+
 go_library(
     name = "go_default_library",
     srcs = [

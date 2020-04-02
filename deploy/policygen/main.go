@@ -17,7 +17,7 @@
 // Policy Generator automate generation of Google-recommended Policy Library constraints based on your Terraform configs.
 //
 // Usage:
-// $ bazel run :policygen -- --output_dir=/tmp/constraints {--input_dir=/path/to/configs/dir|--input_plan=/path/to/plan/json|--input_state=/path/to/state/json}
+// $ bazel run :policygen -- --input_config=./samples/config.yaml --output_dir=/tmp/constraints {--input_dir=/path/to/configs/dir|--input_plan=/path/to/plan/json|--input_state=/path/to/state/json}
 package main
 
 import (
@@ -37,12 +37,11 @@ import (
 )
 
 var (
-	inputDir   = flag.String("input_dir", "", "Path to Terraform configs root directory. Cannot be specified together with other types of inputs.")
-	inputPlan  = flag.String("input_plan", "", "Path to Terraform plan in json format, Cannot be specified together with other types of inputs.")
-	inputState = flag.String("input_state", "", "Path to Terraform state in json format. Cannot be specified together with other types of inputs.")
-	outputDir  = flag.String("output_dir", "", "Path to directory to write generated policies")
-	// TODO: Consider getting the org ID using `gcloud` commands.
-	orgID = flag.String("org_id", "", "ID of the organization to apply the policies to")
+	inputConfig = flag.String("input_config", "", "Path to the Policy Generator config.")
+	inputDir    = flag.String("input_dir", "", "Path to Terraform configs root directory. Cannot be specified together with other types of inputs.")
+	inputPlan   = flag.String("input_plan", "", "Path to Terraform plan in json format, Cannot be specified together with other types of inputs.")
+	inputState  = flag.String("input_state", "", "Path to Terraform state in json format. Cannot be specified together with other types of inputs.")
+	outputDir   = flag.String("output_dir", "", "Path to directory to write generated policies")
 )
 
 const templateDir = "policygen/templates"
@@ -64,34 +63,46 @@ func main() {
 		log.Fatal("maximum one of --input_dir, --input_plan or --input_state must be specified")
 	}
 
+	if *inputConfig == "" {
+		log.Fatal("--input_config must be set")
+	}
+
 	if *outputDir == "" {
 		log.Fatal("--output_dir must be set")
 	}
 
-	if *orgID == "" {
-		log.Fatal("--org_id must be set")
-	}
-
 	if err := run(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to generate policies: %v", err)
 	}
 }
 
 func run() error {
-
 	var err error
+	*inputConfig, err = config.NormalizePath(*inputConfig)
+	if err != nil {
+		return fmt.Errorf("normalize path %q: %v", *inputConfig, err)
+	}
+
 	*outputDir, err = config.NormalizePath(*outputDir)
 	if err != nil {
 		return fmt.Errorf("normalize path %q: %v", *outputDir, err)
+	}
+
+	c, err := loadConfig(*inputConfig)
+	if err != nil {
+		return fmt.Errorf("load config: %v", err)
 	}
 
 	if err := os.MkdirAll(*outputDir, 0755); err != nil {
 		return fmt.Errorf("mkdir %q: %v", *outputDir, err)
 	}
 
-	// Generate organization level policies that do not rely on Terraform resources.
-	if err := generateOrgLevelPolicies(*outputDir, *orgID); err != nil {
-		return fmt.Errorf("generate organization level policies: %v", err)
+	if err := generateGCPOrgPolicies(*outputDir, c); err != nil {
+		return fmt.Errorf("generate GCP organization policies: %v", err)
+	}
+
+	if err := generateForsetiPolicies(*outputDir, c); err != nil {
+		return fmt.Errorf("generate Forseti policies: %v", err)
 	}
 
 	var resources []terraform.Resource
@@ -120,12 +131,33 @@ func run() error {
 	return nil
 }
 
-func generateOrgLevelPolicies(outputDir, orgID string) error {
-	data := map[string]interface{}{
-		"ORG_ID": orgID,
+func generateForsetiPolicies(outputDir string, c *Config) error {
+	if c.ForsetiPolicies == nil {
+		return nil
 	}
-	in := filepath.Join(templateDir, "org")
-	out := filepath.Join(outputDir, fmt.Sprintf("org.%s", orgID))
+
+	data := map[string]interface{}{
+		"ORG_ID": c.OrgID,
+	}
+	in := filepath.Join(templateDir, "forseti", "org")
+	out := filepath.Join(outputDir, "forseti_policies", fmt.Sprintf("org.%s", c.OrgID))
+	return template.WriteDir(in, out, data)
+}
+
+func generateGCPOrgPolicies(outputDir string, c *Config) error {
+	if c.GCPOrgPolicies == nil {
+		return nil
+	}
+	data := map[string]interface{}{
+		"ORG_ID": c.OrgID,
+	}
+
+	if err := template.MergeData(data, c.GCPOrgPolicies, nil); err != nil {
+		return err
+	}
+
+	in := filepath.Join(templateDir, "gcp")
+	out := filepath.Join(outputDir, "gcp_organization_policies")
 	if err := template.WriteDir(in, out, data); err != nil {
 		return err
 	}

@@ -12,8 +12,5 @@ Currently supported Policy Libraries:
 
 *   [Forseti Policy Library](https://github.com/forseti-security/policy-library)
     as YAML files.
-
-Coming next:
-
 *   [Google Cloud Platform Organization Policy Constraints](https://cloud.google.com/resource-manager/docs/organization-policy/org-policy-constraints)
     as Terraform configs.

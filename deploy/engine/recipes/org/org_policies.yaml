@@ -1,4 +1,4 @@
 templates:
 - name: "org_policies"
-  component_path: "../../components/org/org_policies"
+  component_path: "../../../policygen/templates/gcp"
   output_path: "./org_policies"
