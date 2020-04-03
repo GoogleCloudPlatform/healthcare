@@ -60,43 +60,6 @@ def _IsRetriableHTTPError(ret_value: Tuple[httplib2.Response, Text]) -> bool:
   return resp.status in retriable_http_errors
 
 
-# TODO: Remove once switchover to dicom_path.Path is complete.
-def GetInstancePath(study_path: Text, series_uid: Text,
-                    instance_uid: Text) -> Text:
-  """Constructs the path to the instance in the DICOM store.
-
-  Args:
-    study_path: Path to the study. Can be the full URL or a partial path. Will
-      be used as the prefix of the returned path.
-    series_uid: Series UID.
-    instance_uid: Instance UID.
-
-  Returns:
-    The instance path, using the study path as the prefix.
-  """
-  return posixpath.join(study_path, 'series', series_uid, 'instances',
-                        instance_uid)
-
-
-# TODO: Remove once switchover to dicom_path.Path is complete.
-def GetSeriesPath(dicomweb_path: Text, study_uid: Text, series_uid: Text):
-  """Constructs the path to the instance in the DICOM store.
-
-  Args:
-    dicomweb_path:  Path to the DICOM store containing test studies, i.e.
-      projects/<project_id>/.../dicomStores/<dicom_store_name>/dicomWeb. Can be
-      the full URL or a partial path. To be used as the prefix of the returned
-      path.
-    study_uid: Study UID.
-    series_uid: Series UID.
-
-  Returns:
-    The instance path, using the study path as the prefix.
-  """
-  return posixpath.join(dicomweb_path, 'studies', study_uid, 'series',
-                        series_uid)
-
-
 def PathToUrl(path: dicom_path.Path) -> Text:
   """Constructs full URL from a DICOMweb path using the CHC API prefix.
 
