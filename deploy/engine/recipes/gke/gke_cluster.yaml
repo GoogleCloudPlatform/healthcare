@@ -1,0 +1,40 @@
+templates:
+- name: "cluster_network"
+  component_path: "../../components/network"
+  output_path: "./gke_cluster_network-{{.NETWORK_NAME}}"
+  data:
+    PROJECT_ID: '{{.PROJECT_ID}}'
+    REGION: '{{.REGION}}'
+    NETWORK_NAME: '{{.NETWORK_NAME}}'
+    SUBNETS:
+    {{range .CLUSTERS}}
+    - NAME: '{{.CLUSTER_NAME}}-subnet'
+      IP_RANGE: '{{.SUBNET_IP_RANGE}}'
+      SECONDARY_RANGES:
+      - NAME: '{{.CLUSTER_NAME}}-ip-range-pods'
+        IP_RANGE: '{{.PODS_SECONDARY_IP_RANGE}}'
+      - NAME: '{{.CLUSTER_NAME}}-ip-range-svc'
+        IP_RANGE: '{{.SVC_SECONDARY_IP_RANGE}}'
+    - NAME: '{{.CLUSTER_NAME}}-master-subnet'
+      IP_RANGE: '{{.MASTER_AUTH_SUBNET_IP_RANGE}}'
+    {{end}}
+
+{{range .CLUSTERS}}
+- name: "gke_cluster-{{.CLUSTER_NAME}}"
+  component_path: "../../components/gke/gke_cluster"
+  output_path: "./gke_cluster-{{.CLUSTER_NAME}}"
+  data:
+    PROJECT_ID: '{{$.PROJECT_ID}}'
+    REGION: '{{$.REGION}}'
+    NETWORK_NAME: '{{$.NETWORK_NAME}}'
+    CLUSTER_NAME: '{{.CLUSTER_NAME}}'
+    CLUSTER_VERSION: '{{.CLUSTER_VERSION}}'
+    MASTER_IPV4_CIDR_BLOCK: '{{.MASTER_IPV4_CIDR_BLOCK}}'
+    SUBNET_IP_RANGE: '{{.SUBNET_IP_RANGE}}'  # ex. "10.0.0.0/17"
+    MASTER_AUTH_SUBNET_IP_RANGE: '{{.MASTER_AUTH_SUBNET_IP_RANGE}}'  # ex. "10.60.0.0/17"
+    PODS_SECONDARY_IP_RANGE: '{{.PODS_SECONDARY_IP_RANGE}}'  # ex. "192.168.0.0/18"
+    SVC_SECONDARY_IP_RANGE: '{{.SVC_SECONDARY_IP_RANGE}}'  # ex. "192.168.64.0/18"
+    {{if get . "MASTER_AUTHORIZED_NETWORKS"}}
+    MASTER_AUTHORIZED_NETWORKS: '{{.MASTER_AUTHORIZED_NETWORKS}}'
+    {{end}}
+{{end}}

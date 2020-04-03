@@ -1,0 +1,6 @@
+project_id           = "{{.PROJECT_ID}}"
+region               = "{{.REGION}}"
+network_name         = "{{.NETWORK_NAME}}"
+cluster_name         = "{{.CLUSTER_NAME}}"
+cluster_version      = "{{.CLUSTER_VERSION}}"
+master_ipv4_cidr_block = "{{.MASTER_IPV4_CIDR_BLOCK}}"
