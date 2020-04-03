@@ -87,7 +87,7 @@ func WriteDir(inputDir, outputDir string, data map[string]interface{}) error {
 // WriteBuffer creates a buffer with template `text` filled with values from `data`.
 func WriteBuffer(text string, data map[string]interface{}) (*bytes.Buffer, error) {
 	var buf bytes.Buffer
-	tmpl, err := template.New("").Option("missingkey=error").Parse(text)
+	tmpl, err := template.New("").Funcs(funcMap).Option("missingkey=error").Parse(text)
 	if err != nil {
 		return nil, err
 	}
