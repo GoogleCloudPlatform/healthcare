@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"text/template"
 
@@ -46,9 +47,15 @@ func WriteDir(inputDir, outputDir string, data map[string]interface{}) error {
 		return fmt.Errorf("found no files in %q to write", inputDir)
 	}
 
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpDir)
+
 	for _, f := range fs {
 		in := filepath.Join(inputDir, f.Name())
-		out := filepath.Join(outputDir, f.Name())
+		out := filepath.Join(tmpDir, f.Name())
 
 		if err := os.MkdirAll(filepath.Dir(out), 0755); err != nil {
 			return fmt.Errorf("mkdir %q: %v", filepath.Dir(out), err)
@@ -81,7 +88,19 @@ func WriteDir(inputDir, outputDir string, data map[string]interface{}) error {
 			return fmt.Errorf("execute template %q: %v", in, err)
 		}
 	}
-	return nil
+
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("mkdir %q: %v", outputDir, err)
+	}
+
+	ofs, err := filepath.Glob(filepath.Join(tmpDir, "*"))
+	if err != nil {
+		return err
+	}
+
+	cp := exec.Command("cp", append([]string{"-a", "-t", outputDir}, ofs...)...)
+	cp.Stderr = os.Stderr
+	return cp.Run()
 }
 
 // WriteBuffer creates a buffer with template `text` filled with values from `data`.

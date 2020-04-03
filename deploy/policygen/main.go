@@ -93,10 +93,6 @@ func run() error {
 		return fmt.Errorf("load config: %v", err)
 	}
 
-	if err := os.MkdirAll(*outputDir, 0755); err != nil {
-		return fmt.Errorf("mkdir %q: %v", *outputDir, err)
-	}
-
 	if err := generateGCPOrgPolicies(*outputDir, c); err != nil {
 		return fmt.Errorf("generate GCP organization policies: %v", err)
 	}

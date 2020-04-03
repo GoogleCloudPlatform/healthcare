@@ -24,8 +24,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
-	"os/exec"
 	"path/filepath"
 
 	"flag"
@@ -37,7 +35,7 @@ import (
 
 var (
 	configPath = flag.String("config_path", "", "Path to config file")
-	outputDir  = flag.String("output_path", "", "Path to directory dump output")
+	outputPath = flag.String("output_path", "", "Path to directory dump output")
 )
 
 // Config is the user supplied config for the engine.
@@ -62,7 +60,7 @@ func main() {
 	if *configPath == "" {
 		log.Fatal("--config_path must be set")
 	}
-	if *outputDir == "" {
+	if *outputPath == "" {
 		log.Fatal("--output_path must be set")
 	}
 
@@ -82,31 +80,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
-
-	tmpDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(tmpDir)
-
 	outputRefs := map[string]string{
-		"": tmpDir,
+		"": *outputPath,
 	}
-	if err := dump(c, filepath.Dir(*configPath), outputRefs, ""); err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(*outputDir, 0755); err != nil {
-		return fmt.Errorf("failed to mkdir %q: %v", *outputDir, err)
-	}
-
-	fs, err := filepath.Glob(filepath.Join(tmpDir, "/*"))
-	if err != nil {
-		return err
-	}
-	cp := exec.Command("cp", append([]string{"-a", "-t", *outputDir}, fs...)...)
-	cp.Stderr = os.Stderr
-	return cp.Run()
+	return dump(c, filepath.Dir(*configPath), outputRefs, "")
 }
 
 func loadConfig(path string, data map[string]interface{}) (*Config, error) {
