@@ -50,10 +50,12 @@ class DicomBuilderTest(absltest.TestCase):
     """
     self.assertEqual(dicom_json.GetValue(dicomjson, tag), expected)
 
-  @mock.patch.object(dicom_builder, 'GenerateUID', side_effect=[_UID1, _UID2])
+  @mock.patch.object(
+      dicom_builder.DicomBuilder, 'GenerateUID', side_effect=[_UID1, _UID2])
   def testBuildJsonSR(self, *_):
     study_json_copy = _MOCK_STUDY_JSON.copy()
-    dicom_json_sr = dicom_builder.BuildJsonSR(_REPORT_CONTENT, _MOCK_STUDY_JSON)
+    builder = dicom_builder.DicomBuilder()
+    dicom_json_sr = builder.BuildJsonSR(_REPORT_CONTENT, _MOCK_STUDY_JSON)
 
     # Ensure the study json is not affected by the builder.
     self.assertEqual(_MOCK_STUDY_JSON, study_json_copy)
@@ -86,7 +88,8 @@ class DicomBuilderTest(absltest.TestCase):
     self._AssertJsonTag(content_sequence, tags.VALUE_TYPE, 'TEXT')
     self._AssertJsonTag(content_sequence, tags.RELATIONSHIP_TYPE, 'CONTAINS')
 
-  @mock.patch.object(dicom_builder, 'GenerateUID', side_effect=[_UID1])
+  @mock.patch.object(
+      dicom_builder.DicomBuilder, 'GenerateUID', side_effect=[_UID1])
   def testBuildJsonSC(self, *_):
     num_rows = 10
     num_columns = 10
@@ -101,7 +104,8 @@ class DicomBuilderTest(absltest.TestCase):
     dicom_json.Insert(study_dict, tags.STUDY_TIME, study_time_tag_value)
     dicom_json.Insert(study_dict, tags.STUDY_INSTANCE_UID, study_instance_uid)
     study_dict_copy = study_dict.copy()
-    dicom_json_sc = dicom_builder.BuildJsonSC(hufloat, study_dict, series_uid)
+    builder = dicom_builder.DicomBuilder()
+    dicom_json_sc = builder.BuildJsonSC(hufloat, study_dict, series_uid)
 
     # Ensure the study_dict is not affected by the builder.
     self.assertEqual(study_dict, study_dict_copy)
@@ -153,12 +157,14 @@ class DicomBuilderTest(absltest.TestCase):
     self.assertEqual(bulkdata.content_type, 'application/octet-stream')
 
   @mock.patch.object(
-      dicom_builder, 'GenerateUID', side_effect=[_STUDY_UID, _UID1, _UID2])
+      dicom_builder.DicomBuilder,
+      'GenerateUID',
+      side_effect=[_STUDY_UID, _UID1, _UID2])
   def testBuildJsonInstanceFromPng(self, *_):
     sop_class_uid = '1.1.1'
     image = b''
-    dicom_json_inst = dicom_builder.BuildJsonInstanceFromPng(
-        image, sop_class_uid)
+    builder = dicom_builder.DicomBuilder()
+    dicom_json_inst = builder.BuildJsonInstanceFromPng(image, sop_class_uid)
     dicom_dict = dicom_json_inst.dicom_dict
 
     # Test metadata tags.
@@ -185,6 +191,16 @@ class DicomBuilderTest(absltest.TestCase):
     self.assertEqual(bulkdata.uri, bulkdata_uri)
     self.assertEqual(bulkdata.data, image)
     self.assertEqual(bulkdata.content_type, 'image/png; transfer-syntax=""')
+
+  def testIsToolkitUID(self):
+    test_uid = dicom_builder.DEFAULT_UUID_PREFIX + '.1.2.3.4.5.6.7.8'
+    self.assertTrue(dicom_builder.IsToolkitUID(test_uid))
+
+  def testGenerateUIDWithPrefix(self):
+    test_prefix = '1.2.3.4'
+    builder = dicom_builder.DicomBuilder(test_prefix)
+    uid = builder.GenerateUID()
+    self.assertTrue(dicom_builder.UIDStartsWith(uid, test_prefix))
 
 
 if __name__ == '__main__':
