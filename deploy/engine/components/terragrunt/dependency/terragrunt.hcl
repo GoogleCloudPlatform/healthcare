@@ -2,7 +2,7 @@
 dependency "{{.NAME}}" {
   config_path = "{{.PATH}}"
 
-  {{if not (index . "INPUTS")}}
+  {{if not (get . "MOCK_OUTPUTS")}}
   skip_outputs = true
   {{end}}
 
