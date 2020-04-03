@@ -41,6 +41,7 @@ module "gke" {
   # https://github.com/terraform-google-modules/terraform-google-kubernetes-engine/tree/master/examples/safer_cluster
   istio    = true
   skip_provisioners = true
+  grant_registry_access = true
 
   # Need to either disable private endpoint, or enable master auth networks.
   {{if get . "MASTER_AUTHORIZED_NETWORKS"}}

@@ -18,6 +18,7 @@ module "gcp-network" {
       subnet_name   = "{{.NAME}}"
       subnet_ip     = "{{.IP_RANGE}}"
       subnet_region = var.region
+      subnets_private_access = true
     },
     {{end}}
   ]
