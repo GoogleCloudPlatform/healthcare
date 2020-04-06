@@ -26,6 +26,6 @@ module "state_bucket" {
   version = "~> 1.4"
 
   name       = var.state_bucket
-  project_id = var.project_id
+  project_id = module.project.project_id
   location   = var.storage_location
 }
