@@ -1,0 +1,41 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+steps:
+# Build the image.
+# TODO: Consider auto-detect Terraform version update.
+- name: "gcr.io/cloud-builders/docker"
+  args:
+  - "build"
+  - "--build-arg"
+  - "TERRAFORM_VERSION=${_TERRAFORM_VERSION}"
+  - "--build-arg"
+  - "TERRAFORM_SHA256SUM=${_TERRAFORM_SHA256SUM}"
+  - "--build-arg"
+  - "TERRAGRUNT_VERSION=${_TERRAGRUNT_VERSION}"
+  - "--build-arg"
+  - "TERRAGRUNT_SHA256SUM=${_TERRAGRUNT_SHA256SUM}"
+  - "-t"
+  - "gcr.io/$PROJECT_ID/terraform:latest"
+  - "-t"
+  - "gcr.io/$PROJECT_ID/terraform:${_TERRAFORM_VERSION}"
+  - .
+
+substitutions:
+  _TERRAFORM_VERSION: "0.12.24"
+  _TERRAFORM_SHA256SUM: "602d2529aafdaa0f605c06adb7c72cfb585d8aa19b3f4d8d189b42589e27bf11"
+  _TERRAGRUNT_VERSION: "0.23.6"
+  _TERRAGRUNT_SHA256SUM: "0b7a69b109757f004c0d50d6e9b2a655eb4ca5796c0721f80b73d8830bd1b877"
+
+images: ["gcr.io/$PROJECT_ID/terraform"]
