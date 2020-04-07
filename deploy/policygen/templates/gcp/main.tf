@@ -121,15 +121,6 @@ resource "google_organization_policy" "iam_allowed_policy_member_domains" {
   }
 }
 
-resource "google_organization_policy" "iam_disable_workload_identity_cluster_creation" {
-  org_id     = var.org_id
-  constraint = "iam.disableWorkloadIdentityClusterCreation"
-
-  boolean_policy {
-    enforced = true
-  }
-}
-
 # Resource Manager
 resource "google_organization_policy" "compute_restrict_xpn_project_lien_removal" {
   org_id     = var.org_id
