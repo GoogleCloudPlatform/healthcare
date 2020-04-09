@@ -4,7 +4,7 @@ Status: experimental
 
 A security policy generator which generates policies for two purposes:
 
-1.  Typical policies enforced in a HIPAA compliant GCP environment.
+1.  Typical policies enforced in a HIPAA aligned GCP environment.
 1.  Policies based on Terraform configs to monitor GCP changes that are not
     deployed by Terraform.
 
