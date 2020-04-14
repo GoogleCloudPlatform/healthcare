@@ -24,6 +24,7 @@ module "bigquery_log_export" {
   log_sink_name        = "bigquery-org-sink"
   parent_resource_type = "organization"
   parent_resource_id   = var.org_id
+  include_children     = true
   filter               = "logName:\"logs/cloudaudit.googleapis.com\""
   destination_uri      = "bigquery.googleapis.com/projects/${var.project_id}/datasets/${module.bigquery_destination.bigquery_dataset.dataset_id}"
 }
@@ -63,6 +64,7 @@ module "storage_log_export" {
   log_sink_name        = "storage-org-sink"
   parent_resource_type = "organization"
   parent_resource_id   = var.org_id
+  include_children     = true
   filter               = "logName:\"logs/cloudaudit.googleapis.com\""
   destination_uri      = "storage.googleapis.com/${module.storage_destination.bucket.name}"
 }
