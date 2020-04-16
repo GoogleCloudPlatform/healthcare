@@ -72,7 +72,6 @@ import sys
 import scripts.constants as constants
 import scripts.ml_utils as ml_utils
 import tensorflow.compat.v1 as tf
-from tensorflow.compat.v1.python.lib.io import file_io
 
 FLAGS = None
 
@@ -102,10 +101,9 @@ def _get_image_label_info(bottleneck_dir):
   """
   labels = collections.OrderedDict()
   dataset_to_image_count = collections.defaultdict(int)
-  bottleneck_files = file_io.get_matching_files(
-      os.path.join(bottleneck_dir, '*'))
+  bottleneck_files = tf.io.gfile.glob(os.path.join(bottleneck_dir, '*'))
   for bottleneck_file in bottleneck_files:
-    for it in tf.compat.v1.io.tf_record_iterator(bottleneck_file):
+    for it in tf.io.tf_record_iterator(bottleneck_file):
       example = tf.train.Example()
       example.ParseFromString(it)
       label = example.features.feature['label'].bytes_list.value[0]
@@ -151,17 +149,17 @@ def _get_training_validation_testing_dataset(bottleneck_dir, label_table,
     label_index = label_table.lookup(example['label'])
     return example['image_path'], label_index, example['bottleneck']
 
-  training_bottleneck_files = file_io.get_matching_files(
+  training_bottleneck_files = tf.io.gfile.glob(
       os.path.join(bottleneck_dir, constants.TRAINING_DATASET + '*'))
   training_dataset = tf.data.TFRecordDataset(training_bottleneck_files).map(
       _full_tfrecord_parser).repeat().batch(FLAGS.train_batch_size)
 
-  validation_bottleneck_files = file_io.get_matching_files(
+  validation_bottleneck_files = tf.io.gfile.glob(
       os.path.join(bottleneck_dir, constants.VALIDATION_DATASET + '*'))
   validation_dataset = tf.data.TFRecordDataset(validation_bottleneck_files).map(
       _full_tfrecord_parser).repeat().batch(FLAGS.validation_batch_size)
 
-  testing_bottleneck_files = file_io.get_matching_files(
+  testing_bottleneck_files = tf.io.gfile.glob(
       os.path.join(bottleneck_dir, constants.TESTING_DATASET + '*'))
   testing_dataset = tf.data.TFRecordDataset(testing_bottleneck_files).map(
       _full_tfrecord_parser).batch(testing_dataset_size)
@@ -231,8 +229,11 @@ def _export_model(label_list, export_model_path):
   # Create the inference graph.
   with tf.Graph().as_default() as graph:
     # Map from label index to label string.
-    index_to_label_table = tf.contrib.lookup.index_to_string_table_from_tensor(
-        label_list, default_value='UNKNOWN')
+    index_list = list(i for i in range(len(label_list)))
+    initializer = tf.lookup.KeyValueTensorInitializer(
+        index_list, label_list, key_dtype=tf.int64, value_dtype=tf.string)
+    index_to_label_table = tf.lookup.StaticHashTable(
+        initializer, default_value='UNKNOWN')
     # Inference graph, consisting of the Inception V3 feature extraction layers
     # and a dense and softmax layer used for classification.
     input_jpeg_str, label, score = _create_inference_graph(
@@ -362,8 +363,9 @@ def main(_):
   tf.logging.set_verbosity(tf.logging.ERROR)
 
   # Check that the bottleneck directory exists.
-  assert file_io.file_exists(FLAGS.bottleneck_dir), (
-      'bottleneck dir %s missing' % FLAGS.bottleneck_dir)
+  assert tf.io.gfile.exists(
+      FLAGS.bottleneck_dir), ('bottleneck dir %s missing' %
+                              FLAGS.bottleneck_dir)
 
   # Find the total number of images and labels
   dataset_counter, label_list = _get_image_label_info(FLAGS.bottleneck_dir)
@@ -374,9 +376,11 @@ def main(_):
     logging.info('Number of images for %s dataset: %s', k, v)
 
   # Maps from labels to index and vice-versa.
-  label_to_index_table = tf.contrib.lookup.index_table_from_tensor(
-      mapping=label_list, num_oov_buckets=1, default_value=-1)
-
+  index_list = list(i for i in range(len(label_list)))
+  initializer = tf.lookup.KeyValueTensorInitializer(
+      label_list, index_list, value_dtype=tf.int64)
+  label_to_index_table = tf.lookup.StaticVocabularyTable(
+      initializer, num_oov_buckets=1)
   # Split dataset into training, validation and testing
   training_dataset, validation_dataset, testing_dataset = (
       _get_training_validation_testing_dataset(

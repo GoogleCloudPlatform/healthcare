@@ -13,10 +13,10 @@
 # limitations under the License.
 """Module used to setup Dataflow depenedencies for data preprocessing."""
 
-from google3.third_party.google3.setuptools import find_packages
-from google3.third_party.google3.setuptools import setup
-from google3.third_party.google3.setuptools.command.install import install
-from google3.third_party.google3.setuptools.dist import Distribution
+from setuptools import find_packages
+from setuptools import setup
+from setuptools.command.install import install
+from setuptools.dist import Distribution
 
 
 class _InstallPlatlib(install):
