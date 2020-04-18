@@ -24,7 +24,10 @@ templates:
     DEVOPS:
       PROJECT_ID: "example-devops"
       STATE_BUCKET: "example-state-bucket"
-      ENABLE_BOOTSTRAP_GCS_BACKEND: false
+      ENABLE_BOOTSTRAP_GCS_BACKEND: true
+      ORG_ADMIN: "group:example-org-admin@google.com"
+      OWNERS:
+      - "group:example-devops-owners@google.com"
     AUDIT:
       PROJECT_ID: "example-audit"
       DATASET_NAME: "1yr_org_audit_logs"
