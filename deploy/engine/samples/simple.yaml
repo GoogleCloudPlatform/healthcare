@@ -38,6 +38,14 @@ templates:
     ORG_POLICIES:
       ALLOWED_SHARED_VPC_HOST_PROJECTS:
       - "projects/example-networks"
+    CICD:
+      PROJECT_ID: "example-devops"
+      STATE_BUCKET: "example-state-bucket"
+      REPO_OWNER: "GoogleCloudPlatform"
+      REPO_NAME: "example"
+      BRANCH_REGEX: "master"
+      CONTINUOUS_DEPLOYMENT_ENABLED: true
+      TRIGGER_ENABLED: true
 
 # Folder
 - name: "example-folder"

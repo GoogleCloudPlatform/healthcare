@@ -26,3 +26,10 @@ templates:
   flatten:
   - key: "ORG_POLICIES"
 {{end}}
+{{if index . "CICD"}}
+- name: "cicd"
+  component_path: "../../components/cicd"
+  output_path: "./cicd"
+  flatten:
+  - key: "CICD"
+{{end}}
