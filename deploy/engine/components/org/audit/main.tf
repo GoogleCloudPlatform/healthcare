@@ -1,7 +1,28 @@
+# Copyright 2020 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This folder contains Terraform resources related to audit, which includes:
+# - Organization IAM Audit log configs (https://cloud.google.com/logging/docs/audit),
+# - BigQuery log sink creation and configuration for short term log storage,
+# - Cloud Storage log sink creation and configuration for long term log storage,
+# - IAM permissions to grant log Auditors iam.securityReviewer role to view the logs.
+
 terraform {
   backend "gcs" {}
 }
 
+# IAM Audit log configs to enable collection of all possible audit logs.
 resource "google_organization_iam_audit_config" "config" {
   org_id  = var.org_id
   service = "allServices"
@@ -17,6 +38,7 @@ resource "google_organization_iam_audit_config" "config" {
   }
 }
 
+# BigQuery log sink.
 module "bigquery_log_export" {
   source  = "terraform-google-modules/log-export/google"
   version = "~> 4.0"
@@ -57,6 +79,7 @@ resource "google_project_iam_member" "bigquery_sink_member" {
   member  = module.bigquery_log_export.writer_identity
 }
 
+# Cloud Storage log sink.
 module "storage_log_export" {
   source  = "terraform-google-modules/log-export/google"
   version = "~> 4.0"
@@ -72,7 +95,7 @@ module "storage_log_export" {
 # TODO: Replace with terraform-google-modules/log-export/google//modules/storage
 # once https://github.com/terraform-google-modules/terraform-google-log-export/pull/52  is fixed.
 module "storage_destination" {
-  source = "terraform-google-modules/cloud-storage/google//modules/simple_bucket"
+  source  = "terraform-google-modules/cloud-storage/google//modules/simple_bucket"
   version = "~> 1.4"
 
   name          = var.bucket_name
@@ -96,6 +119,7 @@ resource "google_storage_bucket_iam_member" "storage_sink_member" {
   member = module.storage_log_export.writer_identity
 }
 
+# IAM permissions to grant log Auditors iam.securityReviewer role to view the logs.
 resource "google_organization_iam_member" "security_reviewer_auditors" {
   org_id = var.org_id
   role   = "roles/iam.securityReviewer"

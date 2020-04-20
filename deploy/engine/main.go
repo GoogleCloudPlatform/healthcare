@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"os/exec"
 	"path/filepath"
 
 	"flag"
@@ -80,10 +82,30 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	outputRefs := map[string]string{
-		"": *outputPath,
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
 	}
-	return dump(c, filepath.Dir(*configPath), outputRefs, "")
+	defer os.RemoveAll(tmpDir)
+
+	outputRefs := map[string]string{
+		"": tmpDir,
+	}
+	if err := dump(c, filepath.Dir(*configPath), outputRefs, ""); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(*outputPath, 0755); err != nil {
+		return fmt.Errorf("failed to mkdir %q: %v", *outputPath, err)
+	}
+
+	fs, err := filepath.Glob(filepath.Join(tmpDir, "/*"))
+	if err != nil {
+		return err
+	}
+	cp := exec.Command("cp", append([]string{"-a", "-t", *outputPath}, fs...)...)
+	cp.Stderr = os.Stderr
+	return cp.Run()
 }
 
 func loadConfig(path string, data map[string]interface{}) (*Config, error) {

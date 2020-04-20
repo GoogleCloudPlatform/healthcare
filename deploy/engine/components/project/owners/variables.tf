@@ -1,3 +1,4 @@
+
 variable "owners" {
-  type    = list(string)
+  type = list(string)
 }

@@ -12,25 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-org_id       = "{{.ORG_ID}}"
-{{if index . "ALLOWED_POLICY_MEMBER_DOMAINS"}}
+org_id = "{{.ORG_ID}}"
+{{- if index . "ALLOWED_POLICY_MEMBER_DOMAINS"}}
 allowed_policy_member_domains = [
-  {{range .ALLOWED_POLICY_MEMBER_DOMAINS}}
+  {{- range .ALLOWED_POLICY_MEMBER_DOMAINS}}
   "{{.}}",
-  {{end}}
+  {{- end}}
 ]
-{{end}}
-{{if index . "ALLOWED_SHARED_VPC_HOST_PROJECTS"}}
+{{- end}}
+{{- if index . "ALLOWED_SHARED_VPC_HOST_PROJECTS"}}
 allowed_shared_vpc_host_projects = [
-  {{range .ALLOWED_SHARED_VPC_HOST_PROJECTS}}
+  {{- range .ALLOWED_SHARED_VPC_HOST_PROJECTS}}
   "{{.}}",
-  {{end}}
+  {{- end}}
 ]
-{{end}}
-{{if index . "ALLOWED_TRUSTED_IMAGE_PROJECTS"}}
+{{- end}}
+{{- if index . "ALLOWED_TRUSTED_IMAGE_PROJECTS"}}
 allowed_trusted_image_projects = [
-  {{range .ALLOWED_TRUSTED_IMAGE_PROJECTS}}
+  {{- range .ALLOWED_TRUSTED_IMAGE_PROJECTS}}
   "{{.}}",
-  {{end}}
+  {{- end}}
 ]
-{{end}}
+{{- end}}

@@ -5,14 +5,14 @@ module "{{resourceName .NAME}}" {
   name       = "{{.NAME}}"
   project_id = var.project_id
   location   = var.storage_location
-  {{if index . "IAM_MEMBERS"}}
+  {{- if index . "IAM_MEMBERS"}}
   iam_members = [
-    {{range .IAM_MEMBERS}}
+    {{- range .IAM_MEMBERS}}
     {
       role   = "{{.ROLE}}"
       member = "{{.MEMBER}}"
     },
-    {{end}}
+    {{- end}}
   ]
-  {{end}}
+  {{- end}}
 }

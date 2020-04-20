@@ -1,3 +1,3 @@
-{{if index . "VALUE"}}
+{{- if index . "VALUE"}}
 {{.NAME}} = {{.VALUE}}
-{{end}}
+{{- end}}

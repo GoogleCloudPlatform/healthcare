@@ -88,23 +88,30 @@ func run() error {
 		return fmt.Errorf("normalize path %q: %v", *outputDir, err)
 	}
 
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpDir)
+
 	c, err := loadConfig(*inputConfig)
 	if err != nil {
 		return fmt.Errorf("load config: %v", err)
 	}
 
-	if err := generateGCPOrgPolicies(*outputDir, c); err != nil {
+	if err := generateGCPOrgPolicies(tmpDir, c); err != nil {
 		return fmt.Errorf("generate GCP organization policies: %v", err)
 	}
 
-	if err := generateForsetiPolicies(*outputDir, c); err != nil {
+	if err := generateForsetiPolicies(tmpDir, c); err != nil {
 		return fmt.Errorf("generate Forseti policies: %v", err)
 	}
 
+	rn := &runner.Default{}
 	var resources []terraform.Resource
 	switch {
 	case *inputDir != "":
-		if resources, err = resourcesFromDir(*inputDir); err != nil {
+		if resources, err = resourcesFromDir(rn, *inputDir); err != nil {
 			return fmt.Errorf("read resources from configs directory: %v", err)
 
 		}
@@ -124,7 +131,16 @@ func run() error {
 
 	// TODO: generate policies that rely on input config.
 
-	return nil
+	if err := os.MkdirAll(*outputDir, 0755); err != nil {
+		return fmt.Errorf("mkdir %q: %v", *outputDir, err)
+	}
+
+	fs, err := filepath.Glob(filepath.Join(tmpDir, "*"))
+	if err != nil {
+		return err
+	}
+	cp := exec.Command("cp", append([]string{"-a", "-t", *outputDir}, fs...)...)
+	return rn.CmdRun(cp)
 }
 
 func generateForsetiPolicies(outputDir string, c *Config) error {
@@ -160,7 +176,7 @@ func generateGCPOrgPolicies(outputDir string, c *Config) error {
 	return nil
 }
 
-func resourcesFromDir(path string) ([]terraform.Resource, error) {
+func resourcesFromDir(rn runner.Runner, path string) ([]terraform.Resource, error) {
 	path, err := config.NormalizePath(path)
 	if err != nil {
 		return nil, fmt.Errorf("normalize path %q: %v", path, err)
@@ -172,7 +188,6 @@ func resourcesFromDir(path string) ([]terraform.Resource, error) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	rn := &runner.Default{}
 	tfCmd := func(args ...string) error {
 		cmd := exec.Command("terraform", args...)
 		cmd.Dir = tmpDir

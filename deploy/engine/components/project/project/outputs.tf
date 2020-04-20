@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include {
-  path = find_in_parent_folders()
+output "project_id" {
+  value = module.project.project_id
 }
 
-dependencies {
-  paths = [
-    "../../project.{{.PROJECT_ID}}/project",
-    "../../project.{{.PROJECT_ID}}/network",
-  ]
+output "project_number" {
+  value = module.project.project_number
 }

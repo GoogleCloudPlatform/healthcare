@@ -25,14 +25,15 @@ templates:
       PROJECT_ID: "example-devops"
       STATE_BUCKET: "example-state-bucket"
       ENABLE_BOOTSTRAP_GCS_BACKEND: true
-      ORG_ADMIN: "group:example-org-admin@google.com"
-      OWNERS:
-      - "group:example-devops-owners@google.com"
+      ORG_ADMIN: "group:example-org-admin@example.com"
+      PROJECT_OWNERS:
+      - "group:example-devops-owners@example.com"
     AUDIT:
       PROJECT_ID: "example-audit"
+      ENABLE_LIEN: true
       DATASET_NAME: "1yr_org_audit_logs"
       BUCKET_NAME: "7yr-org-audit-logs"
-      AUDITORS: "group:example-dev-auditors@google.com"
+      AUDITORS: "group:example-dev-auditors@example.com"
     MONITOR:
       PROJECT_ID: "example-monitor"
       DOMAIN: "example.com"
@@ -56,6 +57,8 @@ templates:
   output_ref: "folder-prod-team1.dir"
   data:
     PROJECT_ID: "example-prod-data"
+    PROJECT_OWNERS:
+    - "group:example-prod-data-owners@example.com"
 - name: "project-example-prod-data-resources"
   recipe_path: "../recipes/project/data.yaml"
   output_ref: "project-example-prod-data.dir"

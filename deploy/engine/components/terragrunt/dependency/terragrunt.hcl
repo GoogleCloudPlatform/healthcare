@@ -1,25 +1,25 @@
-{{range .DEPENDENCIES}}
+{{- range .DEPENDENCIES}}
 dependency "{{.NAME}}" {
   config_path = "{{.PATH}}"
 
-  {{if not (get . "MOCK_OUTPUTS")}}
+  {{- if not (get . "MOCK_OUTPUTS")}}
   skip_outputs = true
-  {{end}}
+  {{- end}}
 
-  {{if index . "MOCK_OUTPUTS"}}
+  {{- if index . "MOCK_OUTPUTS"}}
   mock_outputs = {
-    {{range $k, $v := .MOCK_OUTPUTS}}
+    {{- range $k, $v := .MOCK_OUTPUTS}}
     {{$k}} = {{$v}}
-    {{end}}
+    {{- end}}
   }
-  {{end}}
+  {{- end}}
 }
 {{end}}
 
-{{if index . "INPUTS"}}
+{{- if index . "INPUTS"}}
 inputs = {
-  {{range $k, $v := .INPUTS}}
+  {{- range $k, $v := .INPUTS}}
   {{$k}} = {{$v}}
-  {{end}}
+  {{- end}}
 }
-{{end}}
+{{- end}}

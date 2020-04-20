@@ -19,5 +19,7 @@ state_bucket      = "{{.STATE_BUCKET}}"
 storage_location  = "{{.STORAGE_LOCATION}}"
 org_admin         = "{{.ORG_ADMIN}}"
 devops_owners = [
-  {{range .OWNERS}}"{{.}}",{{end}}
+  {{- range .PROJECT_OWNERS}}
+  "{{.}}",
+  {{- end}}
 ]

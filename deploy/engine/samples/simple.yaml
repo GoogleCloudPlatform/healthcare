@@ -1,0 +1,81 @@
+# Copyright 2020 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{$BASE := "../recipes"}}
+
+data:
+  ORG_ID: "123"
+  BILLING_ACCOUNT: "000-000-000"
+  STORAGE_LOCATION: "us-central1"
+
+templates:
+- name: "foundation"
+  recipe_path: "{{$BASE}}/org/foundation.yaml"
+  data:
+    DEVOPS:
+      PROJECT_ID: "example-devops"
+      STATE_BUCKET: "example-terraform-state"
+      ENABLE_BOOTSTRAP_GCS_BACKEND: true
+      ORG_ADMIN: "group:example-org-admin@example.com"
+      PROJECT_OWNERS:
+      - "group:example-devops-owners@example.com"
+    AUDIT:
+      PROJECT_ID: "example-audit"
+      DATASET_NAME: "1yr_org_audit_logs"
+      BUCKET_NAME: "7yr-org-audit-logs"
+      AUDITORS: "group:example-dev-auditors@example.com"
+    ORG_POLICIES:
+      ALLOWED_SHARED_VPC_HOST_PROJECTS:
+      - "projects/example-networks"
+
+# Folder
+- name: "example-folder"
+  recipe_path: "{{$BASE}}/org/folder.yaml"
+  output_ref: "foundation.org_dir"
+  data:
+    DISPLAY_NAME: "example-foder"
+
+# Projects
+- name: "project-networks"
+  recipe_path: "{{$BASE}}/folder/project.yaml"
+  output_ref: "example-folder.dir"
+  data:
+    PROJECT_ID: "example-networks"
+    PROJECT_OWNERS:
+    - "group:example-networks-owners@example.com"
+    APIS:
+    - "compute.googleapis.com"
+    - "servicenetworking.googleapis.com"
+
+- name: "project-apps"
+  recipe_path: "{{$BASE}}/folder/project.yaml"
+  output_ref: "example-folder.dir"
+  data:
+    PROJECT_ID: "example-apps"
+    PROJECT_OWNERS:
+    - "group:example-apps-owners@example.com"
+    APIS:
+    - "cloudbuild.googleapis.com"
+    - "compute.googleapis.com"
+    - "container.googleapis.com"
+
+- name: "project-data"
+  recipe_path: "{{$BASE}}/folder/project.yaml"
+  output_ref: "example-folder.dir"
+  data:
+    PROJECT_ID: "example-data"
+    PROJECT_OWNERS:
+    - "group:example-data-owners@example.com"
+    APIS:
+    - "compute.googleapis.com"
