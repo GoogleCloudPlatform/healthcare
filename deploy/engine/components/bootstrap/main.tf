@@ -45,6 +45,7 @@ module "project" {
   skip_gcloud_download    = true
   activate_apis = [
     "cloudbuild.googleapis.com",
+    "secretmanager.googleapis.com",
   ]
 }
 
