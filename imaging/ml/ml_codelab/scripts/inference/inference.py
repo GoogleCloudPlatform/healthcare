@@ -278,9 +278,9 @@ class CMLEPredictor(Predictor):
     # https://cloud.google.com/ml-engine/docs/v1/predict-request
     input_data = {
         'instances': [{
-            'inputs': {
+            'inputs': [{
                 'b64': base64.b64encode(image_jpeg_bytes).decode()
-            }
+            }]
         }]
     }
     # Disable cache discovery due to following issue:
