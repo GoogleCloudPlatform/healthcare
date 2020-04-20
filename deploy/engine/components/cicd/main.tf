@@ -65,7 +65,10 @@ locals {
 }
 
 locals {
+  # Covert "" and "/" to "." in case users use them to indicate root of the git repo.
   terraform_root = trim((var.terraform_root == "" || var.terraform_root == "/") ? "." : var.terraform_root, "/")
+  # ./ to indicate root is not recognized by Cloud Build Trigger.
+  terraform_root_prefix = local.terraform_root == "." ? "" : "${local.terraform_root}/"
 }
 
 # Cloud Build - API
@@ -106,7 +109,7 @@ resource "google_cloudbuild_trigger" "validate" {
   name     = "tf-validate"
 
   included_files = [
-    local.terraform_root == "." ? "**" : "${local.terraform_root}/**",
+    "${local.terraform_root_prefix}**",
   ]
 
   github {
@@ -117,7 +120,7 @@ resource "google_cloudbuild_trigger" "validate" {
     }
   }
 
-  filename = "${path.module}/configs/tf-validate.yaml"
+  filename = "${local.terraform_root_prefix}cicd/configs/tf-validate.yaml"
 
   substitutions = {
     _TERRAFORM_ROOT = local.terraform_root
@@ -135,7 +138,7 @@ resource "google_cloudbuild_trigger" "plan" {
   name     = "tf-plan"
 
   included_files = [
-    local.terraform_root == "." ? "**" : "${local.terraform_root}/**",
+    "${local.terraform_root_prefix}**",
   ]
 
   github {
@@ -146,7 +149,7 @@ resource "google_cloudbuild_trigger" "plan" {
     }
   }
 
-  filename = "${path.module}/configs/tf-plan.yaml"
+  filename = "${local.terraform_root_prefix}cicd/configs/tf-plan.yaml"
 
   substitutions = {
     _TERRAFORM_ROOT = local.terraform_root
@@ -166,8 +169,8 @@ resource "google_cloudbuild_trigger" "apply" {
   name     = "tf-apply"
 
   included_files = [
-    local.terraform_root == "." ? "org/**" : "${local.terraform_root}/org/**",
-    "${path.module}/configs/tf-apply.yaml"
+    "${local.terraform_root_prefix}org/**",
+    "${local.terraform_root_prefix}cicd/configs/tf-apply.yaml"
   ]
 
   github {
@@ -178,7 +181,7 @@ resource "google_cloudbuild_trigger" "apply" {
     }
   }
 
-  filename = "${path.module}/configs/tf-apply.yaml"
+  filename = "${local.terraform_root_prefix}cicd/configs/tf-apply.yaml"
 
   substitutions = {
     _TERRAFORM_ROOT = local.terraform_root
