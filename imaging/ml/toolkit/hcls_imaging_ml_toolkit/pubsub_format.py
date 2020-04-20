@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import enum
 import traceback
-from typing import Text, Optional
+from typing import Optional
 
 import attr
 
@@ -27,10 +27,6 @@ from google.cloud import pubsub_v1
 from google.rpc import code_pb2
 from hcls_imaging_ml_toolkit import dicom_path
 from hcls_imaging_ml_toolkit import exception
-
-# Specifies that no prior should be used for running the inference flow for the
-# input message.
-NO_PRIOR = 'no_prior'
 
 
 # Possible values for the "conflict" attribute of the Pub/Sub notification.
@@ -64,14 +60,12 @@ class ParsedMessage(object):
   Attributes:
     input_path: Path object referencing the DICOM resource specified in the
       message.
-    conflict: Pub/Sub message conflict attribute.
-    verification_test: If True, the module will capture intermediate results and
-      save them in a StructuredReport.
-    prior_study_uid: Prior Study UID. This comes from parsing the optional
-      Pub/Sub message |prior_series_path| attribute. This allows for explicit
-      prior selection. If not set regular prior search flow will proceed.
-    prior_series_uid: Prior Series UID. This comes from parsing the optional
-      Pub/Sub message |prior_series_path| attribute.
+    conflict: Pub/Sub message attribute which determines behaviour of conflicts
+      with existing DICOM instances containing inference module predictions.
+    test: Pub/Sub message attribute determining whether the module is running in
+      a test mode. When running in a test mode, the module might save
+      (e.g. in a Structured Report) additional information which can help with
+      debugging..
     output_dicom_store_path: DICOMStore path to write inference results to. This
       comes from parsing the optional Pub/Sub message |output_dicom_store_path|
       attribute. This allows for results to be written to a different
@@ -79,9 +73,7 @@ class ParsedMessage(object):
   """
   input_path = attr.ib(type=dicom_path.Path)
   conflict = attr.ib(type=ConflictType, default=DEFAULT_CONFLICT)
-  verification_test = attr.ib(type=bool, default=False)
-  prior_study_uid = attr.ib(type=Optional[Text], default=None)
-  prior_series_uid = attr.ib(type=Optional[Text], default=None)
+  test = attr.ib(type=bool, default=False)
   output_dicom_store_path = attr.ib(
       type=Optional[dicom_path.Path], default=None)
 
@@ -106,8 +98,7 @@ def ParseMessage(message: pubsub_v1.types.PubsubMessage,
   """
   input_path_str = message.data.decode()
   # Support both 'True' and 'true' for user convenience with manual invocation.
-  verification_test = (
-      message.attributes.get('verification_test') in ['True', 'true'])
+  test_attr = (message.attributes.get('test') in ['True', 'true'])
   conflict_attr = message.attributes.get('conflict')
   if conflict_attr and conflict_attr not in CONFLICT_MAP:
     raise exception.CustomExceptionError(
@@ -119,9 +110,7 @@ def ParseMessage(message: pubsub_v1.types.PubsubMessage,
   try:
     input_path = dicom_path.FromString(input_path_str, path_type)
     parsed_message = ParsedMessage(
-        input_path=input_path,
-        conflict=conflict,
-        verification_test=verification_test)
+        input_path=input_path, conflict=conflict, test=test_attr)
 
     # Set the output DICOM store path, if available.
     output_store_path_str = message.attributes.get('output_dicom_store_path')
@@ -129,18 +118,6 @@ def ParseMessage(message: pubsub_v1.types.PubsubMessage,
       output_store_path = dicom_path.FromString(output_store_path_str,
                                                 dicom_path.Type.STORE)
       parsed_message.output_dicom_store_path = output_store_path
-
-    # This could be expanded to accommodate other resource types as priors, but
-    # currently it's just series.
-    prior_series_path_str = message.attributes.get('prior_series_path')
-    if prior_series_path_str:
-      if prior_series_path_str in ['None', 'none']:
-        parsed_message.prior_study_uid = NO_PRIOR
-      else:
-        prior_series_path = dicom_path.FromString(prior_series_path_str,
-                                                  dicom_path.Type.SERIES)
-        parsed_message.prior_study_uid = prior_series_path.study_uid
-        parsed_message.prior_series_uid = prior_series_path.series_uid
     return parsed_message
   except ValueError as e:
     traceback.print_exc()
