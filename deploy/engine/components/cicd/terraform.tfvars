@@ -27,8 +27,10 @@ trigger_enabled               = {{.TRIGGER_ENABLED}}
 {{- if index . "TERRAFORM_ROOT"}}
 terraform_root                = "{{.TERRAFORM_ROOT}}"
 {{- end}}
+{{- if index . "BUILD_VIEWERS"}}
 build_viewers = [
   {{- range .BUILD_VIEWERS}}
   "{{.}}",
   {{- end}}
 ]
+{{- end}}
