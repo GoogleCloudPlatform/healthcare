@@ -45,6 +45,7 @@ locals {
     "container.googleapis.com",
     "firebase.googleapis.com",
     "iam.googleapis.com",
+    "servicenetworking.googleapis.com",
     "serviceusage.googleapis.com",
     "sqladmin.googleapis.com",
   ]
@@ -57,6 +58,7 @@ locals {
   ]
   cloudbuild_sa_editor_roles = concat(local.cloudbuild_sa_viewer_roles, [
     "roles/billing.user",
+    "roles/compute.xpnAdmin",
     "roles/orgpolicy.policyAdmin",
     "roles/owner",
     "roles/resourcemanager.organizationAdmin",
