@@ -46,6 +46,8 @@ templates:
       BRANCH_REGEX: "master"
       CONTINUOUS_DEPLOYMENT_ENABLED: true
       TRIGGER_ENABLED: true
+      BUILD_VIEWERS:
+      - "group:example-cicd-viewers@example.com"
 
 # Folder
 - name: "example-folder"

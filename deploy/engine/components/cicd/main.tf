@@ -82,7 +82,18 @@ resource "google_project_service" "devops_apis" {
   disable_on_destroy = false
 }
 
-# Cloud Build - IAM permissions
+# IAM permissions to allow approvers and contributors to view the build results.
+resource "google_project_iam_member" "cloudbuild_viewers" {
+  for_each = toset(var.build_viewers)
+  project  = var.devops_project_id
+  role     = "roles/cloudbuild.builds.viewer"
+  member   = each.value
+  depends_on = [
+    google_project_service.devops_apis,
+  ]
+}
+
+# Cloud Build - Cloud Build Service Account IAM permissions
 # IAM permissions to allow Cloud Build SA to access state.
 resource "google_storage_bucket_iam_member" "cloudbuild_state_iam" {
   bucket = var.state_bucket
