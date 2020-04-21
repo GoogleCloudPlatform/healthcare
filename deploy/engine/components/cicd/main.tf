@@ -39,6 +39,7 @@ locals {
     # TODO: Figure out how to use user_project_override and disable APIs in devops project
     # that are needed to obtain resource information in other projects.
     "bigquery.googleapis.com",
+    "cloudbilling.googleapis.com",
     "cloudbuild.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "container.googleapis.com",
