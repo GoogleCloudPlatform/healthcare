@@ -1,6 +1,6 @@
 # Policy Generator
 
-Status: experimental
+Status: ALPHA
 
 A security policy generator which generates policies for two purposes:
 
