@@ -102,6 +102,17 @@ module "storage_destination" {
   project_id    = var.project_id
   location      = "us-central1"
   storage_class = "COLDLINE"
+
+  lifecycle_rules = [{
+    action = {
+      type = "Delete"
+    }
+    condition = {
+      age        = 7 * 365 # 7 years
+      with_state = "ANY"
+    }
+  }]
+
   iam_members = [
     {
       role   = "roles/storage.objectViewer"
