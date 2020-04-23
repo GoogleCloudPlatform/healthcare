@@ -20,6 +20,7 @@ import (
 
 var funcMap = map[string]interface{}{
 	"get":          get,
+	"has":          has,
 	"resourceName": resourceName,
 }
 
@@ -28,6 +29,11 @@ func get(d map[string]interface{}, key string) interface{} {
 		return val
 	}
 	return nil
+}
+
+func has(d map[string]interface{}, key string) bool {
+	_, ok := d[key]
+	return ok
 }
 
 func resourceName(s string) string {
