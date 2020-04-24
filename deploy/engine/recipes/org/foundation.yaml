@@ -5,28 +5,28 @@ templates:
   - key: "DEVOPS"
 - name: "org_dir"
   output_path: "./org"
-{{if index . "AUDIT"}}
+{{if has . "AUDIT"}}
 - name: "audit"
   recipe_path: "./audit.yaml"
   output_ref: "org_dir"
   flatten:
   - key: "AUDIT"
 {{end}}
-{{if index . "MONITOR"}}
+{{if has . "MONITOR"}}
 - name: "monitor"
   recipe_path: "./monitor.yaml"
   output_ref: "org_dir"
   flatten:
   - key: "MONITOR"
 {{end}}
-{{if index . "ORG_POLICIES"}}
+{{if has . "ORG_POLICIES"}}
 - name: "org_policies"
   recipe_path: "./org_policies.yaml"
   output_path: "./org"
   flatten:
   - key: "ORG_POLICIES"
 {{end}}
-{{if index . "CICD"}}
+{{if has . "CICD"}}
 - name: "cicd"
   component_path: "../../components/cicd"
   output_path: "./cicd"

@@ -37,9 +37,7 @@ templates:
     MONITOR:
       PROJECT_ID: "example-monitor"
       DOMAIN: "example.com"
-    ORG_POLICIES:
-      # TODO: remove this redundant attribute
-      ENABLE: true
+    ORG_POLICIES: {} # Use default org policies.
 
 # Prod
 - name: "folder-prod"
