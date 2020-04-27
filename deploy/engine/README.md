@@ -51,7 +51,7 @@ $ cd healthcare/deploy/engine
 
 # Step 2: Setup helper env vars
 $ ENGINE_ROOT=$PWD
-$ CONFIG_PATH=$PWD/samples/config.yaml
+$ CONFIG_PATH=$PWD/samples/simple.yaml
 $ OUTPUT_PATH=/tmp/engine
 
 # Step 3: Generate Terraform configs.
