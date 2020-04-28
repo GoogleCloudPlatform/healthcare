@@ -21,17 +21,15 @@
 # - Org level IAM permissions for org admins.
 
 // TODO: replace with https://github.com/terraform-google-modules/terraform-google-bootstrap
-{{if get . "ENABLE_BOOTSTRAP_GCS_BACKEND"}}
-# ==============================================================================
-# TODO: Uncomment after initial deployment and run `terraform init`.
+{{- if enabled . "BOOTSTRAP_GCS_BACKEND"}}
 terraform {
   backend "gcs" {
     bucket = "{{.STATE_BUCKET}}"
     prefix = "bootstrap"
   }
 }
-# ==============================================================================
-{{end}}
+{{- end}}
+
 # Create the project, enable APIs, and create the deletion lien, if specified.
 module "project" {
   source  = "terraform-google-modules/project-factory/google"

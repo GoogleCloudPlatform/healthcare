@@ -65,15 +65,7 @@ $ terraform init
 $ terraform plan
 $ terraform apply
 
-# Step 5 (Optional): Backup bootstrap state to GCS backend.
-$ sed -i 's/ENABLE_BOOTSTRAP_GCS_BACKEND: false/ENABLE_BOOTSTRAP_GCS_BACKEND: true/' $CONFIG_PATH
-# Regenerate Terraform configs with bootstrap backend added.
-$ cd $ENGINE_ROOT
-$ bazel run :main -- --config_path=$CONFIG_PATH --output_path=$OUTPUT_PATH
-$ cd $OUTPUT_PATH/bootstrap
-$ terraform init
-
-# Step 6: Deploy Continuous Integration (CI) and Continuous Deployment (CD)
+# Step 5: Deploy Continuous Integration (CI) and Continuous Deployment (CD)
 # resources by following the instructions in components/cicd/README.md in this
 # directory or $OUTPUT_PATH/cicd/README.md in the generated Terraform configs
 # directory.
@@ -83,8 +75,12 @@ $ terraform init
 # reviews. Once approval is granted and CI tests pass, merge the PR. The CD job
 # will automatically deploy the change to your GCP infra.
 
-# Step 7: Deploy org infrastructure and other resources by sending a PR for
+# Step 6: Deploy org infrastructure and other resources by sending a PR for
 # local changes to the config repo.
+
+# Step 7: If a `DISABLED` block is present in the config, follow the steps for
+# all fields within the block and deploy the changes. Remove the `DISABLES`
+# block from the config once done.
 
 # Step 8 (Optional): Modify and/or add deployments as needed...
 $ cd $OUTPUT_PATH/org/.../example-deployment
@@ -94,15 +90,11 @@ $ cd $OUTPUT_PATH/org/.../example-deployment
 ## Tips
 
 -   Before running `terragrunt apply-all` always run `terragrunt plan-all` and
-    carefully review the output. Look for the values of the known fields to
-    ensure they are what you expect. You may see some values with the word
-    "mock" in them. These values are coming from other deployments and will be
-    filled with the real value once Terragrunt runs the dependent deployment.
-
--   `terragrunt apply-all` should be used at least once to deploy your baseline
-    org. After that, individual deployments should only be deployed one at a
-    time using `terragrunt apply`. This reduces the chances of a bad apply
-    affecting multiple parts of your infra and reduces the permissions needed.
+    carefully review the output. The CICD will create a trigger to generate the
+    plan. Look for the values of the known fields to ensure they are what you
+    expect. You may see some values with the word "mock" in them. These values
+    are coming from other deployments and will be filled with the real value
+    once Terragrunt runs the dependent deployment.
 
 -   If you plan on using the engine again, do not manually modify any generated
     file as it will be overwritten the next time the engine runs. Instead,

@@ -4,6 +4,8 @@ templates:
 - name: "network"
   component_path: "../../components/org/monitor/forseti_network"
   output_path: "./project.{{.PROJECT_ID}}/network"
+{{if enabled . "FORSETI_MODULE"}}
 - name: "forseti"
   component_path: "../../components/org/monitor/forseti"
   output_path: "./monitor/forseti"
+{{end}}
