@@ -27,12 +27,55 @@ Our templates use Google's best practice modules from the
 
 Use our [sample](./samples) configs to quickly get started.
 
-## Requirements
+## Prerequisites
 
--   [Terraform 0.12+](https://www.terraform.io/downloads.html)
--   [Terragrunt](https://github.com/gruntwork-io/terragrunt/releases)
--   [Go](https://golang.org/dl/)
--   [Bazel](https://bazel.build/)
+1.  Install the following dependencies and add them to your PATH:
+
+    -   [gcloud](https://cloud.google.com/sdk/gcloud)
+    -   [Terraform 0.12](https://www.terraform.io/)
+    -   [Terragrunt](https://terragrunt.gruntwork.io/)
+    -   [Go 1.14+](https://golang.org/dl/)
+    -   [Bazel](https://bazel.build/)
+
+1.  Get familiar with [GCP](https://cloud.google.com/docs/overview),
+    [Terraform](https://www.terraform.io/intro/index.html) and
+    [Terragrunt](https://blog.gruntwork.io/terragrunt-how-to-keep-your-terraform-code-dry-and-maintainable-f61ae06959d8).
+
+    The infrastructure is deployed using Terraform, which is an industry
+    standard for defining infrastructure-as-code. Terragrunt is used as a
+    wrapper around Terraform to manage multiple Terraform deployments and reduce
+    duplication.
+
+1.  Setup your
+    [organization](https://cloud.google.com/resource-manager/docs/creating-managing-organization)
+    for GCP resources and [G Suite Domain](https://gsuite.google.com/) for
+    groups.
+
+1.  [Create administrative groups](https://support.google.com/a/answer/33343?hl=en)
+    in the G Suite Domain:
+
+    -   {PREFIX}-org-admins@{DOMAIN}: This group will get administrative access
+        to the entire org. This group can be used in break-glass situations to
+        give humans access to the org to make changes.
+
+    -   {PREFIX}-devops-owners@{DOMAIN}: This group will get owners access to
+        the devops project to make changes to the CICD project or make changes
+        to the Terraform state.
+
+    -   {PREFIX}-auditors@{DOMAIN}: This group will get security reviewer
+        (metadata viewer) access to the entire org, as well as viewer access to
+        the audit logs BigQuery and Cloud Storage resources.
+
+    -   {PREFIX}-approvers@{DOMAIN}: This group will get access to view
+        Terraform plans and should approve PRs in the GitHub repo.
+
+    For example, with sample prefix "gcp" and domain "example.com" the group
+    "gcp-org-admins@example.com" should be created.
+
+    WARNING: It is always recommended to use CICD to deploy the changes instead.
+    The privileged groups should remain empty and only have humans added for
+    emergency situations or when investigation is required. This does not apply
+    to view only groups such as approvers.
 
 ## Usage
 
