@@ -10,10 +10,9 @@ into deployments complete with values for your infrastructure.
 
 Users hosting any type of sensitive data on GCP typically need to go through a
 few common and repetitive processes such as setting up devops, auditing and
-monitoring. By using our out of the box complete end-to-end configs that
-implement these steps for you, you can quickly setup a secure and compliant
-environment and focus on the parts of the infrastructure that drive your
-business.
+monitoring. By using our out of the box end-to-end configs that implement these
+steps for you, you can quickly setup a secure and compliant environment and focus
+on the parts of the infrastructure that drive your business.
 
 This tool will help you follow Terraform
 [best practices](https://www.hashicorp.com/resources/evolving-infrastructure-terraform-opencredo),
