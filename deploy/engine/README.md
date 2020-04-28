@@ -122,7 +122,7 @@ $ terraform apply
 # local changes to the config repo.
 
 # Step 7: If a `DISABLED` block is present in the config, follow the steps for
-# all fields within the block and deploy the changes. Remove the `DISABLES`
+# all fields within the block and deploy the changes. Remove the `DISABLED`
 # block from the config once done.
 
 # Step 8 (Optional): Modify and/or add deployments as needed...
