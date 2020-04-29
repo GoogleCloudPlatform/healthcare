@@ -37,7 +37,7 @@ import google.auth.credentials
 from hcls_imaging_ml_toolkit import dicom_path
 from hcls_imaging_ml_toolkit import tags
 
-CLOUD_HEALTHCARE_API_URL = 'https://healthcare.googleapis.com/v1beta1'
+CLOUD_HEALTHCARE_API_URL = 'https://healthcare.googleapis.com/v1'
 
 _TOO_MANY_REQUESTS_ERROR = 429
 
