@@ -1,3 +1,0 @@
-output "{{.NAME}}" {
-  value = {{.VALUE}}
-}
