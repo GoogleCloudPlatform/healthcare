@@ -1,5 +1,8 @@
 # Google Cloud Healthcare Data Protection Toolkit
 
+NOTE: The new version of the toolkit can be found at
+https://github.com/GoogleCloudPlatform/healthcare-data-protection-suite.
+
 **Status:** ALPHA
 
 *   [Features](#features)
