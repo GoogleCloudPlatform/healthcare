@@ -65,18 +65,21 @@ from email.mime import application
 from email.mime import multipart
 import json
 import logging
-import os
-import re
+import posixpath
 import sys
 import traceback
 import uuid
 
-import attr
 import googleapiclient.discovery
+from hcls_imaging_ml_toolkit import dicom_json
+from hcls_imaging_ml_toolkit import dicom_path
+from hcls_imaging_ml_toolkit import exception
+from hcls_imaging_ml_toolkit import pubsub_format
+from hcls_imaging_ml_toolkit import tag_values
+from hcls_imaging_ml_toolkit import tags
 import httplib2
 from oauth2client.client import GoogleCredentials
 from requests_toolbelt.multipart import decoder
-import tags
 
 from google.api_core.exceptions import InvalidArgument
 from google.api_core.exceptions import PermissionDenied
@@ -90,20 +93,11 @@ _logger.setLevel(logging.INFO)
 FLAGS = None
 
 # Prefix for Cloud Healthcare API.
-_HEALTHCARE_API_URL_PREFIX = 'https://healthcare.googleapis.com/v1beta1'
+_HEALTHCARE_API_URL_PREFIX = 'https://healthcare.googleapis.com/v1'
 
 # Credentails used to access Cloud Healthcare API.
 _CREDENTIALS = GoogleCredentials.get_application_default().create_scoped(
     ['https://www.googleapis.com/auth/cloud-platform'])
-
-# SOP Class UID for Basic Text Structured Reports.
-_BASIC_TEXT_SR_CUID = '1.2.840.10008.5.1.4.1.1.88.11'
-
-# DICOM Tags.
-_SOP_INSTANCE_UID_TAG = '00080018'
-_SOP_CLASS_UID_TAG = '00080016'
-
-_VALUE_TYPE = 'Value'
 
 # Number of times to retry failing CMLE predictions.
 _NUM_RETRIES_CMLE = 5
@@ -140,7 +134,7 @@ def _WadoRs(instance_path):
   Raises:
     RuntimeError: If failed to retrieve or process instance.
   """
-  wado_url = os.path.join(_HEALTHCARE_API_URL_PREFIX, instance_path)
+  wado_url = posixpath.join(_HEALTHCARE_API_URL_PREFIX, instance_path)
   http = httplib2.Http()
   http = _CREDENTIALS.authorize(http)
 
@@ -179,7 +173,7 @@ def _StowRs(study_path, jsonstr):
   Raises:
     RuntimeError: If failed to store instance.
   """
-  stow_url = os.path.join(_HEALTHCARE_API_URL_PREFIX, study_path)
+  stow_url = posixpath.join(_HEALTHCARE_API_URL_PREFIX, study_path)
   http = httplib2.Http()
   http = _CREDENTIALS.authorize(http)
   application_type = 'dicom+json'
@@ -368,7 +362,7 @@ def _BuildJSONSR(text, series_uid, instance_uid, study_json):
   # Dicom StowJsonRs expects a list with DICOM JSON as elements.
   # Add study level tags to the SR.
   dataset = study_json
-  _InsertJSONTag(dataset, tags.SOP_CLASS_UID, _BASIC_TEXT_SR_CUID)
+  _InsertJSONTag(dataset, tags.SOP_CLASS_UID, tag_values.BASIC_TEXT_SR_CUID)
   _InsertJSONTag(dataset, tags.SERIES_INSTANCE_UID, series_uid)
   _InsertJSONTag(dataset, tags.SOP_INSTANCE_UID, instance_uid)
   _InsertJSONTag(dataset, tags.SPECIFIC_CHARACTER_SET, _CHARACTER_SET)
@@ -380,7 +374,8 @@ def _BuildJSONSR(text, series_uid, instance_uid, study_json):
   _InsertJSONTag(dataset, tags.CONTENT_SEQUENCE, content_dataset)
 
   _InsertJSONTag(dataset, tags.TRANSFER_SYNTAX_UID, _IMPLICIT_VR_LITTLE_ENDIAN)
-  _InsertJSONTag(dataset, tags.MEDIA_STORAGE_SOP_CLASS_UID, _BASIC_TEXT_SR_CUID)
+  _InsertJSONTag(dataset, tags.MEDIA_STORAGE_SOP_CLASS_UID,
+                 tag_values.BASIC_TEXT_SR_CUID)
   _InsertJSONTag(dataset, tags.MEDIA_STORAGE_SOP_INSTANCE_UID, instance_uid)
 
   jsonstr = json.dumps([dataset])
@@ -400,16 +395,25 @@ def _GenerateUID(prefix=_UUID_INFERENCE_PREFIX):
   return prefix + '.' + str(uuid.uuid4().int)
 
 
-@attr.s
-class ParsedMessage(object):
-  """ParsedMessage represents the parsed Pub/Sub message.
+def _IsMammoInstance(instance_path):
+  # type: dicom_path.Path -> bool
+  """Returns whether the DICOM instance is of type MG modality.
 
-  Attributes:
-    dicomweb_url: The dicom URL.
-    study_uid: Study UID.
+  Args:
+    instance_path: dicom_path.Path of DICOM instance.
+
+  Returns:
+    ParsedMessage or None if the message is invalid.
   """
-  dicomweb_url = attr.ib()  # type: str
-  study_uid = attr.ib()  # type: str
+  series_url = posixpath.join(_HEALTHCARE_API_URL_PREFIX,
+                              str(instance_path.GetSeriesPath()))
+  qido_url = ('%s/instances?SOPInstanceUID=%s&includefield=%s' %
+              (series_url, instance_path.instance_uid, tags.MODALITY.number))
+  parsed_content = _QidoRs(qido_url)[0]
+  modality = dicom_json.GetValue(parsed_content, tags.MODALITY)
+  if modality is None or modality != tag_values.MG_MODALITY:
+    return False
+  return True
 
 
 class PubsubMessageHandler(object):
@@ -427,47 +431,14 @@ class PubsubMessageHandler(object):
       dicom_store_path: DICOM store used to store inference results.
     """
     self._predictor = predictor
-    self._dicom_store_path = dicom_store_path
+    # May raise exception if the path is invalid.
+    if dicom_store_path:
+      self._dicom_store_path = dicom_path.FromString(dicom_store_path,
+                                                     dicom_path.Type.STORE)
+    else:
+      self._dicom_store_path = None
     self._success_count = 0
     self.publisher = pubsub_v1.PublisherClient()
-
-  def _ParseMessage(self, message):
-    # type: pubsub_v1.Message -> Optional[ParsedMessage]
-    """Returns the parsed pubsub message and filters malformed/non-MG messages.
-
-    Checks that the path is valid. Also filters out non-MG modality.
-
-    Args:
-      message: Pubsub message.
-
-    Returns:
-      ParsedMessage or None if the message is invalid.
-    """
-    image_instance_path = message.data.decode()
-    regexp = (r'projects/([^/]+)/locations/([^/]+)/datasets/([^/]+)/dicomStores'
-              '/([^/]+)/dicomWeb/studies/([^/]+)/series/([^/]+)/instances/'
-              '([^/]+)/?$')
-    match = re.match(regexp, image_instance_path)
-    if (match is None) or (len(match.groups()) != 7):
-      return None
-    project_id = match.group(1)
-    location_id = match.group(2)
-    dataset_id = match.group(3)
-    dicom_store_id = match.group(4)
-    study_uid = match.group(5)
-    series_uid = match.group(6)
-    instance_uid = match.group(7)
-    dicomweb_url = ('%s/projects/%s/locations/%s/datasets/%s/dicomStores/%s/'
-                    'dicomWeb' % (_HEALTHCARE_API_URL_PREFIX, project_id,
-                                  location_id, dataset_id, dicom_store_id))
-    qido_url = ('%s/studies/%s/series/%s/instances?SOPInstanceUID=%s&'
-                'includefield=%s' % (dicomweb_url, study_uid, series_uid,
-                                     instance_uid, tags.MODALITY_TAG.number))
-    parsed_content = _QidoRs(qido_url)[0]
-    modality_dict = parsed_content.get(tags.MODALITY_TAG.number, {})
-    if modality_dict.get(_VALUE_TYPE, [None])[0] != 'MG':
-      return None
-    return ParsedMessage(study_uid=study_uid, dicomweb_url=dicomweb_url)
 
   def _PublishInferenceResultsReady(self, image_instance_path):
     # type: str -> None
@@ -529,9 +500,17 @@ class PubsubMessageHandler(object):
     """
     image_instance_path = message.data.decode()
     _logger.debug('Received instance in pubsub feed: %s', image_instance_path)
-    parsed_message = self._ParseMessage(message)
-    if not parsed_message:
-      _logger.info('Ignoring new message: %s', image_instance_path)
+    try:
+      parsed_message = pubsub_format.ParseMessage(message,
+                                                  dicom_path.Type.INSTANCE)
+    except exception.CustomExceptionError:
+      _logger.info('Invalid input path: %s', image_instance_path)
+      message.ack()
+      return
+    input_path = parsed_message.input_path
+    if not _IsMammoInstance(input_path):
+      _logger.info('Instance is not of type MG modality, ignoring message: %s',
+                   image_instance_path)
       message.ack()
       return
 
@@ -540,8 +519,10 @@ class PubsubMessageHandler(object):
     # Retrieve instance from DICOM API in JPEG format.
     image_jpeg_bytes = _WadoRs(image_instance_path)
     # Retrieve study level information
+    dicom_web_url = posixpath.join(_HEALTHCARE_API_URL_PREFIX,
+                                   input_path.dicomweb_path_str)
     qido_study_url = ('%s/studies?StudyInstanceUID=%s&includefield=all' %
-                      (parsed_message.dicomweb_url, parsed_message.study_uid))
+                      (dicom_web_url, input_path.study_uid))
     study_json = _QidoRs(qido_study_url)[0]
     # Get the predicted score and class from the inference model in Cloud ML or
     # AutoML.
@@ -572,9 +553,10 @@ class PubsubMessageHandler(object):
       # Store the DICOM structured report in a different series using Healthcare
       # API.
       dicom_sr = _BuildJSONSR(text, sr_series_uid, sr_instance_uid, study_json)
-      study_path = os.path.join(self._dicom_store_path, 'dicomWeb', 'studies')
+      study_path = dicom_path.FromPath(
+          self._dicom_store_path, study_uid=input_path.study_uid)
       try:
-        _StowRs(study_path, dicom_sr)
+        _StowRs(str(study_path.GetStudyPath()), dicom_sr)
       except RuntimeError as e:
         _logger.error('Error storing DICOM in API: %s', e)
         message.nack()
@@ -582,10 +564,9 @@ class PubsubMessageHandler(object):
 
       # If user requested that new structured reports be published to a channel,
       # publish the instance path of the Structured Report
-      structured_report_path = os.path.join(
-          study_path, parsed_message.study_uid, 'series', sr_series_uid,
-          'instances', sr_instance_uid)
-      self._PublishInferenceResultsReady(structured_report_path)
+      structured_report_path = dicom_path.FromPath(
+          study_path, series_uid=sr_series_uid, instance_uid=sr_instance_uid)
+      self._PublishInferenceResultsReady(str(structured_report_path))
       _logger.info('Published structured report with path: %s',
                    structured_report_path)
     # Ack the message (successful or invalid message).

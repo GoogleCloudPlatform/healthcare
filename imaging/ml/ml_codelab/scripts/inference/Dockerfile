@@ -18,8 +18,13 @@ FROM google/cloud-sdk
 RUN mkdir -p /opt/inference_module/src && mkdir -p /opt/inference_module/bin
 ADD / /opt/inference_module/src/
 
-# Install dependencies.
+# Install pip3.
 RUN apt-get -y install python3-pip
+
+# Install hcls_imaging_ml_toolkit.
+RUN pip3 install git+https://github.com/GoogleCloudPlatform/healthcare.git#subdirectory=imaging/ml/toolkit
+
+# Install dependencies.
 RUN python3 -m pip install setuptools && \
     cd /opt/inference_module/src/ && \
     python3 setup.py install

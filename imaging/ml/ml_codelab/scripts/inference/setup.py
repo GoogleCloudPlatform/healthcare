@@ -17,9 +17,9 @@ from setuptools import find_packages
 from setuptools import setup
 
 REQUIRED_PACKAGES = [
-    'requests-toolbelt', 'google-api-python-client', 'google-api-core<1.17.0',
-    'google-cloud-pubsub', 'httplib2', 'oauth2client', 'google-cloud-automl',
-    'attrs'
+    'setuptools', 'requests-toolbelt', 'google-api-python-client',
+    'google-api-core<1.17.0', 'google-cloud-pubsub', 'httplib2', 'oauth2client',
+    'google-cloud-automl', 'attrs'
 ]
 
 setup(
