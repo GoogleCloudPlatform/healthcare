@@ -11,21 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Module used to setup inference module."""
-
-from setuptools import find_packages
-from setuptools import setup
-
-REQUIRED_PACKAGES = [
-    'setuptools', 'requests-toolbelt', 'google-api-python-client',
-    'google-api-core<1.17.0', 'google-cloud-pubsub', 'httplib2', 'oauth2client',
-    'google-cloud-automl', 'attrs'
-]
-
-setup(
-    name='breast_density_inference_module',
-    version='0.1',
-    install_requires=REQUIRED_PACKAGES,
-    packages=find_packages(),
-    include_package_data=True,
-    description='Breast Density Classification Inference Module.')
+requests-toolbelt
+google-api-python-client
+google-api-core<1.17.0
+google-cloud-pubsub
+httplib2
+oauth2client
+google-cloud-automl
+attrs
+dicomweb-client
+hcls-imaging-ml-toolkit@git+https://github.com/GoogleCloudPlatform/healthcare.git#subdirectory=imaging/ml/toolkit
