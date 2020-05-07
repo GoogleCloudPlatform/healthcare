@@ -5,15 +5,10 @@ This directory contains useful helpers for deploying an ML Model using the Cloud
 
 # Installation
 
-1. Clone the library:
-
-    `git clone https://github.com/GoogleCloudPlatform/healthcare.git`
-
-2. Install dependencies:
+1. PIP install from github:
 
     ```
-    cd healthcare
-    pip install ./imaging/ml/toolkit
+    pip3 install git+https://github.com/GoogleCloudPlatform/healthcare.git#subdirectory=imaging/ml/toolkit
     ```
 
 
