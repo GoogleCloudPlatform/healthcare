@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from typing import Any, List, Text
+from typing import Any, List, Text, Union
 import attr
 import grpc
 import retrying
@@ -121,9 +121,10 @@ class ModelServer(object):
     """
     return self._Predict(input_bytes, 1, model_config)
 
-  def PredictExamples(self, examples: List[tf.train.Example],
+  def PredictExamples(self, examples: Union[List[tf.train.Example],
+                                            List[tf.train.SequenceExample]],
                       model_config: ModelConfig) -> List[List[float]]:
-    """Get prediction for a list of TF examples from the model server.
+    """Get prediction for a list of TF (Sequence)Examples from the model server.
 
     Args:
       examples: The list of TF examples used as input to TF serving.
