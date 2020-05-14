@@ -120,7 +120,7 @@ func (b *StorageBucket) Init(projectID string) error {
 
 // ID returns the resource unique identifier.
 func (b *StorageBucket) ID() string {
-	return b.Name
+	return standardizeID(b.Name)
 }
 
 // ResourceType returns the resource terraform provider type.
@@ -201,7 +201,7 @@ func (m *StorageIAMMember) Init(string) error {
 
 // ID returns the unique identifier.
 func (m *StorageIAMMember) ID() string {
-	return m.id
+	return standardizeID(m.id)
 }
 
 // ResourceType returns the terraform provider type.
