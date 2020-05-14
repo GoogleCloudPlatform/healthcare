@@ -141,10 +141,10 @@ func (b *StorageBucket) DependentResources() []Resource {
 	}
 	return []Resource{&StorageIAMMember{
 		ForEach: forEach,
-		Bucket:  fmt.Sprintf("${google_storage_bucket.%s.name}", b.Name),
+		Bucket:  fmt.Sprintf("${google_storage_bucket.%s.name}", b.ID()),
 		Role:    "${each.value.role}",
 		Member:  "${each.value.member}",
-		id:      b.Name,
+		id:      b.ID(),
 	}}
 }
 
