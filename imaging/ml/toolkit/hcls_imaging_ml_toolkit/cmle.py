@@ -17,8 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import base64
-from typing import Any, Optional, Text
+from typing import Any, Dict, Optional, Text
 
 import attr
 import google_auth_httplib2
@@ -60,11 +59,12 @@ class Predictor(object):
     self._cmle_client = googleapiclient.discovery.build(
         'ml', 'v1', requestBuilder=_BuildRequest)
 
-  def Predict(self, model_input: bytes, model_config: ModelConfig) -> Any:
+  def Predict(self, model_input: Dict[Text, Any],
+              model_config: ModelConfig) -> Any:
     """Envokes CMLE client predictition and returns the model output.
 
     Args:
-      model_input: The model input bytes.
+      model_input: The model input json.
       model_config: The model configuration used to invoke CMLE.
 
     Returns:
@@ -73,13 +73,8 @@ class Predictor(object):
     Raises:
       PredictError: If unable to get results from CMLE.
     """
-    model_input_json = {
-        'instances': [{
-            'b64': base64.b64encode(model_input).decode('utf-8')
-        },],
-    }
     response = self._cmle_client.projects().predict(
-        name=model_config.name, body=model_input_json).execute(num_retries=3)
+        name=model_config.name, body=model_input).execute(num_retries=3)
     if 'error' in response:
       raise PredictError(response['error'])
     predictions = response['predictions']

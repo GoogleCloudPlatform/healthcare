@@ -24,6 +24,12 @@ import google.auth
 
 from hcls_imaging_ml_toolkit import cmle
 
+_SAMPLE_MODEL_INPUT_JSON = {
+    'instances': [{
+        'b64': 'input_data'
+    }],
+}
+
 
 class CmleTest(parameterized.TestCase):
 
@@ -58,8 +64,10 @@ class CmleTest(parameterized.TestCase):
   )
   def testPredictSuccess(self, response, key):
     self._SetPredictResponse(response)
+
     output = self._predictor.Predict(
-        b'', cmle.ModelConfig(name='projects/p1/models/m1', output_key=key))
+        _SAMPLE_MODEL_INPUT_JSON,
+        cmle.ModelConfig(name='projects/p1/models/m1', output_key=key))
     self.assertEqual(output, 'value')
 
   @parameterized.parameters(
@@ -76,7 +84,8 @@ class CmleTest(parameterized.TestCase):
     self._SetPredictResponse(mock_response)
     with self.assertRaises(cmle.PredictError):
       self._predictor.Predict(
-          b'', cmle.ModelConfig(name='projects/p1/models/m1', output_key='key'))
+          _SAMPLE_MODEL_INPUT_JSON,
+          cmle.ModelConfig(name='projects/p1/models/m1', output_key='key'))
 
 
 if __name__ == '__main__':
