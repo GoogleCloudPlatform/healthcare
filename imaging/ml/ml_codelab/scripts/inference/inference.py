@@ -68,7 +68,7 @@ import traceback
 from dicomweb_client import session_utils
 from dicomweb_client.api import DICOMwebClient
 from dicomweb_client.api import load_json_dataset
-import googleapiclient.discovery
+from hcls_imaging_ml_toolkit import cmle
 from hcls_imaging_ml_toolkit import dicom_path
 from hcls_imaging_ml_toolkit import exception
 from hcls_imaging_ml_toolkit import pubsub_format
@@ -126,7 +126,7 @@ class CMLEPredictor(Predictor):
   """
 
   def __init__(self, model_path):
-    self._model_path = model_path
+    self._model_config = cmle.ModelConfig(name=model_path)
 
   def Predict(self, image_jpeg_bytes):
     # type: str -> (str, str)
@@ -147,9 +147,7 @@ class CMLEPredictor(Predictor):
     Raises:
       RuntimeError: if failed to get inference results.
     """
-
-    # CMLE requires images to be encoded in this format:
-    # https://cloud.google.com/ml-engine/docs/v1/predict-request
+    predictor = cmle.Predictor()
     input_data = {
         'instances': [{
             'inputs': [{
@@ -157,19 +155,10 @@ class CMLEPredictor(Predictor):
             }]
         }]
     }
-    # Disable cache discovery due to following issue:
-    # https://github.com/google/google-api-python-client/issues/299
-    service = googleapiclient.discovery.build('ml', 'v1', cache_discovery=False)
-    response = service.projects().predict(
-        name=self._model_path,
-        body=input_data).execute(num_retries=_NUM_RETRIES_CMLE)
-
-    # Propagate the error.
-    if 'error' in response:
-      raise RuntimeError(response['error'])
+    response = predictor.Predict(input_data, self._model_config)
 
     # Return the predictions.
-    prediction = response['predictions'][0]
+    prediction = response[0]
     return prediction['classes'], prediction['scores']
 
 
