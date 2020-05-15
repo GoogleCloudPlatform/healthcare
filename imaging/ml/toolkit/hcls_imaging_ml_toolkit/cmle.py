@@ -18,7 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import base64
-from typing import Any, Text
+from typing import Any, Optional, Text
 
 import attr
 import google_auth_httplib2
@@ -35,7 +35,7 @@ class ModelConfig(object):
     output_key: The output key to return.
   """
   name = attr.ib(type=Text)
-  output_key = attr.ib(type=Text)
+  output_key = attr.ib(default=None, type=Optional[Text])
 
 
 class PredictError(Exception):
@@ -83,6 +83,9 @@ class Predictor(object):
     if 'error' in response:
       raise PredictError(response['error'])
     predictions = response['predictions']
-    if model_config.output_key not in predictions:
-      raise PredictError('CMLE output missing %s key' % model_config.output_key)
-    return predictions[model_config.output_key]
+    if model_config.output_key:
+      if model_config.output_key not in predictions:
+        raise PredictError('CMLE output missing %s key' %
+                           model_config.output_key)
+      return predictions[model_config.output_key]
+    return predictions

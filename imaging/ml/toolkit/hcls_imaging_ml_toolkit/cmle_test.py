@@ -46,11 +46,20 @@ class CmleTest(parameterized.TestCase):
     (self._discovery_client.return_value.projects.return_value.predict
      .return_value.execute.return_value) = return_value
 
-  def testPredictSuccess(self):
-    response = {'predictions': {'key': 'value'}}
+  @parameterized.parameters(
+      ({
+          'predictions': {
+              'key': 'value'
+          }
+      }, 'key'),
+      ({
+          'predictions': 'value'
+      }, None),
+  )
+  def testPredictSuccess(self, response, key):
     self._SetPredictResponse(response)
     output = self._predictor.Predict(
-        b'', cmle.ModelConfig(name='projects/p1/models/m1', output_key='key'))
+        b'', cmle.ModelConfig(name='projects/p1/models/m1', output_key=key))
     self.assertEqual(output, 'value')
 
   @parameterized.parameters(
