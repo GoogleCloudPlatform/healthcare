@@ -110,7 +110,6 @@ class ResponseHandler(object):
       message: Error message to be sent.
       input_message: Input Pub/Sub message that caused the error.
     """
-    logging.exception(None)
     response_message = ResponseMessage(
         status_code=status_code,
         input_message_id=input_message.message_id,
