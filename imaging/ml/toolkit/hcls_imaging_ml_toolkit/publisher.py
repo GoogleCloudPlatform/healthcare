@@ -46,7 +46,7 @@ class PublisherClient(object):
 
   def Publish(
       self,
-      data: Text,
+      data: bytes,
       attributes: Optional[Dict[Text, Text]] = None
   ) -> google.api_core.future.Future:
     """Publishes Pub/Sub message to topic set in PublisherClient.
