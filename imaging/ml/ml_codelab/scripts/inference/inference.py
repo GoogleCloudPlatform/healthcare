@@ -68,7 +68,7 @@ import traceback
 from dicomweb_client import session_utils
 from dicomweb_client.api import DICOMwebClient
 from dicomweb_client.api import load_json_dataset
-from hcls_imaging_ml_toolkit import cmle
+from hcls_imaging_ml_toolkit import caip
 from hcls_imaging_ml_toolkit import dicom_path
 from hcls_imaging_ml_toolkit import exception
 from hcls_imaging_ml_toolkit import pubsub_format
@@ -95,8 +95,8 @@ _HEALTHCARE_API_URL_PREFIX = 'https://healthcare.googleapis.com/v1'
 _CREDENTIALS = GoogleCredentials.get_application_default().create_scoped(
     ['https://www.googleapis.com/auth/cloud-platform'])
 
-# Number of times to retry failing CMLE predictions.
-_NUM_RETRIES_CMLE = 5
+# Number of times to retry failing CAIP predictions.
+_NUM_RETRIES_CAIP = 5
 
 # Accepted character set.
 _CHARACTER_SET = 'ISO_IR 192'
@@ -118,15 +118,15 @@ class Predictor(object):
     raise NotImplementedError
 
 
-class CMLEPredictor(Predictor):
-  """Handler for CMLE predictor.
+class CAIPPredictor(Predictor):
+  """Handler for CAIP predictor.
 
   Attributes:
     model_path: Path to model.
   """
 
   def __init__(self, model_path):
-    self._model_config = cmle.ModelConfig(name=model_path)
+    self._model_config = caip.ModelConfig(name=model_path)
 
   def Predict(self, image_jpeg_bytes):
     # type: str -> (str, str)
@@ -147,7 +147,7 @@ class CMLEPredictor(Predictor):
     Raises:
       RuntimeError: if failed to get inference results.
     """
-    predictor = cmle.Predictor()
+    predictor = caip.Predictor()
     input_data = {
         'instances': [{
             'inputs': [{
@@ -326,11 +326,11 @@ class PubsubMessageHandler(object):
     """Processes a Pubsub message.
 
     This function will retrieve the instance (specified in Pubsub message) from
-    the Cloud Healthcare API. Then it will invoke CMLE to get the prediction
-    results. Finally (and optionally), it will store the inference results back
-    to the Cloud Healthcare API as a DICOM Structured Report. The instance URL
-    to the Structured Report containing the prediction is then published to a
-    pub/sub.
+    the Cloud Healthcare API. Then it will invoke CAIP Prediction API to get the
+    prediction results. Finally (and optionally), it will store the inference
+    results back to the Cloud Healthcare API as a DICOM Structured Report. The
+    instance URL to the Structured Report containing the prediction is then
+    published to a pub/sub.
 
     Args:
       message: Incoming pubsub message.
@@ -425,12 +425,12 @@ class PubsubMessageHandler(object):
 
 
 def main():
-  if FLAGS.prediction_service == 'CMLE':
-    predictor = CMLEPredictor(FLAGS.model_path)
+  if FLAGS.prediction_service == 'CAIP':
+    predictor = CAIPPredictor(FLAGS.model_path)
   elif FLAGS.prediction_service == 'AutoML':
     predictor = AutoMLPredictor(FLAGS.model_path)
   else:
-    raise ValueError('FLAGS.prediction_service must be CMLE or AutoML.')
+    raise ValueError('FLAGS.prediction_service must be CAIP or AutoML.')
 
   handler = PubsubMessageHandler(predictor, FLAGS.dicom_store_path)
   subscriber = pubsub_v1.SubscriberClient()
@@ -484,8 +484,8 @@ if __name__ == '__main__':
   parser.add_argument(
       '--prediction_service',
       type=str,
-      default='CMLE',
-      help='Service to call for prediction, either "CMLE" or "AutoML"')
+      default='CAIP',
+      help='Service to call for prediction, either "CAIP" or "AutoML"')
   parser.add_argument(
       '--pubsub_timeout',
       type=int,
