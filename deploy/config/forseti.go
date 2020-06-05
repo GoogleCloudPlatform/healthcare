@@ -43,9 +43,6 @@ func (p *ForsetiProperties) Init() error {
 	if p.Domain != "" {
 		return fmt.Errorf("domain must be unset: %v", p.Domain)
 	}
-	if len(p.CompositeRootResources) > 0 {
-		return fmt.Errorf("composite_root_resources must be unset: %v", p.CompositeRootResources)
-	}
 	return nil
 }
 

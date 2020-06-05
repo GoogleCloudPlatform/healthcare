@@ -274,14 +274,15 @@ func (c *Config) initForseti() error {
 	p.ProjectID = c.Forseti.Project.ID
 	p.Domain = c.Overall.Domain
 
-	var resources []string
-	if c.Overall.OrganizationID != "" {
-		resources = append(resources, "organizations/"+c.Overall.OrganizationID)
+	p.CompositeRootResources = c.Forseti.Properties.CompositeRootResources
+	if len(p.CompositeRootResources) == 0 {
+		if c.Overall.OrganizationID != "" {
+			p.CompositeRootResources = append(p.CompositeRootResources, "organizations/"+c.Overall.OrganizationID)
+		}
+		for _, f := range c.AllFolders() {
+			p.CompositeRootResources = append(p.CompositeRootResources, "folders/"+f)
+		}
 	}
-	for _, f := range c.AllFolders() {
-		resources = append(resources, "folders/"+f)
-	}
-	p.CompositeRootResources = resources
 	return nil
 }
 

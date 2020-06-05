@@ -132,12 +132,17 @@ type ConfigData struct {
 
 // ConfigBeforeInit gets config that did not call the init() function.
 func ConfigBeforeInit(t *testing.T, data *ConfigData) *config.Config {
+	return ConfigBeforeInitWithTestConfigYAML(t, data, configYAML)
+}
+
+// ConfigBeforeInitWithTestConfigYAML gets config from a testYAML that did not call the init() function.
+func ConfigBeforeInitWithTestConfigYAML(t *testing.T, data *ConfigData, testYAML string) *config.Config {
 	t.Helper()
 	if data == nil {
 		data = &ConfigData{}
 	}
 
-	tmpl, err := template.New("test").Funcs(template.FuncMap{"lpad": lpad}).Parse(configYAML)
+	tmpl, err := template.New("test").Funcs(template.FuncMap{"lpad": lpad}).Parse(testYAML)
 	if err != nil {
 		t.Fatalf("template Parse: %v", err)
 	}
@@ -159,11 +164,16 @@ func ConfigBeforeInit(t *testing.T, data *ConfigData) *config.Config {
 
 // ConfigAndProject gets a test config and project.
 func ConfigAndProject(t *testing.T, data *ConfigData) (*config.Config, *config.Project) {
+	return ConfigAndProjectWithTestConfigYAML(t, data, configYAML)
+}
+
+// ConfigAndProjectWithTestConfigYAML gets a test config and project from a testYAML.
+func ConfigAndProjectWithTestConfigYAML(t *testing.T, data *ConfigData, testYAML string) (*config.Config, *config.Project) {
 	genFields := new(config.AllGeneratedFields)
 	if err := yaml.Unmarshal([]byte(generatedFieldsYAML), genFields); err != nil {
 		t.Fatalf("unmarshal generated fields: %v", err)
 	}
-	conf := ConfigBeforeInit(t, data)
+	conf := ConfigBeforeInitWithTestConfigYAML(t, data, testYAML)
 	if err := conf.Init(genFields); err != nil {
 		t.Fatalf("conf.Init = %v", err)
 	}
