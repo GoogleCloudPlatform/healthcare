@@ -35,8 +35,6 @@ class Type(enum.Enum):
 
 _ATTR_VALIDATOR_ID_1 = attr.validators.matches_re(r'[\w-]+')
 _ATTR_VALIDATOR_ID_2 = attr.validators.matches_re(r'[\w.-]+')
-_ATTR_VALIDATOR_UID = attr.validators.optional(
-    attr.validators.matches_re(r'[\d.]+'))
 
 
 @attr.s(frozen=True)
@@ -56,12 +54,9 @@ class Path(object):
   location = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_1)
   dataset_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_2)
   store_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_2)
-  study_uid = attr.ib(
-      default=None, type=Optional[Text], validator=_ATTR_VALIDATOR_UID)
-  series_uid = attr.ib(
-      default=None, type=Optional[Text], validator=_ATTR_VALIDATOR_UID)
-  instance_uid = attr.ib(
-      default=None, type=Optional[Text], validator=_ATTR_VALIDATOR_UID)
+  study_uid = attr.ib(default=None, type=Optional[Text])
+  series_uid = attr.ib(default=None, type=Optional[Text])
+  instance_uid = attr.ib(default=None, type=Optional[Text])
 
   @study_uid.validator
   def _StudyUidMissing(self, _, value: Optional[Text]) -> None:

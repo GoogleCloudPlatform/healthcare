@@ -96,12 +96,6 @@ class DicomPathTest(parameterized.TestCase):
                       'data%cset' % illegal_char, 's')
     self.assertRaises(ValueError, dicom_path.Path, 'p', 'l', 'd',
                       'st%core' % illegal_char)
-    self.assertRaises(ValueError, dicom_path.Path, 'p', 'l', 'd', 's',
-                      '1.2%c3' % illegal_char)
-    self.assertRaises(ValueError, dicom_path.Path, 'p', 'l', 'd', 's', '1.2.3',
-                      '4.5%c6' % illegal_char)
-    self.assertRaises(ValueError, dicom_path.Path, 'p', 'l', 'd', 's', '1.2.3',
-                      '4.5.6', '7.8%c9' % illegal_char)
 
   def testUidMissingError(self):
     """ValueError is raised when an expected UID is missing."""
