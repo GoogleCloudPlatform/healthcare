@@ -24,9 +24,10 @@ PROJECT_NAME = 'project_name'
 LOCATION = 'us-central1'
 DATASET_ID = 'dataset-id'
 STORE_ID = 'dicom_store-id'
-STUDY_UID = '1.2.3'
-SERIES_UID = '4.5.6'
-INSTANCE_UID = '7.8.9'
+# Support alphanumeric characters in DICOM UIDs
+STUDY_UID = '1.2.3a'
+SERIES_UID = '4.5.6b'
+INSTANCE_UID = '7.8.9c'
 DATASET_PATH_STR = posixpath.join('projects', PROJECT_NAME, 'locations',
                                   LOCATION, 'datasets', DATASET_ID)
 STORE_PATH_STR = posixpath.join(DATASET_PATH_STR, 'dicomStores', STORE_ID)

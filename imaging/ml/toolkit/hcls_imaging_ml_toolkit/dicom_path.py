@@ -32,9 +32,21 @@ class Type(enum.Enum):
   SERIES = 'series'
   INSTANCE = 'instance'
 
-
-_ATTR_VALIDATOR_ID_1 = attr.validators.matches_re(r'[\w-]+')
-_ATTR_VALIDATOR_ID_2 = attr.validators.matches_re(r'[\w.-]+')
+# Used for project ID and location validation
+_REGEX_ID_1 = r'[\w-]+'
+# Used for dataset ID and dicom store ID validation
+_REGEX_ID_2 = r'[\w.-]+'
+# Used for DICOM UIDs validation
+# '/' is not allowed because the parsing logic in the class uses '/' to
+# tokenize the path.
+# '@' is not allowed due to security concerns: theoretically it could lead
+# to the part before '@' being interpreted as the username, and the part
+# after - as the server address, which is a potential vulnerability.
+_REGEX_UID = r'[^/@]+'
+_ATTR_VALIDATOR_ID_1 = attr.validators.matches_re(_REGEX_ID_1)
+_ATTR_VALIDATOR_ID_2 = attr.validators.matches_re(_REGEX_ID_2)
+_ATTR_VALIDATOR_UID = attr.validators.optional(
+    attr.validators.matches_re(_REGEX_UID))
 
 
 @attr.s(frozen=True)
@@ -54,9 +66,12 @@ class Path(object):
   location = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_1)
   dataset_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_2)
   store_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_2)
-  study_uid = attr.ib(default=None, type=Optional[Text])
-  series_uid = attr.ib(default=None, type=Optional[Text])
-  instance_uid = attr.ib(default=None, type=Optional[Text])
+  study_uid = attr.ib(
+      default=None, type=Optional[Text], validator=_ATTR_VALIDATOR_UID)
+  series_uid = attr.ib(
+      default=None, type=Optional[Text], validator=_ATTR_VALIDATOR_UID)
+  instance_uid = attr.ib(
+      default=None, type=Optional[Text], validator=_ATTR_VALIDATOR_UID)
 
   @study_uid.validator
   def _StudyUidMissing(self, _, value: Optional[Text]) -> None:
@@ -137,8 +152,8 @@ def _MatchRegex(regex: Text, text_str: Text, error_str) -> Match[Text]:
 
 def _FromString(path_str: Text) -> Path:
   """Parses the string and returns the Path object or raises ValueError if failed."""
-  store_regex = (r'projects/([\w-]+)/locations/([\w-]+)/datasets/'
-                 r'([\w.-]+)/dicomStores/([\w.-]+)(.*)')
+  store_regex = (r'projects/(%s)/locations/(%s)/datasets/(%s)/dicomStores/(%s)'
+                 r'(.*)' % (_REGEX_ID_1, _REGEX_ID_1, _REGEX_ID_2, _REGEX_ID_2))
   match_err_str = 'Error parsing the path. Path: %s' % path_str
   store_match = _MatchRegex(store_regex, path_str, match_err_str)
 
@@ -151,7 +166,7 @@ def _FromString(path_str: Text) -> Path:
   if not store_path_suffix or store_path_suffix == '/':
     return Path(project_id, location, dataset_id, store_id)
 
-  studies_regex = r'/dicomWeb/studies/([\d.]+)(.*)'
+  studies_regex = r'/dicomWeb/studies/(%s)(.*)' % _REGEX_UID
   studies_match = _MatchRegex(studies_regex, store_path_suffix, match_err_str)
   study_uid = studies_match.group(1)
   study_path_suffix = studies_match.group(2)
@@ -159,7 +174,7 @@ def _FromString(path_str: Text) -> Path:
   if not study_path_suffix or study_path_suffix == '/':
     return Path(project_id, location, dataset_id, store_id, study_uid)
 
-  series_regex = r'/series/([\d.]+)(.*)'
+  series_regex = r'/series/(%s)(.*)' % _REGEX_UID
   series_match = _MatchRegex(series_regex, study_path_suffix, match_err_str)
   series_uid = series_match.group(1)
   series_path_suffix = series_match.group(2)
@@ -168,7 +183,7 @@ def _FromString(path_str: Text) -> Path:
     return Path(project_id, location, dataset_id, store_id, study_uid,
                 series_uid)
 
-  instance_regex = r'/instances/([\d.]+)/?$'
+  instance_regex = r'/instances/(%s)/?$' % _REGEX_UID
   instance_match = _MatchRegex(instance_regex, series_path_suffix,
                                match_err_str)
   instance_uid = instance_match.group(1)

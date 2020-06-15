@@ -85,6 +85,9 @@ class DicomPathTest(parameterized.TestCase):
     self.assertEqual(str(instance_path.GetStudyPath()), tdpu.STUDY_PATH_STR)
     self.assertEqual(str(instance_path.GetSeriesPath()), tdpu.SERIES_PATH_STR)
 
+  # '/' is not allowed because the parsing logic in the class uses '/' to
+  # tokenize the path.
+  # '@' is not allowed due to a potential secuirty vulnerability.
   @parameterized.parameters('/', '@')
   def testNoForwardSlashOrAt(self, illegal_char):
     """ValueError is raised when an attribute contains '/' or '@'."""
@@ -96,6 +99,12 @@ class DicomPathTest(parameterized.TestCase):
                       'data%cset' % illegal_char, 's')
     self.assertRaises(ValueError, dicom_path.Path, 'p', 'l', 'd',
                       'st%core' % illegal_char)
+    self.assertRaises(ValueError, dicom_path.Path, 'p', 'l', 'd', 's',
+                      '1.2%c3' % illegal_char)
+    self.assertRaises(ValueError, dicom_path.Path, 'p', 'l', 'd', 's', '1.2.3',
+                      '4.5%c6' % illegal_char)
+    self.assertRaises(ValueError, dicom_path.Path, 'p', 'l', 'd', 's', '1.2.3',
+                      '4.5.6', '7.8%c9' % illegal_char)
 
   def testUidMissingError(self):
     """ValueError is raised when an expected UID is missing."""
