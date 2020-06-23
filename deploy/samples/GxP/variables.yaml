@@ -1,0 +1,362 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#############################################################################################
+########### Variables File with values for GXP-aligned Life Sciences R&D Platform ###########
+#############################################################################################
+
+# DISCLAIMER: Make sure that config.yaml and this file are in the same folder. DO NOT edit config.yaml file.
+
+# All the parameter values must be declared against the labels mentioned below after the colons (:)
+
+## To find detailed descriptions for all the parameters for resources used below, visit the following links:
+#  https://github.com/GoogleCloudPlatform/healthcare/blob/master/deploy/project_config.yaml.schema
+#  https://www.terraform.io/docs/providers/google/
+
+# This is the file that must be run along with the BAZEL build command which is as follows
+# bazel run cmd/apply:apply -- \
+#   --config_path= ./variables.yaml \
+#   --terraform_apply_flags="--parallelism=1"
+
+## Importing config.yaml to deploy GxP-Aligned Life Sciences and R&D platform resources using configurations mentioned in this file
+imports:
+- path: config.yaml
+
+  ## All the parameters that go into the creation of the Life Sciences and R&D platform resources are declared in this section
+  data:
+    ## Overall template parameters [Setting up billing account for the projects in the template]
+    BILLING_ACCOUNT:
+    DOMAIN:
+
+    # ID of the organization that the projects will be created under
+    ORGANIZATION_ID:
+
+    # ID of the organization that the projects will be created under
+  # FOLDER_ID:
+
+    ## Forseti project parameters [All the parameters required for forseti project]
+
+    # Location used by all the resources to be deployed (Eg. US, EU, etc.)
+    LOCATION:
+
+    # Region used by all the resources to be deployed (Eg. us-central1, europe-west4, etc.)
+    REGION:
+
+    ZONE:
+
+    FORSETI_PROJECT_ID:
+
+    # Mention the forseti project's owner and auditor group
+    FORSETI_PROJECT_OWNERS_GROUP:
+    FORSETI_PROJECT_AUDITORS_GROUP:
+
+    # Forseti BQ dataset service account name
+    FORSETIBQ_SERVICE_ACCOUNT_NAME:
+
+    # Name of the VPC under which Forseti is created
+    FORSETI_VPC_NETWORK_NAME:
+    FORSETI_SUBNETWORK_NAME:
+
+    # Mention the ID for the big query dataset that stores forseti project's audit logs
+    FORSETI_AUDIT_LOGS_BIGQUERY_DATASET_ID:
+
+    # It's a boolean values (true | false)  to decide if forseti contents get deleted upon destroy
+    FORSETI_DELETE_CONTENTS_ON_DESTROY:
+
+    # Name for the storage bucket that stores states of resources deployed under forseti (this) project
+    FORSETI_STATE_STORAGE_BUCKET:
+
+    # Name of the NAT being used in this project
+    FORSETI_ROUTER_NAME:
+
+    # Name of the router being used in this project
+    FORSETI_NAT_NAME:
+
+    ## Life Sciences and R&D platform project parameters [All the parameters required for the project which deployes resources needed in this deployment]
+    # Give a project ID for the project deploying the Life Sciences and R&D platform resources
+    RND_PROJECT_ID:
+
+    # Mention the Life Sciences and R&D platform project's owner and auditor group
+    RND_OWNERS_GROUP:
+    RND_AUDITORS_GROUP:
+
+    # Name for the storage bucket that stores states of resources deployed under project
+    RND_STATE_STORAGE_BUCKET:
+
+    # Mention the ID for the big query dataset that stores this project's audit logs
+    RND_AUDIT_LOGS_BIGQUERY_DATASET_ID:
+
+    # Mention special group that gets the role mentioned in the next parameter
+    RND_AUDIT_BQ_SPECIAL_GROUP:
+
+    # Mention special group that a role mentioned for the special group mentioned above
+    RND_AUDIT_BQ_SPECIAL_GROUP_ROLE:
+
+    # Service account used by the Audit logs storage bucket
+    RND_AUDIT_BQ_SERVICE_ACCOUNT_NAME:
+
+    # Mention the name for the storage nucket that stores this project's GCS logs
+    RND_GCS_LOGS_STORAGE_BUCKET_NAME:
+
+    # Number of days from the time of creation, after which, storage objects from GCS logs bucket are moved to secondary storage class
+    RND_GCS_LOGS_AGE_FOR_SECONDARY_STORAGE_CLASS:
+
+    # The storage class to which, objects from GCS logs bucket will be pushed to, after the specified number of days mentioned above
+    RND_GCS_LOGS_SECONDARY_STORAGE_CLASS:
+
+    # Name of the VPC under which Cloud SQL, it's replica and datalab are created
+    RND_PRIVATE_VPC_NETWORK_NAME:
+
+    # Name for the staging storage bucket
+    STAGING_STORAGE_BUCKET_NAME:
+
+    # User/group that acts objectcreator for staging storage bucket
+    STAGING_STORAGE_BUCKET_OBJECTCREATOR:
+
+    # User/group that acts objectviewer for staging storage bucket
+    STAGING_STORAGE_BUCKET_OBJECTVIEWER:
+
+    # Labels for staging storage bucket
+    STAGING_STORAGE_BUCKET_DATA_CRITICALITY_LABEL:
+
+    STAGING_STORAGE_BUCKET_DATA_TYPE_LABEL:
+
+    ## Name for the sensitive data storage bucket
+    SENSITIVE_DATA_STORAGE_BUCKET_NAME:
+
+    # User/group that acts objectcreator for the sensitive data storage bucket
+    SENSITIVE_DATA_STORAGE_BUCKET_OBJECTCREATOR:
+
+    # User/group that acts objectviewer for the sensitive data storage bucket
+    SENSITIVE_DATA_STORAGE_BUCKET_OBJECTVIEWER:
+
+    # Labels for sensitive data storage bucket
+    SENSITIVE_DATA_STORAGE_BUCKET_DATA_CRITICALITY_LABEL:
+
+    SENSITIVE_DATA_STORAGE_BUCKET_DATA_TYPE_LABEL:
+
+    ## Name for the non-sensitive data storage bucket
+    NON_SENSITIVE_DATA_STORAGE_BUCKET_NAME:
+
+    # User/group that acts objectcreator for the non-sensitive data storage bucket
+    NON_SENSITIVE_DATA_STORAGE_BUCKET_OBJECTCREATOR:
+
+    # User/group that acts objectviewer for the non-sensitive data storage bucket
+    NON_SENSITIVE_DATA_STORAGE_BUCKET_OBJECTVIEWER:
+
+    # Labels for non sensitive data storage bucket
+    NON_SENSITIVE_DATA_STORAGE_BUCKET_DATA_CRITICALITY_LABEL:
+
+    NON_SENSITIVE_DATA_STORAGE_BUCKET_DATA_TYPE_LABEL:
+
+    # Pub/Sub topic that recieves tags from the DLP classification task and triggers objects sorting function
+    PUB_SUB_TOPIC_NAME:
+
+    # Roles for the above mentioned Pub/Sub topic
+    PUB_SUB_TOPIC_EDITOR_ROLE_USER:
+
+    PUB_SUB_TOPIC_VIEWER_ROLE_USER:
+
+    # Labels for the above mentioned Pub/Sub topic
+    PUB_SUB_TOPIC_CRITICALITY_LABEL:
+
+    PUB_SUB_TOPIC_DATA_TYPE_LABEL:
+
+    # Parameters for the subscription for the above mentioned Pub/Sub topic
+    PUB_SUB_SUBSCRIPTION_NAME:
+
+    # Indicates whether to retain acknowledged messages
+    PUB_SUB_SUBSCRIPTION_RETAIN_ACKED_MESSAGES:
+
+    # Duration for which unacknowledged messages are retained in the subscription's backlog, from the moment a message is published (300s, 600s).
+    PUB_SUB_SUBSCRIPTION_MESSAGE_RETENTION_DURATION:
+
+    # Maximum time after a subscriber receives a message before the subscriber should acknowledge the message.
+    PUB_SUB_SUBSCRIPTION_ACK_DEADLINE_SECONDS:
+
+    # The resource expires if it is not active for a period of ttl.
+    PUB_SUB_SUBSCRIPTION_TIME_TO_LIVE:
+
+    # Roles for the above mentioned Pub/Sub subscription
+    PUB_SUB_SUBSCRIPTION_SUBSCRIBER_ROLE_USER:
+
+    PUB_SUB_SUBSCRIPTION_EDITOR_ROLE_USER:
+
+    # Pub/Sub topic that works as deal-letter pipeline
+    PUB_SUB_DEAD_LETTER_TOPIC_NAME:
+
+    # Roles for the dead-letter pub/sub topic
+    PUB_SUB_DEAD_LETTER_EDITOR_ROLE_USER:
+
+    PUB_SUB_DEAD_LETTER_VIEWER_ROLE_USER:
+
+    # Parameters for the above mentioned Pub/Sub topic
+    PUB_SUB_DEAD_LETTER_SUBSCRIPTION_NAME:
+
+    # Indicates whether to retain acknowledged messages
+    PUB_SUB_DEAD_LETTER_SUBSCRIPTION_RETAIN_ACKED_MESSAGES:
+
+    # Duration for which unacknowledged messages are retained in the subscription's backlog, from the moment a message is published (300s, 600s).
+    PUB_SUB_DEAD_LETTER_SUBSCRIPTION_MESSAGE_RETENTION_DURATION:
+
+    # Maximum time after a subscriber receives a message before the subscriber should acknowledge the message.
+    PUB_SUB_DEAD_LETTER_SUBSCRIPTION_ACK_DEADLINE_SECONDS:
+
+    # The resource expires if it is not active for a period of ttl.
+    PUB_SUB_DEAD_LETTER_SUBSCRIPTION_TIME_TO_LIVE:
+
+    # Roles for the dead-letter mentioned Pub/Sub subscription
+    PUB_SUB_DEAD_LETTER_SUBSCRIPTION_SUBSCRIBER_ROLE_USER:
+
+    PUB_SUB_DEAD_LETTER_SUBSCRIPTION_EDITOR_ROLE_USER:
+
+    # Name of the GKE Cluster used by analysts
+    ANALYSTS_GKE_CLUSTER_NAME:
+
+    # Name of the servuce account used by analysts GKE Cluster
+    ANALYSTS_GKE_CLUSTER_SERVICE_ACCOUNT_NAME:
+
+    # The range of internal addresses that are owned by the analysts cluster
+    ANALYSTS_GKE_CLUSTER_SUBNET_IP_RANGE:
+
+    # The secondary range of internal addresses used by pods of the analysts cluster
+    ANALYSTS_GKE_CLUSTER_PODS_IP_RANGE:
+
+    # The secondary range of internal addresses used by services of the analysts cluster
+    ANALYSTS_GKE_CLUSTER_SERVICES_IP_RANGE:
+
+    # This range will be used for assigning private IP addresses to the analysts cluster master
+    ANALYSTS_GKE_CLUSTER_MASTER_IPV4_CIDR_BLOCK:
+
+    # External network that can access analysts cluster master through HTTPS
+    ANALYSTS_GKE_CLUSTER_EXTERNAL_NETWORK_CIDR:
+
+    # The default maximum number of pods per node in the analysts cluster
+    MAX_PODS_PER_NODE_ANALYSTS_GKE_CLUSTER:
+
+    # Labels used by the analysts cluster
+    ANALYSTS_GKE_CLUSTER_DATA_CRITICALITY_LABEL:
+
+    ANALYSTS_GKE_CLUSTER_DATASET_DATA_TYPE_LABEL:
+
+    # The username to use for HTTP basic authentication when accessing the Kubernetes master endpoint of the analysts cluster
+    ANALYSTS_GKE_CLUSTER_AUTH_USERNAME:
+
+    # The password to use for HTTP basic authentication when accessing the Kubernetes master endpoint of the analysts cluster
+    ANALYSTS_GKE_CLUSTER_AUTH_PASSWORD:
+
+    # Configuring the minimum and maximum GBs of memory used by the analysts cluster
+    ANALYSTS_GKE_CLUSTER_MIN_MEMORY:
+
+    ANALYSTS_GKE_CLUSTER_MAX_MEMORY:
+
+    # Configuring the minimum and maximum number of cores of CPU used by the analysts cluster
+    ANALYSTS_GKE_CLUSTER_MIN_CPU:
+
+    ANALYSTS_GKE_CLUSTER_MAX_CPU:
+
+    # Maximum number of  nodes that can be configured by the autoscaling policy for the researchers cluster
+    MAX_ANALYSTS_GKE_CLUSTER_NODE_COUNT:
+
+    # Name of the GKE Cluster used by researchers
+    RESEARCHERS_GKE_CLUSTER_NAME:
+
+    # Name of the servuce account used by researchers GKE Cluster
+    RESEARCHERS_GKE_CLUSTER_SERVICE_ACCOUNT_NAME:
+
+    # The range of internal addresses that are owned by the researchers cluster subnetwork
+    RESEARCHERS_GKE_CLUSTER_SUBNET_IP_RANGE:
+
+    # The secondary range of internal addresses used by pods of the researchers cluster
+    RESEARCHERS_GKE_CLUSTER_PODS_IP_RANGE:
+
+    # The secondary range of internal addresses used by services of the researchers cluster
+    RESEARCHERS_GKE_CLUSTER_SERVICES_IP_RANGE:
+
+    # This range will be used for assigning private IP addresses to the researchers cluster master
+    RESEARCHERS_GKE_CLUSTER_MASTER_IPV4_CIDR_BLOCK:
+
+    # External network that can access researchers cluster master through HTTPS
+    RESEARCHERS_GKE_CLUSTER_EXTERNAL_NETWORK_CIDR:
+
+    # The default maximum number of pods per node in the researchers cluster
+    MAX_PODS_PER_NODE_RESEARCHERS_GKE_CLUSTER:
+
+    # Labels used by the researchers cluster
+    RESEARCHERS_GKE_CLUSTER_DATA_CRITICALITY_LABEL:
+
+    RESEARCHERS_GKE_CLUSTER_DATASET_DATA_TYPE_LABEL:
+
+    # The username to use for HTTP basic authentication when accessing the Kubernetes master endpoint of the researchers cluster
+    RESEARCHERS_GKE_CLUSTER_AUTH_USERNAME:
+
+    # The password to use for HTTP basic authentication when accessing the Kubernetes master endpoint of the researchers cluster
+    RESEARCHERS_GKE_CLUSTER_AUTH_PASSWORD:
+
+    # Configuring the minimum and maximum GBs of memory used by the researchers cluster
+    RESEARCHERS_GKE_CLUSTER_MIN_MEMORY:
+
+    RESEARCHERS_GKE_CLUSTER_MAX_MEMORY:
+
+    # Configuring the minimum and maximum number of cores of CPU used by the researchers cluster
+    RESEARCHERS_GKE_CLUSTER_MIN_CPU:
+
+    RESEARCHERS_GKE_CLUSTER_MAX_CPU:
+
+    # Maximum number of  nodes that can be configured by the autoscaling policy for the researchers cluster
+    MAX_RESEARCHERS_GKE_CLUSTER_NODE_COUNT:
+
+    # The name of the bucket storing the zip file containing the cloudfunctions' scripts
+    CLOUD_FUNCTION_ZIP_BUCKET:
+
+    # The name of the storage object (zip file) containing the cloudfunctions' scripts
+    CLOUD_FUNCTION_ZIP_OBJECT:
+
+    # Name of the bigquery dataset storing desensitized/non-sensitive data
+    NON_SENSITIVE_DATA_BIGQUERY_DATASET_ID:
+
+    # Service account that's used by the bigquery dataset that stores desensitized/non-sensitive data
+    NON_SENSITIVE_DATA_BQ_SERVICE_ACCOUNT_NAME:
+
+    # Special group and it's role for dataset storing desensitized/non-sensitive data
+    NON_SENSITIVE_DATA_BQ_SPECIAL_GROUP:
+
+    NON_SENSITIVE_DATA_BQ_SPECIAL_GROUP_ROLE:
+
+    # Labels for the bigquery dataset storing desensitized/non-sensitive data
+    NON_SENSITIVE_DATA_BIGQUERY_DATASET_DATA_CRITICALITY_LABEL:
+
+    NON_SENSITIVE_DATA_BIGQUERY_DATASET_DATA_TYPE_LABEL:
+
+    # Names for healthcare dataset and it's datastores
+    HEALTHCARE_DATASET_NAME:
+    HEALTHCARE_DICOM_STORE_NAME:
+    HEALTHCARE_FHIR_STORE_NAME:
+    HEALTHCARE_HL7V2_STORE_NAME:
+
+    # User/group that acts as viewer for healthcare datastores
+    HEALTHCARE_DATASET_VIEWER:
+
+    # Users/groups that act as editor and storage admin for healthcare DICOM datastore respectively
+    HEALTHCARE_DICOM_EDITOR:
+    HEALTHCARE_DICOM_STOREADMIN:
+
+    # Users/groups that act as reader and editor for healthcare FHIR datastore respectively
+    HEALTHCARE_FHIR_STORE_READER:
+    HEALTHCARE_FHIR_STORE_EDITOR:
+
+    # Users/groups that act as storage admin and editor for healthcare HL7V2 datastore respectively
+    HEALTHCARE_HL7V2_STOREADMIN:
+    HEALTHCARE_HL7V2_INGEST:
+    HEALTHCARE_HL7V2_STORE_EDITOR:

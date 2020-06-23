@@ -1,0 +1,701 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+######################################################
+############# GXP RND Platform Template ##############
+######################################################
+
+# This template is parameterized and can't be built directly. Instead, fill in the parametes' values
+# in variables.yaml that imports this file
+
+# Make sure that variables.yaml and this file are in the same folder
+
+# To spin up resources for GxP-Aligned Life Sciences R&D Platform, run the follwing command, provided, variables.yaml is
+# filled with resources' configuration values
+
+# bazel run cmd/apply:apply -- \
+#   --config_path= ./variables.yaml \
+#   --terraform_apply_flags="--parallelism=1"
+
+# API might need to be enabled during deployment when prompted. Re-apply the command after enabling.
+# Try re-running the bazel command if errors are encountered.
+# parallelism=1 terraform apply flag is necessary as this template tries making multiple changes to IAM policy at a time.
+# This sections sets up billing account and folder under which the projects must be deployed
+
+overall:
+  billing_account: {{.BILLING_ACCOUNT}}
+  domain: {{.DOMAIN}}
+  organization_id: {{.ORGANIZATION_ID}}
+  # folder_id: {{.FOLDER_ID}}
+
+# Path to an empty YAML file in which DPT writes all the generated fields after successful deployment. These fields are used to generate monitoring rules.
+generated_fields_path: ./generated_fields.yaml
+
+# Forseti section deploys a forseti image which does security monitoring of GCP resources
+forseti:
+  project:
+    project_id: {{.FORSETI_PROJECT_ID}}
+    owners_group: {{.FORSETI_PROJECT_OWNERS_GROUP}}
+    auditors_group: {{.FORSETI_PROJECT_AUDITORS_GROUP}}         # Auditors group at project level
+
+    # Bigquery dataset stores audit logs from the forseti project and its resources.
+    audit:
+      logs_bigquery_dataset:
+        dataset_id: {{.FORSETI_AUDIT_LOGS_BIGQUERY_DATASET_ID}}
+        delete_contents_on_destroy: {{.FORSETI_DELETE_CONTENTS_ON_DESTROY}}
+        access:
+          - user_by_email: {{.FORSETIBQ_SERVICE_ACCOUNT_NAME}}@{{.FORSETI_PROJECT_ID}}.iam.gserviceaccount.com
+            role: roles/bigquery.dataEditor                # Can provide roles as per requirement.
+        location: {{.LOCATION}}
+        # default_encryption_configuration:
+        #   kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+        labels:
+          data_criticality: medium
+          datatype: auditlogs
+          project: {{.FORSETI_PROJECT_ID}}
+
+    # Storage bucket stores the terraform states of the resources in the projects.
+    devops:
+      state_storage_bucket:
+        name: {{.FORSETI_STATE_STORAGE_BUCKET}}
+        # encryption:
+        #   default_kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+        location: {{.LOCATION}}
+
+    project_services:
+    - service: compute.googleapis.com
+    - service: servicenetworking.googleapis.com
+
+    # Setup NAT to allow private forseti to access the internet to fetch the Forseti repo while
+    # having no external IP.
+    # See https://github.com/forseti-security/terraform-google-forseti/issues/234.
+    terraform_deployments:
+      resources:
+        config:
+          resource:
+          - google_service_account_iam_binding:
+              admin-account-iam:
+                service_account_id: ${google_service_account.forsetibqsa.name}
+                role: roles/iam.serviceAccountUser
+                members:
+                - group:{{.FORSETI_PROJECT_OWNERS_GROUP}}
+          - google_service_account:
+              forsetibqsa:
+                account_id: {{.FORSETIBQ_SERVICE_ACCOUNT_NAME}}
+          # Setting up VPC
+          - google_compute_network:
+              forseti_private_network:
+                name: {{.FORSETI_VPC_NETWORK_NAME}}
+                auto_create_subnetworks: false
+          - google_compute_subnetwork:
+              forseti_subnetwork:
+              - name: {{.FORSETI_SUBNETWORK_NAME}}
+                network: ${google_compute_network.forseti_private_network.self_link}
+                region: {{.REGION}}
+                ip_cidr_range: {{.FORSETI_SUBNET_IP_RANGE}} # (ex. 192.168.0.0/20)
+          - google_compute_router:
+              forseti-router:
+                name: {{.FORSETI_ROUTER_NAME}}
+                project: {{.FORSETI_PROJECT_ID}}
+                network: ${google_compute_network.forseti_private_network.self_link}
+                region: {{.REGION}}
+          - google_compute_router_nat:
+              forseti-nat:
+                name: {{.FORSETI_NAT_NAME}}
+                project: {{.FORSETI_PROJECT_ID}}
+                region: {{.REGION}}
+                nat_ip_allocate_option: AUTO_ONLY
+                source_subnetwork_ip_ranges_to_nat: ALL_SUBNETWORKS_ALL_IP_RANGES
+                router: ${google_compute_router.forseti-router.name}
+  properties:
+    server_private: true
+    client_private: true
+    cloudsql_private: true
+    network: ${google_compute_network.forseti_private_network.name}
+    subnetwork: ${google_compute_subnetwork.forseti_subnetwork.name}
+
+projects:
+- project_id: {{.RND_PROJECT_ID}}
+  owners_group: {{.RND_OWNERS_GROUP}}
+  auditors_group: {{.RND_AUDITORS_GROUP}}
+  # Storage bucket stores the terraform states of the resources in the projects.
+  devops:
+    state_storage_bucket:
+      name: {{.RND_STATE_STORAGE_BUCKET}}
+      # encryption:
+      #   default_kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+      location: {{.LOCATION}}
+      labels:
+        data_criticality: low
+        datatype: statefiles
+        project: {{.RND_PROJECT_ID}}
+  # Bigquery dataset and data storage bucket to store logs from projects and their resources.
+  audit:
+    logs_bigquery_dataset:
+      dataset_id: {{.RND_AUDIT_LOGS_BIGQUERY_DATASET_ID}}
+      # delete_contents_on_destroy: true
+      access:
+        - user_by_email: {{.RND_AUDIT_BQ_SERVICE_ACCOUNT_NAME}}@{{.RND_PROJECT_ID}}.iam.gserviceaccount.com
+          # Can provide roles as per requirement.
+          role: roles/bigquery.dataEditor
+        - special_group: {{.RND_AUDIT_BQ_SPECIAL_GROUP}}
+          role: {{.RND_AUDIT_BQ_SPECIAL_GROUP_ROLE}}
+      # default_encryption_configuration:
+      #   kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+
+      location: {{.LOCATION}}
+      labels:
+        data_criticality: medium
+        datatype: auditlogs
+        project: {{.RND_PROJECT_ID}}
+    logs_storage_bucket:
+      name: {{.RND_GCS_LOGS_STORAGE_BUCKET_NAME}}
+      location: {{.LOCATION}}
+      # encryption:
+      #   default_kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+      lifecycle_rule:
+      - condition:
+          # Number of days from the time of creation, after which, storage objects from GCS logs bucket are moved to secondary storage class
+          age: {{.RND_GCS_LOGS_AGE_FOR_SECONDARY_STORAGE_CLASS}}
+        action:
+          type: SetStorageClass
+          # The storage class to which, objects from GCS logs bucket will be pushed to, after the specified number of days mentioned above (e.g. STANDARD/REGIONAL/MULTI_REGIONAL/COLDLINE/NEARLINE)
+          storage_class: {{.RND_GCS_LOGS_SECONDARY_STORAGE_CLASS}}
+      labels:
+        data_criticality: medium
+        datatype: gcslogs
+        project: {{.RND_PROJECT_ID}}
+
+  # APIs required by analysis and RnD tasks and also other necessary APIs are enabled here
+  project_services:
+  - service: compute.googleapis.com
+  - service: cloudfunctions.googleapis.com
+  - service: container.googleapis.com
+  - service: servicenetworking.googleapis.com
+  - service: dataproc.googleapis.com
+  - service: dlp.googleapis.com
+  - service: speech.googleapis.com
+  - service: lifesciences.googleapis.com
+  - service: translate.googleapis.com
+  - service: videointelligence.googleapis.com
+  - service: vision.googleapis.com
+  - service: language.googleapis.com
+  - service: genomics.googleapis.com
+  storage_buckets:
+  # Staging Bucket that stores the incoming health data containing PHI and other sensitive data
+  - name: {{.STAGING_STORAGE_BUCKET_NAME}}
+    # force_destroy: true
+    versioning:
+      enabled: true
+    # IAM Role Binding
+    _iam_members:
+      - role: roles/storage.objectCreator
+        member: {{.STAGING_STORAGE_BUCKET_OBJECTCREATOR}}
+      - role: roles/storage.objectViewer
+        member: {{.STAGING_STORAGE_BUCKET_OBJECTVIEWER}}
+    # encryption:
+    #   default_kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+    location: {{.LOCATION}}
+    labels:
+      data_criticality: {{.STAGING_STORAGE_BUCKET_DATA_CRITICALITY_LABEL}}
+      datatype: {{.STAGING_STORAGE_BUCKET_DATA_TYPE_LABEL}}
+      project: {{.RND_PROJECT_ID}}
+  # Bucket that stores the objects with sensitive data coming from staging bucket
+  - name: {{.SENSITIVE_DATA_STORAGE_BUCKET_NAME}}
+    # force_destroy: true
+    versioning:
+      enabled: true
+    # IAM Role Binding
+    _iam_members:
+      - role: roles/storage.objectCreator
+        member: {{.SENSITIVE_DATA_STORAGE_BUCKET_OBJECTCREATOR}}
+      - role: roles/storage.objectViewer
+        member: {{.SENSITIVE_DATA_STORAGE_BUCKET_OBJECTVIEWER}}
+    # encryption:
+    #   default_kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+    location: {{.LOCATION}}
+    labels:
+      data_criticality: {{.SENSITIVE_DATA_STORAGE_BUCKET_DATA_CRITICALITY_LABEL}}
+      datatype: {{.SENSITIVE_DATA_STORAGE_BUCKET_DATA_TYPE_LABEL}}
+      project: {{.RND_PROJECT_ID}}
+  # Bucket that stores the objects with no sensitive data coming from staging bucket
+  - name: {{.NON_SENSITIVE_DATA_STORAGE_BUCKET_NAME}}
+    # force_destroy: true
+    versioning:
+      enabled: true
+    # IAM Role Binding
+    _iam_members:
+      - role: roles/storage.objectCreator
+        member: {{.NON_SENSITIVE_DATA_STORAGE_BUCKET_OBJECTCREATOR}}
+      - role: roles/storage.objectViewer
+        member: {{.NON_SENSITIVE_DATA_STORAGE_BUCKET_OBJECTVIEWER}}
+    # encryption:
+    #   default_kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+    location: {{.LOCATION}}
+    labels:
+      data_criticality: {{.NON_SENSITIVE_DATA_STORAGE_BUCKET_DATA_CRITICALITY_LABEL}}
+      datatype: {{.NON_SENSITIVE_DATA_STORAGE_BUCKET_DATA_TYPE_LABEL}}
+      project: {{.RND_PROJECT_ID}}
+  # Data from sensitive data storage bucket gets transfered here for deanonymization and other cleaup tasks by Healthcare API
+  healthcare_datasets:
+  - name: {{.HEALTHCARE_DATASET_NAME}}
+    location: {{.REGION}}
+    # IAM Role Binding
+    _iam_members:
+    - role: roles/healthcare.datasetViewer
+      member: {{.HEALTHCARE_DATASET_VIEWER}}
+    _dicom_stores:
+    - name: {{.HEALTHCARE_DICOM_STORE_NAME}}
+      _iam_members:
+      - role: roles/healthcare.dicomEditor
+        member: {{.HEALTHCARE_DICOM_EDITOR}}
+      - role: roles/healthcare.dicomStoreAdmin
+        member: {{.HEALTHCARE_DICOM_STOREADMIN}}
+    _fhir_stores:
+    - name: {{.HEALTHCARE_FHIR_STORE_NAME}}
+      _iam_members:
+      - role: roles/healthcare.fhirResourceReader
+        member: {{.HEALTHCARE_FHIR_STORE_READER}}
+      - role: roles/healthcare.fhirResourceEditor
+        member: {{.HEALTHCARE_FHIR_STORE_EDITOR}}
+    _hl7_v2_stores:
+    - name: {{.HEALTHCARE_HL7V2_STORE_NAME}}
+      _iam_members:
+      - role: roles/healthcare.hl7V2StoreAdmin
+        member: {{.HEALTHCARE_HL7V2_STOREADMIN}}
+      - role: roles/healthcare.hl7V2Ingest
+        member: {{.HEALTHCARE_HL7V2_INGEST}}
+      - role: roles/healthcare.hl7V2Editor
+        member: {{.HEALTHCARE_HL7V2_STORE_EDITOR}}
+  # Data with no sensitive information is stored for the use by data analysts
+  bigquery_datasets:
+  - dataset_id: {{.NON_SENSITIVE_DATA_BIGQUERY_DATASET_ID}}
+    # delete_contents_on_destroy: true
+    depends_on:
+    -  google_service_account.{{.NON_SENSITIVE_DATA_BQ_SERVICE_ACCOUNT_NAME}}
+    access:
+    - user_by_email: ${google_service_account.{{.NON_SENSITIVE_DATA_BQ_SERVICE_ACCOUNT_NAME}}.email}
+      role: roles/bigquery.dataEditor                # Can provide roles as per requirement.
+    - special_group: {{.NON_SENSITIVE_DATA_BQ_SPECIAL_GROUP}}
+      role: {{.NON_SENSITIVE_DATA_BQ_SPECIAL_GROUP_ROLE}}
+      # default_encryption_configuration:
+      #   kms_key_name: (ex.{google_kms_crypto_key.gcs.self_link})
+    location: {{.LOCATION}}
+    labels:
+      data_criticality: {{.NON_SENSITIVE_DATA_BIGQUERY_DATASET_DATA_CRITICALITY_LABEL}}
+      datatype: {{.NON_SENSITIVE_DATA_BIGQUERY_DATASET_DATA_TYPE_LABEL}}
+      project: {{.RND_PROJECT_ID}}
+  # Data classification labels of object from statging bucket are pushed to this topic by the DLP task,
+  # for their consumption by objects sorting cloud function
+  pubsub_topics:
+  - name: {{.PUB_SUB_TOPIC_NAME}}
+    # IAM Role Binding
+    _iam_members:
+    - role: roles/pubsub.editor
+      member: {{.PUB_SUB_TOPIC_EDITOR_ROLE_USER}}
+    - role: roles/pubsub.viewer
+      member: {{.PUB_SUB_TOPIC_VIEWER_ROLE_USER}}
+    labels:
+      data_criticality: {{.PUB_SUB_TOPIC_CRITICALITY_LABEL}}
+      datatype: {{.PUB_SUB_TOPIC_DATA_TYPE_LABEL}}
+      project: {{.RND_PROJECT_ID}}
+    _subscriptions:
+    - name: {{.PUB_SUB_SUBSCRIPTION_NAME}}
+      # Duration of the messsages stored in the regions.
+      message_retention_duration: {{.PUB_SUB_SUBSCRIPTION_MESSAGE_RETENTION_DURATION}}
+      # Whether acked messages are retained or not.
+      retain_acked_messages: {{.PUB_SUB_SUBSCRIPTION_RETAIN_ACKED_MESSAGES}}
+      # This value is the maximum time after a subscriber receives a message before the subscriber should acknowledge the message.
+      ack_deadline_seconds: {{.PUB_SUB_SUBSCRIPTION_ACK_DEADLINE_SECONDS}}
+      # Policy defining the guidelines for expiration of the subscription.
+      expiration_policy:
+        # Time-to-Live duration of associated resources.
+        ttl: {{.PUB_SUB_SUBSCRIPTION_TIME_TO_LIVE}}
+      # IAM Role Binding
+      _iam_members:
+      - role: roles/pubsub.subscriber
+        member: {{.PUB_SUB_SUBSCRIPTION_SUBSCRIBER_ROLE_USER}}
+      - role: roles/pubsub.editor
+        member: {{.PUB_SUB_SUBSCRIPTION_EDITOR_ROLE_USER}}
+      # A policy that specifies the conditions for dead lettering messages in this subscription. If dead_letter_policy is not set, dead lettering is disabled.
+      dead_letter_policy:
+        dead_letter_topic: ${google_pubsub_topic.{{.PUB_SUB_DEAD_LETTER_TOPIC_NAME}}.id}
+        max_delivery_attempts: 10
+      # If push delivery is used with this subscription, incomment the following field used to configure it. Refer to "https://www.terraform.io/docs/providers/google/r/pubsub_subscription.html" for more information.
+      # push_config:
+      #   oidc_token:
+      #     service_account_email: ${google_service_account.forsetibqsa.name}
+      #     audience: (ex. https://example.com/push)
+      #   push_endpoint: (ex. https://example.com/push)
+      #   attributes: (ex. x-goog-version)
+
+  - name: {{.PUB_SUB_DEAD_LETTER_TOPIC_NAME}}
+    # IAM Role Binding
+    _iam_members:
+    - role: roles/pubsub.editor
+      member: {{.PUB_SUB_DEAD_LETTER_EDITOR_ROLE_USER}}
+    - role: roles/pubsub.viewer
+      member: {{.PUB_SUB_DEAD_LETTER_VIEWER_ROLE_USER}}
+    _subscriptions:
+    - name: {{.PUB_SUB_DEAD_LETTER_SUBSCRIPTION_NAME}}
+      # Duration of the messsages stored in the regions.
+      message_retention_duration: {{.PUB_SUB_DEAD_LETTER_SUBSCRIPTION_MESSAGE_RETENTION_DURATION}}
+      # Whether acked messages are retained or not.
+      retain_acked_messages: {{.PUB_SUB_DEAD_LETTER_SUBSCRIPTION_RETAIN_ACKED_MESSAGES}}
+      # This value is the maximum time after a subscriber receives a message before the subscriber should acknowledge the message.
+      ack_deadline_seconds: {{.PUB_SUB_DEAD_LETTER_SUBSCRIPTION_ACK_DEADLINE_SECONDS}}
+      # Policy defining the guidelines for expiration of the subscription.
+      expiration_policy:
+        # Time-to-Live duration of associated resources.
+        ttl: {{.PUB_SUB_DEAD_LETTER_SUBSCRIPTION_TIME_TO_LIVE}}
+      # IAM Role Binding
+      _iam_members:
+      - role: roles/pubsub.subscriber
+        member: {{.PUB_SUB_DEAD_LETTER_SUBSCRIPTION_SUBSCRIBER_ROLE_USER}}
+      - role: roles/pubsub.editor
+        member: {{.PUB_SUB_DEAD_LETTER_SUBSCRIPTION_EDITOR_ROLE_USER}}
+      # If push delivery is used with this subscription, incomment the following field used to configure it. Refer to "https://www.terraform.io/docs/providers/google/r/pubsub_subscription.html" for more information.
+      # push_config:
+      #   oidc_token:
+      #     service_account_email: ${google_service_account.forsetibqsa.name}
+      #     audience: (ex. https://example.com/push)
+      #   push_endpoint: (ex. https://example.com/push)
+      #   attributes: (ex. x-goog-version)
+  # Service accounts required for this project
+  service_accounts:
+  - account_id: {{.ANALYSTS_GKE_CLUSTER_SERVICE_ACCOUNT_NAME}}
+  - account_id: {{.RESEARCHERS_GKE_CLUSTER_SERVICE_ACCOUNT_NAME}}
+  - account_id: {{.RND_AUDIT_BQ_SERVICE_ACCOUNT_NAME}}
+  - account_id: {{.NON_SENSITIVE_DATA_BQ_SERVICE_ACCOUNT_NAME}}
+  terraform_deployments:
+    resources:
+      config:
+        resource:
+        # Role bindings for the service accounts
+        - google_service_account_iam_binding:
+            analysts-gke-cluster-sa-iam:
+              service_account_id: ${google_service_account.{{.ANALYSTS_GKE_CLUSTER_SERVICE_ACCOUNT_NAME}}.name}
+              role: roles/iam.serviceAccountUser
+              members:
+              - group:{{.RND_OWNERS_GROUP}}
+            researchers-gke-cluster-sa-iam:
+              service_account_id: ${google_service_account.{{.RESEARCHERS_GKE_CLUSTER_SERVICE_ACCOUNT_NAME}}.name}
+              role: roles/iam.serviceAccountUser
+              members:
+              - group:{{.RND_OWNERS_GROUP}}
+        # Adding IAM Policy Bindings for service accounts created by defualt by DLP and APP Engine Admin APIs
+        - null_resource:
+            app_engine_sa_roles:
+              provisioner:
+                local-exec:
+                  command: |
+                    app_sa=$(gcloud projects get-iam-policy {{.RND_PROJECT_ID}} | grep appspot | sed 's/^.*\({{.RND_PROJECT_ID}}.*\)/\1/g' | sed '2d'); \
+                    gcloud projects add-iam-policy-binding {{.RND_PROJECT_ID}} --member serviceAccount:$app_sa --role roles/owner; \
+                    gcloud projects add-iam-policy-binding {{.RND_PROJECT_ID}} --member serviceAccount:$app_sa --role roles/dlp.admin
+            dlp_sa_roles:
+              provisioner:
+                local-exec:
+                  command: |
+                    dlp_sa=$(gcloud projects get-iam-policy {{.RND_PROJECT_ID}} | grep dlp-api | sed 's/^.*\(service-.*\)/\1/g' | sed '2d'); \
+                    gcloud projects add-iam-policy-binding {{.RND_PROJECT_ID}} --member serviceAccount:$dlp_sa --role roles/viewer
+        # Setting up VPC network
+        - google_compute_network:
+            private_network:
+              name: {{.RND_PRIVATE_VPC_NETWORK_NAME}}
+              auto_create_subnetworks: false
+        # Creating a Subnetwork for the use of GKE Cluster
+        - google_compute_subnetwork:
+          - analysts-gke-cluster-subnetwork:
+            - name: {{.ANALYSTS_GKE_CLUSTER_NAME}}
+              network: ${google_compute_network.private_network.self_link}
+              region: {{.REGION}}
+              ip_cidr_range: {{.ANALYSTS_GKE_CLUSTER_SUBNET_IP_RANGE}} # (ex. 192.168.0.0/20)
+              private_ip_google_access: true
+              secondary_ip_range:
+              - range_name: analysts-gke-cluster-pods-range
+                ip_cidr_range: {{.ANALYSTS_GKE_CLUSTER_PODS_IP_RANGE}} # (ex. 10.4.0.0/14)
+              - range_name: analysts-gke-cluster-services-range
+                ip_cidr_range: {{.ANALYSTS_GKE_CLUSTER_SERVICES_IP_RANGE}} # (eg. 10.0.32.0/20)
+          - researchers-gke-cluster-subnetwork:
+            - name: researchers-gke-cluster-subnet
+              network: ${google_compute_network.private_network.self_link}
+              region: {{.REGION}}
+              ip_cidr_range: {{.RESEARCHERS_GKE_CLUSTER_SUBNET_IP_RANGE}} # (ex. 192.168.0.0/20)
+              private_ip_google_access: true
+              secondary_ip_range:
+              - range_name: researchers-gke-cluster-pods-range
+                ip_cidr_range: {{.RESEARCHERS_GKE_CLUSTER_PODS_IP_RANGE}} # (ex. 10.4.0.0/14)
+              - range_name: researchers-gke-cluster-services-range
+                ip_cidr_range: {{.RESEARCHERS_GKE_CLUSTER_SERVICES_IP_RANGE}} # (eg. 10.0.32.0/20)
+
+        - google_container_cluster:
+            # GKE Cluster dedicated for containers used by Researchers
+            cluster_for_researchers:
+              name: {{.RESEARCHERS_GKE_CLUSTER_NAME}}
+              location: {{.REGION}}
+              remove_default_node_pool: true
+              initial_node_count: 1
+              default_max_pods_per_node: {{.MAX_PODS_PER_NODE_RESEARCHERS_GKE_CLUSTER}}
+              enable_binary_authorization: true
+              # enable_shielded_nodes: true
+              logging_service: logging.googleapis.com/kubernetes        # Available options include logging.googleapis.com(Legacy Stackdriver), logging.googleapis.com/kubernetes(Stackdriver Kubernetes Engine Logging), and none.
+              # Uncomment the following field for maintenance configurations. Refer to "https://www.terraform.io/docs/providers/google/r/container_cluster.html" for field values information.
+              # maintenance_policy:
+              #   daily_maintenance_window:
+              #   ----------------------------------------------
+              #     daily_maintenance_window:
+              #       start_time: 03:00
+              #   --------------------- OR ---------------------
+              #   recurring_window:
+              #     start_time: 2019-01-01T09:00:00-04:00
+              #     end_time: 2019-01-01T17:00:00-04:00
+              #     recurrence: FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR
+              #   ----------------------------------------------
+
+              # Available options include monitoring.googleapis.com(Legacy Stackdriver), monitoring.googleapis.com/kubernetes(Stackdriver Kubernetes Engine Monitoring), and none.
+              monitoring_service: monitoring.googleapis.com/kubernetes
+              master_authorized_networks_config:
+                # External networks that can access the Kubernetes cluster master through HTTPS.
+                cidr_blocks:
+                - cidr_block: {{.RESEARCHERS_GKE_CLUSTER_EXTERNAL_NETWORK_CIDR}}
+              resource_labels:
+                data_criticality: {{.RESEARCHERS_GKE_CLUSTER_DATA_CRITICALITY_LABEL}}
+                datatype: {{.RESEARCHERS_GKE_CLUSTER_DATASET_DATA_TYPE_LABEL}}
+                project: {{.RND_PROJECT_ID}}
+              # authenticator_groups_config:
+              # The name of the RBAC security group for use with Google security groups in Kubernetes RBAC. Group name must be in format gke-security-groups@yourdomain.com.
+              #   security_group: (ex. gke-security-groups@yourdomain.com)
+              # Network and Subnetwork used by this GKE cluster
+              network: ${google_compute_network.private_network.self_link}
+              subnetwork: ${google_compute_subnetwork.researchers-gke-cluster-subnetwork.self_link}
+              # The authentication information for accessing the Kubernetes master
+              master_auth:
+                username: '{{.RESEARCHERS_GKE_CLUSTER_AUTH_USERNAME}}'
+                password: '{{.RESEARCHERS_GKE_CLUSTER_AUTH_PASSWORD}}'
+                client_certificate_config:
+                  issue_client_certificate: false
+              # Configuration for private cluster with private nodes
+              private_cluster_config:
+                # Enables the private cluster feature, creating a private endpoint on the cluster
+                enable_private_nodes: true
+                # The cluster's private endpoint is used as the cluster endpoint and access through the public endpoint is disabled when true
+                enable_private_endpoint: true
+                # The IP range in CIDR notation to use for the hosted master network. The range should not overlap with an existing subnet.
+                master_ipv4_cidr_block: {{.RESEARCHERS_GKE_CLUSTER_MASTER_IPV4_CIDR_BLOCK}} # (ex. 172.16.0.32/28)
+
+              # Configuration of cluster IP allocation for VPC-native clusters. Adding this block enables IP aliasing,
+              # making the cluster VPC-native instead of routes-based.
+              ip_allocation_policy:
+                # The name of the existing secondary range in the cluster's subnetwork to use for pod IP addresses.
+                cluster_secondary_range_name: researchers-gke-cluster-pods-range
+                # The name of the existing secondary range in the cluster's subnetwork to use for service cluster IPs.
+                services_secondary_range_name: researchers-gke-cluster-services-range
+              # Cluster configuration of Node Auto-Provisioning with Cluster Autoscaler to automatically adjust the size of the cluster
+              cluster_autoscaling:
+                enabled: true
+                #autoscaling_profile: BALANCED # (or OPTIMIZE_UTILIZATION)
+                # Limits on CPU and Memory for the cluster
+                resource_limits:
+                - resource_type: memory
+                  minimum: {{.RESEARCHERS_GKE_CLUSTER_MIN_MEMORY}}
+                  maximum: {{.RESEARCHERS_GKE_CLUSTER_MAX_MEMORY}}
+                - resource_type: cpu
+                  minimum: {{.RESEARCHERS_GKE_CLUSTER_MIN_CPU}}
+                  maximum: {{.RESEARCHERS_GKE_CLUSTER_MAX_CPU}}
+                # Contains defaults for a node pool created by Node Auto-Provisioning.
+                auto_provisioning_defaults:
+                  service_account: ${google_service_account.{{.RESEARCHERS_GKE_CLUSTER_SERVICE_ACCOUNT_NAME}}.email}
+                  oauth_scopes:
+                  - https://www.googleapis.com/auth/bigquery.readonly
+              # Refer "https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters#Cluster.DatabaseEncryption"
+              # database_encryption:
+              #   state: (ex. ENCRYPTED or DECRYPTED)
+              #   key_name: (ex. projects/my-project/locations/global/keyRings/my-ring/cryptoKeys/my-key or {google_kms_crypto_key.gcs.self_link})
+            # GKE Cluster dedicated for containers used by Analysts
+            cluster_for_analysts:
+              name: {{.ANALYSTS_GKE_CLUSTER_NAME}}
+              location: {{.REGION}}
+              remove_default_node_pool: true
+              initial_node_count: 1
+              default_max_pods_per_node: {{.MAX_PODS_PER_NODE_ANALYSTS_GKE_CLUSTER}}
+              enable_binary_authorization: true
+              # enable_shielded_nodes: true
+              logging_service: logging.googleapis.com/kubernetes        # Available options include logging.googleapis.com(Legacy Stackdriver), logging.googleapis.com/kubernetes(Stackdriver Kubernetes Engine Logging), and none.
+              # Uncomment the following field for maintenance configurations. Refer to "https://www.terraform.io/docs/providers/google/r/container_cluster.html" for field values information.
+              # maintenance_policy:
+              #   daily_maintenance_window:
+              #   ----------------------------------------------
+              #     daily_maintenance_window:
+              #       start_time: 03:00
+              #   --------------------- OR ---------------------
+              #   recurring_window:
+              #     start_time: 2019-01-01T09:00:00-04:00
+              #     end_time: 2019-01-01T17:00:00-04:00
+              #     recurrence: FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR
+              #   ----------------------------------------------
+
+              # Available options include monitoring.googleapis.com(Legacy Stackdriver), monitoring.googleapis.com/kubernetes(Stackdriver Kubernetes Engine Monitoring), and none.
+              monitoring_service: monitoring.googleapis.com/kubernetes
+              master_authorized_networks_config:
+                # External networks that can access the Kubernetes cluster master through HTTPS.
+                cidr_blocks:
+                - cidr_block: {{.ANALYSTS_GKE_CLUSTER_EXTERNAL_NETWORK_CIDR}}
+              resource_labels:
+                data_criticality: {{.ANALYSTS_GKE_CLUSTER_DATA_CRITICALITY_LABEL}}
+                datatype: {{.ANALYSTS_GKE_CLUSTER_DATASET_DATA_TYPE_LABEL}}
+                project: {{.RND_PROJECT_ID}}
+              # authenticator_groups_config:
+              # The name of the RBAC security group for use with Google security groups in Kubernetes RBAC. Group name must be in format gke-security-groups@yourdomain.com.
+              #   security_group: (ex. gke-security-groups@yourdomain.com)
+              # Network and Subnetwork used by this GKE cluster
+              network: ${google_compute_network.private_network.self_link}
+              subnetwork: ${google_compute_subnetwork.analysts-gke-cluster-subnetwork.self_link}
+              # The authentication information for accessing the Kubernetes master
+              master_auth:
+                username: '{{.ANALYSTS_GKE_CLUSTER_AUTH_USERNAME}}'
+                password: '{{.ANALYSTS_GKE_CLUSTER_AUTH_PASSWORD}}'
+                client_certificate_config:
+                  issue_client_certificate: false
+              # Configuration for private cluster with private nodes
+              private_cluster_config:
+                # Enables the private cluster feature, creating a private endpoint on the cluster
+                enable_private_nodes: true
+                # The cluster's private endpoint is used as the cluster endpoint and access through the public endpoint is disabled when true
+                enable_private_endpoint: true
+                # The IP range in CIDR notation to use for the hosted master network. The range should not overlap with an existing subnet.
+                master_ipv4_cidr_block: {{.ANALYSTS_GKE_CLUSTER_MASTER_IPV4_CIDR_BLOCK}} # (ex. 172.16.0.32/28)
+
+              # Configuration of cluster IP allocation for VPC-native clusters. Adding this block enables IP aliasing,
+              # making the cluster VPC-native instead of routes-based.
+              ip_allocation_policy:
+                # The name of the existing secondary range in the cluster's subnetwork to use for pod IP addresses.
+                cluster_secondary_range_name: analysts-gke-cluster-pods-range
+                # The name of the existing secondary range in the cluster's subnetwork to use for service cluster IPs.
+                services_secondary_range_name: analysts-gke-cluster-services-range
+              # Cluster configuration of Node Auto-Provisioning with Cluster Autoscaler to automatically adjust the size of the cluster
+              cluster_autoscaling:
+                enabled: true
+                #autoscaling_profile: BALANCED # (or OPTIMIZE_UTILIZATION)
+                # Limits on CPU and Memory for the cluster
+                resource_limits:
+                - resource_type: memory
+                  minimum: {{.ANALYSTS_GKE_CLUSTER_MIN_MEMORY}}
+                  maximum: {{.ANALYSTS_GKE_CLUSTER_MAX_MEMORY}}
+                - resource_type: cpu
+                  minimum: {{.ANALYSTS_GKE_CLUSTER_MIN_CPU}}
+                  maximum: {{.ANALYSTS_GKE_CLUSTER_MAX_CPU}}
+                # Contains defaults for a node pool created by Node Auto-Provisioning.
+                auto_provisioning_defaults:
+                  service_account: ${google_service_account.{{.ANALYSTS_GKE_CLUSTER_SERVICE_ACCOUNT_NAME}}.email}
+                  oauth_scopes:
+                  - https://www.googleapis.com/auth/bigquery.readonly
+              # Refer "https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters#Cluster.DatabaseEncryption"
+              # database_encryption:
+              #   state: (ex. ENCRYPTED or DECRYPTED)
+              #   key_name: (ex. projects/my-project/locations/global/keyRings/my-ring/cryptoKeys/my-key or {google_kms_crypto_key.gcs.self_link})
+        - google_container_node_pool:
+            researchers_cluster_preemptible_nodes:
+              name: researchers-gke-cluster-node-pool
+              location: {{.REGION}}
+              cluster: ${google_container_cluster.cluster_for_researchers.name}
+              node_count: 1
+              # Node management configuration, wherein auto-repair and auto-upgrade is configured.
+              management:
+                auto_repair: true
+                auto_upgrade: true
+              # Configuration required by cluster autoscaler to adjust the size of the node pool to the current cluster usage.
+              autoscaling:
+                min_node_count: 1
+                max_node_count: {{.MAX_RESEARCHERS_GKE_CLUSTER_NODE_COUNT}}
+              # Node configuration of the pool.
+              node_config:
+                preemptible: true
+                machine_type: n1-standard-1
+                metadata:
+                  disable-legacy-endpoints: 'true'
+                oauth_scopes:
+                - https://www.googleapis.com/auth/logging.write
+                - https://www.googleapis.com/auth/monitoring
+            analysts_cluster_preemptible_nodes:
+              name: analysts-gke-cluster-node-pool
+              location: {{.REGION}}
+              cluster: ${google_container_cluster.cluster_for_analysts.name}
+              node_count: 1
+              # Node management configuration, wherein auto-repair and auto-upgrade is configured.
+              management:
+                auto_repair: true
+                auto_upgrade: true
+              # Configuration required by cluster autoscaler to adjust the size of the node pool to the current cluster usage.
+              autoscaling:
+                min_node_count: 1
+                max_node_count: {{.MAX_ANALYSTS_GKE_CLUSTER_NODE_COUNT}}
+              # Node configuration of the pool.
+              node_config:
+                preemptible: true
+                machine_type: n1-standard-1
+                metadata:
+                  disable-legacy-endpoints: 'true'
+                oauth_scopes:
+                - https://www.googleapis.com/auth/logging.write
+                - https://www.googleapis.com/auth/monitoring
+        - google_cloudfunctions_function:
+            # Cloud function that runs DLP job to generate classification labels (Sensitive/Non-sensitive) for objects in Staging Storage Bucket and pushes messages to PubSub
+            # The Cloud Function script can be found at https://cloud.google.com/solutions/automating-classification-of-data-uploaded-to-cloud-storage.
+            create_DLP_job:
+              name: create-DLP-job
+              description: This function is triggered by new files uploaded to the designated Cloud Storage staging bucket.
+              runtime: python37
+              available_memory_mb: 128
+              # Place where the code for the cloud function is stored
+              source_archive_bucket: {{.CLOUD_FUNCTION_ZIP_BUCKET}}
+              source_archive_object: {{.CLOUD_FUNCTION_ZIP_OBJECT}}
+              timeout: 60
+              region: {{.REGION}} # support only for us-central1 at present
+              entry_point: create_DLP_job
+              event_trigger:
+                event_type: google.storage.object.finalize
+                resource: {{.STAGING_STORAGE_BUCKET_NAME}}
+                failure_policy:
+                  retry: true
+              environment_variables:
+                YOUR_QUARANTINE_BUCKET: {{.STAGING_STORAGE_BUCKET_NAME}}
+                YOUR_SENSITIVE_DATA_BUCKET: {{.SENSITIVE_DATA_STORAGE_BUCKET_NAME}}
+                YOUR_NON_SENSITIVE_DATA_BUCKET: {{.NON_SENSITIVE_DATA_STORAGE_BUCKET_NAME}}
+                PROJECT_ID_HOSTING_STAGING_BUCKET: {{.RND_PROJECT_ID}}
+                PUB_SUB_TOPIC: {{.PUB_SUB_TOPIC_NAME}}
+            # Cloud function that fetches classification labels (Sensitive/Non-sensitive) for objects in Staging Storage Bucket from
+            # Pubsub and sort them into Non-sensitive and Sensitive data storage buckets.
+            # The Cloud Function script can be found at https://cloud.google.com/solutions/automating-classification-of-data-uploaded-to-cloud-storage.
+            resolve_DLP:
+              name: resolve-DLP
+              description: This function listens to the pub/sub notification from the create_DLP_job function.
+              runtime: python37
+              available_memory_mb: 128
+              # Place where the code for the cloud function is stored
+              source_archive_bucket: {{.CLOUD_FUNCTION_ZIP_BUCKET}}
+              source_archive_object: {{.CLOUD_FUNCTION_ZIP_OBJECT}}
+              timeout: 60
+              region: us-central1 # support only for us-central1 at present
+              entry_point: resolve_DLP
+              event_trigger:
+                event_type: google.pubsub.topic.publish
+                resource: {{.PUB_SUB_TOPIC_NAME}}
+                failure_policy:
+                  retry: true
+              environment_variables:
+                YOUR_QUARANTINE_BUCKET: {{.STAGING_STORAGE_BUCKET_NAME}}
+                YOUR_SENSITIVE_DATA_BUCKET: {{.SENSITIVE_DATA_STORAGE_BUCKET_NAME}}
+                YOUR_NON_SENSITIVE_DATA_BUCKET: {{.NON_SENSITIVE_DATA_STORAGE_BUCKET_NAME}}
+                PROJECT_ID_HOSTING_STAGING_BUCKET: {{.RND_PROJECT_ID}}
+                PUB_SUB_TOPIC: {{.PUB_SUB_TOPIC_NAME}}
