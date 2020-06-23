@@ -8,15 +8,14 @@ A similar pattern can be found under
 
 Through DPT, you can configure and deploy the fabric recommended architecture.
 
-
 ## Deployment steps
 
 You would need to make a copy of the configs in the samples in your own version
 control system, but the commands here will be specific for the projects deployed
 in these configs.
 
-To deploy, the maintainers of the shared config (typically a devops or
-data compliance team) should first deploy the shared projects:
+To deploy, the maintainers of the shared config (typically a devops or data
+compliance team) should first deploy the shared projects:
 
 ```
 $ bazel run cmd/apply:apply -- \
