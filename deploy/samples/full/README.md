@@ -17,14 +17,14 @@ in these configs.
 To deploy, the maintainers of the shared config (typically a devops or data
 compliance team) should first deploy the shared projects:
 
-```
+```bash
 $ bazel run cmd/apply:apply -- \
   --config_path=samples/full/shared.yaml \
 ```
 
 Then, `team1` can deploy their subprojects:
 
-```
+```bash
 $ bazel run cmd/apply:apply -- \
   --config_path=samples/full/team1/config.yaml
   --projects=example-analysis
@@ -32,7 +32,7 @@ $ bazel run cmd/apply:apply -- \
 
 And `team2` can also deploy their subprojects independently:
 
-```
+```bash
 $ bazel run cmd/apply:apply -- \
   --config_path=samples/full/team2/config.yaml
   --projects=example-data-123,example-data-456

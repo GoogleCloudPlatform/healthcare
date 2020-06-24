@@ -24,5 +24,4 @@ The Cloud Function script used in the `google_cloudfunctions_function` block can
 be found
 [here](https://cloud.google.com/solutions/automating-classification-of-data-uploaded-to-cloud-storage).
 
-The setup steps for the DPT are clearly mentioned in the official
-[DPT repo](https://github.com/GoogleCloudPlatform/healthcare/tree/master/deploy).
+The setup steps for the DPT can be found [here](../..).
