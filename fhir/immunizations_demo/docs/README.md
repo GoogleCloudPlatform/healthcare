@@ -26,7 +26,7 @@ Here is the architecture of the whole system.
 
 First, follow the quickstart guide for the
 [Healthcare API](https://cloud.google.com/healthcare/docs/quickstart) to set up
-a project and configure the Cloud Healtcare API. However, instead of creating a
+a project and configure the Cloud Healthcare API. However, instead of creating a
 service account, follow the instructions on the [OAuth
 quickstart](https://cloud.google.com/docs/authentication/end-user). You
 will only need the client ID, the client secret (API key) is not required for
