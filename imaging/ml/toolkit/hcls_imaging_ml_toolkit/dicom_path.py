@@ -212,7 +212,7 @@ def FromString(path_str: Text, path_type: Optional[Type] = None) -> Path:
   if path_type and path.type != path_type:
     raise ValueError(
         'Unexpected path type. Expected: %s, actual: %s. Path: %s' %
-        (type, path.type, path_str))
+        (path_type, path.type, path_str))
 
   return path
 
