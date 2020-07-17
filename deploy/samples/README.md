@@ -16,4 +16,6 @@ This directory contains sample configs showcasing various uses of DPT. The
 
 - [Resources](resources/): In-depth examples of resources supported by DPT.
 
+- [HIPAA](HIPAA/): HIPAA-Aligned Analytics and AI/ML Platform DPT Templates.
+
 - [GxP](GxP/): GxP-Aligned Life Sciences R&D Platform DPT Templates.

@@ -1,0 +1,242 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#####################################################################################
+########## Configuration File with values for HIPAA Aligned AI/ML Platform ##########
+#####################################################################################
+
+# DISCLAIMER: Make sure that config.yaml and this file are in the same folder. DO NOT edit config.yaml
+
+# All the parameter values must be declared against the labels mentioned below after the colons (:)
+
+## To find detailed descriptions for all the parameters for resources used below, visit the following links:
+#  https://github.com/GoogleCloudPlatform/healthcare/blob/master/deploy/project_config.yaml.schema
+#  https://www.terraform.io/docs/providers/google/
+
+# This is the file that must be run along with the BAZEL build command which is as follows
+# bazel run cmd/apply:apply -- \
+#   --config_path= ./variables.yaml
+
+## Importing config.yaml to deploy hipaa Aligned ai/ml platform resources using configurations mentioned in this file
+# For BigQuery dataset names, use underscore.
+# Try re-running the template in case or error
+# Prefix "user:" or "group:" where entering user or group respectively
+# When providing roles, use “roles/”
+imports:
+- path: config.yaml
+
+  ## All the parameters that go into the creation of the AI/ML and Analytics platform resources are declared in this section
+  data:
+    ## Overall template parameters [Setting up billing account for the projects in the template]
+    BILLING_ACCOUNT:
+    DOMAIN:
+
+    # ID of the organization that the projects will be created under
+    ORGANIZATION_ID:
+
+    # ID of the organization that the projects will be created under
+    # FOLDER_ID:
+
+    # Location used by all the resources to be deployed (Eg. US, EU, etc.)
+    LOCATION:
+
+    # Region used by all the resources to be deployed (Eg. us-central1, europe-west4, etc.)
+    REGION:
+
+    ZONE:
+
+    ## Forseti project parameters [All the parameters required for forseti project]
+
+    # Give a project ID for the forseti project here
+    FORSETI_PROJECT_ID:
+
+    # Mention the forseti project's owner and auditor group
+    FORSETI_PROJECT_OWNERS_GROUP:
+    FORSETI_PROJECT_AUDITORS_GROUP:
+
+    # Name of the VPC under which Forseti is created
+    FORSETI_VPC_NETWORK_NAME:
+
+    # Name the resource for private IP Address used by Forseti (Not the IP Address itself)
+    FORSETI_PRIVATE_IP_NAME:
+
+    # Mention the ID for the bigquery dataset that stores forseti project's audit logs
+    FORSETI_AUDIT_LOGS_BIGQUERY_DATASET_ID:
+
+    # Forseti BQ dataset service account name
+    FORSETIBQ_SERVICE_ACCOUNT_NAME:
+
+    # It's a boolean values (true | false)  to decide if forseti BQ dataset contents get deleted upon destroy even if the dataset is not empty.
+    FORSETI_DELETE_CONTENTS_ON_DESTROY: true
+
+    # Name for the storage bucket that stores states of resources deployed under forseti (this) project
+    FORSETI_STATE_STORAGE_BUCKET:
+
+    # Setup NAT to allow private forseti to access the internet to fetch the Forseti repo while having no external IP.
+    # Name of the NAT being used in this project
+    FORSETI_ROUTER_NAME:
+
+    # Name of the router being used in this project
+    FORSETI_NAT_NAME:
+
+    ## ai/ml platform project parameters [All the parameters required for the project which deployes resources needed in this ai/ml platform]
+    # Give a project ID for the project deploying the ai/ml platform resources
+    AIML_PROJECT_ID:
+
+    # Mention the ai/ml platform project's owner and auditor group
+    AIML_OWNERS_GROUP:
+    AIML_AUDITORS_GROUP:
+
+    # Name for the storage bucket that stores states of resources deployed under ai/ml platform (this) project
+    AIML_STATE_STORAGE_BUCKET:
+
+    # Mention the ID for the big query dataset that stores ai/ml platform project's audit logs
+    AIML_AUDIT_LOGS_BIGQUERY_DATASET_ID:
+
+    # Mention the name for the storage bucket that stores ai/ml platform project's GCS logs
+    AIML_GCS_LOGS_STORAGE_BUCKET_NAME:
+
+    # Number of days from the time of creation, after which, storage objects from GCS logs bucket are moved to secondary storage class
+    AIML_GCS_LOGS_AGE_FOR_SECONDARY_STORAGE_CLASS:
+
+    # The storage class to which, objects from GCS logs bucket will be pushed to, after the specified number of days mentioned above (e.g. STANDARD/REGIONAL/MULTI_REGIONAL/COLDLINE/NEARLINE)
+    AIML_GCS_LOGS_SECONDARY_STORAGE_CLASS:
+
+    # Enter deployers email used for datalab instance for analysis unprocessed data on bigquery datasets, storage buckets, and cloud SQL instances.  deployment.
+    DATALAB_EMAIL:
+
+    # Name of the Dataproc service account
+    DATAPROC_SERVICE_ACCOUNT_NAME:
+
+    # Name of the Datalab service account
+    DATALAB_SERVICE_ACCOUNT_NAME:
+
+    # Name of the Datalab service account
+    DEEPVM_SERVICE_ACCOUNT_NAME:
+
+    # Audit BQ dataset service account name
+    AUDITBQ_SERVICE_ACCOUNT_NAME:
+
+    # Raw data BQ dataset service account name
+    RAWDATABQ_SERVICE_ACCOUNT_NAME:
+
+    # Transformed BQ dataset service account name
+    TRANSDATABQ_SERVICE_ACCOUNT_NAME:
+
+    # Name of the Dataproc cluster is created to run hadoop jobs like pyspark, hive etc.
+    DATAPROC_CLUSTER_NAME:
+
+    # User/group that acts as editor for dataproc cluster defined above
+    DATAPROC_CLUSTER_EDITOR_ROLE_MEMBER:
+
+    # User/group that acts as viewer for dataproc cluster defined above
+    DATAPROC_CLUSTER_VIEWER_ROLE_MEMBER:
+
+    # User/group that acts as editor for the example pyspark dataproc job created in this template.
+    DATAPROC_JOB_EDITOR_ROLE_MEMBER:
+
+    # User/group that acts as viewer for the example pyspark dataproc job created in this template.
+    DATAPROC_JOB_VIEWER_ROLE_MEMBER:
+
+    # Name of the VPC network used by Datalab instance, Deep Learning VM, and the private IP Cloud SQL instance and it's replica
+    PRIVATE_VPC_NETWORK_NAME:
+
+    # Name the resource for private IP Address used by Cloud SQL (Not the IP Address itself)
+    CLOUD_SQL_PRIVATE_IP_NAME:
+
+    # Name of the master cloud sql instance used as storage for unprocessed data in relational format in the architecture.
+    MASTER_CLOUD_SQL_NAME:
+
+    # Name of the cloud sql instancethat act as a replica for master instance declared above for backup and failover purpose.
+    REPLICA_CLOUD_SQL_NAME:
+
+    # Mention the ID for the big query dataset that stores raw data in the ai/ml platform for querying
+    RAW_DATA_BIGQUERY_DATASET_ID:
+
+    # Mention the special group that is given an additional role in BQ dataset above. Groups can be - projectOwners: Owners of the enclosing project, projectReaders: Readers of the enclosing project, projectWriters: Writers of the enclosing project, allAuthenticatedUsers: All authenticated BigQuery users.
+    RAW_DATA_BQ_SPECIAL_GROUP:
+
+    # Mention the additional role that must be give to the special group mentioned above
+    RAW_DATA_BQ_SPECIAL_GROUP_ROLE:
+
+    # Criticality of data stored in the bigquery dataset (possible values are high, medium, and low) used for labels
+    RAW_DATA_BIGQUERY_DATASET_DATA_CRITICALITY_LABEL:
+
+    # Type of data stored in the bigquery dataset (possible values are phi, pii, gcslogs, auditlogs, statefiles, and general) used for labels.
+    RAW_DATA_BIGQUERY_DATASET_DATA_TYPE_LABEL:
+
+    # Mention the ID for the big query dataset that stores processed data in the ai/ml platform for querying
+    TRANSFORMED_DATA_BIGQUERY_DATASET_ID:
+
+    # Mention the special group that must be given an additional role. Groups can be - projectOwners: Owners of the enclosing project, projectReaders: Readers of the enclosing project, projectWriters: Writers of the enclosing project, allAuthenticatedUsers: All authenticated BigQuery users.
+    TRANSFORMED_DATA_BQ_SPECIAL_GROUP:
+
+    # Mention the additional role that must be give to the special group mentioned above
+    TRANSFORMED_DATA_BQ_SPECIAL_GROUP_ROLE:
+
+    # Criticality of data stored in the bigquery dataset (possible values are high, medium, and low)
+    TRANSFORMED_DATA_BIGQUERY_DATASET_DATA_CRITICALITY_LABEL:
+
+    # Type of data stored in the bigquery dataset (possible values are phi, pii, gcslogs, auditlogs, statefiles, and general)
+    TRANSFORMED_DATA_BIGQUERY_DATASET_DATA_TYPE_LABEL:
+
+    # Storage bucket that stores raw data that comes from various healthcare tools used by the organization
+    RAW_DATA_STORAGE_BUCKET_NAME:
+
+    # User/group that acts objectcreator for storage bucket that stores raw data that comes from various healthcare tools used by the organization
+    RAW_DATA_STORAGE_BUCKET_OBJECTCREATOR:
+
+    # User/group that acts objectviewer for storage bucket that stores raw data that comes from various healthcare tools used by the organization
+    RAW_DATA_STORAGE_BUCKET_OBJECTVIEWER:
+
+    # Criticality of data stored in the bucket (possible values are high, medium, and low)
+    RAW_DATA_STORAGE_BUCKET_DATA_CRITICALITY_LABEL:
+
+    # Type of data stored in the bucket (possible values are phi, pii, gcslogs, auditlogs, statefiles, and general)
+    RAW_DATA_STORAGE_BUCKET_DATA_TYPE_LABEL:
+
+    # Names for healthcare dataset and it's datastores used for storing personal identifiable information healthcare data.
+    HEALTHCARE_DATASET_NAME:
+    HEALTHCARE_DICOM_STORE_NAME:
+    HEALTHCARE_FHIR_STORE_NAME:
+    HEALTHCARE_HL7V2_STORE_NAME:
+
+    # User/group that acts as viewer for healthcare datastores
+    HEALTHCARE_DATASET_VIEWER:
+
+    # Users/groups that act as editor and storage admin for healthcare DICOM datastore respectively
+    HEALTHCARE_DICOM_EDITOR:
+    HEALTHCARE_DICOM_STOREADMIN:
+
+    # Users/groups that act as reader and editor for healthcare FHIR datastore respectively
+    HEALTHCARE_FHIR_STORE_READER:
+    HEALTHCARE_FHIR_STORE_EDITOR:
+
+    # Users/groups that act as storage admin and editor for healthcare HL7V2 datastore respectively
+    HEALTHCARE_HL7V2_STOREADMIN:
+    HEALTHCARE_HL7V2_INGEST:
+    HEALTHCARE_HL7V2_STORE_EDITOR:
+
+    # Name of the Deep Learning VM with pre-installed Jupyter notebooks and machine learning libraries, which enables analysis of unprocessed data on bigquery datasets, storage buckets, and cloud SQL instances.
+    DEEP_LEARNING_VM_NAME:
+
+    # Criticality of data stored and processed by the Deep Learning VM instance (possible values are high, medium, and low)
+    DEEP_LEARNING_VM_DATA_CRITICALITY_LABEL:
+
+    # Type of data stored and processed by the Deep Learning VM instance (possible values are phi, pii, gcslogs, auditlogs, statefiles, and general)
+    DEEP_LEARNING_VM_DATA_TYPE_LABEL:
+
+    # Users/groups that act as editor and viewer for Deep learning VM
+    DEEP_LEARNING_VM_EDITOR_ROLE_MEMBER:
+    DEEP_LEARNING_VM_VIEWER_ROLE_MEMBER:
