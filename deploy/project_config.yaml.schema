@@ -494,7 +494,25 @@ definitions:
               description: |
                 The display name for the service account. Can be updated
                 without creating a new resource.
-
+            _iam_members:
+              type: array
+              description: |
+                Supports google_spanner_instance_iam_member (https://www.terraform.io/docs/providers/google/r/service_account_iam.html).
+                Only the fields below are allowed.
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - role
+                - member
+                properties:
+                  role:
+                    type: string
+                    description: The role that should be applied.
+                  member:
+                    type: string
+                    description: |
+                      Identities that will be granted the privilege in role.
       spanner_instances:
         type: array
         description: |

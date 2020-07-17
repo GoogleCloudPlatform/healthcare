@@ -172,9 +172,10 @@ func (ms *ProjectIAMMembers) UnmarshalJSON(b []byte) error {
 
 // ServiceAccount represents a Terraform service account.
 type ServiceAccount struct {
-	AccountID   string `json:"account_id"`
-	Project     string `json:"project"`
-	DisplayName string `json:"display_name"`
+	AccountID   string                     `json:"account_id"`
+	Project     string                     `json:"project"`
+	DisplayName string                     `json:"display_name"`
+	IAMMembers  []*ServiceAccountIAMMember `json:"_iam_members,omitempty"`
 }
 
 // Init initializes the resource.
@@ -199,4 +200,58 @@ func (a *ServiceAccount) ResourceType() string {
 // ImportID returns the ID to use for terraform imports.
 func (a *ServiceAccount) ImportID(runner.Runner) (string, error) {
 	return fmt.Sprintf("projects/%s/serviceAccounts/%s@%s.iam.gserviceaccount.com", a.Project, a.AccountID, a.Project), nil
+}
+
+// DependentResources returns the child resources of this resource.
+func (a *ServiceAccount) DependentResources() []Resource {
+	if len(a.IAMMembers) == 0 {
+		return nil
+	}
+
+	forEach := make(map[string]*ServiceAccountIAMMember)
+	for _, m := range a.IAMMembers {
+		key := fmt.Sprintf("%s %s", m.Role, m.Member)
+		forEach[key] = m
+	}
+	return []Resource{&ServiceAccountIAMMember{
+		ForEach:   forEach,
+		AccountID: fmt.Sprintf("${google_service_account.%s.name}", a.ID()),
+		Role:      "${each.value.role}",
+		Member:    "${each.value.member}",
+		id:        a.ID(),
+	}}
+}
+
+// ServiceAccountIAMMember represents a Terraform GCS bucket IAM member.
+type ServiceAccountIAMMember struct {
+	Role   string `json:"role"`
+	Member string `json:"member"`
+
+	// The following fields should not be set by users.
+
+	// ForEach is used to let a single iam member expand to reference multiple iam members
+	// through the use of terraform's for_each iterator.
+	ForEach map[string]*ServiceAccountIAMMember `json:"for_each,omitempty"`
+
+	// Bucket should be written as a terraform reference to a bucket name so that it is created after the bucket.
+	// e.g. ${google_ServiceAccount_bucket.foo_bucket.name}
+	AccountID string `json:"service_account_id,omitempty"`
+
+	// id should be the bucket's literal name.
+	id string
+}
+
+// Init initializes the resource.
+func (m *ServiceAccountIAMMember) Init(string) error {
+	return nil
+}
+
+// ID returns the unique identifier.
+func (m *ServiceAccountIAMMember) ID() string {
+	return standardizeID(m.id)
+}
+
+// ResourceType returns the terraform provider type.
+func (m *ServiceAccountIAMMember) ResourceType() string {
+	return "google_service_account_iam_member"
 }
