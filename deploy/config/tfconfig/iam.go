@@ -175,7 +175,9 @@ type ServiceAccount struct {
 	AccountID   string                     `json:"account_id"`
 	Project     string                     `json:"project"`
 	DisplayName string                     `json:"display_name"`
-	IAMMembers  []*ServiceAccountIAMMember `json:"_iam_members,omitempty"`
+	IAMMembers  []*ServiceAccountIAMMember `json:"_iam_members"`
+
+	raw json.RawMessage
 }
 
 // Init initializes the resource.
@@ -220,6 +222,28 @@ func (a *ServiceAccount) DependentResources() []Resource {
 		Member:    "${each.value.member}",
 		id:        a.ID(),
 	}}
+}
+
+// aliasStorageBucket is used to prevent infinite recursion when dealing with json marshaling.
+// https://stackoverflow.com/q/52433467
+type aliasServiceAccount ServiceAccount
+
+// UnmarshalJSON provides a custom JSON unmarshaller.
+// It is used to store the original (raw) user JSON definition,
+// which can have more fields than what is defined in this struct.
+func (a *ServiceAccount) UnmarshalJSON(data []byte) error {
+	var alias aliasServiceAccount
+	if err := unmarshalJSONMany(data, &alias, &alias.raw); err != nil {
+		return fmt.Errorf("failed to unmarshal to parsed alias: %v", err)
+	}
+	*a = ServiceAccount(alias)
+	return nil
+}
+
+// MarshalJSON provides a custom JSON marshaller.
+// It is used to merge the original (raw) user JSON definition with the struct.
+func (a *ServiceAccount) MarshalJSON() ([]byte, error) {
+	return interfacePair{a.raw, aliasServiceAccount(*a)}.MarshalJSON()
 }
 
 // ServiceAccountIAMMember represents a Terraform GCS bucket IAM member.
