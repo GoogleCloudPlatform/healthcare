@@ -57,7 +57,7 @@ class Predictor(object):
       return googleapiclient.http.HttpRequest(http, *args, **kwargs)
 
     self._caip_client = googleapiclient.discovery.build(
-        'ml', 'v1', requestBuilder=_BuildRequest)
+        'ml', 'v1', cache_discovery=False, requestBuilder=_BuildRequest)
 
   def Predict(self, model_input: Dict[Text, Any],
               model_config: ModelConfig) -> Any:
