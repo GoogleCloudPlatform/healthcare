@@ -1,9 +1,12 @@
 # Google Cloud Healthcare Data Protection Toolkit
 
-NOTE: The new version of the toolkit can be found at
-https://github.com/GoogleCloudPlatform/healthcare-data-protection-suite.
-
-**Status:** ALPHA
+This is the stable version of the Data Protection Toolkit.
+It supports creating projects with auditing and monitoring built in. We are
+actively working on the next iteration of the tool at
+https://github.com/GoogleCloudPlatform/healthcare-data-protection-suite. For new
+users, we recommend starting with the new toolkit so you can stay up to date
+with the latest features. For current users of this toolkit, they will continue
+to function in a stable state
 
 *   [Features](#features)
 *   [Use Cases](#use-cases)
