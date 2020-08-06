@@ -73,8 +73,12 @@ from hcls_imaging_ml_toolkit import dicom_path
 from hcls_imaging_ml_toolkit import exception
 from hcls_imaging_ml_toolkit import pubsub_format
 from hcls_imaging_ml_toolkit import tag_values
+from highdicom.sr import sop
+from highdicom.sr import templates
+from highdicom.sr import value_types
 from oauth2client.client import GoogleCredentials
 import pydicom
+from pydicom.sr.codedict import codes
 
 from google.api_core.exceptions import InvalidArgument
 from google.api_core.exceptions import PermissionDenied
@@ -105,6 +109,23 @@ _CHARACTER_SET = 'ISO_IR 192'
 _IMPLICIT_VR_LITTLE_ENDIAN = '1.2.840.10008.1.2'
 
 _MODALITY_KEY_WORD = 'Modality'
+
+# Prediction response keys.
+_PREDICTION_CLASSES = 'prediction_classes'
+_PREDICTION_SCORES = 'prediction_scores'
+
+_PREDICTION_CLASS_TO_CODE = {
+    '2':
+        value_types.CodeContentItem(
+            name=codes.SCT.BreastComposition,
+            value=codes.SCT.
+            MammographicBreastCompositionShowingScatteredFibroglandularDensities
+        ),
+    '3':
+        value_types.CodeContentItem(
+            name=codes.SCT.BreastComposition,
+            value=codes.SCT.HeterogeneouslyDenseBreastComposition)
+}
 
 
 class Predictor(object):
@@ -201,35 +222,60 @@ class AutoMLPredictor(Predictor):
     return result.display_name, result.classification.score
 
 
-def _BuildSR(study_json, text, series_uid, instance_uid):
+def _BuildComprehensiveSR(instance_metadata, prediction_class, series_uid,
+                          instance_uid):
   # type: (Dict, str, str, str) -> pydicom.dataset.Dataset
-  """Builds and returns a Basic Text DICOM Structured Report instance.
+  """Builds and returns a Comprehensive SR DICOM Structured Report instance.
 
   Args:
-    study_json: Dict of study level information to populate the SR.
-    text: Text string to use for the Basic Text DICOM SR.
+    instance_metadata: Dict of instance for which the prediction was made and
+      from which the created SR document instance should inherit patient and
+      study information.
+    prediction_class: The BI-RADS breast density predicted class.
     series_uid: UID of the series to use for the SR.
     instance_uid: UID of the instance to use for the SR.
 
+  Raises:
+    ValueError if the prediction class is not in |_PREDICTION_CLASS_TO_CODE|.
   Returns:
     pydicom.dataset.Dataset representing the Structured Report.
   """
-  dataset = load_json_dataset(study_json)
-  dataset.SOPClassUID = tag_values.BASIC_TEXT_SR_CUID
-  dataset.SeriesInstanceUID = series_uid
-  dataset.SOPInstanceUID = instance_uid
-  dataset.Modality = tag_values.SR_MODALITY
-
-  content_dataset = pydicom.dataset.Dataset()
-  dataset.ContentSequence = pydicom.sequence.Sequence([content_dataset])
-  content_dataset.RelationshipType = 'CONTAINS'
-  content_dataset.ValueType = 'TEXT'
-  content_dataset.TextValue = text
-
-  dataset.fix_meta_info(enforce_standard=True)
-  # Must be set but is overwritten later during `dcmwrite()`.
-  dataset.file_meta.FileMetaInformationGroupLength = 0
-  return dataset
+  # Get code from prediction class.
+  if prediction_class not in _PREDICTION_CLASS_TO_CODE.keys():
+    raise ValueError('Prediction class: %s is invalid must be in: %s' %
+                     (prediction_class, _PREDICTION_CLASS_TO_CODE.keys()))
+  prediction_code = _PREDICTION_CLASS_TO_CODE[prediction_class]
+  model_name = 'Breast Density Classification Model'
+  # Description of the classification model.
+  algorithm = templates.AlgorithmIdentification(
+      name=model_name,
+      version='v0.1.0',
+  )
+  # Add prediction_code to qualitative evaluations
+  measurements_group = templates.MeasurementsAndQualitativeEvaluations(
+      tracking_identifier=templates.TrackingIdentifier(
+          identifier='Classification of Breast Density'),
+      algorithm_id=algorithm,
+      qualitative_evaluations=[prediction_code])
+  device = templates.DeviceObserverIdentifyingAttributes(
+      uid=pydicom.uid.generate_uid(prefix=None), model_name=model_name)
+  observation_context = templates.ObservationContext(
+      observer_device_context=templates.ObserverContext(
+          observer_type=codes.DCM.Device,
+          observer_identifying_attributes=device))
+  measurement_report = templates.MeasurementReport(
+      observation_context=observation_context,
+      procedure_reported=codes.SCT.ImagingProcedure,
+      imaging_measurements=[measurements_group])
+  structured_report = sop.ComprehensiveSR(
+      evidence=[load_json_dataset(instance_metadata)],
+      content=measurement_report[0],
+      series_number=1,
+      series_instance_uid=series_uid,
+      sop_instance_uid=instance_uid,
+      instance_number=1,
+      manufacturer='ML Codelab')
+  return structured_report
 
 
 class PubsubMessageHandler(object):
@@ -362,10 +408,9 @@ class PubsubMessageHandler(object):
         input_path.series_uid,
         input_path.instance_uid,
         media_types=('image/jpeg',))
-    # Retrieve study level information
-    study_json = input_client.search_for_studies(
-        fields=['all'],
-        search_filters={'StudyInstanceUID': input_path.study_uid})[0]
+    # Retrieve instance metadata.
+    instance_metadata = input_client.retrieve_instance_metadata(
+        input_path.study_uid, input_path.series_uid, input_path.instance_uid)
     # Get the predicted score and class from the inference model in Cloud ML or
     # AutoML.
     try:
@@ -381,9 +426,12 @@ class PubsubMessageHandler(object):
       return
 
     # Print the prediction.
-    text = 'Base path: %s\nPredicted class: %s\nPredicted score: %s' % (
-        image_instance_path, predicted_class, predicted_score)
-    _logger.info(text)
+    inference_results = {
+        'base_path': image_instance_path,
+        _PREDICTION_CLASSES: predicted_class,
+        _PREDICTION_SCORES: predicted_score
+    }
+    _logger.info(inference_results)
 
     # If user requested destination DICOM store for inference, create a DICOM
     # structured report that stores the prediction.
@@ -396,7 +444,9 @@ class PubsubMessageHandler(object):
       # Generate series uid and instance uid for the structured report.
       sr_instance_uid = pydicom.uid.generate_uid(prefix=None)
       sr_series_uid = pydicom.uid.generate_uid(prefix=None)
-      sr_dataset = _BuildSR(study_json, text, sr_series_uid, sr_instance_uid)
+      sr_dataset = _BuildComprehensiveSR(instance_metadata,
+                                         inference_results[_PREDICTION_CLASSES],
+                                         sr_series_uid, sr_instance_uid)
       try:
         output_client.store_instances([sr_dataset])
       except RuntimeError as e:

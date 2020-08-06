@@ -20,4 +20,5 @@ oauth2client
 google-cloud-automl
 attrs
 dicomweb-client
+highdicom
 hcls-imaging-ml-toolkit@git+https://github.com/GoogleCloudPlatform/healthcare.git#subdirectory=imaging/ml/toolkit
