@@ -130,15 +130,15 @@ class DicomWebTest(parameterized.TestCase):
     httplib2.Http.return_value = http_mock
     http_mock.request.side_effect = [
         FakeHttpResponse(http_client.OK,
-                         json.dumps(_MOCK_CT_INSTANCE_METADATA)),
-        FakeHttpResponse(http_client.NO_CONTENT, '{}')
+                         json.dumps([_MOCK_CT_INSTANCE_METADATA])),
+        FakeHttpResponse(http_client.NO_CONTENT, b'')
     ]
     google_auth_httplib2.AuthorizedHttp.return_value = http_mock
     resp = self._dwc.QidoRs(_URI)
-    self.assertEqual(resp, _MOCK_CT_INSTANCE_METADATA)
+    self.assertEqual(resp, [_MOCK_CT_INSTANCE_METADATA])
 
     resp = self._dwc.QidoRs(_URI)
-    self.assertEqual(resp, {})
+    self.assertEqual(resp, [{}])
 
   def testPathToUrl(self):
     dicom_path_str = tdpu.STUDY_PATH_STR

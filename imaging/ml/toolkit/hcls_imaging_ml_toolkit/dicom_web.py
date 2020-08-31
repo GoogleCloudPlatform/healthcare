@@ -178,16 +178,19 @@ class DicomWebClientImpl(DicomWebClient):
       qido_url: URL for the QIDO request.
 
     Returns:
-      The parsed JSON response content.
+      The parsed JSON response content or empty dictionary if no contents are
+        found.
 
     Raises:
       UnexpectedResponseError: If the response status was not success.
     """
     resp, content = self._InvokeHttpRequest(qido_url, 'GET')
-    if 200 <= resp.status >= 299:
+    if resp.status >= 299:
       raise UnexpectedResponseError(
           'QidoRs error. Response Status: %d,\nURL: %s,\nContent: %s.' %
           (resp.status, qido_url, content))
+    if resp.status == 204:  # Empty query
+      return [{}]
     return json.loads(content)
 
   def WadoRs(self, wado_url: Text, accept_header: Text = None) -> bytes:
