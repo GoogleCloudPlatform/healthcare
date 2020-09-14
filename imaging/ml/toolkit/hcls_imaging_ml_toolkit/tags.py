@@ -21,7 +21,7 @@ from typing import Text
 import attr
 
 
-@attr.s
+@attr.s(frozen=True)
 class DicomTag(object):
   # Tag number.
   number = attr.ib(type=Text)
