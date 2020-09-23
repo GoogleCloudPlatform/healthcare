@@ -31,7 +31,8 @@ def Insert(dicom_json: Dict[Text, Any], tag: tags.DicomTag, value: Any) -> None:
   """Inserts a Dicom Tag into passed DICOM JSON Dict.
 
   Args:
-    dicom_json: DICOM JSON dict where the tag will be inserted.
+    dicom_json: DICOM JSON dict where the tag will be inserted. See:
+      https://www.dicomstandard.org/dicomweb/dicom-json-format
     tag: A DICOM tag.
     value: Any type that will be inserted into dict as the value for the tag.
   """
@@ -41,10 +42,20 @@ def Insert(dicom_json: Dict[Text, Any], tag: tags.DicomTag, value: Any) -> None:
 
 def GetList(dicom_json: Dict[Text, Any],
             tag: tags.DicomTag) -> Optional[List[Any]]:
-  """Returns the value list for the tag from the provided DICOM JSON."""
+  """Returns the value list for the tag from the provided DICOM JSON.
+
+  Args:
+    dicom_json: Dictionary containing DICOM JSON. See:
+      https://www.dicomstandard.org/dicomweb/dicom-json-format
+    tag: The tag to return the list of values for.
+
+  Returns:
+    The value list corresponding to the tag or None if the tag or value list is
+    not present in the dictionary.
+  """
   if tag.number not in dicom_json:
     return None
-  return dicom_json[tag.number][_VALUE_KEY]
+  return dicom_json[tag.number].get(_VALUE_KEY)
 
 
 def GetValue(dicom_json: Dict[Text, Any], tag: tags.DicomTag) -> Any:
@@ -55,17 +66,17 @@ def GetValue(dicom_json: Dict[Text, Any], tag: tags.DicomTag) -> Any:
   value list exists, returns None.
 
   Args:
-    dicom_json: Dictionary containing DICOM JSON.
+    dicom_json: Dictionary containing DICOM JSON. See:
+      https://www.dicomstandard.org/dicomweb/dicom-json-format
     tag: The tag to return the value for.
 
   Returns:
-    The first value from the value list corresponding to the tag or None if the
-    tag or value list is not present in the dictionary.
+    The first value from the value list corresponding to the tag or None if:
+    - The tag or value list is not present in the dictionary.
+    - The value list is empty.
   """
-  if tag.number not in dicom_json:
-    return None
-  val_list = dicom_json[tag.number].get(_VALUE_KEY)
-  return val_list[0] if val_list else None
+  value_list = GetList(dicom_json, tag)
+  return value_list[0] if value_list else None
 
 
 @attr.s
