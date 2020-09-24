@@ -18,6 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 # SOP Class UIDs.
+# These values are found under the DICOM Tag (0008,0016). The SOP Classes in the
+# Storage Service Class identify the Composite IODs to be stored.
 # http://dicom.nema.org/medical/dicom/current/output/chtml/part04/sect_B.5.html
 #
 # Basic Text Structured Reports.
@@ -26,6 +28,8 @@ BASIC_TEXT_SR_CUID = '1.2.840.10008.5.1.4.1.1.88.11'
 SECONDARY_CAPTURE_CUID = '1.2.840.10008.5.1.4.1.1.7'
 # Digital Mammography X-Ray Image Storage - For Presentation.
 MAMMO_XRAY_PRESENTATION_CUID = '1.2.840.10008.5.1.4.1.1.1.2'
+# Digital X-Ray Image Storage - For Presentation.
+XRAY_PRESENTATION_CUID = '1.2.840.10008.5.1.4.1.1.1.1'
 
 # Modality values.
 CT_MODALITY = 'CT'

@@ -69,6 +69,7 @@ ADDITIONAL_PATIENT_HISTORY = DicomTag(number='001021B0', vr='LT')
 PATIENT_COMMENTS = DicomTag(number='00104000', vr='LT')
 
 SLICE_THICKNESS = DicomTag(number='00180050', vr='DS')
+IMAGER_PIXEL_SPACING = DicomTag(number='00181164', vr='DS')
 VIEW_POSITION = DicomTag(number='00185101', vr='CS')
 
 MEDIA_STORAGE_SOP_CLASS_UID = DicomTag(number='00020002', vr='UI')
