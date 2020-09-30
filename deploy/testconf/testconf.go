@@ -78,6 +78,8 @@ projects:
   data_readonly_groups:
   - my-project-readonly@my-domain.com
   - another-readonly-group@googlegroups.com
+  labels:
+    test_label: test_value
   devops:
     state_storage_bucket:
       name: my-project-state

@@ -194,6 +194,7 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 		OrgID:          oid,
 		FolderID:       fid,
 		BillingAccount: ba,
+		Labels:         project.Labels,
 	}
 
 	if err := pr.Init(project.ID); err != nil {

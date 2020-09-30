@@ -67,13 +67,14 @@ type Config struct {
 
 // Project defines a single project's configuration.
 type Project struct {
-	ID                  string   `json:"project_id"`
-	BillingAccount      string   `json:"billing_account"`
-	FolderID            string   `json:"folder_id"`
-	OwnersGroup         string   `json:"owners_group"`
-	AuditorsGroup       string   `json:"auditors_group"`
-	DataReadWriteGroups []string `json:"data_readwrite_groups"`
-	DataReadOnlyGroups  []string `json:"data_readonly_groups"`
+	ID                  string            `json:"project_id"`
+	BillingAccount      string            `json:"billing_account"`
+	FolderID            string            `json:"folder_id"`
+	OwnersGroup         string            `json:"owners_group"`
+	AuditorsGroup       string            `json:"auditors_group"`
+	DataReadWriteGroups []string          `json:"data_readwrite_groups"`
+	DataReadOnlyGroups  []string          `json:"data_readonly_groups"`
+	Labels              map[string]string `json:"labels"`
 
 	DevopsConfig struct {
 		StateBucket *tfconfig.StorageBucket `json:"state_storage_bucket"`

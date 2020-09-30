@@ -23,11 +23,12 @@ import (
 // ProjectResource represents a Terraform project resource.
 // https://www.terraform.io/docs/providers/google/r/google_project.html
 type ProjectResource struct {
-	ProjectID      string `json:"project_id"`
-	Name           string `json:"name"`
-	OrgID          string `json:"org_id,omitempty"`
-	FolderID       string `json:"folder_id,omitempty"`
-	BillingAccount string `json:"billing_account"`
+	ProjectID      string            `json:"project_id"`
+	Name           string            `json:"name"`
+	OrgID          string            `json:"org_id,omitempty"`
+	FolderID       string            `json:"folder_id,omitempty"`
+	BillingAccount string            `json:"billing_account"`
+	Labels         map[string]string `json:"labels"`
 }
 
 // Init initializes the resource.

@@ -70,6 +70,10 @@ definitions:
           Group to be granted access to audit logs and securityReviewer role in
           this project.
 
+      labels:
+        type: object
+        descroption: Labels to set on the project.
+
       devops:
         type: object
         description: Configuration for devops related components like Terraform.
