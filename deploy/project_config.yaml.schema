@@ -498,6 +498,9 @@ definitions:
               description: |
                 The display name for the service account. Can be updated
                 without creating a new resource.
+            description:
+              type: string
+              description: Description of the service account.
             _iam_members:
               type: array
               description: |

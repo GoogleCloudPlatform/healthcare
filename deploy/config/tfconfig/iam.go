@@ -175,6 +175,7 @@ type ServiceAccount struct {
 	AccountID   string                     `json:"account_id"`
 	Project     string                     `json:"project"`
 	DisplayName string                     `json:"display_name"`
+	Description string                     `json:"description,omitempty"`
 	IAMMembers  []*ServiceAccountIAMMember `json:"_iam_members"`
 
 	raw json.RawMessage
