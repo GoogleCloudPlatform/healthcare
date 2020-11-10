@@ -111,3 +111,5 @@ TEXT_VALUE = DicomTag(number='0040A160', vr='UT')
 CONTENT_SEQUENCE = DicomTag(number='0040A730', vr='SQ')
 
 PIXEL_DATA = DicomTag(number='7FE00010', vr='OW')
+
+DEIDENTIFICATION_METHOD = DicomTag(number='00120063', vr='LO')
