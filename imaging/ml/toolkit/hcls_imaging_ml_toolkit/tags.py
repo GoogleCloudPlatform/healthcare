@@ -112,4 +112,5 @@ CONTENT_SEQUENCE = DicomTag(number='0040A730', vr='SQ')
 
 PIXEL_DATA = DicomTag(number='7FE00010', vr='OW')
 
+PATIENT_IDENTITY_REMOVED = DicomTag(number='00120062', vr='CS')
 DEIDENTIFICATION_METHOD = DicomTag(number='00120063', vr='LO')
