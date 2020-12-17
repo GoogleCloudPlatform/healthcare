@@ -1,0 +1,145 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#####################################
+########## Cloud Dataproc ###########
+#####################################
+
+overall:
+  billing_account: XXXXXX-XXXXXX-XXXXXX
+  domain: dpt.healthcare
+  # Optional ID of the organization that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # organization_id:
+  # Optional ID of the folder that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # folder_id:
+
+generated_fields_path: ./generated_fields.yaml
+
+projects:
+- project_id: example-project
+  owners_group: ownergroup@domain
+  auditors_group: auditorgroup@domain
+
+  audit:
+    logs_bigquery_dataset:
+      dataset_id: out_data_logs
+      location: US
+    logs_storage_bucket:
+      name: out-data-logs
+      location: US
+
+  devops:
+    state_storage_bucket:
+      name: out-data-state
+      location: US
+
+  # Custom created servive account for dataproc.
+  service_accounts:
+  - account_id: example-account
+
+  terraform_deployments:
+    resources:
+      config:
+        resource:
+          # User provided with serviceAccountUser role on service accounts
+          - google_service_account_iam_member:
+              admin-account-iam:
+                service_account_id: ${google_service_account.example-account.name}
+                role: roles/iam.serviceAccountUser
+                # mention deployer of this template
+                member: user:user@domain
+
+          # Service account provided with dataproc worker role on project
+          - google_project_iam_member:
+              projects:
+                project: example-project
+                role: roles/dataproc.worker
+                member: serviceAccount:example-account@example-project.iam.gserviceaccount.com
+
+          # Dataproc cluster
+          - google_dataproc_cluster:
+              mycluster:
+                name: mycluster
+                region: us-west1
+                labels:
+                  foo: bar
+                cluster_config:
+                  master_config:
+                    num_instances: 1
+                    machine_type: n1-standard-1
+                    disk_config:
+                      boot_disk_type: pd-ssd
+                      boot_disk_size_gb: 15
+                  worker_config:
+                    num_instances: 2
+                    machine_type: n1-standard-1
+                    min_cpu_platform: Intel Skylake
+                    disk_config:
+                      boot_disk_size_gb: 15
+                      num_local_ssds: 1
+                  preemptible_worker_config:
+                    num_instances: 0
+                  software_config:
+                    image_version: 1.3.7-deb9
+                    override_properties:
+                      dataproc:dataproc.allow.zero.workers: 'true'
+                  # KMS keys configuration can be enabled by uncommenting the section below and inputting corresponding values. Refer "https://www.terraform.io/docs/providers/google/r/dataproc_cluster.html"
+                  # security_config:
+                  #   kerberos_config:
+                  #     kms_key_uri: projects/projectId/locations/locationId/keyRings/keyRingId/cryptoKeys/keyId
+                  #     root_principal_password_uri: bucketId/o/objectId
+                  gce_cluster_config:
+                    tags:
+                    - foo
+                    - bar
+                    service_account: example-account@example-project.iam.gserviceaccount.com
+                  initialization_action:
+                    script: gs://dataproc-initialization-actions/stackdriver/stackdriver.sh
+                    timeout_sec: 500
+          # IAM bindings for dataprocs
+          - google_dataproc_cluster_iam_member:
+            - editor:
+              - cluster: ${google_dataproc_cluster.mycluster.name}
+                # mention the user to give editor role
+                member: user:user@domain
+                role: roles/editor
+                region: us-west1
+            - viewer:
+              - cluster: ${google_dataproc_cluster.mycluster.name}
+                # mention the user to give editor role
+                member: user:user@domain
+                role: roles/viewer
+                region: us-west1
+          - google_dataproc_job_iam_member:
+            - editor:
+              - job_id: ${google_dataproc_job.pyspark.reference[0].job_id}
+                member: user:user@domain
+                role: roles/editor
+                region: us-west1
+            - viewer:
+              - job_id: ${google_dataproc_job.pyspark.reference[0].job_id}
+                member: user:user@domain
+                role: roles/viewer
+                region: us-west1
+          # Example pyspark dataproc job. Refer "https://www.terraform.io/docs/providers/google/r/dataproc_job.html" for more examples.
+          - google_dataproc_job:
+              pyspark:
+                region: ${google_dataproc_cluster.mycluster.region}
+                force_delete: true
+                placement:
+                  cluster_name: ${google_dataproc_cluster.mycluster.name}
+                pyspark_config:
+                  main_python_file_uri: gs://dataproc-examples-2f10d78d114f6aaec76462e3c310f31f/src/pyspark/hello-world/hello-world.py
+                  properties:
+                    spark.logConf: 'true'

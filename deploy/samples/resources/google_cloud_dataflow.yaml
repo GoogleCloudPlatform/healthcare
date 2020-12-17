@@ -1,0 +1,73 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+####################################
+########## Cloud Dataflow ##########
+####################################
+
+# This sections sets up billing acccount and folder under which the projects must be deployed
+overall:
+  billing_account: XXXXXX-XXXXXX-XXXXXX
+  domain: dpt.healthcare
+  # Optional ID of the organization that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # organization_id:
+  # Optional ID of the folder that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # folder_id:
+
+generated_fields_path: ./generated_fields.yaml
+
+# projects deployed in the cloud are listed
+projects:
+  - project_id: example-project
+    owners_group: ownergroup@domain
+    auditors_group: auditgroup@domain
+
+    # Storage bucket stores the terraform states of the resources in the projects.
+    devops:
+      state_storage_bucket:
+        name: data-state
+        location: EU
+
+    # Bigquery dataset stores audit logs of the project and it's resources
+    # Storage bucket holds GCS logs if the project has storage buckets
+    audit:
+      logs_bigquery_dataset:
+        dataset_id: data_logs
+        location: EU
+      logs_storage_bucket:
+        name: data-logs
+        location: EU
+    # Resources deployed which are not inbuilt in DPT using JSON
+    terraform_deployments:
+      resources:
+        # Creates a job on Dataflow, which is an implementation of Apache Beam running on Google Compute Engine.
+        # If it reaches a terminal state (e.g. 'FAILED', 'COMPLETE', 'CANCELLED'), it will be recreated on the next 'apply'.
+        # Add the template path (custom or inbuilt) you want to run in "template_gcs_path".
+        config:
+          resource:
+          - google_dataflow_job:
+            - big_data_job:
+              - name: dataflow-job
+                zone: europe-west1-b
+                parameters:
+                  baz: qux
+                  foo: bar
+                # The below mentioned GCS path is an example. Enter a template path as per requirement. Refer to "https://cloud.google.com/dataflow/docs/guides/templates/provided-templates" for more information.
+                temp_gcs_location: gs://my-bucket/tmp_dir
+                template_gcs_path: gs://dataflow-templates-staging/2018-10-08-00_RC00/PubSub_to_BigQuery
+                ip_configuration: WORKER_IP_PRIVATE
+                # uncomment the following attributes as per the requirements. Refer to "https://www.terraform.io/docs/providers/google/r/dataflow_job.html" for more information on the attributes below and their corresponding values.
+                # on_delete:
+                # network:
+                # subnetwork:

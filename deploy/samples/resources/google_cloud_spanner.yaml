@@ -1,0 +1,78 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+###################################
+########## Cloud Spanner ##########
+###################################
+
+# This sections sets up billing account and folder under which the projects must be deployed
+overall:
+  billing_account: XXXXXX-XXXXXX-XXXXXX
+  domain: dpt.healthcare
+  # Optional ID of the organization that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # organization_id:
+  # Optional ID of the folder that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # folder_id:
+
+generated_fields_path: ./generated_fields.yaml
+
+# projects deployed in the cloud are listed
+projects:
+  - project_id: example-project
+    owners_group: ownergroup@domain
+    auditors_group: auditgroup@domain
+
+    # Storage bucket stores the terraform states of the resources in the projects.
+    devops:
+      state_storage_bucket:
+        name: data-state
+        location: EU
+
+    # Bigquery dataset stores audit logs of the project and it's resources
+    # Storage bucket holds GCS logs if the project has storage buckets
+    audit:
+      logs_bigquery_dataset:
+        dataset_id: data_logs
+        location: EU
+      logs_storage_bucket:
+        name: data-logs
+        location: EU
+
+    terraform_deployments:
+      resources:
+        # the bindings and the corresponding roles which the IAM policy refers to are in the data section, and instance, database, and policy are in the resource section.
+        # add roles in the data section under binding
+        config:
+          resource:
+          - google_spanner_instance:
+            - main:
+              - config: regional-europe-west1
+                display_name: main-instance
+                num_nodes: '2'
+          - google_spanner_database:
+            - database:
+              - ddl:
+                - CREATE TABLE t1 (t1 INT64 NOT NULL,) PRIMARY KEY(t1)
+                - CREATE TABLE t2 (t2 INT64 NOT NULL,) PRIMARY KEY(t2)
+                instance: ${google_spanner_instance.main.name}
+                name: my-database
+          - google_spanner_instance_iam_member:
+            - owner:
+              - instance: ${google_spanner_instance.main.name}
+                role: roles/owner
+                member: user:user@domain
+              reviewer:
+              - instance: ${google_spanner_instance.main.name}
+                role: roles/iam.securityReviewer
+                member: user:user@domain

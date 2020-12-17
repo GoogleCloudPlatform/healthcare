@@ -1,0 +1,79 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+####################################
+##### Google Compute Firewall ######
+####################################
+
+# This sections sets up billing acccount and folder under which the projects must be deployed
+
+overall:
+  billing_account: XXXXXX-XXXXXX-XXXXXX
+  domain: dpt.healthcare
+  # Optional ID of the organization that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # organization_id:
+  # Optional ID of the folder that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # folder_id:
+
+generated_fields_path: ./generated_fields.yaml
+
+projects:
+- project_id: example-project
+  owners_group: dpt-admins-test@dpt.healthcare
+  auditors_group: dpt-auditors-test@dpt.healthcare
+  # Storage bucket stores the terraform states of the resources in the projects.
+  devops:
+    state_storage_bucket:
+      name: data-state
+      location: EU
+  # Bigquery dataset and data storage bucket to store logs from projects and their resources.
+  audit:
+    logs_bigquery_dataset:
+      dataset_id: data_logs
+      location: EU
+    logs_storage_bucket:
+      name: data-logs
+      location: EU
+
+  compute_firewalls:
+  - name: test-firewall
+    network: ${google_compute_network.default.name}
+    allow:
+    - protocol: icmp
+    - protocol: tcp
+      ports:
+      - '80'
+      - '8080'
+      - 1000-2000
+    source_tags:
+    - web
+    # For EGRESS traffic, it is NOT supported to specify source_ranges OR source_tags.
+    direction: INGRESS
+    # Enable logging for a particular firewall rule. If logging is enabled, logs will be exported to Stackdriver.
+    enable_logging: true
+    # Uncomment the following attributes as per the requirements. For more information on the attributes, refer to "https://www.terraform.io/docs/providers/google/r/compute_firewall.html".
+    # destination_ranges:
+    # source_ranges:
+    # source_service_accounts:
+    # source_tags:
+
+  # Resources deployed which are not inbuilt in DPT using JSON
+  terraform_deployments:
+    resources:
+    # Sample network for the firewall to work on
+      config:
+        resource:
+        - google_compute_network:
+          - default:
+            - name: test-network

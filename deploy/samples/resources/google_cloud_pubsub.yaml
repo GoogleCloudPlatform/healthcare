@@ -1,0 +1,95 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+####################################
+############## Pubsub ##############
+####################################
+
+# This sections sets up billing acccount and folder under which the projects must be deployed
+overall:
+  billing_account: XXXXXX-XXXXXX-XXXXXX
+  domain: dpt.healthcare
+  # Optional ID of the organization that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # organization_id:
+  # Optional ID of the folder that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # folder_id:
+
+generated_fields_path: ./generated_fields.yaml
+
+# projects deployed in the cloud are listed
+projects:
+  - project_id: example-project
+    owners_group: ownergroup@domain
+    auditors_group: auditgroup@domain
+
+    # Storage bucket stores the terraform states of the resources in the projects
+    devops:
+      state_storage_bucket:
+        name: data-state
+        location: EU
+
+    # Bigquery dataset stores audit logs of the project and it's resources
+    # Storage bucket holds GCS logs if the project has storage buckets
+    audit:
+      logs_bigquery_dataset:
+        dataset_id: data_logs
+        location: EU
+      logs_storage_bucket:
+        name: data-logs
+        location: EU
+
+    # Deploying Pubsub resources
+    pubsub_topics:
+      - name: example-topic
+
+        # Policy defining the set of guidelines related to storage of messages published to the topic.
+        message_storage_policy:
+
+          # List of regions where the messages are allowed to be stored (All are GDPR compliant EU regions).
+          allowed_persistence_regions:
+            - us-west1
+            - us-west2
+            - us-west3
+            - us-central1
+
+        # IAM Role Binding
+        _iam_members:
+          - role: roles/editor
+            member: user:user@domain
+          - role: roles/viewer
+            member: user:user@domain
+
+        _subscriptions:
+          - name: example-subscription
+
+            # Duration of the messsages stored in the regions.  Can be changes as per the requirements.
+            message_retention_duration: 600s
+
+            # Whether acked messages are retained or not.
+            retain_acked_messages: true
+
+            # This value is the maximum time after a subscriber receives a message before the subscriber should acknowledge the message.  Can be changes as per the requirements.
+            ack_deadline_seconds: 20
+
+            # Policy defining the guidelines for expiration of the subscription.
+            expiration_policy:
+
+              # Time-to-Live duration of associated resources.  Can be changes as per the requirements.
+              ttl: 300000s
+
+            # If push delivery is used with this subscription, fields below are uncommented and used to configure it. For furthur information go to "https://www.terraform.io/docs/providers/google/r/pubsub_subscription.html "
+            # push_config:
+            # oidc_token:
+            # push_endpoint:
+            # attributes:

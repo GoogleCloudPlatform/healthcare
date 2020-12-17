@@ -18,4 +18,6 @@ This directory contains sample configs showcasing various uses of DPT. The
 
 - [HIPAA](HIPAA/): HIPAA-Aligned Analytics and AI/ML Platform DPT Templates.
 
+- [GDPR](GDPR/): GDPR-Aligned Data Warehouse DPT Templates.
+
 - [GxP](GxP/): GxP-Aligned Life Sciences R&D Platform DPT Templates.

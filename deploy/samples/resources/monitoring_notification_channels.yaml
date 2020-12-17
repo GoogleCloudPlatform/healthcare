@@ -1,0 +1,56 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+######################################################
+########## Monitoring Notification Channel ###########
+######################################################
+
+# This sections sets up billing acccount and folder under which the projects must be deployed.
+overall:
+  billing_account: XXXXXX-XXXXXX-XXXXXX
+  domain: dpt.healthcare
+  # Optional ID of the organization that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # organization_id:
+  # Optional ID of the folder that the projects will be created under (pattern: ^[0-9]{8,25}$)
+  # folder_id:
+
+generated_fields_path: ./generated_fields.yaml
+
+# Projects deployed in the cloud are listed.
+projects:
+  - project_id: example-project
+    owners_group: dpt-admins-test@dpt.healthcare
+    auditors_group: dpt-auditors-test@dpt.healthcare
+
+    # Storage bucket stores the terraform states of the resources in the projects.
+    devops:
+      state_storage_bucket:
+        name: data-state
+        location: EU
+
+    # Bigquery dataset stores audit logs of the project and it's resources.
+    # Storage bucket holds GCS logs if the project has storage buckets.
+    audit:
+      logs_bigquery_dataset:
+        dataset_id: data_logs
+        location: EU
+      logs_storage_bucket:
+        name: data-logs
+        location: EU
+
+    monitoring_notification_channels:
+    - display_name: email1
+      _email: fake_email1@domain
+    - display_name: email2
+      _email: fake_email2@domain

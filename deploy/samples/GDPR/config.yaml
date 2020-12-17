@@ -1,0 +1,253 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+##################################################################################
+################# Configuration file GDPR Datawarehouse Template #################
+##################################################################################
+
+# This template is parameterized and can't be built directly. Instead, fill in the parametes' values
+# in variables.yaml which will be used by this file
+
+# Make sure that variables.yaml and this file are in the same folder
+
+# To spin up resources for data warehouse, run the follwong command, provided, variables.yaml is
+# filled with resources' configuration values
+
+# bazel run cmd/apply:apply -- \
+#   --config_path= ./variables.yaml
+
+# This sections sets up billing account and folder under which the projects must be deployed
+overall:
+  billing_account: {{.BILLING_ACCOUNT}}
+  domain: {{.DOMAIN}}
+  organization_id: {{.ORGANIZATION_ID}}
+  # folder_id: {{.FOLDER_ID}}
+
+# Path to an empty YAML file in which DPT writes all the generated fields after successful deployment. These fields are used to generate monitoring rules.
+generated_fields_path: ./generated_fields.yaml
+
+# Forseti section deploys a forseti image which does security monitoring of GCP resources
+forseti:
+  project:
+    project_id: {{.FORSETI_PROJECT_ID}}
+    owners_group: {{.FORSETI_PROJECT_OWNERS_GROUP}}              # Owner groups at project level
+    auditors_group: {{.FORSETI_PROJECT_AUDITORS_GROUP}}          # Auditors group at project level
+
+    # Bigquery dataset and data storage bucket to store logs from projects and their resources.
+    audit:
+      logs_bigquery_dataset:
+        dataset_id: {{.FORSETI_AUDIT_LOGS_BIGQUERY_DATASET_ID}}
+        delete_contents_on_destroy: {{.FORSETI_DELETE_CONTENTS_ON_DESTROY}}
+        access:
+        - special_group: {{.FORSETI_AUDIT_LOGS_SPECIAL_GROUP}}
+          role: {{.FORSETI_AUDIT_LOGS_SPECIAL_GROUP_ROLE}}
+        location: {{.LOCATION}}
+
+    # Storage bucket stores the terraform states of the resources in the projects.
+    devops:
+      state_storage_bucket:
+        name: {{.FORSETI_STATE_STORAGE_BUCKET}}
+        #encryption:
+        #  default_kms_key_name
+        location: {{.LOCATION}}
+
+    project_services:
+    - service: compute.googleapis.com
+    - service: servicenetworking.googleapis.com
+
+    terraform_deployments:
+      resources:
+        config:
+          resource:
+          - google_compute_network:
+              forseti_private_network:
+                name: {{.FORSETI_VPC_NETWORK_NAME}}
+                auto_create_subnetworks: false
+          - google_compute_router:
+              forseti-router:
+                name: {{.FORSETI_ROUTER_NAME}}
+                project: {{.FORSETI_PROJECT_ID}}
+                network: ${google_compute_network.forseti_private_network.self_link}
+                region: {{.REGION}}
+          - google_compute_router_nat:
+              forseti-nat:
+                name: {{.FORSETI_NAT_NAME}}
+                project: {{.FORSETI_PROJECT_ID}}
+                region: {{.REGION}}
+                nat_ip_allocate_option: AUTO_ONLY
+                source_subnetwork_ip_ranges_to_nat: ALL_SUBNETWORKS_ALL_IP_RANGES
+                router: ${google_compute_router.forseti-router.name}
+          - google_compute_subnetwork:
+              forseti_subnetwork:
+                name: {{.FORSETI_SUBNETWORK_NAME}}
+                network: ${google_compute_network.forseti_private_network.self_link}
+                region: {{.REGION}}
+                ip_cidr_range: {{.FORSETI_SUBNET_IP_RANGE}} # (ex. 192.168.0.0/20)
+
+  properties:
+    server_private: true
+    client_private: true
+    cloudsql_private: true
+    network: ${google_compute_network.forseti_private_network.name}
+    subnetwork: ${google_compute_subnetwork.forseti_subnetwork.name}
+
+# List of projects deployed for the data warehouse usecase.
+projects:
+- project_id: {{.DATAWAREHOUSE_PROJECT_ID}}
+  owners_group: {{.DATAWAREHOUSE_OWNERS_GROUP}}
+  auditors_group: {{.DATAWAREHOUSE_AUDITORS_GROUP}}
+
+  # Bigquery dataset and data storage bucket to store logs from projects and their resources.
+  audit:
+    logs_bigquery_dataset:
+      dataset_id: {{.DATAWAREHOUSE_AUDIT_LOGS_BIGQUERY_DATASET_ID}}
+      #delete_contents_on_destroy: true
+      access:
+      - special_group: {{.DW_AUDIT_LOGS_SPECIAL_GROUP}}
+        role: {{.DW_AUDIT_LOGS_SPECIAL_GROUP_ROLE}}
+      #default_encryption_configuration:
+      #  kms_key_name
+      location: {{.LOCATION}}
+    logs_storage_bucket:
+      name: {{.DATAWAREHOUSE_GCS_LOGS_STORAGE_BUCKET_NAME}}
+      location: {{.LOCATION}}
+
+  # Storage bucket stores the terraform states of the resources in the projects.
+  devops:
+    state_storage_bucket:
+      name: {{.DATAWAREHOUSE_STATE_STORAGE_BUCKET}}
+      #encryption:
+      #  default_kms_key_name
+      location: {{.LOCATION}}
+
+  project_services:
+  - service: compute.googleapis.com
+  - service: servicenetworking.googleapis.com
+
+  # deploying 2 BigQuery datasets for raw and transformed data
+  bigquery_datasets:
+  - dataset_id: {{.RAW_DATA_BIGQUERY_DATASET_ID}}
+    # delete_contents_on_destroy: true
+    access:
+    - special_group: {{.RAW_DATA_BQ_SPECIAL_GROUP}}
+      role: {{.RAW_DATA_BQ_SPECIAL_GROUP_ROLE}}
+    # default_encryption_configuration:
+    #   kms_key_name
+    location: {{.LOCATION}}
+  - dataset_id: {{.TRANSFORMED_DATA_BIGQUERY_DATASET_ID}}
+    # delete_contents_on_destroy: true
+    access:
+    - special_group: {{.TRANSFORMED_DATA_BQ_SPECIAL_GROUP}}
+      role: {{.TRANSFORMED_DATA_BQ_SPECIAL_GROUP_ROLE}}
+    # default_encryption_configuration:
+    #   kms_key_name
+    location: {{.LOCATION}}
+
+  # deploying storage bucket as a data source
+  storage_buckets:
+  - name: {{.RAW_DATA_STORAGE_BUCKET_NAME}}
+    # IAM Role
+    _iam_members:
+    - role: roles/storage.objectCreator
+      member: {{.RAW_DATA_STORAGE_BUCKET_OBJECTCREATOR}}
+    - role: roles/storage.objectViewer
+      member: {{.RAW_DATA_STORAGE_BUCKET_OBJECTVIEWER}}
+    # encryption:
+    #   default_kms_key_name
+    location: {{.LOCATION}}
+
+  # datastores for personal data which aid in features of Healthcare API
+  healthcare_datasets:
+  - name: {{.HEALTHCARE_DATASET_NAME}}
+    location: {{.REGION}}
+    # IAM Role
+    _iam_members:
+    - role: roles/healthcare.datasetViewer
+      member: {{.HEALTHCARE_DATASET_VIEWER}}
+    _dicom_stores:
+    - name: {{.HEALTHCARE_DICOM_STORE_NAME}}
+      _iam_members:
+      - role: roles/healthcare.dicomEditor
+        member: {{.HEALTHCARE_DICOM_EDITOR}}
+      - role: roles/healthcare.dicomStoreAdmin
+        member: {{.HEALTHCARE_DICOM_STOREADMIN}}
+    _fhir_stores:
+    - name: {{.HEALTHCARE_FHIR_STORE_NAME}}
+      _iam_members:
+      - role: roles/healthcare.fhirResourceReader
+        member: {{.HEALTHCARE_FHIR_STORE_READER}}
+      - role: roles/healthcare.fhirResourceEditor
+        member: {{.HEALTHCARE_FHIR_STORE_EDITOR}}
+    _hl7_v2_stores:
+    - name: {{.HEALTHCARE_HL7V2_STORE_NAME}}
+      _iam_members:
+      - role: roles/healthcare.hl7V2StoreAdmin
+        member: {{.HEALTHCARE_HL7V2_STOREADMIN}}
+      - role: roles/healthcare.hl7V2Ingest
+        member: {{.HEALTHCARE_HL7V2_INGEST}}
+      - role: roles/healthcare.hl7V2Editor
+        member: {{.HEALTHCARE_HL7V2_STORE_EDITOR}}
+
+  terraform_deployments:
+    resources:
+      config:
+        resource:
+        # Setting up VPC SQL instances
+        - google_compute_network:
+            private_network:
+              name: {{.CLOUD_SQL_VPC_NETWORK_NAME}}
+
+        - google_compute_global_address:
+            private_ip_address:
+              name: {{.CLOUD_SQL_PRIVATE_IP_NAME}}
+              purpose: VPC_PEERING
+              address_type: INTERNAL
+              prefix_length: 16
+              network: ${google_compute_network.private_network.self_link}
+        - google_service_networking_connection:
+            private_vpc_connection:
+              network: ${google_compute_network.private_network.self_link}
+              service: servicenetworking.googleapis.com
+              reserved_peering_ranges:
+              - ${google_compute_global_address.private_ip_address.name}
+
+        # Setting up master and replica SQL instances
+        - google_sql_database_instance:
+            instance:
+              name: {{.MASTER_CLOUD_SQL_NAME}}
+              region: {{.REGION}}
+              depends_on:
+              - google_service_networking_connection.private_vpc_connection
+              settings:
+                tier: db-f1-micro
+                ip_configuration:
+                  ipv4_enabled: false
+                  private_network: ${google_compute_network.private_network.self_link}
+                backup_configuration:
+                  binary_log_enabled: true
+                  enabled: true
+            replica-instance:
+              name: {{.REPLICA_CLOUD_SQL_NAME}}
+              region: {{.REGION}}
+              master_instance_name: ${google_sql_database_instance.instance.name}
+              depends_on:
+              - google_service_networking_connection.private_vpc_connection
+              settings:
+                tier: db-f1-micro
+                ip_configuration:
+                  ipv4_enabled: false
+                  private_network: ${google_compute_network.private_network.self_link}
+              replica_configuration:
+                failover_target: true
+                master_heartbeat_period: 60000
