@@ -39,7 +39,6 @@ func TestApplyConfigs(t *testing.T) {
 	*configPath = "samples/full/team1/config.yaml"
 	projects = arrayFlags{"example-forseti"}
 	*dryRun = true
-	*enableTerraform = true
 	*importExisting = true
 	*terraformApplyFlags = "-auto-approve"
 

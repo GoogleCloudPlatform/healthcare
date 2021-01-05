@@ -45,18 +45,13 @@ var forsetiStandardRoles = [...]string{
 // Forseti applies project configuration to a Forseti project.
 func Forseti(conf *config.Config, opts *Options, terraformConfigsDir string, rn runner.Runner) error {
 	project := conf.Forseti.Project
-	if err := Default(conf, project, opts, rn); err != nil {
+	if err := Terraform(conf, []string{project.ID}, opts, rn); err != nil {
 		return err
 	}
+
 	workDir, err := terraform.WorkDir(terraformConfigsDir, project.ID)
 	if err != nil {
 		return err
-	}
-	// Always deploy state bucket, otherwise a forseti installation that failed half way through
-	// will be left in a partial state and every following attempt will install a fresh instance.
-	// TODO: once terraform is launched and default just let the Default take care of deploying the state bucket and remove this block.
-	if err := stateBucket(project, opts, workDir, rn); err != nil {
-		return fmt.Errorf("failed to deploy terraform state: %v", err)
 	}
 
 	if err := forsetiConfig(conf, opts, workDir, rn); err != nil {

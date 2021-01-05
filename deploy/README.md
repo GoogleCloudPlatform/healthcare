@@ -13,7 +13,6 @@ to function in a stable state
 *   [Setup Instructions](#setup-instructions)
 *   [Phases](#phases)
 *   [Rule Generation](#rule-generation)
-*   [Legacy](#legacy)
 
 ## Features
 
@@ -37,7 +36,7 @@ if an organization has a highly custom solution or needs many resources that DPT
 does not support natively, they can still use DPT to setup the foundational
 pieces such as data projects + centralized auditing, devops and monitoring.
 Resources within the project could then be managed through another process,
-such as direct use of Terraform or Deployment Manager.
+such as direct use of Terraform.
 
 ## Use Cases
 
@@ -310,167 +309,3 @@ instance is applied in the Forseti project at this point.
 
 **forseti-permissions**: The Forseti instance is granted the minimum necessary
 access to each project to monitor security violations in them.
-
-## Rule Generation
-
-NOTE: this is currently not supported for Terraform configs.
-
-To generate new rules specific to your config for the Forseti instance, run the
-following command:
-
-```shell
-$ bazel run cmd/rule_generator:rule_generator -- \
-  --config_path=${CONFIG_PATH?}
-```
-
-By default, the rules will be written to the Forseti server bucket.
-Alternatively, use `--output_path` to specify a local directory or a different
-Cloud Storage bucket to write the rules to.
-
-
-## Legacy
-
-### Steps
-
-The script `cmd/apply/apply.go` takes in YAML config files and creates one or
-more projects. It creates an audit logs project if `audit_logs_project` is
-provided and a forseti project if `forseti` is provided. It then creates a data
-hosting project for each project listed under `projects`. For each new project,
-the script performs the following steps:
-
-1.  Create a new GCP project.
-1.  Enable billing on the project.
-1.  Enable required services:
-    *   deploymentmanager.googleapis.com (for Deployment Manager)
-    *   cloudresourcemanager.googleapis.com (for project level IAM policy
-        changes)
-    *   iam.googleapis.com (if custom IAM roles were defined)
-1.  Grant the Deployment Manager service account the required roles:
-    *   roles/owner
-    *   roles/storage.admin
-1.  Create custom boot image(s), if specified on a `gce_instance` resource
-1.  Deploy all project resources including:
-
-    *   Default resources:
-        *   IAM Policies to grant owner and auditor groups project level access
-        *   Log sink export to the `logs_bq_dataset`
-        *   Log metrics for alerting on bigquery ACL, IAM and bucket ALC
-            accesses.
-    *   User defined resources (possible resources can be found in the
-        `project_config.yaml.schema` file under the `gcp_project.resources`
-        definition).
-
-    TIP: To view deployed resources, open the project in the GCP console and
-    navigate to the Deployment Manager page. Click the expanded config under the
-    `data-protect-toolkit-resources` deployment to view the list of resources
-    deployed.
-
-1.  Deploys audit resources to hold exported logs
-
-    *   The audit resources will be deployed in the remote audit logs project if
-        one was specified.
-
-1.  Removes the user from the project's owners.
-
-1.  Prompts the user to create a Stackdriver account (currently this must be
-    done using the Stackdriver UI).
-
-1.  Creates Stackdriver Alerts for IAM changes and unexpected Cloud Storage
-    bucket access.
-
-1.  If a `forseti` block is defined:
-
-    *   Uses the Forseti Terraform module to deploy a Forseti instance.
-    *   Grants permissions for each project to the Forseti service account so
-        they may be monitored.
-
-### Resources
-This section is for the legacy Deployment Manager support. This is enabled
-by passing --enable_terraform=false. Deployment manager support will be shut
-down in the near future.
-
-Resources can be added in the config in a uniform way, but may use different
-tools underneath to do the actual deployment. Since each resource may have a
-very large and complex schema, we cannot cover all of it in our tooling layers.
-Thus, we only implement a subset and allow the users to set additional allowed
-fields as they wish. This is done through the `properties` block available for
-most resources. See documentation below for each resource.
-
-See the `samples/` directory for sample resource definitions.
-
-NOTE: project_config.yaml.schema provides documentation on our subset. Please
-reference it before adding your resource to your config.
-
-NOTE: Dependencies can be set implicitly in deployment manager resource
-properties. See
-https://cloud.google.com/deployment-manager/docs/step-by-step-guide/using-references.
-Dependencies are only supported between deployment manager resources.
-
-Resource                | Deployment Tool
------------------------ | ---------------
-bq_dataset              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery)
-chc_datasets (ALPHA)    | [Deployment Manager](https://cloud.google.com/healthcare/docs/)
-enabled_api             | [Gcloud](https://cloud.google.com/sdk/gcloud/reference/services/enable)
-forseti                 | [Terraform (CFT)](https://github.com/forseti-security/terraform-google-forseti)
-gce_firewall            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/firewall)
-gce_instance            | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/instance)
-gcs_bucket              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket)
-gke_cluster             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gke)
-gke_workload            | [Kubectl](https://kubernetes.io/docs/tutorials/configuration)
-iam_custom_role         | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_custom_role)
-iam_policy              | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/iam_member)
-pubsub                  | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/pubsub)
-vpc_network             | [Deployment Manager (CFT)](https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/network)
-service_account (ALPHA) | [Deployment Manager (Direct)](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/create)
-
-### Updates
-
-You may wish to modify a project to add additional resources or change an
-existing setting. The `cmd/apply/apply.go` script can be used to also update a
-project. Listing a previously deployed project in the `--projects` flag (or
-omitting the flag for all projects), will trigger an update.
-
-WARNING: Deployment Manager will run with deletion policy "ABANDON". Thus, if a
-resource is removed from a project, it will become unmonitored rather than
-deleted. It is the responsibility of the user to manually remove stale
-references including IAM bindings and enabled APIs.
-
-
-### Debug
-
-These are solutions to non-typical problems encountered:
-
-#### Log Sink reporting errors on initial deployment
-
-When using the `cmd/apply/apply.go` script, you may see an error on the log sink
-that exports to the logs dataset or you may have gotten an email with the
-subject "[ACTION REQUIRED] Stackdriver Logging export config error in
-{PROJECT_ID}".
-
-This is due to the log sink being created and given permissions in two separate
-deployments, causing an inevitable delay.
-
-See
-https://cloud.google.com/logging/docs/export/configure_export_v2#authorization_delays.
-
-If you have successfully deployed the entire project then the error should
-disappear on its own. If you continue to see log sink errors please reach out
-for support.
-
-#### Bucket Permission Denied
-
-Typically the error message will contain the following during a failed
-deployment manager deployment:
-
-```
-"ResourceType":"storage.v1.bucket", "ResourceErrorCode":"403"
-```
-
-This is due to the Deployment Manager Service account not having storage admin
-permissions. There can be a delay of up to 7 minutes for permission changes to
-propagate. After recent changes, deployment manager permissions will no longer
-be revoked so just retry deployment of all projects that failed after at least 7
-minutes.
-
-NOTE: if remote audit logs failed to deploy due to this error then you will need
-to re-deploy the audit logs project first.

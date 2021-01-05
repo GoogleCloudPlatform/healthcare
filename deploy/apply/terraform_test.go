@@ -30,6 +30,15 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+func contains(s string, subs ...string) bool {
+	for _, sub := range subs {
+		if !strings.Contains(s, sub) {
+			return false
+		}
+	}
+	return true
+}
+
 type applyCall struct {
 	Config  map[string]interface{}
 	Imports []terraform.Import

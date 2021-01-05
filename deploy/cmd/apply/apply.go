@@ -36,15 +36,16 @@ import (
 	"github.com/GoogleCloudPlatform/healthcare/deploy/apply"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
-	"github.com/GoogleCloudPlatform/healthcare/deploy/terraform"
 	"github.com/google/shlex"
 )
 
 var (
-	configPath          = flag.String("config_path", "", "Path to project config file")
-	dryRun              = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
-	enableTerraform     = flag.Bool("enable_terraform", true, "Whether terraform is preferred over deployment manager.")
-	importExisting      = flag.Bool("terraform_import_existing", false, "TERRAFORM ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
+	configPath      = flag.String("config_path", "", "Path to project config file")
+	dryRun          = flag.Bool("dry_run", false, "Whether or not to run DPT in the dry run mode. If true, prints the commands that will run without executing.")
+	enableTerraform = flag.Bool("enable_terraform", true, "This flag cannot be false. Deployment manager is no longer supported.")
+
+	importExisting = flag.Bool("terraform_import_existing", false, "TERRAFORM ONLY. Whether applicable Terraform resources will try to be imported (used for migrating an existing installation).")
+
 	terraformConfigsDir = flag.String("terraform_configs_dir", "", "TERRAFORM ONLY. Directory path to store generated Terraform configs. The configs are discarded if not specified.")
 	terraformApplyFlags = flag.String("terraform_apply_flags", "", "TERRAFORM ONLY. Extra option flags to pass to apply command.")
 	projects            arrayFlags
@@ -75,6 +76,10 @@ func main() {
 	flag.Var(&projects, "projects", "Comma separeted project IDs within --config_path to deploy, or leave unspecified to deploy all projects.")
 	flag.Parse()
 
+	if !*enableTerraform {
+		log.Fatal("--enable_terraform must be unset or true. Deployment manager is no longer supported.")
+	}
+
 	if err := applyConfigs(); err != nil {
 		log.Fatalf("Failed to apply configs: %v", err)
 	}
@@ -83,7 +88,6 @@ func main() {
 
 // TODO: add tests.
 func applyConfigs() (err error) {
-	config.EnableTerraform = *enableTerraform
 	if *configPath == "" {
 		return errors.New("--config_path must be set")
 	}
@@ -151,73 +155,5 @@ func applyConfigs() (err error) {
 		rn = &runner.Default{}
 	}
 
-	if *enableTerraform {
-		return apply.Terraform(conf, projects, opts, rn)
-	}
-
-	// DM ONLY CODE.
-	// TODO: remove this once DM support is shut down.
-	wantProjects := make(map[string]bool)
-	for _, p := range projects {
-		wantProjects[p] = true
-	}
-
-	wantProject := func(project string) bool {
-		if len(wantProjects) == 0 {
-			return true
-		}
-		return wantProjects[project]
-	}
-
-	// Cannot enable Forseti for remote audit logs project and Forseti project itself until it is deployed.
-	enableRemoteAudit := conf.AuditLogsProject != nil && wantProject(conf.AuditLogsProject.ID)
-
-	// Always deploy the remote audit logs project first (if present).
-	if enableRemoteAudit {
-		log.Printf("Applying config for remote audit log project %q", conf.AuditLogsProject.ID)
-		if err := apply.Default(conf, conf.AuditLogsProject, opts, rn); err != nil {
-			return fmt.Errorf("failed to apply config for remote audit log project %q: %v", conf.AuditLogsProject.ID, err)
-		}
-	}
-
-	// Deploy the Forseti project.
-	if conf.Forseti != nil && wantProject(conf.Forseti.Project.ID) {
-		log.Printf("Applying config for Forseti project %q", conf.Forseti.Project.ID)
-		// Forseti for Forseti project itself is enabled at the end of apply.Forseti().
-		if err := apply.Forseti(conf, opts, *terraformConfigsDir, rn); err != nil {
-			return fmt.Errorf("failed to apply config for Forseti project %q: %v", conf.Forseti.Project.ID, err)
-		}
-	}
-
-	if conf.Forseti != nil && conf.AllGeneratedFields.Forseti.ServiceAccount == "" {
-		return fmt.Errorf("forseti project config is specified but has never been deployed")
-	}
-
-	// Use conf.AllGeneratedFields.Forseti.ServiceAccount to check if the Forseti project has been deployed or not.
-	if enableRemoteAudit && conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
-		// Grant Forseti permissions in remote audit log project after Forseti project is deployed.
-		workDir, err := terraform.WorkDir(*terraformConfigsDir, conf.AuditLogsProject.ID)
-		if err != nil {
-			return err
-		}
-		if err := apply.GrantForsetiPermissions(conf.AuditLogsProject.ID, conf.AllGeneratedFields.Forseti.ServiceAccount, "", opts, workDir, rn); err != nil {
-			return fmt.Errorf("failed to grant Forseti permissions to remote audit logs project: %v", err)
-		}
-	}
-
-	for _, p := range conf.Projects {
-		if !wantProject(p.ID) {
-			continue
-		}
-		log.Printf("Applying config for project %q", p.ID)
-		if err := apply.Default(conf, p, opts, rn); err != nil {
-			return fmt.Errorf("failed to apply config for project %q: %v", p.ID, err)
-		}
-	}
-
-	if conf.AllGeneratedFields.Forseti.ServiceAccount != "" {
-		log.Println("Note: Forseti rule generation is no longer run as part of this script. Please use standalone script cmd/rule_generator/rule_generator.go to generate Forseti rules.")
-	}
-
-	return nil
+	return apply.Terraform(conf, projects, opts, rn)
 }

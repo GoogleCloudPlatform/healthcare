@@ -43,7 +43,7 @@ _config_test = rule(
             doc = "Additional dependent configs, templates or generated fields file to import.",
         ),
         "enable_terraform": attr.bool(
-            default = False,
+            default = True,
             doc = "Whether to enable Terraform.",
         ),
         "projects": attr.string_list(

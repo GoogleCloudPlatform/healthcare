@@ -16,11 +16,8 @@
 package config
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"strings"
-	"text/template"
 
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config/tfconfig"
 )
@@ -85,28 +82,6 @@ type Project struct {
 	ViolationExceptions   map[string][]string `json:"violation_exceptions"`
 	StackdriverAlertEmail string              `json:"stackdriver_alert_email"`
 
-	Resources struct {
-		// Deployment manager resources
-		BQDatasets      []*BigqueryDataset `json:"bq_datasets"`
-		CHCDatasets     []*CHCDataset      `json:"chc_datasets"`
-		CloudRouter     []*DefaultResource `json:"cloud_routers"`
-		GCEFirewalls    []*DefaultResource `json:"gce_firewalls"`
-		GCEInstances    []*GCEInstance     `json:"gce_instances"`
-		GCSBuckets      []*GCSBucket       `json:"gcs_buckets"`
-		GKEClusters     []*GKECluster      `json:"gke_clusters"`
-		IAMCustomRoles  []*IAMCustomRole   `json:"iam_custom_roles"`
-		IAMPolicies     []*IAMPolicy       `json:"iam_policies"`
-		IPAddresses     []*DefaultResource `json:"ip_addresses"`
-		Pubsubs         []*Pubsub          `json:"pubsubs"`
-		Routes          []*DefaultResource `json:"routes"`
-		ServiceAccounts []*ServiceAccount  `json:"service_accounts"`
-		VPCNetworks     []*DefaultResource `json:"vpc_networks"`
-		VPNs            []*DefaultResource `json:"vpns"`
-
-		// Kubectl resources
-		GKEWorkloads []*GKEWorkload `json:"gke_workloads"`
-	} `json:"resources"`
-
 	// Terraform resources
 	BigqueryDatasets     []*tfconfig.BigqueryDataset               `json:"bigquery_datasets"`
 	CloudBuildTriggers   []*tfconfig.CloudBuildTrigger             `json:"cloudbuild_triggers"`
@@ -125,13 +100,6 @@ type Project struct {
 	SpannerInstances     []*tfconfig.SpannerInstance               `json:"spanner_instances"`
 	StorageBuckets       []*tfconfig.StorageBucket                 `json:"storage_buckets"`
 
-	BinauthzPolicy *BinAuthz `json:"binauthz"`
-
-	AuditLogs *struct {
-		LogsBQDataset BigqueryDataset `json:"logs_bq_dataset"`
-		LogsGCSBucket *GCSBucket      `json:"logs_gcs_bucket"`
-	} `json:"audit_logs"`
-
 	Audit struct {
 		LogsBigqueryDataset *tfconfig.BigqueryDataset `json:"logs_bigquery_dataset"`
 		LogsStorageBucket   *tfconfig.StorageBucket   `json:"logs_storage_bucket"`
@@ -145,10 +113,8 @@ type Project struct {
 
 	// The following vars are set through helpers and not directly through the user defined config.
 	GeneratedFields *GeneratedFields `json:"-"`
-	BQLogSink       *LogSink         `json:"-"`
 	// TODO: replace DM log sink with TF once DM is deprecated.
 	BQLogSinkTF *tfconfig.LoggingSink `json:"-"`
-	Metrics     []*Metric             `json:"-"`
 
 	IAMAuditConfig        *tfconfig.ProjectIAMAuditConfig   `json:"-"`
 	DefaultAlertPolicies  []*tfconfig.MonitoringAlertPolicy `json:"-"`
@@ -307,319 +273,13 @@ func (p *Project) Init(devopsProject, auditLogsProject *Project) error {
 		// })
 	}
 
-	if EnableTerraform {
-		sb := p.DevopsConfig.StateBucket
-		if sb == nil {
-			return errors.New("state_storage_bucket must be set when terraform is enabled")
-		}
-
-		// TODO: uncomment this once state bucket and project deployments are merged.
-		// sb.DependsOn = append(sb.DependsOn, "google_project.project")
-
-		return p.initTerraform(auditLogsProject)
+	sb := p.DevopsConfig.StateBucket
+	if sb == nil {
+		return errors.New("state_storage_bucket must be set when terraform is enabled")
 	}
 
-	if err := p.initAuditResources(auditLogsProject); err != nil {
-		return fmt.Errorf("failed to init audit resources: %v", err)
-	}
+	// TODO: uncomment this once state bucket and project deployments are merged.
+	// sb.DependsOn = append(sb.DependsOn, "google_project.project")
 
-	for _, r := range p.DeploymentManagerResources() {
-		if err := r.Init(); err != nil {
-			return fmt.Errorf("failed to init: %v, %+v", err, r)
-		}
-	}
-
-	if err := p.initDataResources(); err != nil {
-		return fmt.Errorf("failed to init data resources: %v", err)
-	}
-
-	if err := p.addBaseResources(); err != nil {
-		return fmt.Errorf("failed to add base resources: %v", err)
-	}
-	return nil
-}
-
-func (p *Project) initAuditResources(auditProject *Project) error {
-	p.BQLogSink = &LogSink{
-		LogSinkProperties: LogSinkProperties{
-			Sink:                 "audit-logs-to-bigquery",
-			Destination:          fmt.Sprintf("bigquery.googleapis.com/projects/%s/datasets/%s", auditProject.ID, p.AuditLogs.LogsBQDataset.Name()),
-			Filter:               `logName:"logs/cloudaudit.googleapis.com"`,
-			UniqueWriterIdentity: true,
-		},
-	}
-
-	if err := p.AuditLogs.LogsBQDataset.Init(); err != nil {
-		return fmt.Errorf("failed to init logs bq dataset: %v", err)
-	}
-
-	accesses := []*Access{
-		{Role: "OWNER", GroupByEmail: auditProject.OwnersGroup},
-		{Role: "READER", GroupByEmail: p.AuditorsGroup},
-	}
-
-	// Note: if there is no log sink SA it means the project hasn't been deployed.
-	// The SA will be set once the project gets deployed (apply.Apply).
-	if p.GeneratedFields.LogSinkServiceAccount != "" {
-		accesses = append(accesses, &Access{Role: "WRITER", UserByEmail: p.GeneratedFields.LogSinkServiceAccount})
-	}
-	p.AuditLogs.LogsBQDataset.Accesses = accesses
-
-	if p.AuditLogs.LogsGCSBucket == nil {
-		return nil
-	}
-
-	if err := p.AuditLogs.LogsGCSBucket.Init(); err != nil {
-		return fmt.Errorf("faild to init logs gcs bucket: %v", err)
-	}
-
-	p.AuditLogs.LogsGCSBucket.Bindings = []Binding{
-		{Role: "roles/storage.admin", Members: []string{"group:" + auditProject.OwnersGroup}},
-		{Role: "roles/storage.objectCreator", Members: []string{accessLogsWriter}},
-		{Role: "roles/storage.objectViewer", Members: []string{"group:" + p.AuditorsGroup}},
-	}
-
-	return nil
-}
-
-func (p *Project) initDataResources() error {
-	for _, d := range p.Resources.BQDatasets {
-		// Note: duplicate accesses are de-duplicated by deployment manager.
-		roleAndGroups := []struct {
-			Role   string
-			Groups []string
-		}{
-			{"OWNER", []string{p.OwnersGroup}},
-			{"WRITER", p.DataReadWriteGroups},
-			{"READER", p.DataReadOnlyGroups},
-		}
-
-		for _, rg := range roleAndGroups {
-			for _, g := range rg.Groups {
-				d.Accesses = append(d.Accesses, &Access{
-					Role:         rg.Role,
-					GroupByEmail: g,
-				})
-			}
-		}
-	}
-
-	appendGroupPrefix := func(ss ...string) []string {
-		res := make([]string, 0, len(ss))
-		for _, s := range ss {
-			res = append(res, "group:"+s)
-		}
-		return res
-	}
-
-	for _, b := range p.Resources.GCSBuckets {
-		// Note: duplicate bindings are de-duplicated by deployment manager.
-		bindings := []Binding{
-			{Role: "roles/storage.admin", Members: appendGroupPrefix(p.OwnersGroup)},
-		}
-		if len(p.DataReadWriteGroups) > 0 {
-			bindings = append(bindings, Binding{
-				Role: "roles/storage.objectAdmin", Members: appendGroupPrefix(p.DataReadWriteGroups...),
-			})
-		}
-		if len(p.DataReadOnlyGroups) > 0 {
-			bindings = append(bindings, Binding{
-				Role: "roles/storage.objectViewer", Members: appendGroupPrefix(p.DataReadOnlyGroups...),
-			})
-		}
-		b.Bindings = MergeBindings(append(bindings, b.Bindings...)...)
-
-		// TODO: this should always be true (data buckets should imply log bucket exists).
-		if p.AuditLogs.LogsGCSBucket != nil {
-			if b.Logging == nil {
-				b.Logging = new(logging)
-			}
-			b.Logging.LogBucket = p.AuditLogs.LogsGCSBucket.Name()
-		}
-	}
-
-	for _, ps := range p.Resources.Pubsubs {
-		defaultBindings := []Binding{
-			{"roles/pubsub.editor", appendGroupPrefix(p.DataReadWriteGroups...)},
-			{"roles/pubsub.viewer", appendGroupPrefix(p.DataReadOnlyGroups...)},
-		}
-
-		for _, s := range ps.Subscriptions {
-			s.Bindings = MergeBindings(append(defaultBindings, s.Bindings...)...)
-		}
-	}
-
-	return nil
-}
-
-// addBaseResources adds resources not set by the raw yaml config in the project (i.e. not configured by the user).
-func (p *Project) addBaseResources() error {
-	p.Resources.IAMPolicies = append(p.Resources.IAMPolicies, &IAMPolicy{
-		IAMPolicyName: "required-project-bindings",
-		IAMPolicyProperties: IAMPolicyProperties{Bindings: []Binding{
-			{Role: "roles/owner", Members: []string{"group:" + p.OwnersGroup}},
-			{Role: "roles/iam.securityReviewer", Members: []string{"group:" + p.AuditorsGroup}},
-		}},
-	})
-	defaultMetrics := []*Metric{
-		&Metric{
-			MetricProperties: MetricProperties{
-				MetricName:      BQSettingChangeMetricName,
-				Description:     "Count of bigquery permission changes.",
-				Filter:          `resource.type="bigquery_resource" AND protoPayload.methodName="datasetservice.update"`,
-				Descriptor:      unexpectedUserDescriptor,
-				LabelExtractors: principalEmailLabelExtractor,
-			},
-		},
-		&Metric{
-			MetricProperties: MetricProperties{
-				MetricName:      IAMChangeMetricName,
-				Description:     "Count of IAM policy changes.",
-				Filter:          `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`,
-				Descriptor:      unexpectedUserDescriptor,
-				LabelExtractors: principalEmailLabelExtractor,
-			},
-		},
-		&Metric{
-			MetricProperties: MetricProperties{
-				MetricName:  BucketPermissionChangeMetricName,
-				Description: "Count of GCS permissions changes.",
-				Filter: `resource.type=gcs_bucket AND protoPayload.serviceName=storage.googleapis.com AND
-(protoPayload.methodName=storage.setIamPermissions OR protoPayload.methodName=storage.objects.update)`,
-				Descriptor:      unexpectedUserDescriptor,
-				LabelExtractors: principalEmailLabelExtractor,
-			},
-		},
-	}
-	excludeMetricPrincipleEmails, err := template.New("excludeEmails").Parse(` AND
-protoPayload.authenticationInfo.principalEmail!=({{.ExpectedAccounts}})`)
-	if err != nil {
-		return err
-	}
-	for index, dm := range defaultMetrics {
-		if violationExceptions, ok := p.ViolationExceptions[dm.MetricProperties.MetricName]; ok {
-			var buf bytes.Buffer
-			data := struct {
-				ExpectedAccounts string
-			}{
-				strings.Join(violationExceptions, " AND "),
-			}
-			if err := excludeMetricPrincipleEmails.Execute(&buf, data); err != nil {
-				return fmt.Errorf("failed to execute filter template: %v", err)
-			}
-			defaultMetrics[index].MetricProperties.Filter = dm.MetricProperties.Filter + buf.String()
-		}
-	}
-	p.Metrics = append(p.Metrics, defaultMetrics...)
-
-	metricFilterTemplate, err := template.New("metricFilter").Parse(`resource.type=gcs_bucket AND
-logName=projects/{{.Project.ID}}/logs/cloudaudit.googleapis.com%2Fdata_access AND
-protoPayload.resourceName=projects/_/buckets/{{.Bucket.Name}} AND
-protoPayload.status.code!=7 AND
-protoPayload.authenticationInfo.principalEmail!=({{.ExpectedUsers}})`)
-	if err != nil {
-		return err
-	}
-
-	for _, b := range p.Resources.GCSBuckets {
-		if len(b.ExpectedUsers) == 0 {
-			continue
-		}
-
-		var buf bytes.Buffer
-		data := struct {
-			Project       *Project
-			Bucket        *GCSBucket
-			ExpectedUsers string
-		}{
-			p,
-			b,
-			strings.Join(b.ExpectedUsers, " AND "),
-		}
-		if err := metricFilterTemplate.Execute(&buf, data); err != nil {
-			return fmt.Errorf("failed to execute filter template: %v", err)
-		}
-
-		p.Metrics = append(p.Metrics, &Metric{
-			MetricProperties: MetricProperties{
-				MetricName:      BucketUnexpectedAccessMetricPrefix + b.Name(),
-				Description:     "Count of unexpected data access to " + b.Name(),
-				Filter:          buf.String(),
-				Descriptor:      unexpectedUserDescriptor,
-				LabelExtractors: principalEmailLabelExtractor,
-			},
-			dependencies: []string{b.Name()},
-		})
-	}
-	return nil
-}
-
-// Resource is an interface that must be implemented by all concrete resource implementations.
-type Resource interface {
-	Init() error
-	Name() string
-}
-
-// DeploymentManagerResources gets all deployment manager data resources in this project.
-func (p *Project) DeploymentManagerResources() []Resource {
-	rs := []Resource{p.BQLogSink}
-
-	for _, r := range p.Metrics {
-		rs = append(rs, r)
-	}
-
-	prs := p.Resources
-
-	for _, r := range prs.BQDatasets {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.CHCDatasets {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.CloudRouter {
-		r.TmplPath = "config/templates/cloud_router/cloud_router.py"
-		rs = append(rs, r)
-	}
-	for _, r := range prs.GCEFirewalls {
-		r.TmplPath = "config/templates/firewall/firewall.py"
-		rs = append(rs, r)
-	}
-	for _, r := range prs.GCEInstances {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.GCSBuckets {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.GKEClusters {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.IAMCustomRoles {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.IAMPolicies {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.IPAddresses {
-		r.TmplPath = "config/templates/ip_reservation/ip_address.py"
-		rs = append(rs, r)
-	}
-	for _, r := range prs.Routes {
-		r.TmplPath = "config/templates/route/single_route.py"
-		rs = append(rs, r)
-	}
-	for _, r := range prs.ServiceAccounts {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.Pubsubs {
-		rs = append(rs, r)
-	}
-	for _, r := range prs.VPCNetworks {
-		r.TmplPath = "config/templates/network/network.py"
-		rs = append(rs, r)
-	}
-	for _, r := range prs.VPNs {
-		r.TmplPath = "config/templates/vpn/vpn.py"
-		rs = append(rs, r)
-	}
-	return rs
+	return p.initTerraform(auditLogsProject)
 }
