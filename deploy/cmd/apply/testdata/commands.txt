@@ -15,7 +15,6 @@ terraform import -no-color google_logging_metric.iam-policy-change-count iam-pol
 terraform apply -auto-approve
 gcloud config get-value account --format json --project example-forseti
 gcloud projects get-iam-policy example-forseti --project example-forseti --format json
-gcloud --project example-forseti compute instances list --format json
 terraform init
 terraform import -no-color google_logging_project_sink.audit-logs-to-bigquery projects/example-forseti/sinks/audit-logs-to-bigquery
 terraform import -no-color google_bigquery_dataset.example_forseti_logs example-audit/example_forseti_logs

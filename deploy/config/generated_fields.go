@@ -14,10 +14,6 @@
 
 package config
 
-import (
-	"fmt"
-)
-
 // AllGeneratedFields defines the generated_fields block.
 // AllGeneratedFields contains resource information when the resources are deployed.
 // See field_generation_test for examples.
@@ -28,9 +24,11 @@ type AllGeneratedFields struct {
 
 // GeneratedFields defines the generated_fields of a single project.
 type GeneratedFields struct {
-	ProjectNumber         string            `json:"project_number,omitempty"`
-	LogSinkServiceAccount string            `json:"log_sink_service_account,omitempty"`
-	GCEInstanceInfoList   []GCEInstanceInfo `json:"gce_instance_info,omitempty"`
+	ProjectNumber         string `json:"project_number,omitempty"`
+	LogSinkServiceAccount string `json:"log_sink_service_account,omitempty"`
+
+	// NOTE: This field is deprecated and no longer used. It is retained for backwards compatibility to avoid breaking existing configs.
+	GCEInstanceInfoList []GCEInstanceInfo `json:"gce_instance_info,omitempty"`
 }
 
 // GCEInstanceInfo defines the generated fields for instances in a project.
@@ -43,14 +41,4 @@ type GCEInstanceInfo struct {
 type ForsetiServiceInfo struct {
 	ServiceAccount string `json:"service_account,omitempty"`
 	ServiceBucket  string `json:"server_bucket,omitempty"`
-}
-
-// InstanceID returns the ID of the instance with the given name.
-func (g *GeneratedFields) InstanceID(name string) (string, error) {
-	for _, info := range g.GCEInstanceInfoList {
-		if info.Name == name {
-			return info.ID, nil
-		}
-	}
-	return "", fmt.Errorf("info for instance %q not found in generated_fields", name)
 }

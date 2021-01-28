@@ -52,7 +52,8 @@ forseti:
 			"some-analytics": &config.GeneratedFields{
 				ProjectNumber:         "456456456456",
 				LogSinkServiceAccount: "p456456456456-002222@gcp-sa-logging.iam.gserviceaccount.com",
-				GCEInstanceInfoList:   []config.GCEInstanceInfo{{Name: "foo-instance", ID: "123"}}},
+				GCEInstanceInfoList:   []config.GCEInstanceInfo{{Name: "foo-instance", ID: "123"}},
+			},
 		},
 		Forseti: &config.ForsetiServiceInfo{
 			ServiceAccount: "some-forseti-gcp-reader@some-forseti.iam.gserviceaccount.com",
@@ -62,38 +63,5 @@ forseti:
 
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("AllGeneratedFields mismatch (-want +got):\n%s", diff)
-	}
-}
-
-func TestGetInstanceID(t *testing.T) {
-	const projectID = "some-analytics"
-	gf := &config.AllGeneratedFields{
-		Projects: map[string]*config.GeneratedFields{
-			projectID: &config.GeneratedFields{
-				GCEInstanceInfoList: []config.GCEInstanceInfo{
-					{Name: "foo-instance", ID: "123"},
-					{Name: "bar-instance", ID: "456"},
-				},
-			},
-		},
-	}
-
-	project, ok := gf.Projects[projectID]
-	if !ok {
-		t.Fatalf("missing %q in %v", projectID, gf.Projects)
-	}
-
-	name := "foo-instance"
-	if id, err := project.InstanceID(name); err != nil {
-		t.Errorf("project.InstanceID(%q): got error %v", name, err)
-	} else {
-		if id != "123" {
-			t.Errorf("project.InstanceID(%q) id: got %q, want 123", name, id)
-		}
-	}
-
-	name = "dne"
-	if _, err := gf.Projects["some-analytics"].InstanceID(name); err == nil {
-		t.Errorf("project.InstanceID(%q): got nil error, want non-nil error", name)
 	}
 }

@@ -55,21 +55,6 @@ type depender interface {
 	Dependencies() []string
 }
 
-func collectGCEInfo(project *config.Project, rn runner.Runner) error {
-	cmd := exec.Command("gcloud", "--project", project.ID, "compute", "instances", "list", "--format", "json")
-	out, err := rn.CmdOutput(cmd)
-	if err != nil {
-		return fmt.Errorf("failed to list existing compute instances: %v", err)
-	}
-
-	var i []config.GCEInstanceInfo
-	if err := json.Unmarshal(out, &i); err != nil {
-		return fmt.Errorf("failed to unmarshal existing compute instances list output: %v", err)
-	}
-	project.GeneratedFields.GCEInstanceInfoList = i
-	return nil
-}
-
 func getLogSinkServiceAccount(project *config.Project, sinkName string, rn runner.Runner) (string, error) {
 	cmd := exec.Command("gcloud", "logging", "sinks", "describe", sinkName, "--format", "json", "--project", project.ID)
 

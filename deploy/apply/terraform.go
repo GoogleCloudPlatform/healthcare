@@ -121,9 +121,6 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err := removeOwnerUser(p, rn); err != nil {
 			return fmt.Errorf("failed to remove authenticated user: %v", err)
 		}
-		if err := collectGCEInfo(p, rn); err != nil {
-			return fmt.Errorf("failed to collect GCE instances info: %v", err)
-		}
 	}
 
 	for _, p := range projs {
