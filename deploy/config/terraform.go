@@ -197,25 +197,6 @@ func (p *Project) addDefaultMonitoring() {
 				}},
 			},
 		},
-		{
-			metric: &tfconfig.LoggingMetric{
-				Name:        "iam-policy-change-count",
-				Description: "Count of IAM policy changes.",
-				Filter:      `protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"`,
-			},
-			alert: &tfconfig.MonitoringAlertPolicy{
-				DisplayName: "IAM Policy Change Alert",
-				Documentation: &tfconfig.Documentation{
-					Content: "This policy ensures the designated user/group is notified when IAM policies are altered.",
-				},
-				Conditions: []*tfconfig.Condition{{
-					DisplayName: "No tolerance on iam-policy-change-count!",
-					ConditionThreshold: &tfconfig.ConditionThreshold{
-						Filter: `resource.type=one_of("global","pubsub_topic","pubsub_subscription","gce_instance") AND metric.type="logging.googleapis.com/user/${google_logging_metric.iam-policy-change-count.name}"`,
-					},
-				}},
-			},
-		},
 	}
 
 	for _, ma := range metricAndAlerts {

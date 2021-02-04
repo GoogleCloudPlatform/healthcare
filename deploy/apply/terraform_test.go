@@ -116,27 +116,11 @@ resource:
           value_type: STRING
       label_extractors:
         user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
-- google_logging_metric:
-    iam-policy-change-count:
-      name: iam-policy-change-count
-      project: my-project
-      description: Count of IAM policy changes.
-      filter: protoPayload.methodName="SetIamPolicy" OR protoPayload.methodName:".setIamPolicy"
-      metric_descriptor:
-        metric_kind: DELTA
-        value_type: INT64
-        labels:
-        - key: user
-          description: Unexpected user
-          value_type: STRING
-      label_extractors:
-        user: EXTRACT(protoPayload.authenticationInfo.principalEmail)
 `
 
 var resourcesImports = []terraform.Import{
 	{Address: "google_logging_metric.bigquery-settings-change-count", ID: "bigquery-settings-change-count"},
 	{Address: "google_logging_metric.bucket-permission-change-count", ID: "bucket-permission-change-count"},
-	{Address: "google_logging_metric.iam-policy-change-count", ID: "iam-policy-change-count"},
 }
 
 type tfTestRunner struct{}
@@ -496,22 +480,6 @@ monitoring_notification_channels:
           comparison: COMPARISON_GT
           duration: 0s
           filter: resource.type="gcs_bucket" AND metric.type="logging.googleapis.com/user/${google_logging_metric.bucket-permission-change-count.name}"
-      notification_channels:
-      - ${google_monitoring_notification_channel.email.name}
-- google_monitoring_alert_policy:
-    iam_policy_change_alert:
-      display_name: IAM Policy Change Alert
-      project: my-project
-      documentation:
-        content: This policy ensures the designated user/group is notified when IAM policies are altered.
-        mime_type: text/markdown
-      combiner: AND
-      conditions:
-      - display_name: No tolerance on iam-policy-change-count!
-        condition_threshold:
-          comparison: COMPARISON_GT
-          duration: 0s
-          filter: resource.type=one_of("global","pubsub_topic","pubsub_subscription","gce_instance") AND metric.type="logging.googleapis.com/user/${google_logging_metric.iam-policy-change-count.name}"
       notification_channels:
       - ${google_monitoring_notification_channel.email.name}
 - google_monitoring_notification_channel:
