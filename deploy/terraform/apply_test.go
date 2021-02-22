@@ -134,6 +134,4 @@ func TestApply(t *testing.T) {
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("terraform config differs (-got, +want):\n%v", diff)
 	}
-
-	// TODO: test with actual modules
 }

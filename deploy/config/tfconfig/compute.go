@@ -84,7 +84,6 @@ type ComputeImage struct {
 	Name    string `json:"name"`
 	Project string `json:"project"`
 
-	// TODO: add documentation on this var as well in all raws.
 	raw json.RawMessage
 }
 

@@ -114,10 +114,6 @@ func projects(conf *config.Config, projs []*config.Project, opts *Options, rn ru
 		if err := resources(p, opts, workDir, rn); err != nil {
 			return fmt.Errorf("failed to apply resources: %v", err)
 		}
-
-		// TODO: the user being used for terraform is actually set by gcloud auth application-default login.
-		// This user can differ than the one set by gcloud auth login which is what removeOwnerUser checks for.
-		// Fix this to remove the application-default owner.
 		if err := removeOwnerUser(p, rn); err != nil {
 			return fmt.Errorf("failed to remove authenticated user: %v", err)
 		}
@@ -199,8 +195,6 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 	}
 
 	tfConf := terraform.NewConfig()
-	// TODO: add project.DevopsConfig.StateBucket here once
-	// https://github.com/terraform-providers/terraform-provider-google/issues/3429 is fixed.
 	if err := addResources(tfConf, pr); err != nil {
 		return err
 	}
@@ -242,8 +236,6 @@ func createProjectTerraform(config *config.Config, project *config.Project, opts
 	return nil
 }
 
-// TODO: merge this with project creation deployment once
-// https://github.com/terraform-providers/terraform-provider-google/issues/3429 is fixed.
 func stateBucket(project *config.Project, opts *Options, workDir string, rn runner.Runner) error {
 	tfConf := terraform.NewConfig()
 

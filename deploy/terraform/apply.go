@@ -103,9 +103,8 @@ func Apply(config *Config, dir string, opts *Options, rn runner.Runner) error {
 	}
 
 	for _, imp := range opts.Imports {
-		// TODO: this will fail if the resource does not exist
-		// or is already a part of the state. Avoid this in the long run.
-		// For the time being, ignore the error and just log it.
+		// This will fail if the resource does not exist
+		// or is already a part of the state.
 		if err := runCmd("import", "-no-color", imp.Address, imp.ID); err != nil {
 			log.Print(err)
 		}

@@ -34,7 +34,6 @@ type ProjectResource struct {
 // Init initializes the resource.
 func (p *ProjectResource) Init(projectID string) error {
 	p.ProjectID = projectID
-	// TODO: allow name to be set in config.
 	if p.Name == "" {
 		p.Name = projectID
 	}

@@ -24,7 +24,6 @@ import (
 
 // EnableTerraform determines whether terraform will be enabled or not.
 // Note: The terraform state bucket does not respect this var as it is required currently for Forseti projects.
-// TODO: remove this once DM has been deprecated.
 var EnableTerraform = false
 
 // accessLogsWriter is the access logs writer.
@@ -112,9 +111,8 @@ type Project struct {
 	} `json:"terraform_deployments"`
 
 	// The following vars are set through helpers and not directly through the user defined config.
-	GeneratedFields *GeneratedFields `json:"-"`
-	// TODO: replace DM log sink with TF once DM is deprecated.
-	BQLogSinkTF *tfconfig.LoggingSink `json:"-"`
+	GeneratedFields *GeneratedFields      `json:"-"`
+	BQLogSinkTF     *tfconfig.LoggingSink `json:"-"`
 
 	IAMAuditConfig        *tfconfig.ProjectIAMAuditConfig   `json:"-"`
 	DefaultAlertPolicies  []*tfconfig.MonitoringAlertPolicy `json:"-"`
@@ -277,9 +275,5 @@ func (p *Project) Init(devopsProject, auditLogsProject *Project) error {
 	if sb == nil {
 		return errors.New("state_storage_bucket must be set when terraform is enabled")
 	}
-
-	// TODO: uncomment this once state bucket and project deployments are merged.
-	// sb.DependsOn = append(sb.DependsOn, "google_project.project")
-
 	return p.initTerraform(auditLogsProject)
 }

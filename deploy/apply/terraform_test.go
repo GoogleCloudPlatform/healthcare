@@ -157,7 +157,6 @@ func (*tfTestRunner) CmdOutput(cmd *exec.Cmd) ([]byte, error) {
 
 func (*tfTestRunner) CmdCombinedOutput(*exec.Cmd) ([]byte, error) { return nil, nil }
 
-// TODO: Add integration test
 func TestResources(t *testing.T) {
 	config.EnableTerraform = true
 	tests := []struct {

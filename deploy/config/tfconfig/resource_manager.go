@@ -28,7 +28,6 @@ import (
 const defaultRestriction = "resourcemanager.projects.delete"
 
 // ResourceManagerLien supports Terraform liens.
-// TODO: support imports for this resource.
 type ResourceManagerLien struct {
 	Origin       string   `json:"origin"`
 	Parent       string   `json:"parent"`

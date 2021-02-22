@@ -761,8 +761,6 @@ definitions:
         type: object
         description: |
           Resources to deploy. See README.md for links to resource specific documentation and schemas.
-          # TODO: investigate implementing a subset of the CFT
-          # schema here for the fields we change.
         additionalProperties: false
         properties:
           bq_datasets:
