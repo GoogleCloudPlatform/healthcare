@@ -19,7 +19,7 @@ from setuptools import setup
 
 REQUIRED_PACKAGES = [
   'numpy==1.14.3',
-  'Pillow==5.1.0',
+  'Pillow==8.1.1',
   'google-cloud-storage==1.10.0',
   'pandas==0.23.0',
 ]
