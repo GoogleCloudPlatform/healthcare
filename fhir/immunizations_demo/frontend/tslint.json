@@ -1,11 +1,15 @@
 {
-  "rulesDirectory": ["node_modules/codelyzer"],
+  "rulesDirectory": [
+    "node_modules/codelyzer"
+  ],
   "extends": "gts/tslint.json",
   "rules": {
     "return-undefined": true,
     "typedef": true,
     "trailing-comma": true,
-    "file-header": [true, "Copyright \\d{4} Google LLC.*"],
-    "import-blacklist": [true, "util"]
+    "file-header": [
+      true,
+      "Copyright \\d{4} Google LLC.*"
+    ]
   }
 }
