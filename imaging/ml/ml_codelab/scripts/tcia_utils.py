@@ -26,9 +26,9 @@ _LABEL_PATHS = [
 _BREAST_DENSITY_COLUMN = {"breast_density", "breast density"}
 _IMAGE_FILE_PATH_COLUMN = {"image file path"}
 
-# Blacklist a set of study UIDs for training. These have duplicate images that
+# Exclude a set of study UIDs for training. These have duplicate images that
 # cause warnings in AutoML.
-_BLACKLISTED_STUDY_UIDS = {
+_EXCLUDED_STUDY_UIDS = {
     "1.3.6.1.4.1.9590.100.1.2.311909379911326678329538827560440159485",
     "1.3.6.1.4.1.9590.100.1.2.16561647310839362507344536782775923598",
     "1.3.6.1.4.1.9590.100.1.2.166931122911456605424645792320616925399",
@@ -77,7 +77,7 @@ def _GetStudyUIDMaps(has_study_uid=None):
         continue
       dicom_uids = row[image_file_path_column].split("/")
       study_instance_uid, series_instance_uid = dicom_uids[1], dicom_uids[2]
-      if study_instance_uid in _BLACKLISTED_STUDY_UIDS:
+      if study_instance_uid in _EXCLUDED_STUDY_UIDS:
         continue
       if has_study_uid and has_study_uid != study_instance_uid:
         continue
