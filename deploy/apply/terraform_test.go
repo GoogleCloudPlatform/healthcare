@@ -279,7 +279,7 @@ compute_firewalls:
 compute_images:
 - name: foo-image
   raw_disk:
-    source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz
+    source: <url>
 `},
 			wantResources: `
 - google_compute_image:
@@ -287,7 +287,7 @@ compute_images:
       name: foo-image
       project: my-project
       raw_disk:
-        source: https://storage.googleapis.com/bosh-cpi-artifacts/bosh-stemcell-3262.4-google-kvm-ubuntu-trusty-go_agent-raw.tar.gz`,
+        source: <url>`,
 			wantImports: []terraform.Import{{
 				Address: "google_compute_image.foo-image",
 				ID:      "my-project/foo-image",
