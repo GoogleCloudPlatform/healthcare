@@ -111,7 +111,9 @@ class DicomWebClient(six.with_metaclass(abc.ABCMeta, object)):
     raise NotImplementedError
 
   @abc.abstractmethod
-  def WadoRs(self, wado_url: Text, accept_header: Text = None) -> bytes:
+  def WadoRs(self,
+             wado_url: Text,
+             accept_header: Optional[Text] = None) -> bytes:
     """Performs a WadoRs request and returns the response."""
     raise NotImplementedError
 
@@ -135,7 +137,9 @@ class DicomWebClient(six.with_metaclass(abc.ABCMeta, object)):
 class DicomWebClientImpl(DicomWebClient):
   """Concrete implementation, using REST HTTP calls."""
 
-  def __init__(self, credentials: google.auth.credentials.Credentials = None):
+  def __init__(self,
+               credentials: Optional[google.auth.credentials.Credentials] = None
+              ):
     super(DicomWebClientImpl, self).__init__()
     self._credentials = credentials
     # Support integration testing through dependency injection.
@@ -193,7 +197,9 @@ class DicomWebClientImpl(DicomWebClient):
       return [{}]
     return json.loads(content)
 
-  def WadoRs(self, wado_url: Text, accept_header: Text = None) -> bytes:
+  def WadoRs(self,
+             wado_url: Text,
+             accept_header: Optional[Text] = None) -> bytes:
     """Performs the request, parses the multipart response, and returns content.
 
     Args:

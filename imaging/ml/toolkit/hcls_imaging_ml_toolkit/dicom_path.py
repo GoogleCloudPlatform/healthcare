@@ -218,10 +218,10 @@ def FromString(path_str: Text, path_type: Optional[Type] = None) -> Path:
 
 
 def FromPath(base_path: Path,
-             store_id: Text = None,
-             study_uid: Text = None,
-             series_uid: Text = None,
-             instance_uid: Text = None) -> Path:
+             store_id: Optional[Text] = None,
+             study_uid: Optional[Text] = None,
+             series_uid: Optional[Text] = None,
+             instance_uid: Optional[Text] = None) -> Path:
   """Creates a new Path object based on the provided one.
 
   Replaces the specified path components in the base path to create the new one.

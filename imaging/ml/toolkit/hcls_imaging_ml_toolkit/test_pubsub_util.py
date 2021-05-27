@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from typing import Dict, Text
+from typing import Dict, Optional, Text
 from google.cloud import pubsub_v1
 
 
@@ -34,7 +34,8 @@ def CreatePubsubReceivedMessage(
     ack_id: Text,
     data: Text,
     message_id: Text,
-    attributes: Dict[Text, Text] = None) -> pubsub_v1.types.ReceivedMessage:
+    attributes: Optional[Dict[Text, Text]] = None
+) -> pubsub_v1.types.ReceivedMessage:
   """Creates a ReceivedMessage instance for testing.
 
   Args:
