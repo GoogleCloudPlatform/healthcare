@@ -138,7 +138,7 @@ class DicomWebTest(parameterized.TestCase):
     self.assertEqual(resp, [_MOCK_CT_INSTANCE_METADATA])
 
     resp = self._dwc.QidoRs(_URI)
-    self.assertEqual(resp, [{}])
+    self.assertEqual(resp, [])
 
   def testPathToUrl(self):
     dicom_path_str = tdpu.STUDY_PATH_STR
