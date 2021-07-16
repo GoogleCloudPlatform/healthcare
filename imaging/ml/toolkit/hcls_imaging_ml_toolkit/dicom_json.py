@@ -20,7 +20,6 @@ from __future__ import print_function
 from typing import Any, Dict, List, Optional, Text
 import attr
 
-from hcls_imaging_ml_toolkit import dicom_web
 from hcls_imaging_ml_toolkit import tags
 
 # The key used for values in DICOM JSON.
@@ -80,10 +79,21 @@ def GetValue(dicom_json: Dict[Text, Any], tag: tags.DicomTag) -> Any:
 
 
 @attr.s
+class DicomBulkData(object):
+  # URI for the bulkdata.
+  uri = attr.ib(type=Text)
+  # The payload.
+  data = attr.ib(type=bytes)
+  # Content type in the following format:
+  # https://www.w3.org/Protocols/rfc1341/4_Content-Type.html.
+  content_type = attr.ib(type=Text)
+
+
+@attr.s
 class ObjectWithBulkData(object):
   """DICOM JSON object with the optional bulk data."""
   dicom_dict = attr.ib(type=Dict[Text, Any])
-  bulkdata_list = attr.ib(type=List[dicom_web.DicomBulkData], factory=list)
+  bulkdata_list = attr.ib(type=List[DicomBulkData], factory=list)
 
   @property
   def instance_uid(self) -> Text:

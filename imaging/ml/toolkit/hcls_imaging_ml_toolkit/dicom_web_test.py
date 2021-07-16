@@ -23,12 +23,11 @@ from typing import Any, Dict, Optional, Text, Tuple
 
 from absl.testing import absltest
 from absl.testing import parameterized
+import google.auth.credentials
 import google_auth_httplib2
 import httplib2
 import mock
 from six.moves import http_client
-
-import google.auth.credentials
 from hcls_imaging_ml_toolkit import dicom_json
 from hcls_imaging_ml_toolkit import dicom_path
 from hcls_imaging_ml_toolkit import dicom_web
@@ -119,7 +118,7 @@ class DicomWebTest(parameterized.TestCase):
     self.assertEqual(call_args[0], expected_url)
 
   def testStowRsJsonError(self):
-    bulk_data = dicom_web.DicomBulkData(uri='', data=b'', content_type='a/b/c')
+    bulk_data = dicom_json.DicomBulkData(uri='', data=b'', content_type='a/b/c')
     with self.assertRaises(Exception):
       self._dwc.StowRsJson('', [{}], [bulk_data])
 

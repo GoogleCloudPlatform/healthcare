@@ -23,7 +23,6 @@ import posixpath
 from typing import Any, Dict, Iterable, List, Optional, Text, Tuple
 import uuid
 
-import attr
 import google_auth_httplib2
 import httplib2
 from requests_toolbelt.multipart import decoder
@@ -34,6 +33,7 @@ import urllib3
 
 import google.auth
 import google.auth.credentials
+from hcls_imaging_ml_toolkit import dicom_json
 from hcls_imaging_ml_toolkit import dicom_path
 from hcls_imaging_ml_toolkit import tags
 
@@ -84,17 +84,10 @@ def PathStrToUrl(path_str: Text) -> Text:
   """
   return posixpath.join(CLOUD_HEALTHCARE_API_URL, path_str)
 
-
-# DicomBulkData represents a DICOM bulkdata that is encoded as part of STOW JSON
-@attr.s
-class DicomBulkData(object):
-  # URI for the bulkdata.
-  uri = attr.ib(type=Text)
-  # The payload.
-  data = attr.ib(type=bytes)
-  # Content type in the following format:
-  # https://www.w3.org/Protocols/rfc1341/4_Content-Type.html.
-  content_type = attr.ib(type=Text)
+# DicomBulkData represents bulk data that is encoded as part of STOW JSON.
+# The original class was moved to `dicom_bulk_data.py`. This definition is for
+# backward compatibility only, and may be removed in future updates.
+DicomBulkData = dicom_json.DicomBulkData
 
 
 class UnexpectedResponseError(Exception):
@@ -124,7 +117,7 @@ class DicomWebClient(six.with_metaclass(abc.ABCMeta, object)):
 
   @abc.abstractmethod
   def StowRsJson(self, stow_url: Text, dicom_dict_list: List[Dict[Text, Any]],
-                 bulkdata: Iterable[DicomBulkData]) -> None:
+                 bulkdata: Iterable[dicom_json.DicomBulkData]) -> None:
     """Performs a StowRs JSON request."""
     raise NotImplementedError
 
@@ -248,7 +241,7 @@ class DicomWebClientImpl(DicomWebClient):
     return self._StowRs(stow_url, application_type, parts)
 
   def StowRsJson(self, stow_url: Text, dicom_dict_list: List[Dict[Text, Any]],
-                 bulkdata_list: Iterable[DicomBulkData]) -> None:
+                 bulkdata_list: Iterable[dicom_json.DicomBulkData]) -> None:
     """Stores the instance(s) via StowRs JSON.
 
     Args:

@@ -22,7 +22,6 @@ from absl.testing import parameterized
 import frozendict
 
 from hcls_imaging_ml_toolkit import dicom_json
-from hcls_imaging_ml_toolkit import dicom_web
 from hcls_imaging_ml_toolkit import tags
 
 
@@ -79,7 +78,7 @@ class DicomJsonTest(parameterized.TestCase):
     dicom_json.Insert(dicom_dict, tags.SOP_INSTANCE_UID, instance_uid)
     dicom_json.Insert(dicom_dict, tags.STUDY_INSTANCE_UID, study_uid)
     dicom_json.Insert(dicom_dict, tags.SERIES_INSTANCE_UID, series_uid)
-    bulkdata = dicom_web.DicomBulkData(
+    bulkdata = dicom_json.DicomBulkData(
         uri='uri',
         data=bytearray('image_array', encoding='utf8'),
         content_type='type')
