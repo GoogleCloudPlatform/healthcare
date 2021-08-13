@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'third_party/javascript/angular2/material' as mat;
 
 @import '~@angular/material/theming';
 @import './app/app-theme';
 
-@include mat-core();
+@include mat.core();
 
 // Define the light theme.
-$primary: mat-palette($mat-indigo);
-$accent: mat-palette($mat-pink, A200, A100, A400);
+$primary: mat.define-palette(mat.$indigo-palette);
+$accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
 
-$theme: mat-light-theme($primary, $accent);
-$config: mat-typography-config();
+$theme: mat.define-light-theme($primary, $accent);
+$config: mat.define-typography-config();
 
-@include angular-material-theme($theme);
+@include mat.all-component-themes($theme);
 
 body {
   font-family: 'Roboto', 'Helvetica Neue Light', 'Helvetica Neue', Helvetica,

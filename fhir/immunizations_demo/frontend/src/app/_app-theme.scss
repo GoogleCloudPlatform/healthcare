@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'third_party/javascript/angular2/material' as mat;
 
 @import '~@angular/material/theming';
 @import './patient-panel/patient-panel-theme';
@@ -22,12 +23,12 @@
   $background: map-get($theme, background);
 
   .app-toolbar {
-    @include mat-elevation(6);
+    @include mat.elevation(6);
     z-index: 10;
   }
 
   .nav-link-active {
-    background: mat-color($background, status-bar) !important;
+    background: mat.get-color-from-palette($background, status-bar) !important;
   }
 }
 
@@ -36,11 +37,11 @@
 
   .app-data-list {
     .mat-list .mat-list-item .mat-line:nth-child(n + 2) {
-      color: mat-color($foreground, secondary-text);
+      color: mat.get-color-from-palette($foreground, secondary-text);
     }
 
     mat-panel-title.panel-title-large {
-      font-size: mat-font-size($config, title);
+      font-size: mat.font-size($config, title);
     }
 
     mat-expansion-panel-header .mat-content {

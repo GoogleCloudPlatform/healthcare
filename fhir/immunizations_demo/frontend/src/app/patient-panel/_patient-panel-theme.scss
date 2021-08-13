@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@use 'third_party/javascript/angular2/material' as mat;
 
 @mixin app-patient-panel-theme($theme) {
   $background: map-get($theme, background);
 
   .patient-panel-content {
-    background: mat-color($background, 'card');
-    @include mat-elevation(4);
+    background: mat.get-color-from-palette($background, 'card');
+    @include mat.elevation(4);
   }
 }
