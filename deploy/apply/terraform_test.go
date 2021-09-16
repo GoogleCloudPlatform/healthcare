@@ -866,6 +866,8 @@ resource:
         group_by_email: my-project-owners@my-domain.com
       - role: READER
         group_by_email: my-project-auditors@my-domain.com
+      - role: roles/bigquery.user
+        group_by_email: my-project-auditors@my-domain.com
       - role: WRITER
         user_by_email: '${replace(google_logging_project_sink.audit-logs-to-bigquery.writer_identity, "serviceAccount:", "")}'
 - google_storage_bucket:

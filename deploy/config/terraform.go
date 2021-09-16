@@ -64,6 +64,7 @@ func (p *Project) initTerraformAuditResources(auditProject *Project) error {
 	d.Accesses = append(d.Accesses,
 		&tfconfig.Access{Role: "OWNER", GroupByEmail: auditProject.OwnersGroup},
 		&tfconfig.Access{Role: "READER", GroupByEmail: p.AuditorsGroup},
+		&tfconfig.Access{Role: "roles/bigquery.user", GroupByEmail: p.AuditorsGroup},
 	)
 
 	p.BQLogSinkTF = &tfconfig.LoggingSink{
