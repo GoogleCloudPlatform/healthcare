@@ -46,7 +46,7 @@ _REGEX_UID = r'[^/@]+'
 _ATTR_VALIDATOR_ID_1 = attr.validators.matches_re(_REGEX_ID_1)
 _ATTR_VALIDATOR_ID_2 = attr.validators.matches_re(_REGEX_ID_2)
 _ATTR_VALIDATOR_UID = attr.validators.optional(
-    attr.validators.matches_re(_REGEX_UID))
+    attr.validators.matches_re(_REGEX_UID))  # pytype: disable=wrong-arg-types  # attr-stubs
 
 
 @attr.s(frozen=True)
@@ -62,10 +62,10 @@ class Path(object):
     series_uid: DICOM Series UID. Optional.
     instance_uid: DICOM Instance UID. Optional.
   """
-  project_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_1)
-  location = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_1)
-  dataset_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_2)
-  store_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_2)
+  project_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_1)  # pytype: disable=wrong-arg-types  # attr-stubs
+  location = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_1)  # pytype: disable=wrong-arg-types  # attr-stubs
+  dataset_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_2)  # pytype: disable=wrong-arg-types  # attr-stubs
+  store_id = attr.ib(type=Text, validator=_ATTR_VALIDATOR_ID_2)  # pytype: disable=wrong-arg-types  # attr-stubs
   study_uid = attr.ib(
       default=None, type=Optional[Text], validator=_ATTR_VALIDATOR_UID)
   series_uid = attr.ib(
