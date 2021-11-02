@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatDatepickerModule} from '@angular/material/datepicker';
@@ -26,6 +26,7 @@ import * as moment from 'moment';
 import {createResourceServiceSpy, resourceServiceSpyProvider} from '../../../test/resource-service-spy';
 import {createTestTravelQuestionnaireResponse} from '../../../test/travel-plan';
 import {TravelFormComponent} from '../travel-form/travel-form.component';
+
 import {TravelListComponent} from './travel-list.component';
 
 describe('TravelListComponent', () => {
@@ -41,7 +42,7 @@ describe('TravelListComponent', () => {
 
   const resourceServiceSpy = createResourceServiceSpy();
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed
         .configureTestingModule({
           schemas: [CUSTOM_ELEMENTS_SCHEMA],

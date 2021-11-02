@@ -14,7 +14,7 @@
 
 // tslint:disable:no-any
 import {NO_ERRORS_SCHEMA} from '@angular/core';
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {set} from 'lodash';
 import {of} from 'rxjs';
@@ -23,6 +23,7 @@ import {createTestTravelQuestionnaireResponse} from '../../../test/travel-plan';
 import {createTestScheduler} from '../../../test/util';
 import {PredictionService} from '../../prediction.service';
 import {TravelPlan} from '../travel-plan';
+
 import {ConditionListComponent, RiskProbability} from './condition-list.component';
 
 describe('ConditionListComponent', () => {
@@ -37,7 +38,7 @@ describe('ConditionListComponent', () => {
   const snackbarSpy =
       jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed
         .configureTestingModule({
           schemas: [NO_ERRORS_SCHEMA],

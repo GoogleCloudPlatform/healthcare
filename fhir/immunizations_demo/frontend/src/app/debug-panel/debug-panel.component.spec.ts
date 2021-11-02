@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {NO_ERRORS_SCHEMA} from '@angular/core';
-import {async, ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick, waitForAsync} from '@angular/core/testing';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subject} from 'rxjs';
 
@@ -37,7 +37,7 @@ describe('DebugPanelComponent', () => {
                              environment.fhirEndpoint.dataset}/fhirStores/${
                              environment.fhirEndpoint.fhirStore}/`;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed
         .configureTestingModule({
           schemas: [NO_ERRORS_SCHEMA],

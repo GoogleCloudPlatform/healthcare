@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatDatepickerModule} from '@angular/material/datepicker';
@@ -23,6 +23,7 @@ import {createTestTravelQuestionnaireResponse} from '../../../test/travel-plan';
 import {ShortDatePipe} from '../../short-date.pipe';
 import {TravelFormComponent} from '../travel-form/travel-form.component';
 import {TravelPlan} from '../travel-plan';
+
 import {TravelItemComponent} from './travel-item.component';
 
 describe('TravelItemComponent', () => {
@@ -32,7 +33,7 @@ describe('TravelItemComponent', () => {
   const resourceServiceSpy = createResourceServiceSpy();
   let travelPlan: fhir.QuestionnaireResponse;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed
         .configureTestingModule({
           schemas: [CUSTOM_ELEMENTS_SCHEMA],

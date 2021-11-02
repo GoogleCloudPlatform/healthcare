@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -29,6 +29,7 @@ import {createTestScheduler, resetSpyObj} from '../../../test/util';
 import {ISO_DATE} from '../../constants';
 import {FHIR_STORE} from '../../fhir-store';
 import {Immunization, ImmunizationReaction, ImmunizationReason} from '../immunization';
+
 import {ImmunizationFormComponent} from './immunization-form.component';
 
 describe('ImmunizationFormComponent', () => {
@@ -46,7 +47,7 @@ describe('ImmunizationFormComponent', () => {
   const resourceServiceSpy = createResourceServiceSpy();
   const scheduler = createTestScheduler();
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed
         .configureTestingModule({
           schemas: [CUSTOM_ELEMENTS_SCHEMA],

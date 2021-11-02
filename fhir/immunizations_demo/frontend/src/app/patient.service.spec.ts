@@ -11,8 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {async, TestBed} from '@angular/core/testing';
+import {TestBed, waitForAsync} from '@angular/core/testing';
+
 import {createResourceServiceSpy, resourceServiceSpyProvider} from '../test/resource-service-spy';
+
 import {PatientService} from './patient.service';
 
 describe('PatientService', () => {
@@ -28,7 +30,7 @@ describe('PatientService', () => {
   };
   const resourceServiceSpy = createResourceServiceSpy();
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       providers: [
         PatientService,

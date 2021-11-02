@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import * as moment from 'moment';
 
 import {createTestImmunization, createTestReaction} from '../../../test/immunization';
@@ -21,6 +21,7 @@ import {resetSpyObj} from '../../../test/util';
 import {Immunization, ImmunizationReaction} from '../immunization';
 import {ImmunizationFormComponent} from '../immunization-form/immunization-form.component';
 import {ImmunizationService} from '../immunization.service';
+
 import {ImmunizationItemComponent} from './immunization-item.component';
 
 describe('ImmunizationItemComponent', () => {
@@ -33,7 +34,7 @@ describe('ImmunizationItemComponent', () => {
       jasmine.createSpyObj(
           'ImmunizationService', ['create', 'save', 'remove', 'addNewDose']);
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed
         .configureTestingModule({
           schemas: [CUSTOM_ELEMENTS_SCHEMA],

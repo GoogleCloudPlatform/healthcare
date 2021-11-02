@@ -14,9 +14,11 @@
 
 import {Overlay, OverlayRef} from '@angular/cdk/overlay';
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
+
 import {createTestScheduler, resetSpyObj} from '../../test/util';
 import {PatientService} from '../patient.service';
+
 import {PatientPanelComponent} from './patient-panel.component';
 
 describe('PatientPanelComponent', () => {
@@ -39,7 +41,7 @@ describe('PatientPanelComponent', () => {
   const patientServiceSpy =
       jasmine.createSpyObj('PatientService', ['getPatient']);
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed
         .configureTestingModule({
           schemas: [CUSTOM_ELEMENTS_SCHEMA],

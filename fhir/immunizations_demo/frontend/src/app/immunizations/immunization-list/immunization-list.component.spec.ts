@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -29,6 +29,7 @@ import {ISO_DATE} from '../../constants';
 import {Immunization} from '../immunization';
 import {ImmunizationFormComponent} from '../immunization-form/immunization-form.component';
 import {ImmunizationService} from '../immunization.service';
+
 import {ImmunizationListComponent} from './immunization-list.component';
 
 describe('ImmunizationListComponent', () => {
@@ -40,7 +41,7 @@ describe('ImmunizationListComponent', () => {
     immunizations$: immunizations.asObservable(),
   };
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed
         .configureTestingModule({
           schemas: [CUSTOM_ELEMENTS_SCHEMA],

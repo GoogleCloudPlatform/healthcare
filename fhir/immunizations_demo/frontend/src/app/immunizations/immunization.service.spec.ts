@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import {async, fakeAsync, flush, tick} from '@angular/core/testing';
+import {fakeAsync, waitForAsync} from '@angular/core/testing';
 import {BehaviorSubject, of} from 'rxjs';
 
 import {createTestImmunization} from '../../test/immunization';
@@ -30,7 +30,7 @@ describe('ImmunizationService', () => {
   });
   let immunizationListener: BehaviorSubject<Immunization[]>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     resetSpyObj(resourceServiceSpy);
 
     resourceServiceSpy.searchResource.and.returnValue(
