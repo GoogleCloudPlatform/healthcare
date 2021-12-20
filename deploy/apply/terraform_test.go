@@ -533,7 +533,7 @@ storage_buckets:
         log_bucket: my-project-logs
       versioning:
         enabled: true
-      bucket_policy_only: true
+      uniform_bucket_level_access: true
 - google_storage_bucket_iam_member:
     foo-bucket:
       for_each:
@@ -806,7 +806,7 @@ resource:
       location: US
       versioning:
         enabled: true
-      bucket_policy_only: true`),
+      uniform_bucket_level_access: true`),
 			Imports: []terraform.Import{
 				{Address: "google_storage_bucket.my-project-state", ID: "my-project/my-project-state"},
 			},
@@ -878,7 +878,7 @@ resource:
       storage_class: MULTI_REGIONAL
       versioning:
         enabled: true
-      bucket_policy_only: true
+      uniform_bucket_level_access: true
 - google_storage_bucket_iam_member:
     my-project-logs:
       for_each:

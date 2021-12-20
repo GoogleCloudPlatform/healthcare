@@ -30,7 +30,7 @@ type StorageBucket struct {
 	LifecycleRules   []*LifecycleRule `json:"lifecycle_rule,omitempty"`
 	Logging          *Logging         `json:"logging,omitempty"`
 	Versioning       versioning       `json:"versioning,omitempty"`
-	BucketPolicyOnly *bool            `json:"bucket_policy_only"`
+	BucketPolicyOnly *bool            `json:"uniform_bucket_level_access"`
 
 	DependsOn []string `json:"depends_on,omitempty"`
 
