@@ -61,7 +61,10 @@ class SubscriptionTest(parameterized.TestCase):
     self.assertLen(messages, 1)
 
     self.assertListEqual(self._subscriber.pull.call_args_list, [
-        mock.call(_SUBSCRIPTION_PATH, max_messages=1, return_immediately=False)
+        mock.call(
+            subscription=_SUBSCRIPTION_PATH,
+            max_messages=1,
+            return_immediately=False)
     ])
     self.assertEqual(messages[0].ack_id, _ACK_ID)
     self.assertEqual(messages[0].message.message_id, _MESSAGE_ID)
@@ -78,7 +81,9 @@ class SubscriptionTest(parameterized.TestCase):
     messages = self._sub_client.Pull()
     self.assertEmpty(messages)
     self._subscriber.pull.assert_called_once_with(
-        _SUBSCRIPTION_PATH, max_messages=1, return_immediately=False)
+        subscription=_SUBSCRIPTION_PATH,
+        max_messages=1,
+        return_immediately=False)
     self.assertEqual(logging.exception.call_count, 1,
                      'Errors should be logged.')
 
@@ -92,7 +97,10 @@ class SubscriptionTest(parameterized.TestCase):
     self._sub_client.Pull(return_immediately=True)
     self.assertEqual(self._subscriber.pull.call_count, 1)
     self.assertListEqual(self._subscriber.pull.call_args_list, [
-        mock.call(_SUBSCRIPTION_PATH, max_messages=1, return_immediately=True)
+        mock.call(
+            subscription=_SUBSCRIPTION_PATH,
+            max_messages=1,
+            return_immediately=True)
     ])
 
 

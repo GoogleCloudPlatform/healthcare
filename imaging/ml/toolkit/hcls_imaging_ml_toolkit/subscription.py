@@ -64,7 +64,7 @@ class SubscriptionClient(object):
     """
     try:
       return self._subscriber.pull(
-          self._subscription_path,
+          subscription=self._subscription_path,
           max_messages=1,
           return_immediately=return_immediately).received_messages
     except (google.api_core.exceptions.GoogleAPICallError,
@@ -73,7 +73,8 @@ class SubscriptionClient(object):
     return []
 
   def Acknowledge(self, ack_id: Text) -> None:
-    self._subscriber.acknowledge(self._subscription_path, [ack_id])
+    self._subscriber.acknowledge(
+        subscription=self._subscription_path, ack_ids=[ack_id])
 
   def ModifyAckDeadline(self, ack_id: Text, ack_deadline_seconds: int) -> None:
     self._subscriber.modify_ack_deadline(self._subscription_path, [ack_id],
