@@ -77,8 +77,10 @@ class SubscriptionClient(object):
         subscription=self._subscription_path, ack_ids=[ack_id])
 
   def ModifyAckDeadline(self, ack_id: Text, ack_deadline_seconds: int) -> None:
-    self._subscriber.modify_ack_deadline(self._subscription_path, [ack_id],
-                                         ack_deadline_seconds)
+    self._subscriber.modify_ack_deadline(
+        subscription=self._subscription_path,
+        ack_ids=[ack_id],
+        ack_deadline_seconds=ack_deadline_seconds)
 
   def Close(self) -> None:
     self._subscriber.api.transport.channel.close()
