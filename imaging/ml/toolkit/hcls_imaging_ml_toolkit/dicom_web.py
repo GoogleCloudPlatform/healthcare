@@ -22,6 +22,8 @@ import json
 import posixpath
 from typing import Any, Dict, Iterable, List, Optional, Text, Tuple
 import uuid
+import google.auth
+import google.auth.credentials
 
 import google_auth_httplib2
 import httplib2
@@ -31,8 +33,6 @@ import six
 from six.moves import http_client
 import urllib3
 
-import google.auth
-import google.auth.credentials
 from hcls_imaging_ml_toolkit import dicom_json
 from hcls_imaging_ml_toolkit import dicom_path
 from hcls_imaging_ml_toolkit import tags
@@ -130,6 +130,10 @@ class DicomWebClient(six.with_metaclass(abc.ABCMeta, object)):
 class DicomWebClientImpl(DicomWebClient):
   """Concrete implementation, using REST HTTP calls."""
 
+  @staticmethod
+  def _not_http_2xx(status):
+    return status // 100 != 2
+
   def __init__(self,
                credentials: Optional[google.auth.credentials.Credentials] = None
               ):
@@ -181,7 +185,7 @@ class DicomWebClientImpl(DicomWebClient):
       UnexpectedResponseError: If the response status was not success.
     """
     resp, content = self._InvokeHttpRequest(qido_url, 'GET')
-    if resp.status >= 299:
+    if DicomWebClientImpl._not_http_2xx(resp.status):
       raise UnexpectedResponseError(
           'QidoRs error. Response Status: %d,\nURL: %s,\nContent: %s.' %
           (resp.status, qido_url, content))
@@ -210,7 +214,7 @@ class DicomWebClientImpl(DicomWebClient):
         wado_url,
         'GET',
         headers={'Accept': accept_header} if accept_header is not None else {})
-    if 200 <= resp.status >= 299:
+    if DicomWebClientImpl._not_http_2xx(resp.status):
       raise UnexpectedResponseError(
           'WadoRs error. Response Status: %d,\nURL: %s,\nContent: %s.' %
           (resp.status, wado_url, content))
@@ -228,6 +232,12 @@ class DicomWebClientImpl(DicomWebClient):
     Args:
       stow_url: URL for the STOW request.
       dcmbytes_list: List of serialized DICOM instances to store.
+
+    Returns:
+      None
+
+    Raises:
+      UnexpectedResponseError: If StowRs response status was not successful.
     """
     application_type = 'dicom'
     parts = []
@@ -307,7 +317,7 @@ class DicomWebClientImpl(DicomWebClient):
     resp, content = self._InvokeHttpRequest(
         stow_url, method='POST', body=body, headers=headers)
 
-    if 200 <= resp.status >= 299:
+    if DicomWebClientImpl._not_http_2xx(resp.status):
       raise UnexpectedResponseError(
           'StowRs error. Response Status: %d,\nURL: %s,\nContent: %s.' %
           (resp.status, stow_url, content))
@@ -323,7 +333,7 @@ class DicomWebClientImpl(DicomWebClient):
 
     """
     resp, content = self._InvokeHttpRequest(delete_url, 'DELETE')
-    if 200 <= resp.status >= 299:
+    if DicomWebClientImpl._not_http_2xx(resp.status):
       raise UnexpectedResponseError(
           'DeleteRs error. Response Status: %d,\nURL: %s,\nContent: %s.' %
           (resp.status, delete_url, content))

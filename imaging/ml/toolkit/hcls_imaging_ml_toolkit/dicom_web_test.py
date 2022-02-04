@@ -54,7 +54,7 @@ _MOCK_CT_INSTANCE_METADATA = _CreateMockInstanceMetadata()
 def FakeHttpResponse(
     status_code: int,
     body: Optional[Text] = _BODY) -> Tuple[httplib2.Response, Text]:
-  return (httplib2.Response({'status': status_code}), body)
+  return httplib2.Response({'status': status_code}), body
 
 
 class DicomWebTest(parameterized.TestCase):
@@ -121,6 +121,20 @@ class DicomWebTest(parameterized.TestCase):
     bulk_data = dicom_json.DicomBulkData(uri='', data=b'', content_type='a/b/c')
     with self.assertRaises(Exception):
       self._dwc.StowRsJson('', [{}], [bulk_data])
+
+  @parameterized.parameters(199, 300, 403)
+  def testStowRsHttpErrors(self, error_value):
+    bulk_data = ['0x12', '0x13']
+    expected_response = (f'StowRs error. Response Status: {error_value},\nURL: '
+                         'https://some_stow_url,\nContent: body.')
+    with mock.patch.object(
+        dicom_web.DicomWebClientImpl,
+        '_InvokeHttpRequest',
+        return_value=FakeHttpResponse(error_value),
+        autospec=True):
+      with self.assertRaisesRegex(dicom_web.UnexpectedResponseError,
+                                  expected_response):
+        self._dwc.StowRs('https://some_stow_url', bulk_data)
 
   @mock.patch.object(httplib2, 'Http')
   @mock.patch.object(google_auth_httplib2, 'AuthorizedHttp')
