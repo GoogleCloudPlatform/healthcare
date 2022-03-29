@@ -154,6 +154,7 @@ class DicomWebClientImpl(DicomWebClient):
       self,
       uri: Text,
       method: Text,
+      timeout: Optional[int] = 3600,
       body: Optional[Text] = None,
       headers: Optional[Dict[Text,
                              Any]] = None) -> Tuple[httplib2.Response, Text]:
@@ -162,13 +163,15 @@ class DicomWebClientImpl(DicomWebClient):
     Args:
       uri: URI of Http request.
       method: Http method type e.g. 'GET'
+      timeout: Http timeout in seconds.
       body: Http request body.
       headers: Http request headers.
 
     Returns:
       Tuple of httplib2.Response and string content.
     """
-    http = google_auth_httplib2.AuthorizedHttp(self._credentials)
+    http = google_auth_httplib2.AuthorizedHttp(self._credentials,
+                                               httplib2.Http(timeout))
     http.force_exception_to_status_code = True
     return http.request(uri, method, body, headers)
 
