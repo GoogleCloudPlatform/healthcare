@@ -99,31 +99,88 @@ class DicomWebClient(six.with_metaclass(abc.ABCMeta, object)):
   """Abstract base class for DICOMWeb client."""
 
   @abc.abstractmethod
-  def QidoRs(self, qido_url: Text) -> List[Dict[Text, Any]]:
-    """Performs a QidoRs request and returns the parsed JSON response."""
+  def QidoRs(self,
+             qido_url: Text,
+             timeout: Optional[int] = 3600) -> List[Dict[Text, Any]]:
+    """Performs a QidoRs request and returns the parsed JSON response.
+
+    Args:
+      qido_url: URL for the QIDO request.
+      timeout: Http timeout in seconds.
+
+    Returns:
+      The parsed JSON response content or empty list if no contents are found.
+    """
     raise NotImplementedError
 
   @abc.abstractmethod
   def WadoRs(self,
              wado_url: Text,
-             accept_header: Optional[Text] = None) -> bytes:
-    """Performs a WadoRs request and returns the response."""
+             accept_header: Optional[Text] = None,
+             timeout: Optional[int] = 3600) -> bytes:
+    """Performs a WadoRs request and returns the response.
+
+    Args:
+      wado_url: URL for the WADO request.
+      accept_header: Value of the Accept header to use. If set to None, no
+        Accept header will be used.
+      timeout: Http timeout in seconds.
+
+    Returns:
+      The content of the first (and only) part as a string.
+    """
     raise NotImplementedError
 
   @abc.abstractmethod
-  def StowRs(self, stow_url: Text, dcmbytes_list: List[bytes]) -> None:
-    """Performs a StowRs request."""
+  def StowRs(self,
+             stow_url: Text,
+             dcmbytes_list: List[bytes],
+             timeout: Optional[int] = 3600) -> None:
+    """Performs a StowRs request.
+
+    Args:
+      stow_url: URL for the STOW request.
+      dcmbytes_list: List of serialized DICOM instances to store.
+      timeout: Http timeout in seconds.
+
+    Returns:
+      None
+    """
     raise NotImplementedError
 
   @abc.abstractmethod
-  def StowRsJson(self, stow_url: Text, dicom_dict_list: List[Dict[Text, Any]],
-                 bulkdata: Iterable[dicom_json.DicomBulkData]) -> None:
-    """Performs a StowRs JSON request."""
+  def StowRsJson(self,
+                 stow_url: Text,
+                 dicom_dict_list: List[Dict[Text, Any]],
+                 bulkdata: Iterable[dicom_json.DicomBulkData],
+                 timeout: Optional[int] = 3600) -> None:
+    """Performs a StowRs JSON request.
+
+    Args:
+      stow_url: URL for the STOW request.
+      dicom_dict_list: List of dictionaries, each dictionary containing DICOM
+        metadata corresponding to a DICOM instance to store. Gets encoded into
+        DICOM JSON.
+      bulkdata: DICOM bulkdata to store. Each instance corresponds to a
+        reference from DICOM metadata in dicom_dict_list.
+      timeout: Http timeout in seconds.
+
+    Returns:
+      None
+    """
     raise NotImplementedError
 
   @abc.abstractmethod
-  def DeleteRs(self, delete_url: Text) -> None:
-    """Performs a DeleteRs request."""
+  def DeleteRs(self, delete_url: Text, timeout: Optional[int] = 3600) -> None:
+    """Performs a DeleteRs request.
+
+    Args:
+      delete_url: URL for the DELETE request. Can be instance, series, study.
+      timeout: Http timeout in seconds.
+
+    Returns:
+      None
+    """
     raise NotImplementedError
 
 
@@ -170,16 +227,19 @@ class DicomWebClientImpl(DicomWebClient):
     Returns:
       Tuple of httplib2.Response and string content.
     """
-    http = google_auth_httplib2.AuthorizedHttp(self._credentials,
-                                               httplib2.Http(timeout))
+    http = google_auth_httplib2.AuthorizedHttp(self._credentials)
     http.force_exception_to_status_code = True
+    http.timeout = timeout
     return http.request(uri, method, body, headers)
 
-  def QidoRs(self, qido_url: Text) -> List[Dict[Text, Any]]:
+  def QidoRs(self,
+             qido_url: Text,
+             timeout: Optional[int] = 3600) -> List[Dict[Text, Any]]:
     """Performs the request, and returns the parsed JSON response.
 
     Args:
       qido_url: URL for the QIDO request.
+      timeout: Http timeout in seconds.
 
     Returns:
       The parsed JSON response content or empty list if no contents are found.
@@ -187,7 +247,7 @@ class DicomWebClientImpl(DicomWebClient):
     Raises:
       UnexpectedResponseError: If the response status was not success.
     """
-    resp, content = self._InvokeHttpRequest(qido_url, 'GET')
+    resp, content = self._InvokeHttpRequest(qido_url, 'GET', timeout=timeout)
     if DicomWebClientImpl._not_http_2xx(resp.status):
       raise UnexpectedResponseError(
           'QidoRs error. Response Status: %d,\nURL: %s,\nContent: %s.' %
@@ -198,13 +258,15 @@ class DicomWebClientImpl(DicomWebClient):
 
   def WadoRs(self,
              wado_url: Text,
-             accept_header: Optional[Text] = None) -> bytes:
+             accept_header: Optional[Text] = None,
+             timeout: Optional[int] = 3600) -> bytes:
     """Performs the request, parses the multipart response, and returns content.
 
     Args:
       wado_url: URL for the WADO request.
       accept_header: Value of the Accept header to use. If set to None, no
         Accept header will be used.
+      timeout: Http timeout in seconds.
 
     Returns:
       The content of the first (and only) part as a string.
@@ -216,6 +278,7 @@ class DicomWebClientImpl(DicomWebClient):
     resp, content = self._InvokeHttpRequest(
         wado_url,
         'GET',
+        timeout=timeout,
         headers={'Accept': accept_header} if accept_header is not None else {})
     if DicomWebClientImpl._not_http_2xx(resp.status):
       raise UnexpectedResponseError(
@@ -229,12 +292,16 @@ class DicomWebClientImpl(DicomWebClient):
           ' Actual: %d.\nURL: %s' % (num_parts, wado_url))
     return multipart_data.parts[0].content
 
-  def StowRs(self, stow_url: Text, dcmbytes_list: List[bytes]) -> None:
+  def StowRs(self,
+             stow_url: Text,
+             dcmbytes_list: List[bytes],
+             timeout: Optional[int] = 3600) -> None:
     """Stores the serialized instance via StowRs.
 
     Args:
       stow_url: URL for the STOW request.
       dcmbytes_list: List of serialized DICOM instances to store.
+      timeout: Http timeout in seconds.
 
     Returns:
       None
@@ -251,19 +318,26 @@ class DicomWebClientImpl(DicomWebClient):
           headers={'Content-Type': 'application/%s' % application_type},
       )
       parts.append(part)
-    return self._StowRs(stow_url, application_type, parts)
+    return self._StowRs(stow_url, application_type, parts, timeout=timeout)
 
-  def StowRsJson(self, stow_url: Text, dicom_dict_list: List[Dict[Text, Any]],
-                 bulkdata_list: Iterable[dicom_json.DicomBulkData]) -> None:
+  def StowRsJson(self,
+                 stow_url: Text,
+                 dicom_dict_list: List[Dict[Text, Any]],
+                 bulkdata_list: Iterable[dicom_json.DicomBulkData],
+                 timeout: Optional[int] = 3600) -> None:
     """Stores the instance(s) via StowRs JSON.
 
     Args:
       stow_url: URL for the STOW request.
       dicom_dict_list: List of dictionaries, each dictionary containing DICOM
-        metatdata corresponding to a DICOM instance to store. Gets encoded into
+        metatata corresponding to a DICOM instance to store. Gets encoded into
         DICOM JSON.
       bulkdata_list: DICOM bulkdata to store. Each instance corresponds to a
         reference from DICOM metadata in dicom_dict_list.
+      timeout: Http timeout in seconds.
+
+    Returns:
+      None
 
     Raises:
       ValueError if the content type is invalid.
@@ -294,16 +368,20 @@ class DicomWebClientImpl(DicomWebClient):
       )
       parts.append(part)
 
-    self._StowRs(stow_url, application_type, parts)
+    self._StowRs(stow_url, application_type, parts, timeout=timeout)
 
-  def _StowRs(self, stow_url: Text, application_type: Text,
-              parts: List[urllib3.fields.RequestField]) -> None:
+  def _StowRs(self,
+              stow_url: Text,
+              application_type: Text,
+              parts: List[urllib3.fields.RequestField],
+              timeout: Optional[int] = 3600) -> None:
     """Stores the instance(s) via StowRs.
 
     Args:
       stow_url: URL for the STOW request.
       application_type: MIME appliction type.
       parts: List of RequestField's containing HTTP multipart data.
+      timeout: Http timeout in seconds.
 
     Raises:
       UnexpectedResponseError: If StowRs response status was not success.
@@ -318,24 +396,29 @@ class DicomWebClientImpl(DicomWebClient):
     # and it works fine in our use-case.
     body, _ = urllib3.filepost.encode_multipart_formdata(parts, boundary)
     resp, content = self._InvokeHttpRequest(
-        stow_url, method='POST', body=body, headers=headers)
+        stow_url, method='POST', timeout=timeout, body=body, headers=headers)
 
     if DicomWebClientImpl._not_http_2xx(resp.status):
       raise UnexpectedResponseError(
           'StowRs error. Response Status: %d,\nURL: %s,\nContent: %s.' %
           (resp.status, stow_url, content))
 
-  def DeleteRs(self, delete_url: Text) -> None:
+  def DeleteRs(self, delete_url: Text, timeout: Optional[int] = 3600) -> None:
     """Performs delete request on the specified URL.
 
     Args:
       delete_url: URL for the DELETE request. Can be instance, series, study.
+      timeout: Http timeout in seconds.
+
+    Returns:
+      None
 
     Raises:
       UnexpectedResponseError: If DeleteRs response status was not success.
 
     """
-    resp, content = self._InvokeHttpRequest(delete_url, 'DELETE')
+    resp, content = self._InvokeHttpRequest(
+        delete_url, 'DELETE', timeout=timeout)
     if DicomWebClientImpl._not_http_2xx(resp.status):
       raise UnexpectedResponseError(
           'DeleteRs error. Response Status: %d,\nURL: %s,\nContent: %s.' %
