@@ -31,6 +31,7 @@ itself is not a natural machine learning task.
 
 import functools
 import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1 import estimator as tf_estimator
 
 # Input data specific flags.
 tf.flags.DEFINE_string(
@@ -144,7 +145,7 @@ def build_serving_input_receiver_fn():
       return inputs
 
     inputs = functools.reduce(add_input, FEATURE_KEYS, {})
-    return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+    return tf_estimator.export.ServingInputReceiver(inputs, inputs)
 
   return serving_input_receiver_fn
 
@@ -156,7 +157,7 @@ def main(_):
       for key in FEATURE_KEYS
   ]
 
-  classifier = tf.estimator.LinearClassifier(
+  classifier = tf_estimator.LinearClassifier(
       feature_columns=feature_columns,
       model_dir=FLAGS.model_dir,
       n_classes=FLAGS.n_classes,
@@ -164,7 +165,7 @@ def main(_):
           learning_rate=FLAGS.learning_rate,
           l1_regularization_strength=FLAGS.l1_regularization_strength,
           l2_regularization_strength=FLAGS.l2_regularization_strength),
-      config=tf.estimator.RunConfig(keep_checkpoint_max=1))
+      config=tf_estimator.RunConfig(keep_checkpoint_max=1))
 
   # Training.
   classifier.train(

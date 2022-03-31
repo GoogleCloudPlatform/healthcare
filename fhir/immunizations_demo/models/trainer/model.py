@@ -36,6 +36,7 @@ itself is not a natural machine learning task.
 import tensorflow.compat.v1 as tf
 
 from functools import reduce
+from tensorflow.compat.v1 import estimator as tf_estimator
 
 # Input data specific flags.
 tf.flags.DEFINE_string("training_data", default=None,
@@ -129,7 +130,7 @@ def build_serving_input_receiver_fn():
       return inputs
 
     inputs = reduce(add_input, FEATURE_KEYS, {})
-    return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+    return tf_estimator.export.ServingInputReceiver(inputs, inputs)
   return serving_input_receiver_fn
 
 
@@ -138,15 +139,15 @@ def main(_):
   feature_columns = [tf.feature_column.numeric_column(key=key, dtype=tf.int32)
     for key in FEATURE_KEYS]
 
-  classifier = tf.estimator.LinearClassifier(
-    feature_columns=feature_columns,
-    model_dir=FLAGS.model_dir,
-    n_classes=FLAGS.n_classes,
-    optimizer=tf.train.FtrlOptimizer(
-        learning_rate=FLAGS.learning_rate,
-        l1_regularization_strength=FLAGS.l1_regularization_strength,
-        l2_regularization_strength=FLAGS.l2_regularization_strength),
-    config=tf.estimator.RunConfig(keep_checkpoint_max=1))
+  classifier = tf_estimator.LinearClassifier(
+      feature_columns=feature_columns,
+      model_dir=FLAGS.model_dir,
+      n_classes=FLAGS.n_classes,
+      optimizer=tf.train.FtrlOptimizer(
+          learning_rate=FLAGS.learning_rate,
+          l1_regularization_strength=FLAGS.l1_regularization_strength,
+          l2_regularization_strength=FLAGS.l2_regularization_strength),
+      config=tf_estimator.RunConfig(keep_checkpoint_max=1))
 
   # Training.
   classifier.train(
