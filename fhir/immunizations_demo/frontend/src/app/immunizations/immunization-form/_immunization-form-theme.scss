@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@use 'third_party/javascript/angular2/material' as mat;
+@use 'third_party/javascript/angular_components/material' as mat;
 
 @mixin immunization-form-theme($theme) {
   $background: map-get($theme, background);
