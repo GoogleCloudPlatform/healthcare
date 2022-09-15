@@ -24,7 +24,7 @@
 $primary: mat.define-palette(mat.$indigo-palette);
 $accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
 
-$theme: mat.define-light-theme($primary, $accent);
+$theme: mat.define-light-theme((color: (primary: $primary, accent: $accent)));
 $config: mat.define-typography-config();
 
 @include mat.all-component-themes($theme);
@@ -56,7 +56,7 @@ mat-expansion-panel.loading-expansion-panel {
   flex-direction: column;
   padding: 16px 24px;
 
-   > * {
+  > * {
     max-width: 300px;
   }
 }
