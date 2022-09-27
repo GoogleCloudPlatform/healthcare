@@ -19,8 +19,8 @@
 @import './patient-panel/patient-panel-theme';
 
 @mixin navbar-theme($theme) {
-  $primary: map-get($theme, primary);
-  $background: map-get($theme, background);
+  $primary: map-get(mat.get-color-config($theme), primary);
+  $background: map-get(mat.get-color-config($theme), background);
 
   .app-toolbar {
     @include mat.elevation(6);
@@ -33,7 +33,7 @@
 }
 
 @mixin data-list-theme($theme, $config) {
-  $foreground: map-get($theme, foreground);
+  $foreground: map-get(mat.get-color-config($theme), foreground);
 
   .app-data-list {
     .mat-list .mat-list-item .mat-line:nth-child(n + 2) {

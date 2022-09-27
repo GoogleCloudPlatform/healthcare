@@ -16,7 +16,7 @@
 @use 'third_party/javascript/angular_components/material' as mat;
 
 @mixin app-patient-panel-theme($theme) {
-  $background: map-get($theme, background);
+  $background: map-get(mat.get-color-config($theme), background);
 
   .patient-panel-content {
     background: mat.get-color-from-palette($background, 'card');

@@ -16,7 +16,7 @@
 @use 'third_party/javascript/angular_components/material' as mat;
 
 @mixin immunization-form-theme($theme) {
-  $background: map-get($theme, background);
+  $background: map-get(mat.get-color-config($theme), background);
 
   app-immunization-form {
     background: mat.get-color-from-palette($background, card);
