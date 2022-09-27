@@ -18,7 +18,8 @@
 @import '~@angular/material/theming';
 @import './app/app-theme';
 
-@include mat.core();
+@include mat.all-component-typographies();
+@include mat.core($exclude-typography: true);
 
 // Define the light theme.
 $primary: mat.define-palette(mat.$indigo-palette);
