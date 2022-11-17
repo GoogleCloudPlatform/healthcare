@@ -53,7 +53,7 @@ _config_test = rule(
         "_apply": attr.label(
             default = Label("//cmd/apply"),
             doc = "The config loader binary. Internal attribute and should not be set by users.",
-            cfg = "host",
+            cfg = "exec",
             executable = True,
             allow_single_file = True,
         ),
@@ -62,13 +62,13 @@ _config_test = rule(
         "_generated_fields_schema": attr.label(
             default = Label("//:generated_fields.yaml.schema"),
             doc = "The generated fields schema. Internal attribute and should not be set by users.",
-            cfg = "host",
+            cfg = "exec",
             allow_single_file = True,
         ),
         "_project_config_schema": attr.label(
             default = Label("//:project_config.yaml.schema"),
             doc = "The project config schema. Internal attribute and should not be set by users.",
-            cfg = "host",
+            cfg = "exec",
             allow_single_file = True,
         ),
     },
