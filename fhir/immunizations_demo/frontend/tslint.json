@@ -6,7 +6,7 @@
   "rules": {
     "return-undefined": true,
     "typedef": true,
-    "trailing-comma": true,
+    "trailing-comma": false,
     "file-header": [
       true,
       "Copyright \\d{4} Google LLC.*"
