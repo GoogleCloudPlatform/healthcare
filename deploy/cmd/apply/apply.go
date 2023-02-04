@@ -24,15 +24,15 @@
 package main
 
 import (
+
+	"flag"
+	
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
-
-	"flag"
-	
 	"github.com/GoogleCloudPlatform/healthcare/deploy/apply"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/config"
 	"github.com/GoogleCloudPlatform/healthcare/deploy/runner"
