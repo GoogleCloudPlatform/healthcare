@@ -12,6 +12,7 @@ Go to https://cloud.google.com/healthcare/docs/resources/public-datasets/tcia#cl
 
 **Please wait until you are granted access.** You cannot complete the codelab until granted access.
 
+Note: Google Cloud is managing a new version of the [TCIA dataset](https://cloud.google.com/healthcare-api/docs/resources/public-datasets/idc). Changes are needed in the notebooks/scripts to use the new dataset.
 
 We need to allow the service account running the Datalab instance to administer roles.
 To grant permission please run following commands with owner or roles/iam.securityAdmin role
