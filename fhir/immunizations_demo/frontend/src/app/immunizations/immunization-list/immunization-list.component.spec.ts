@@ -15,9 +15,9 @@ import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
 import {MatDatepickerModule} from '@angular/material/datepicker';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatInputModule} from '@angular/material/input';
-import {MatSelectModule} from '@angular/material/select';
+import {MatLegacyFormFieldModule} from '@angular/material/form-field';
+import {MatLegacyInputModule} from '@angular/material/input';
+import {MatLegacySelectModule} from '@angular/material/select';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import * as moment from 'moment';
@@ -49,9 +49,9 @@ describe('ImmunizationListComponent', () => {
             NoopAnimationsModule,
             MatDatepickerModule,
             ReactiveFormsModule,
-            MatSelectModule,
-            MatFormFieldModule,
-            MatInputModule,
+            MatLegacySelectModule,
+            MatLegacyFormFieldModule,
+            MatLegacyInputModule,
           ],
           declarations: [
             ImmunizationListComponent,

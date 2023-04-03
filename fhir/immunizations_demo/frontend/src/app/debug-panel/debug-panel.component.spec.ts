@@ -14,7 +14,7 @@
 
 import {NO_ERRORS_SCHEMA} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick, waitForAsync} from '@angular/core/testing';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar} from '@angular/material/snack-bar';
 import {Subject} from 'rxjs';
 
 import {environment} from '../../environments/environment';
@@ -30,7 +30,7 @@ describe('DebugPanelComponent', () => {
   let component: DebugPanelComponent;
   let fixture: ComponentFixture<DebugPanelComponent>;
   const snackBarSpy =
-      jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
+      jasmine.createSpyObj<MatLegacySnackBar>('MatSnackBar', ['open']);
   const FHIR_STORE_URL = environment.fhirEndpoint.baseURL +
       `projects/${environment.fhirEndpoint.project}/locations/${
                              environment.fhirEndpoint.location}/datasets/${
@@ -44,7 +44,7 @@ describe('DebugPanelComponent', () => {
           declarations: [DebugPanelComponent],
           providers: [
             {provide: FHIR_STORE, useValue: environment.fhirEndpoint},
-            {provide: MatSnackBar, useValue: snackBarSpy},
+            {provide: MatLegacySnackBar, useValue: snackBarSpy},
             {
               provide: ClipboardService,
               useValue: jasmine.createSpyObj('ClipboardService', ['writeText'])

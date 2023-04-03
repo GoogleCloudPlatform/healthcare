@@ -14,7 +14,7 @@
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatLegacyAutocompleteModule} from '@angular/material/autocomplete';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import * as moment from 'moment';
 import {of} from 'rxjs';
@@ -53,7 +53,7 @@ describe('TravelFormComponent', () => {
           schemas: [CUSTOM_ELEMENTS_SCHEMA],
           imports: [
             MatDatepickerModule,
-            MatAutocompleteModule,
+            MatLegacyAutocompleteModule,
             ReactiveFormsModule,
           ],
           declarations: [TravelFormComponent],

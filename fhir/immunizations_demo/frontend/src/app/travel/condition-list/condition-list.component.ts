@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {Component, Input, OnDestroy, OnInit} from '@angular/core';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar} from '@angular/material/snack-bar';
 import {get, includes, isUndefined, sortBy} from 'lodash';
 import * as moment from 'moment';
 import {Observable, of, Subject} from 'rxjs';
@@ -55,7 +55,7 @@ export class ConditionListComponent implements OnInit, OnDestroy {
 
   constructor(
       private readonly predictionService: PredictionService,
-      private readonly snackbar: MatSnackBar) {
+      private readonly snackbar: MatLegacySnackBar) {
     this.conditionAssessments$ = of([]);
   }
 

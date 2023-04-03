@@ -15,7 +15,7 @@
 // tslint:disable:no-any
 import {NO_ERRORS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar} from '@angular/material/snack-bar';
 import {set} from 'lodash';
 import {of} from 'rxjs';
 
@@ -36,7 +36,7 @@ describe('ConditionListComponent', () => {
     predictions$: of([] as fhir.RiskAssessment[]),
   };
   const snackbarSpy =
-      jasmine.createSpyObj<MatSnackBar>('MatSnackBar', ['open']);
+      jasmine.createSpyObj<MatLegacySnackBar>('MatSnackBar', ['open']);
 
   beforeEach(waitForAsync(() => {
     TestBed
@@ -45,7 +45,7 @@ describe('ConditionListComponent', () => {
           declarations: [ConditionListComponent],
           providers: [
             {provide: PredictionService, useValue: predictionServiceSpy},
-            {provide: MatSnackBar, useValue: snackbarSpy},
+            {provide: MatLegacySnackBar, useValue: snackbarSpy},
           ],
         })
         .compileComponents();

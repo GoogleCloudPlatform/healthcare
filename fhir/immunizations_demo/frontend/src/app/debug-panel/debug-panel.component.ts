@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {Component, Inject, OnInit} from '@angular/core';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar} from '@angular/material/snack-bar';
 import {from, Observable, of} from 'rxjs';
 import {map, scan, switchAll} from 'rxjs/operators';
 
@@ -38,7 +38,7 @@ export class DebugPanelComponent implements OnInit {
 
   constructor(
       @Inject(FHIR_STORE) fhirStore: FHIRStore,
-      private readonly snackbar: MatSnackBar,
+      private readonly snackbar: MatLegacySnackBar,
       private readonly resourceService: ResourceService,
       private readonly clipboardService: ClipboardService,
   ) {

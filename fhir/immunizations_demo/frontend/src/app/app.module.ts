@@ -17,20 +17,20 @@ import {HttpClientModule} from '@angular/common/http';
 import {APP_INITIALIZER, NgModule} from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatMomentDateModule} from '@angular/material-moment-adapter';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-import {MatButtonModule} from '@angular/material/button';
-import {MatCardModule} from '@angular/material/card';
+import {MatLegacyAutocompleteModule} from '@angular/material/autocomplete';
+import {MatLegacyButtonModule} from '@angular/material/button';
+import {MatLegacyCardModule} from '@angular/material/card';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatExpansionModule} from '@angular/material/expansion';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatLegacyFormFieldModule} from '@angular/material/form-field';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {MatIconModule} from '@angular/material/icon';
-import {MatInputModule} from '@angular/material/input';
-import {MatListModule} from '@angular/material/list';
-import {MatProgressBarModule} from '@angular/material/progress-bar';
-import {MatSelectModule} from '@angular/material/select';
+import {MatLegacyInputModule} from '@angular/material/input';
+import {MatLegacyListModule} from '@angular/material/list';
+import {MatLegacyProgressBarModule} from '@angular/material/progress-bar';
+import {MatLegacySelectModule} from '@angular/material/select';
 import {MatSidenavModule} from '@angular/material/sidenav';
-import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatLegacySnackBarModule} from '@angular/material/snack-bar';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
@@ -70,11 +70,11 @@ import {LOCATION, SESSION_STORAGE} from './window-injection-tokens';
   ],
   imports: [
     BrowserModule,       BrowserAnimationsModule, MatToolbarModule,
-    MatListModule,       MatCardModule,           MatExpansionModule,
-    MatFormFieldModule,  MatInputModule,          MatButtonModule,
-    MatSelectModule,     MatSidenavModule,        MatIconModule,
-    MatDatepickerModule, MatProgressBarModule,    MatTooltipModule,
-    MatSnackBarModule,   MatGridListModule,       MatAutocompleteModule,
+    MatLegacyListModule,       MatLegacyCardModule,           MatExpansionModule,
+    MatLegacyFormFieldModule,  MatLegacyInputModule,          MatLegacyButtonModule,
+    MatLegacySelectModule,     MatSidenavModule,        MatIconModule,
+    MatDatepickerModule, MatLegacyProgressBarModule,    MatTooltipModule,
+    MatLegacySnackBarModule,   MatGridListModule,       MatLegacyAutocompleteModule,
     MatMomentDateModule, ReactiveFormsModule,     FormsModule,
     HttpClientModule,    AppRoutingModule,
   ],

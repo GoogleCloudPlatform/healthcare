@@ -14,7 +14,7 @@
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatLegacyAutocompleteModule} from '@angular/material/autocomplete';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {By} from '@angular/platform-browser';
 
@@ -40,7 +40,7 @@ describe('TravelItemComponent', () => {
           imports: [
             ReactiveFormsModule,
             MatDatepickerModule,
-            MatAutocompleteModule,
+            MatLegacyAutocompleteModule,
           ],
           declarations: [
             TravelItemComponent,

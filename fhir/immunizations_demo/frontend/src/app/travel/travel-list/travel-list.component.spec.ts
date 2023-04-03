@@ -14,11 +14,11 @@
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatLegacyAutocompleteModule} from '@angular/material/autocomplete';
 import {MatDatepickerModule} from '@angular/material/datepicker';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatInputModule} from '@angular/material/input';
-import {MatSelectModule} from '@angular/material/select';
+import {MatLegacyFormFieldModule} from '@angular/material/form-field';
+import {MatLegacyInputModule} from '@angular/material/input';
+import {MatLegacySelectModule} from '@angular/material/select';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import * as moment from 'moment';
@@ -49,11 +49,11 @@ describe('TravelListComponent', () => {
           imports: [
             NoopAnimationsModule,
             MatDatepickerModule,
-            MatAutocompleteModule,
+            MatLegacyAutocompleteModule,
             ReactiveFormsModule,
-            MatSelectModule,
-            MatFormFieldModule,
-            MatInputModule,
+            MatLegacySelectModule,
+            MatLegacyFormFieldModule,
+            MatLegacyInputModule,
           ],
           declarations: [TravelListComponent, TravelFormComponent],
           providers: [resourceServiceSpyProvider(resourceServiceSpy)],
