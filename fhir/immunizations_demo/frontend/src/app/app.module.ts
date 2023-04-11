@@ -32,7 +32,7 @@ import {MatLegacySelectModule} from '@angular/material/select';
 import {MatSidenavModule} from '@angular/material/sidenav';
 import {MatLegacySnackBarModule} from '@angular/material/snack-bar';
 import {MatToolbarModule} from '@angular/material/toolbar';
-import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatLegacyTooltipModule} from '@angular/material/tooltip';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
@@ -73,7 +73,7 @@ import {LOCATION, SESSION_STORAGE} from './window-injection-tokens';
     MatLegacyListModule,       MatLegacyCardModule,           MatExpansionModule,
     MatLegacyFormFieldModule,  MatLegacyInputModule,          MatLegacyButtonModule,
     MatLegacySelectModule,     MatSidenavModule,        MatIconModule,
-    MatDatepickerModule, MatLegacyProgressBarModule,    MatTooltipModule,
+    MatDatepickerModule, MatLegacyProgressBarModule,    MatLegacyTooltipModule,
     MatLegacySnackBarModule,   MatGridListModule,       MatLegacyAutocompleteModule,
     MatMomentDateModule, ReactiveFormsModule,     FormsModule,
     HttpClientModule,    AppRoutingModule,

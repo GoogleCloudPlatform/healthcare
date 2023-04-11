@@ -15,7 +15,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {MAT_MOMENT_DATE_FORMATS, MomentDateAdapter} from '@angular/material-moment-adapter';
-import {LegacyDateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/core';
+import {LegacyDateAdapter, MAT_LEGACY_DATE_FORMATS, MAT_LEGACY_DATE_LOCALE} from '@angular/material/core';
 import * as moment from 'moment';
 import {Observable, of, Subject} from 'rxjs';
 import {map, startWith, takeUntil} from 'rxjs/operators';
@@ -51,9 +51,9 @@ const VALID_COUNTRIES = [
     {
       provide: LegacyDateAdapter,
       useClass: MomentDateAdapter,
-      deps: [MAT_DATE_LOCALE]
+      deps: [MAT_LEGACY_DATE_LOCALE]
     },
-    {provide: MAT_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS},
+    {provide: MAT_LEGACY_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS},
   ],
 })
 export class TravelFormComponent implements OnInit, OnChanges, AfterViewInit,

@@ -13,7 +13,7 @@
 // limitations under the License.
 import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {MAT_MOMENT_DATE_FORMATS, MomentDateAdapter} from '@angular/material-moment-adapter';
-import {LegacyDateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/core';
+import {LegacyDateAdapter, MAT_LEGACY_DATE_FORMATS, MAT_LEGACY_DATE_LOCALE} from '@angular/material/core';
 import {ResourceService} from '../../resource.service';
 import {TravelFormComponent} from '../travel-form/travel-form.component';
 import {TravelPlan} from '../travel-plan';
@@ -26,9 +26,9 @@ import {TravelPlan} from '../travel-plan';
     {
       provide: LegacyDateAdapter,
       useClass: MomentDateAdapter,
-      deps: [MAT_DATE_LOCALE]
+      deps: [MAT_LEGACY_DATE_LOCALE]
     },
-    {provide: MAT_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS},
+    {provide: MAT_LEGACY_DATE_FORMATS, useValue: MAT_MOMENT_DATE_FORMATS},
   ],
 })
 export class TravelItemComponent {
