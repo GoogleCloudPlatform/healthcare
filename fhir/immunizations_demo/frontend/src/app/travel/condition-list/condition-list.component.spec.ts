@@ -15,7 +15,7 @@
 // tslint:disable:no-any
 import {NO_ERRORS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
-import {MatLegacySnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar} from '@angular/material/legacy-snack-bar';
 import {set} from 'lodash';
 import {of} from 'rxjs';
 

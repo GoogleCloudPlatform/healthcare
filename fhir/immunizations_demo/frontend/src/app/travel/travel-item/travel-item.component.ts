@@ -13,7 +13,8 @@
 // limitations under the License.
 import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {MAT_MOMENT_DATE_FORMATS, MomentDateAdapter} from '@angular/material-moment-adapter';
-import {LegacyDateAdapter, MAT_LEGACY_DATE_FORMATS, MAT_LEGACY_DATE_LOCALE} from '@angular/material/core';
+import {LegacyDateAdapter, MAT_LEGACY_DATE_FORMATS, MAT_LEGACY_DATE_LOCALE} from '@angular/material/legacy-core';
+
 import {ResourceService} from '../../resource.service';
 import {TravelFormComponent} from '../travel-form/travel-form.component';
 import {TravelPlan} from '../travel-plan';

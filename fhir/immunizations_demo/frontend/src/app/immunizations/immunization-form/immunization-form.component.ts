@@ -15,7 +15,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {MAT_MOMENT_DATE_FORMATS, MomentDateAdapter} from '@angular/material-moment-adapter';
-import {LegacyDateAdapter, MAT_LEGACY_DATE_FORMATS, MAT_LEGACY_DATE_LOCALE} from '@angular/material/core';
+import {LegacyDateAdapter, MAT_LEGACY_DATE_FORMATS, MAT_LEGACY_DATE_LOCALE} from '@angular/material/legacy-core';
 import {get, isUndefined, omit, set} from 'lodash';
 import * as moment from 'moment';
 

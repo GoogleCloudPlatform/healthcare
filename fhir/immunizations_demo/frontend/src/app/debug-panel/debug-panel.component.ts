@@ -13,13 +13,14 @@
 // limitations under the License.
 
 import {Component, Inject, OnInit} from '@angular/core';
-import {MatLegacySnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar} from '@angular/material/legacy-snack-bar';
 import {from, Observable, of} from 'rxjs';
 import {map, scan, switchAll} from 'rxjs/operators';
 
 import {FHIR_STORE, FHIRStore} from '../fhir-store';
 import {FHIRRequest, ResourceService} from '../resource.service';
 import {encodeURL} from '../util';
+
 import {ClipboardService} from './clipboard.service';
 
 /**

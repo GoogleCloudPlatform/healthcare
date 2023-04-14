@@ -14,11 +14,11 @@
 import {CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
 import {ReactiveFormsModule} from '@angular/forms';
-import {MatLegacyAutocompleteModule} from '@angular/material/autocomplete';
 import {MatDatepickerModule} from '@angular/material/datepicker';
-import {MatLegacyFormFieldModule} from '@angular/material/form-field';
-import {MatLegacyInputModule} from '@angular/material/input';
-import {MatLegacySelectModule} from '@angular/material/select';
+import {MatLegacyAutocompleteModule} from '@angular/material/legacy-autocomplete';
+import {MatLegacyFormFieldModule} from '@angular/material/legacy-form-field';
+import {MatLegacyInputModule} from '@angular/material/legacy-input';
+import {MatLegacySelectModule} from '@angular/material/legacy-select';
 import {By} from '@angular/platform-browser';
 import {NoopAnimationsModule} from '@angular/platform-browser/animations';
 import * as moment from 'moment';
