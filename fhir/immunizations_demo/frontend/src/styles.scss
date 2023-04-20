@@ -18,8 +18,8 @@
 @import '~@angular/material/theming';
 @import './app/app-theme';
 
-@include mat.all-component-typographies();
-@include mat.core();
+@include mat.all-legacy-component-typographies();
+@include mat.legacy-core();
 
 // Define the light theme.
 $primary: mat.define-palette(mat.$indigo-palette);
@@ -33,9 +33,9 @@ $theme: mat.define-light-theme(
     ),
   )
 );
-$config: mat.define-typography-config();
+$config: mat.define-legacy-typography-config();
 
-@include mat.all-component-themes($theme);
+@include mat.all-legacy-component-themes($theme);
 
 body {
   font-family: 'Roboto', 'Helvetica Neue Light', 'Helvetica Neue', Helvetica,
