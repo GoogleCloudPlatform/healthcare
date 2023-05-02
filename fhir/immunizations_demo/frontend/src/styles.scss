@@ -19,7 +19,7 @@
 @import './app/app-theme';
 
 @include mat.all-legacy-component-typographies();
-@include mat.legacy-core();
+@include mat.core();
 
 // Define the light theme.
 $primary: mat.define-palette(mat.$indigo-palette);
