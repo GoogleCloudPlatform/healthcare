@@ -1,3 +1,12 @@
+# Deprecation
+
+This demo was written 4 years ago to show the capabilities of the Google FHIR
+store, and show interested users how they might integrate the FHIR API with
+Tensorflow. Since then, many improvements and new features have been added to
+the Cloud Healthcare API, and Tensorflow. The technical maintenance of this demo
+is not feasible, and as a result we will be removing this code on or after
+August 15, 2023.
+
 # Lung Cancer Demo
 
 [![Complete this tutorial in Cloud Shell](http://gstatic.com/cloudssh/images/open-btn.png)](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/healthcare.git&page=shell&tutorial=fhir/lung-cancer/README.md)
