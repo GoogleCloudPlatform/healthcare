@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 @use 'third_party/javascript/angular_components/material' as mat;
+@use 'third_party/javascript/angular_components/deprecated' as mat-deprecated;
 
 @import '~@angular/material/theming';
 @import './app/app-theme';
 
-@include mat.all-legacy-component-typographies();
+@include mat-deprecated.all-legacy-component-typographies();
 @include mat.core();
 
 // Define the light theme.
@@ -33,9 +34,9 @@ $theme: mat.define-light-theme(
     ),
   )
 );
-$config: mat.define-legacy-typography-config();
+$config: mat-deprecated.define-legacy-typography-config();
 
-@include mat.all-legacy-component-themes($theme);
+@include mat-deprecated.all-legacy-component-themes($theme);
 
 body {
   font-family: 'Roboto', 'Helvetica Neue Light', 'Helvetica Neue', Helvetica,
