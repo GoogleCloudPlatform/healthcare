@@ -37,6 +37,7 @@ REQUIRED_PACKAGES = [
     'mock',
     'grpcio',
     'tensorflow-serving-api',
+    'frozendict',
 ]
 
 setup(
