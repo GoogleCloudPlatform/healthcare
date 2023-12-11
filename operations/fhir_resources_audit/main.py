@@ -1,13 +1,10 @@
-import argparse
-import pandas as pd
 from utils import *
 from constants import *
 
 
 
-
-
 class CsvFhirHarmonizationTrack:
+    """Tracks FHIR resources generated from CSV harmonization dataflow pipeline"""
 
     def __init__(self, file_format, gcs_file_path, hde_prefix, hde_env, hde_fhir_store_location):
         self.FILE_FORMAT = FILE_FORMAT
@@ -20,6 +17,8 @@ class CsvFhirHarmonizationTrack:
         self.AUTH_QUERY = AuthenticateAndQuery()
 
     def get_docref_ids_for_provenance_ref(self):
+        """Fetches DocumentRefence ID for the source CSV file as well as BQ table"""
+
         self.FHIR_URL = Util.get_hde_fhir_url(self.HDE_PREFIX, self.HDE_ENV, self.FHIR_STORE_LOC)
         docref_url = Util.get_docref_resource_path_url(self.FHIR_URL, self.GCS_FILE_PATH)
         resources = self.AUTH_QUERY.executeQuery(next_page_url=docref_url)
@@ -48,6 +47,8 @@ class CsvFhirHarmonizationTrack:
             self.results.append(csv_file_info)
 
     def get_reconcilated_resources(self, resource_ref):
+        """Fetches how given FHIR resource reference ID reconciled into and by which pipeline"""
+
         provenance_recon_url = Util.get_reconcilated_resources_url(self.FHIR_URL, resource_ref)
         resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_recon_url)
         recon_results={}
@@ -57,6 +58,8 @@ class CsvFhirHarmonizationTrack:
 
 
     def get_transformed_fhir_fhir_resources(self):
+        """Fetches how source records/data transformed into IFS FHIR resources and by which pipeline"""
+
         for index, source_file_info in enumerate(self.results):
             ifs_resources = {}
             provenance_url = Util.get_provenance_resource_path_url(self.FHIR_URL, source_file_info['ingested_tbl_info']['id'])
@@ -85,17 +88,18 @@ class CsvFhirHarmonizationTrack:
                 self.results[index]['ingested_tbl_info']['resources_transformed_ifs'].append(ifs_resource_info)
 
     def process(self):
-        print("processing audit logs for fhir to fhir harmonization")
+        """Handler function to process given configs in the constants.py"""
+
+        print("processing OFS resources for CSV to FHIR harmonization")
         self.get_docref_ids_for_provenance_ref()
-        # self.get_transformed_fhir_fhir_resources()
-        # elif str(self.FILE_FORMAT).strip().lower == "csv":
-        #     self.get_docref_ids()
-        #     self.get_transformed_csv_fhir_resources()
+        self.get_transformed_fhir_fhir_resources()
         Util.write_json_to_local_file(self.results)
 
 
-class FhirFhirHarmonizationTrack:
-    def __init__(self, **kwargs):
+class CCDAFhirHarmonizationTrack:
+    """Tracks FHIR resources generated from C-CDA harmonization dataflow pipeline"""
+
+    def __init__(self):
         self.FILE_FORMAT = FILE_FORMAT
         self.GCS_FILE_PATH = GCS_FILE_PATH
         self.HDE_PREFIX = HDE_PREFIX
@@ -106,7 +110,8 @@ class FhirFhirHarmonizationTrack:
         self.AUTH_QUERY = AuthenticateAndQuery()
 
     def get_docref_ids_for_provenance_ref(self):
-        '''fetching DocumentReference ID for reference while querying Provenance resource'''
+        """Fetches DocumentRefence ID for the source xml file"""
+
         self.FHIR_URL = Util.get_hde_fhir_url(self.HDE_PREFIX, self.HDE_ENV, self.FHIR_STORE_LOC)
         docref_url = Util.get_docref_resource_path_url(self.FHIR_URL, self.GCS_FILE_PATH)
         resources = self.AUTH_QUERY.executeQuery(next_page_url=docref_url)
@@ -120,6 +125,8 @@ class FhirFhirHarmonizationTrack:
             self.results.append(matched_resource_info)
 
     def get_reconcilated_resources(self, resource_ref):
+        """Fetches how given FHIR resource reference ID reconciled into and by which pipeline"""
+
         provenance_recon_url = Util.get_reconcilated_resources_url(self.FHIR_URL, resource_ref)
         resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_recon_url)
         recon_results={}
@@ -129,6 +136,8 @@ class FhirFhirHarmonizationTrack:
 
 
     def get_transformed_fhir_fhir_resources(self):
+        """Fetches how source records/data transformed into IFS FHIR resources and by which pipeline"""
+
         for index, source_file_info in enumerate(self.results):
             ifs_resources = {}
             provenance_url = Util.get_provenance_resource_path_url(self.FHIR_URL, source_file_info['id'])
@@ -149,6 +158,7 @@ class FhirFhirHarmonizationTrack:
                 for ifs_resource in resources['entry'][i]['resource']['target']:
                      temp_ifs_resource_info = {}
                      temp_ifs_resource_info['reference'] = ifs_resource['reference']
+
                      #fetch reconcilation info for this resource
                      temp_ifs_resource_info['reconciled_into'] = self.get_reconcilated_resources(ifs_resource['reference'])
                      ifs_resource_info['transormed_resources'].append(temp_ifs_resource_info)
@@ -156,21 +166,96 @@ class FhirFhirHarmonizationTrack:
                 self.results[index]['resources_transformed_ifs'].append(ifs_resource_info)
 
     def process(self):
-        print("processing audit logs for fhir to fhir harmonization")
+        print("processing OFS resources for C-CDA to FHIR harmonization")
+        self.get_docref_ids_for_file()
+        self.get_fhir_fhir_transformed_resources()
+        Util.write_json_to_local_file(self.results)
+
+
+class FhirFhirHarmonizationTrack:
+    """Tracks FHIR resources generated from FHIR harmonization dataflow pipeline"""
+
+    def __init__(self):
+        self.FILE_FORMAT = FILE_FORMAT
+        self.GCS_FILE_PATH = GCS_FILE_PATH
+        self.HDE_PREFIX = HDE_PREFIX
+        self.HDE_ENV = HDE_ENV
+        self.FHIR_STORE_LOC = FHIR_STORE_LOC
+        self.FHIR_URL = None
+        self.results=[]
+        self.AUTH_QUERY = AuthenticateAndQuery()
+
+    def get_docref_ids_for_provenance_ref(self):
+        """Fetches DocumentRefence ID for the source ndjson file"""
+
+        self.FHIR_URL = Util.get_hde_fhir_url(self.HDE_PREFIX, self.HDE_ENV, self.FHIR_STORE_LOC)
+        docref_url = Util.get_docref_resource_path_url(self.FHIR_URL, self.GCS_FILE_PATH)
+        resources = self.AUTH_QUERY.executeQuery(next_page_url=docref_url)
+        total_matched_resources = resources["total"]
+        for i in range(total_matched_resources):
+            matched_resource_info = {}
+            matched_resource_info['file'] = resources["entry"][i]['resource']['content'][0]['attachment']['url']
+            matched_resource_info['resource_full_url'] = resources["entry"][i]['fullUrl']
+            matched_resource_info['id'] = resources["entry"][i]['resource']['id']
+            matched_resource_info['meta'] = resources["entry"][i]['resource']['meta']
+            self.results.append(matched_resource_info)
+
+    def get_reconcilated_resources(self, resource_ref):
+        """Fetches how given FHIR resource reference ID reconciled into and by which pipeline"""
+
+        provenance_recon_url = Util.get_reconcilated_resources_url(self.FHIR_URL, resource_ref)
+        resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_recon_url)
+        recon_results={}
+        recon_results['reconciled_resource'] = resources['entry'][0]['resource']['target']
+        recon_results['reconciled_by'] = resources['entry'][0]['resource']['agent'][0]['who']
+        return recon_results
+
+
+    def get_transformed_fhir_fhir_resources(self):
+        """Fetches how source records/data transformed into IFS FHIR resources and by which pipeline"""
+
+        for index, source_file_info in enumerate(self.results):
+            ifs_resources = {}
+            provenance_url = Util.get_provenance_resource_path_url(self.FHIR_URL, source_file_info['id'])
+            print(provenance_url)
+            resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_url)
+            total_transformed_ifs_resources = resources["total"]
+            total_resources_entry = len(resources['entry'])
+
+            transformed_ifs_resources = {}
+            self.results[index]['total_resoruces_transformed_ifs'] = resources["total"]
+            self.results[index]['total_resources_entry'] = total_resources_entry
+            self.results[index]['resources_transformed_ifs'] = []
+            print(f"iterating loop over {total_transformed_ifs_resources} times")
+
+            for i in range(total_resources_entry):
+                ifs_resource_info = {}
+                ifs_resource_info['transormed_resources'] = []
+                for ifs_resource in resources['entry'][i]['resource']['target']:
+                     temp_ifs_resource_info = {}
+                     temp_ifs_resource_info['reference'] = ifs_resource['reference']
+
+                     #fetch reconcilation info for this resource
+                     temp_ifs_resource_info['reconciled_into'] = self.get_reconcilated_resources(ifs_resource['reference'])
+                     ifs_resource_info['transormed_resources'].append(temp_ifs_resource_info)
+                ifs_resource_info['transformed_by'] = resources['entry'][i]['resource']['agent'][0]['who']
+                self.results[index]['resources_transformed_ifs'].append(ifs_resource_info)
+
+    def process(self):
+        print("processing OFS resources for FHIR to FHIR harmonization")
         self.get_docref_ids_for_file()
         self.get_fhir_fhir_transformed_resources()
         Util.write_json_to_local_file(self.results)
 
 def main():
     if str(FILE_FORMAT).strip().lower() == "ndjson":
-        processing_obj = fhir_fhir_harmonization_track(args)
+        processing_obj = FhirFhirHarmonizationTrack()
         processing_obj.process()
     if str(FILE_FORMAT).strip().lower() == "csv":
-        processing_obj = csv_fhir_harmonization_track(file_format=args.file_format, 
-        gcs_file_path=args.gcs_file_path, hde_prefix=args.hde_prefix, hde_env=args.hde_env, hde_fhir_store_location=args.hde_fhir_store_location)
+        processing_obj = CsvFhirHarmonizationTrack()
         processing_obj.process()
     if str(FILE_FORMAT).strip().lower() == "xml":
-        processing_obj = cda_fhir_harmonization_track(args)
+        processing_obj = CCDAFhirHarmonizationTrack()
         processing_obj.process()
 
 
