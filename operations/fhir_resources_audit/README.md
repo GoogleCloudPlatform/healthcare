@@ -16,7 +16,7 @@ This utility will help you track all FHIR resources. It will create a JSON outpu
 
 
 
-#### To run this utility program, you need to add your configuration values in the constants.py file 
+#### To run this utility program, configure values in the constants.py file 
 ```
 # Source file format e.g. "csv", "ndjson", "xml"
 FILE_FORMAT = ""
