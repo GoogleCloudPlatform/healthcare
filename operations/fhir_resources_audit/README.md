@@ -3,9 +3,11 @@
 In accordance with FHIR specifications, provenance data for data lineage is stored using three different FHIR resources, Provenance, DocumentReference, and Device.
 
 ## Relationship between these FHIR Resources:
-Provenance and DocumentReference: The Provenance resource can reference a DocumentReference as the source entity of an activity (e.g., creation, modification). This helps track the origin and evolution of the FHIR resource.
-Provenance and Device: Similarly, Provenance can reference a Device used in an activity. This provides insights into the device's role in generating FHIR resources.
-DocumentReference and Device: A DocumentReference can contain information about the devices used in its creation. This could include device settings, data pipeline information.
+ * Provenance and DocumentReference: The Provenance resource can reference a DocumentReference as the source entity of an activity (e.g., creation, modification). This helps track the origin and evolution of the FHIR resource.
+
+ * Provenance and Device: Similarly, Provenance can reference a Device used in an activity. This provides insights into the device's role in generating FHIR resources.
+
+ * DocumentReference and Device: A DocumentReference can contain information about the devices used in its creation. This could include device settings, data pipeline information.
 
 
 To track FHIR resources, you need to query three different resources using the relationships listed above.
@@ -14,7 +16,7 @@ This utility will help you track all FHIR resources. It will create a JSON outpu
 
 
 
-To run this utility program, you need to add your configuration values in the constants.py file 
+#### To run this utility program, you need to add your configuration values in the constants.py file 
 ```
 # Source file format e.g. "csv", "ndjson", "xml"
 FILE_FORMAT = ""
@@ -38,7 +40,7 @@ OUTPUT_FILE_PATH = ""
 ```
 
 
-And Execute main.py file. 
+#### And Execute main.py file. 
 ```
 python main.py
 
