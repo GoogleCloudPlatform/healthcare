@@ -1,22 +1,40 @@
 # FHIR Resources Audit
 
-In accordance with FHIR specifications, provenance data for data lineage is stored using three different FHIR resources, Provenance, DocumentReference, and Device.
-
-## Relationship between these FHIR Resources:
- * Provenance and DocumentReference: The Provenance resource can reference a DocumentReference as the source entity of an activity (e.g., creation, modification). This helps track the origin and evolution of the FHIR resource.
-
- * Provenance and Device: Similarly, Provenance can reference a Device used in an activity. This provides insights into the device's role in generating FHIR resources.
-
- * DocumentReference and Device: A DocumentReference can contain information about the devices used in its creation. This could include device settings, data pipeline information.
+In accordance with FHIR specifications, provenance data for data lineage is stored using three different FHIR resources, Provenance, DocumentReference, and Device The goal of this project is to create a utility that will take minimal inputs from the user and provide a detailed easy interpretation to get information about how source data gets ingested, transformed and reconciled into final FHIR resources.
 
 
-To track FHIR resources, you need to query three different resources using the relationships listed above.
+## Before this Utility:
 
-This utility will help you track all FHIR resources. It will create a JSON output that shows how data was transformed into the intermediate-fhir-store and reconciled into the final-fhir-store.
+##### For FHIR and CDA batch pipelines:
 
+1. Query operational-fhir-store to fetch DocumentReference ID  of source data file from GCS bucket.
+2. Use this fetched DocumentReference ID as a reference to query provenance resource to get the details about transformed resources in the intermediate-fhir-store
+3. To get the information about which pipeline/agent transformed source data to intermediate-fhir-store, you will get Device ID in the Provenance resource information which can be used to query Device resource and dataflow pipeline details.
+4. To get information about reconciled resources in the final-fhir-store, you need to query the Provenance resource using intermediate-fhir-store resource ID.
+
+##### For CSV batch pipelines:
+
+1. Query operational-fhir-store to fetch DocumentReference ID  of source CSV data file from GCS bucket.
+2. Since for CSV data harmonization, data first gets copied to Bigquery tables and from there it gets transformed into FHIR resources, get the details of DocumentReference ID  of Bigquery table using fetched DocumentReference ID  of source CSV data file.
+3. Performed the same steps as for FHIR and CDA batch pipelines using DocumentReference ID of the Bigquery table.
+4. Use this fetched DocumentReference ID of BQ table as a reference to query provenance resource to get the details about transformed resources in the intermediate-fhir-store.
+5. To get the information about which pipeline/agent transformed source data to intermediate-fhir-store, you will get Device ID in the Provenance resource information which can be used to query Device resource and dataflow pipeline details.
+6. To get information about reconciled resources in the final-fhir-store, you need to query the Provenance resource using intermediate-fhir-store resource ID.
+
+
+
+#### After following all the steps the user would be able to track only one single record from ingestion to reconciliation. There is no way to query multiple records for data lineage at the same time.
+
+#### Additionally, users must be familiar with the relationships between FHIR resources like Provenance, DocumentReference, and Device to get the required details.
+
+
+## After this Utility:
+
+With this utility the user needs to configure very minimal basic information in the config file and execute the main.py as shown below.
 
 
 #### To run this utility program, configure values in the constants.py file 
+
 ```
 # Source file format e.g. "csv", "ndjson", "xml"
 FILE_FORMAT = ""
@@ -39,14 +57,14 @@ OUTPUT_FILE_PATH = ""
 
 ```
 
-
 #### And Execute main.py file. 
 ```
 python main.py
-
 ```
 
 
 ### That’s it!
 
 The utility will generate a JSON document in the user-configured output file path and provide information about the generated FHIR resources.
+
+![Sample output json image](./sample_output_json.png)
