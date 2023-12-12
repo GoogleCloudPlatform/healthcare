@@ -63,7 +63,6 @@ class CsvFhirHarmonizationTrack:
         for index, source_file_info in enumerate(self.results):
             ifs_resources = {}
             provenance_url = Util.get_provenance_resource_path_url(self.FHIR_URL, source_file_info['ingested_tbl_info']['id'])
-            print(provenance_url)
             resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_url)
             total_transformed_ifs_resources = resources["total"]
             total_resources_entry = len(resources['entry'])
@@ -90,7 +89,7 @@ class CsvFhirHarmonizationTrack:
     def process(self):
         """Handler function to process given configs in the constants.py"""
 
-        print("processing OFS resources for CSV to FHIR harmonization")
+        print(f"processing OFS resources for CSV to FHIR harmonization")
         self.get_docref_ids_for_provenance_ref()
         self.get_transformed_fhir_fhir_resources()
         Util.write_json_to_local_file(self.results)
@@ -141,7 +140,6 @@ class CCDAFhirHarmonizationTrack:
         for index, source_file_info in enumerate(self.results):
             ifs_resources = {}
             provenance_url = Util.get_provenance_resource_path_url(self.FHIR_URL, source_file_info['id'])
-            print(provenance_url)
             resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_url)
             total_transformed_ifs_resources = resources["total"]
             total_resources_entry = len(resources['entry'])
@@ -166,7 +164,7 @@ class CCDAFhirHarmonizationTrack:
                 self.results[index]['resources_transformed_ifs'].append(ifs_resource_info)
 
     def process(self):
-        print("processing OFS resources for C-CDA to FHIR harmonization")
+        print(f"processing OFS resources for C-CDA to FHIR harmonization")
         self.get_docref_ids_for_file()
         self.get_fhir_fhir_transformed_resources()
         Util.write_json_to_local_file(self.results)
@@ -242,7 +240,7 @@ class FhirFhirHarmonizationTrack:
                 self.results[index]['resources_transformed_ifs'].append(ifs_resource_info)
 
     def process(self):
-        print("processing OFS resources for FHIR to FHIR harmonization")
+        print(f"processing OFS resources for FHIR to FHIR harmonization")
         self.get_docref_ids_for_file()
         self.get_fhir_fhir_transformed_resources()
         Util.write_json_to_local_file(self.results)
