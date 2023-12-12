@@ -210,7 +210,7 @@ class FhirFhirHarmonizationTrack:
 
 
     def get_transformed_fhir_fhir_resources(self):
-        """Fetches how source records/data transformed into IFS FHIR resources and by which pipeline"""
+        """Fetches the specific source records/data and respective pipeline of transformed into IFS FHIR resources."""
 
         for index, source_file_info in enumerate(self.results):
             ifs_resources = {}
