@@ -6,7 +6,7 @@ from constants import *
 class CsvFhirHarmonizationTrack:
     """Tracks FHIR resources generated from CSV harmonization dataflow pipeline"""
 
-    def __init__(self, file_format, gcs_file_path, hde_prefix, hde_env, hde_fhir_store_location):
+    def __init__(self):
         self.FILE_FORMAT = FILE_FORMAT
         self.GCS_FILE_PATH = GCS_FILE_PATH
         self.HDE_PREFIX = HDE_PREFIX
@@ -52,8 +52,9 @@ class CsvFhirHarmonizationTrack:
         provenance_recon_url = Util.get_reconcilated_resources_url(self.FHIR_URL, resource_ref)
         resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_recon_url)
         recon_results={}
-        recon_results['reconciled_resource'] = resources['entry'][0]['resource']['target']
-        recon_results['reconciled_by'] = resources['entry'][0]['resource']['agent'][0]['who']
+        if resources['total'] != 0:
+            recon_results['reconciled_resource'] = resources['entry'][0]['resource']['target']
+            recon_results['reconciled_by'] = resources['entry'][0]['resource']['agent'][0]['who']
         return recon_results
 
 
@@ -68,7 +69,6 @@ class CsvFhirHarmonizationTrack:
             total_resources_entry = len(resources['entry'])
 
             transformed_ifs_resources = {}
-            self.results[index]['ingested_tbl_info']['total_resoruces_transformed_ifs'] = resources["total"]
             self.results[index]['ingested_tbl_info']['total_resources_entry'] = total_resources_entry
             self.results[index]['ingested_tbl_info']['resources_transformed_ifs'] = []
             print(f"iterating loop over {total_transformed_ifs_resources} times")
@@ -129,12 +129,13 @@ class CCDAFhirHarmonizationTrack:
         provenance_recon_url = Util.get_reconcilated_resources_url(self.FHIR_URL, resource_ref)
         resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_recon_url)
         recon_results={}
-        recon_results['reconciled_resource'] = resources['entry'][0]['resource']['target']
-        recon_results['reconciled_by'] = resources['entry'][0]['resource']['agent'][0]['who']
+        if resources['total'] != 0:
+            recon_results['reconciled_resource'] = resources['entry'][0]['resource']['target']
+            recon_results['reconciled_by'] = resources['entry'][0]['resource']['agent'][0]['who']
         return recon_results
 
 
-    def get_transformed_fhir_fhir_resources(self):
+    def get_transformed_ccda_fhir_resources(self):
         """Fetches how source records/data transformed into IFS FHIR resources and by which pipeline"""
 
         for index, source_file_info in enumerate(self.results):
@@ -145,7 +146,6 @@ class CCDAFhirHarmonizationTrack:
             total_resources_entry = len(resources['entry'])
 
             transformed_ifs_resources = {}
-            self.results[index]['total_resoruces_transformed_ifs'] = resources["total"]
             self.results[index]['total_resources_entry'] = total_resources_entry
             self.results[index]['resources_transformed_ifs'] = []
             print(f"iterating loop over {total_transformed_ifs_resources} times")
@@ -165,8 +165,8 @@ class CCDAFhirHarmonizationTrack:
 
     def process(self):
         print(f"processing OFS resources for C-CDA to FHIR harmonization")
-        self.get_docref_ids_for_file()
-        self.get_fhir_fhir_transformed_resources()
+        self.get_docref_ids_for_provenance_ref()
+        self.get_transformed_ccda_fhir_resources()
         Util.write_json_to_local_file(self.results)
 
 
@@ -204,8 +204,9 @@ class FhirFhirHarmonizationTrack:
         provenance_recon_url = Util.get_reconcilated_resources_url(self.FHIR_URL, resource_ref)
         resources = self.AUTH_QUERY.executeQuery(next_page_url=provenance_recon_url)
         recon_results={}
-        recon_results['reconciled_resource'] = resources['entry'][0]['resource']['target']
-        recon_results['reconciled_by'] = resources['entry'][0]['resource']['agent'][0]['who']
+        if resources['total'] != 0:
+            recon_results['reconciled_resource'] = resources['entry'][0]['resource']['target']
+            recon_results['reconciled_by'] = resources['entry'][0]['resource']['agent'][0]['who']
         return recon_results
 
 
@@ -221,7 +222,6 @@ class FhirFhirHarmonizationTrack:
             total_resources_entry = len(resources['entry'])
 
             transformed_ifs_resources = {}
-            self.results[index]['total_resoruces_transformed_ifs'] = resources["total"]
             self.results[index]['total_resources_entry'] = total_resources_entry
             self.results[index]['resources_transformed_ifs'] = []
             print(f"iterating loop over {total_transformed_ifs_resources} times")
@@ -241,8 +241,8 @@ class FhirFhirHarmonizationTrack:
 
     def process(self):
         print(f"processing OFS resources for FHIR to FHIR harmonization")
-        self.get_docref_ids_for_file()
-        self.get_fhir_fhir_transformed_resources()
+        self.get_docref_ids_for_provenance_ref()
+        self.get_transformed_fhir_fhir_resources()
         Util.write_json_to_local_file(self.results)
 
 def main():
