@@ -1,6 +1,8 @@
 # FHIR Resources Audit
 
-In accordance with FHIR specifications, provenance data for data lineage is stored using three different FHIR resources, Provenance, DocumentReference, and Device The goal of this project is to create a utility that will take minimal inputs from the user and provide a detailed easy interpretation to get information about how source data gets ingested, transformed and reconciled into final FHIR resources.
+In accordance with FHIR specifications, provenance data for data lineage is stored using three different FHIR resources: Provenance, DocumentReference, and Device. Currently, the steps to obtain information about reconciled resources in final-fhir-store are tedious and only allows the user to track a single record at a time from ingestion to reconciliation. There is no way to query multiple records for data lineage at the same time.
+
+This utility will take in minimal user input about the environment and output a detailed, easy to interpret JSON file with information about how source data gets ingested, transformed and reconciled into final FHIR resources.
 
 
 ## Before this Utility:
@@ -22,8 +24,6 @@ In accordance with FHIR specifications, provenance data for data lineage is stor
 6. To get information about reconciled resources in the final-fhir-store, you need to query the Provenance resource using intermediate-fhir-store resource ID.
 
 
-
-#### After following all the steps the user would be able to track only one single record from ingestion to reconciliation. There is no way to query multiple records for data lineage at the same time.
 
 #### Additionally, users must be familiar with the relationships between FHIR resources like Provenance, DocumentReference, and Device to get the required details.
 
