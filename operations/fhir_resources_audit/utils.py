@@ -1,6 +1,7 @@
 
 import os
 import json
+import pandas as pd
 import google.auth
 from google.auth.transport import requests
 
@@ -110,11 +111,30 @@ class Util:
         return f"{fhir_url}/Provenance?entity={docref_id}&_count=1000"
 
     @staticmethod
+    def get_device_id_url(fhir_url, device_id):
+        """Generates url to search resources with particular Device ID"""
+        return f"{fhir_url}/Device?_id={device_id}"
+
+    @staticmethod
     def write_json_to_local_file(json_data):
         """Writes output to local output file in local directory"""
-        output_file_path = OUTPUT_FILE_PATH if not OUTPUT_FILE_PATH else "output.json"
+        output_file_path = OUTPUT_FILE_PATH if OUTPUT_FILE_PATH else "output.json"
         with open(output_file_path, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, ensure_ascii=False, indent=4)
+
+    @staticmethod
+    def handle_results(final_df):
+        if OUTPUT_BQ_TBL:
+            """Writes output to BQ Table"""
+            table_id = str(OUTPUT_BQ_TBL).strip().split(":")[1]
+            project_id = str(OUTPUT_BQ_TBL).strip().split(":")[0]
+            final_df.to_gbq('ehr1_batch_01_57913d37.my_table_csv', project_id='hde140-uat-12-synth-data', if_exists='replace')
+        if OUTPUT_FILE_PATH:
+            """Writes output to local output file in local directory"""
+            output_file_path = OUTPUT_FILE_PATH if OUTPUT_FILE_PATH else "output.json"
+            with open(output_file_path, 'w', encoding='utf-8') as f:
+                json.dump(json_data, f, ensure_ascii=False, indent=4)
+            
 
     @staticmethod
     def get_bq_table_docref_info(fhir_url, csv_file_docref_id):
