@@ -2,14 +2,19 @@
 import os
 import json
 import pandas as pd
+import sys
+import logging
+
 import google.auth
 from google.auth.transport import requests
 
 # Imports a module to allow authentication using a service account
 from google.oauth2 import service_account
 
-#Imports configs from constants.py
+# Imports configs from constants.py
 from constants import *
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class HttpMethods:
 
@@ -72,24 +77,28 @@ class AuthenticateAndQuery:
 
     def executeQuery(self, next_page_url="", method="GET"):
         """Formats results(paginated) from the GET call on given url"""
-        results = {}
-        current_page = 1
-        while True:
-            print(
-                f"retrieving results for page: {current_page} using {next_page_url}")
-            response = self.getResults(next_page_url)
-            response_json = response.json()
+        try:
+            results = {}
+            current_page = 1
+            while True:
+                logging.info(
+                    f"retrieving results for page: {current_page} using url:{next_page_url}")
+                response = self.getResults(next_page_url)
+                response_json = response.json()
 
-            if not results:
-                results.update(response_json)
-            else:
-                results['entry'].extend(response_json['entry'])
-            if response_json['link'][1].get("relation") == 'next':
-                next_page_url = response_json['link'][1].get("url")
-            else:
-                break
-            current_page += 1
-        return results
+                if not results:
+                    results.update(response_json)
+                else:
+                    results['entry'].extend(response_json['entry'])
+                if response_json['link'][1].get("relation") == 'next':
+                    next_page_url = response_json['link'][1].get("url")
+                else:
+                    break
+                current_page += 1
+            return results
+        except KeyError as e:
+            logging.error("Please re-check properties in constants.py to resolve the issue")
+            sys.exit(0)
 
 
 class Util:
@@ -128,13 +137,16 @@ class Util:
             """Writes output to BQ Table"""
             table_id = str(OUTPUT_BQ_TBL).strip().split(":")[1]
             project_id = str(OUTPUT_BQ_TBL).strip().split(":")[0]
-            final_df.to_gbq('ehr1_batch_01_57913d37.my_table_csv', project_id='hde140-uat-12-synth-data', if_exists='replace')
+            final_df.to_gbq(table_id,
+                            project_id=project_id, if_exists='replace')
         if OUTPUT_FILE_PATH:
             """Writes output to local output file in local directory"""
             output_file_path = OUTPUT_FILE_PATH if OUTPUT_FILE_PATH else "output.json"
+            # final_df.to_json(output_file_path, orient = 'split', compression = 'infer', index = 'true')
+            result = final_df.to_json(orient="records")
+            parsed_op_data = json.loads(result)
             with open(output_file_path, 'w', encoding='utf-8') as f:
-                json.dump(json_data, f, ensure_ascii=False, indent=4)
-            
+                json.dump(parsed_op_data, f, ensure_ascii=False, indent=4)
 
     @staticmethod
     def get_bq_table_docref_info(fhir_url, csv_file_docref_id):
@@ -150,3 +162,4 @@ class Util:
     def get_reconcilated_resources_url(fhir_url, ifs_resource_ref):
         """Generates url to search reconciled resources using Provenance resource"""
         return f"{fhir_url}/Provenance?_content:contains=reconciliation&entity={ifs_resource_ref}"
+
