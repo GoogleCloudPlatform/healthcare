@@ -36,9 +36,6 @@ With this utility the user needs to configure very minimal basic information in 
 #### To run this utility program, configure values in the constants.py file 
 
 ```
-# Source file format e.g. "csv", "ndjson", "xml"
-FILE_FORMAT = ""
-
 # Source file GCS Path e.g. "gs://pgt-csv-input/ehr2/batch_02/csvs/patients.csv"
 GCS_FILE_PATH = ""
 
@@ -51,6 +48,11 @@ HDE_ENV = ""
 # HDE FHIR store location e.g. "us", "us-central1", "us-east4"
 FHIR_STORE_LOC = ""
 
+# Need reconciliation information Boolean value - default: False e.g. True
+RECON_INFO = False
+
+# Output BQ table in format "{PROJECT_ID}:{DATASET_ID}.{TABLE_NAME}" e.g. "hde14-stage-data:ehr2_batch_01_9f77ec70.provenance_tbl"
+OUTPUT_BQ_TBL = ""
 
 # Local file path for storing the output e.g. "output.json", "/home/user/output.json"
 OUTPUT_FILE_PATH = ""
@@ -65,6 +67,12 @@ python main.py
 
 ### That’s it!
 
-The utility will generate a JSON document in the user-configured output file path and provide information about the generated FHIR resources.
+The utility will provide a summary of the information in the logs.
 
-![Sample output json image](./sample_output_json.png)
+![Log output image](./output_images/log_op.png)
+
+A detailed information about the generated FHIR resources can be written to a BigQuery table and/or JSON document in the user-configured output BigQuery table and output file path. This is an optional step.
+
+![json output image](./output_images/json_op.png)
+
+![Bigquery table output image](./output_images/bqtable_op.png)
