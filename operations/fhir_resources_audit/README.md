@@ -5,7 +5,7 @@ In accordance with FHIR specifications, provenance data for data lineage is stor
 This utility will take in minimal user input about the environment and output a detailed, easy to interpret JSON file with information about how source data gets ingested, transformed and reconciled into final FHIR resources.
 
 
-## Before this Utility:
+## Without using this Utility:
 
 ##### For FHIR and CDA batch pipelines:
 
@@ -24,11 +24,12 @@ This utility will take in minimal user input about the environment and output a 
 6. To get information about reconciled resources in the final-fhir-store, you need to query the Provenance resource using intermediate-fhir-store resource ID.
 
 
+#### Upon completion of the aforementioned steps, the user will be able to trace a single record from ingestion to reconciliation. There is currently no easy method to find the provenance of multiple records simultaneously.
 
 #### Additionally, users must be familiar with the relationships between FHIR resources like Provenance, DocumentReference, and Device to get the required details.
 
 
-## After this Utility:
+## With this Utility:
 
 With this utility the user needs to configure very minimal basic information in the config file and execute the main.py as shown below.
 
