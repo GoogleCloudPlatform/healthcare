@@ -276,7 +276,7 @@ class writeToGCS(beam.DoFn):
     def process(self, element, bucket, messageType, topic=None):
         """
          write raw / error messages to respective bucket
-        :param str element: PCollection of message from convert kafka record function
+        :param str element: PCollection of message from consumeTransformMessages DoFn
         :param str bucket: bucket name
         :param str messageType: message type raw or error message
         :return: None message written to cloud storage
@@ -319,7 +319,7 @@ class buildPubSubMesage(beam.DoFn):
     #beam output tag to mark transformed element as pass and fail
     def process(self, element):
         """ Function to build PubSub message as per:
-        https://beam.apache.org/releases/pydoc/2.53.0/apache_beam.io.gcp.pubsub.html#module-apache_beam.io.gcp.pubsub """
+        https://beam.apache.org/releases/pydoc/2.29.0/apache_beam.io.gcp.pubsub.html#apache_beam.io.gcp.pubsub.PubsubMessage """
         logging.info("starting to build PubSubMessage")
         newElement = json.loads(json.dumps(element,separators=(',', ':')))
         attributes = newElement['attributes']

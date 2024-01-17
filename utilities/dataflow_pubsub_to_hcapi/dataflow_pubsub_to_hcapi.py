@@ -320,7 +320,7 @@ class writeToGCS(beam.DoFn):
     def process(self, element, bucket, messageType, topic=None):
         """
          write raw / error messages to respective bucket
-        :param str element: PCollection of message from convert kafka record function
+        :param str element: PCollection of message from consumeTransformMessages DoFn
         :param str bucket: bucket name
         :param str messageType: message type raw or error message
         :return: None message written to cloud storage
