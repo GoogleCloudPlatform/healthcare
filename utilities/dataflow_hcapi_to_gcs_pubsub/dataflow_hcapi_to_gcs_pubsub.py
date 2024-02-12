@@ -1,18 +1,16 @@
-# @title ###### Licensed to the Apache Software Foundation (ASF), Version 2.0 (the "License")
+#    Copyright 2023 Google LLC
 
-# Copyright 2023 Google LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# You may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 
 #        http://www.apache.org/licenses/LICENSE-2.0
 
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 
 ##################################
 # Author: Devansh Modi           #
@@ -184,6 +182,7 @@ class hcapi_fhir_store:
             reqSession.close()
             return responseJSON,responseFlag
 
+    #Below post_fhir_message function only kept for future reference not used in the script
     def post_fhir_message(self, resourceType:str,payload:str):
         """ Function to post messages to FHIR store """
         """
@@ -362,7 +361,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s :: %(levelname)-8s :: [%(filename)s:%(lineno)d] :: %(message)s')
     parser = argparse.ArgumentParser()
     parser.add_argument('--read_pubsub_subscription', required=True, help='Pub/Sub Subscription to consume messages')
-    parser.add_argument('--write_pubsub_topic', required=True, help='Pub/Sub Subscription to consume messages')
+    parser.add_argument('--write_pubsub_topic', required=True, help='Pub/Sub topic to write messages')
     parser.add_argument('--hcapi_project_id', required=True, help='HCAPI project ID')
     parser.add_argument('--hcapi_dataset', required=True, help='HCAPI dataset')
     parser.add_argument('--hcapi_version', required=True, help='HCAPI Version')
