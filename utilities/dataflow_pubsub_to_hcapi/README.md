@@ -124,7 +124,8 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
     --gcs_error_bucket 'ehr-demo-error-bucket'\
     --max_num_workers 5\
     --streaming True\
-    --save_main_session True
+    --save_main_session True\
+    --requirements_file requirements.txt
     ```  
 7. After triggering the job the dataflow will generate a Dataflow DAG
 
