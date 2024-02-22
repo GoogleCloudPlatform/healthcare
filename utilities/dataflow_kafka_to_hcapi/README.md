@@ -38,7 +38,7 @@ Usage: To store Kafka connection details e.g bootstrap servers, Api Key and secr
 3. Create a kafka producer and topic. Refer following [link](https://kafka.apache.org/quickstart) for more information on setting up standalone Kafka cluster,Kafka producer and topics.  
 4. Create secrets using Google Cloud secret manager to store kafka server details, API key and secrets if using Confluent Kafka. Refer following [link](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets) for more information on creating secrets using Google Cloud Secret manager.  
 5. Create a FHIR store using Healthcare API. Refer following [link](https://cloud.google.com/healthcare-api/docs/how-tos/fhir#healthcare-create-fhir-store-console) for more information on how to create a FHIR store and set up necessary permissions.
-6. Understanding of FHIR Resources and types of FHIR resources.Refer following [link](https://build.fhir.org/ig/HL7/US-Core/) for more information on FHIR resources and different types of FHIR resources.
+6. Understand the FHIR Resources and types of FHIR resources. Refer  to the following [link](https://build.fhir.org/ig/HL7/US-Core/) for more information on FHIR resources and different types of FHIR resources.
 
 
 # Step by Step workflow
