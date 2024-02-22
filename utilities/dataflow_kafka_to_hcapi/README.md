@@ -33,7 +33,7 @@ Overview: Secret Manager stores API keys, passwords, certificates, and other sen
 Usage: To store Kafka connection details e.g bootstrap servers, Api Key and secrets if using Confluent Kafka. Dataflow will read from secret manager to extract kafka connection details.
 
 ## Prerequisites before cloning the repository
-1. Create a Google Cloud Project and set up appropriate billing and IAM permissions. Refer following [link](https://developers.google.com/workspace/guides/create-project) for more information on how to create a GCP project.
+1. Create a Google Cloud Project and set up appropriate billing and IAM permissions. Refer to the following [link](https://developers.google.com/workspace/guides/create-project) for more information on how to create a GCP project.
 2. Create a GCS Archive and Error bucket. Refer following [link](https://cloud.google.com/storage/docs/creating-buckets) for more information on how to create a GCS bucket.
 3. Create a kafka producer and topic. Refer following [link](https://kafka.apache.org/quickstart) for more information on setting up standalone Kafka cluster,Kafka producer and topics.  
 4. Create secrets using Google Cloud secret manager to store kafka server details, API key and secrets if using Confluent Kafka. Refer following [link](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets) for more information on creating secrets using Google Cloud Secret manager.  
