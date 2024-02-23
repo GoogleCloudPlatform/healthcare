@@ -1,15 +1,14 @@
-# DataFlow Streaming Pipeline to read from HCAPI, write to Google Cloud Pub/Sub and Google Cloud Storage
+# DataFlow Streaming Pipeline to read from Healthcare API Fhir Store, write to Google Cloud Pub/Sub and Google Cloud Storage
 
 
-The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume FHIR notification from Google Cloud Healthcare API via Google Pub/Sub, transform FHIR resources as per Business requirements and send to downstream applications via Google Cloud Storage and Google Cloud Pub/Sub.  
-This solution is built using Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Pub/Sub, Google Cloud Healthcare API and Google Cloud Storage.  
-This template will help them bridge the gap between onboarding streaming sources via Pub/Sub making Healthcare FHIR resources available into Cloud Healthcare API.  
-This will help users accelerate deploying streaming data pipelines from Google Cloud Healthcare API via Pub/Sub to Google Cloud Pub/Sub and Google Cloud Storage for downstream applications or business requirements.
+The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume FHIR notification from Google Cloud Healthcare API Fhir Store via Google Pub/Sub, transform FHIR resources as per Business requirements and send to downstream applications via Google Cloud Storage and Google Cloud Pub/Sub.  
+This solution is built using Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Pub/Sub, Google Cloud Healthcare API and Google Cloud Storage.
+This will help users accelerate deploying streaming data pipelines to process fhir data from Google Cloud Healthcare API via Pub/Sub to Google Cloud Pub/Sub and Google Cloud Storage for downstream applications or business requirements.
 
 
 # Architecture for the Pipeline is shown below
  
- ![Log output image](./images/dataflow_architecture_hcapi_to_gcs_pubsub.png)
+ ![Log output image](./images/dataflow_architecture_fhirstore_to_gcs_pubsub.png)
 
 ## Products/tools used for the pipeline
 
@@ -21,13 +20,13 @@ Usage: Vendors/Application (web UI, Mobile Apps, etc.) will send healthcare data
 Overview: Dataflow is a managed service for executing a wide variety of data processing patterns. The documentation on this site shows you how to deploy your batch and streaming data processing pipelines using Dataflow, including directions for using service features.  
 Usage: Dataflow will read raw healthcare data events in JSON format, parse and transform them into appropriate FHIR resources as per US Core Implementation Guide. For the sake of this example we will be creating a Patient FHIR resource.
 
-# Google Cloud Healthcare API
+# Google Cloud Healthcare API 
 Overview: The Cloud Healthcare API is a fully-managed service that makes it easy to access, process, and analyze healthcare data. It provides a RESTful API that supports a wide range of healthcare data formats, including FHIR, HL7v2, and DICOM.\n
 The Cloud Healthcare API is a secure and reliable service that is compliant with HIPAA and HITECH. \n
 Usage: HCAPI will be used to store transformed FHIR resources (in our case Patient FHIR resource)which will be made available for downstream applications or other processes.
 
 # Google Cloud Storage
-Usage: Google Cloud Storage will be used to archive raw healthcare data sent by the source as well as log error message occurred during transformation or while posting FHIR resource to HCAPI
+Usage: Google Cloud Storage will be used to archive raw healthcare data sent by the source as well as log error message occurred during transformation and while writing output to downstream
 
 
 ## Prerequisites before cloning the repository
@@ -128,7 +127,7 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
     ```  
 6. After triggering the job the dataflow will generate a Dataflow DAG
 
-    ![Log output image](./images/dataflow_dag_pubsub_to_hcapi_gcs.png)
+    ![Log output image](./images/dataflow_dag_fhirstore_to_gcs_pubsub.png)
 
 7. Once the data is read from PubSub read subscriptions it will stored in GCS after specified transformation as per business requirements
 
@@ -141,4 +140,4 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
     ![Log output image](./images/PubSub_OP.png)
 
 
-**Note: The above example shows the leveraging Dataflow job to consume and transform FHIR resources events from Google Cloud Healthcare API, write them to HCAPI/GCS. Please update/edit the code based on your custom transformations and business requirements.**  
+**Note: The above example shows the leveraging Dataflow job to consume and transform FHIR resources events from Google Cloud Healthcare API, write them to PubSub/GCS. Please update/edit the code based on your custom transformations and business requirements.**  
