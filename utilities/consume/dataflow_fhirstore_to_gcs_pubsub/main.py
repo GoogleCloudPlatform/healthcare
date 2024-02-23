@@ -16,7 +16,7 @@
 # Author: Devansh Modi           #
 ##################################
 
-#Main Dataflow MODULE :- fetching FHIR resoures notifications sent via hcapi to PubSub,
+#Main Dataflow MODULE :- fetching FHIR resoures notifications sent via healthcare API Fhir Store to PubSub,
 #cleaning, transforming and writing to GCS and Pub/Sub for downstream application consumption
 
 #Importing Necessary Libraries
@@ -39,7 +39,7 @@ import argparse
 import google
 
 
-#Below class is used to POST and GET FHIR resources from HealthCare API (We will use Patient FHIR resource as an example)
+#Below class is used to POST and GET FHIR resources from HealthCare API Fhir store (We will use Patient FHIR resource as an example)
 class hcapi_fhir_store:
     def __init__(self, args:dict):
         self.hcapi_project_id = str(args['hcapi_project_id'])
@@ -241,7 +241,7 @@ class consumeTransformMessages(beam.DoFn):
                     logging.info("printing raw data element from pubsub")
                     message = str(element.data.decode('utf-8'))
                     #example for NameOnly resource
-                    #projects/devansh-365318/locations/us-central1/datasets/ehr-demo/fhirStores/ehr-demo-fhirstore2/fhir/Patient/a76e6286-269c-4c73-8ec8-c867644357cf
+                    #projects/demo-project/locations/us-central1/datasets/ehr-demo/fhirStores/ehr-demo-fhirstore2/fhir/Patient/a76e6286-269c-4c73-8ec8-c867644357cf
                     urlPath = '/'.join(message.split("/")[-2:])
                     responseJSON, responseFlag = hcapi.get_fhir_message(url_path=urlPath)
                     if responseFlag == "success":
