@@ -1,8 +1,8 @@
-# DataFlow Kafka to HCAPI Streaming Pipeline
+# DataFlow Kafka to Healthcare API FHIR Store Streaming Pipeline
 
-The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume messages via Apache Kafka, transform raw JSON messages to FHIR resource as per [U.S Core Implementation Guide](https://build.fhir.org/ig/HL7/US-Core/) (Preferential) and POST new created FHIR resources to Healthcare API (HCAPI R4 FHIR store) for further reconciliation ingestion via Heathcare Data Engine or standalone FHIR Store which can be used for downstream application.  
-This solution is built using Apache Kafka, Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Secret Manager, Google Cloud Healthcare API and Google Cloud Storage.  
-This pipeline will help users accelerate deploying streaming data pipelines from Apache Kafka to Google Healthcare API enabling users to transform their raw data to FHIR resources where streaming application
+The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume messages via Apache Kafka, transform raw JSON messages to FHIR resource as per [U.S Core Implementation Guide](https://build.fhir.org/ig/HL7/US-Core/) (Preferential) and POST new created FHIR resources to Healthcare API FHIR Store (HCAPI R4 FHIR Store) for further reconciliation ingestion via Heathcare Data Engine or standalone FHIR Store which can be used for downstream application.  
+This solution is built using Apache Kafka, Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Secret Manager, Google Cloud Healthcare API FHIR Store and Google Cloud Storage.  
+This pipeline will help users accelerate deploying streaming data pipelines from Apache Kafka to Google Healthcare API FHIR Store enabling users to transform their raw data to FHIR resources where streaming application
 is applicable.  
 
 
@@ -20,9 +20,9 @@ Usage: Vendors/Application (web UI, Mobile Apps, etc.) will send healthcare data
 Overview: Dataflow is a managed service for executing a wide variety of data processing patterns. The documentation on this site shows you how to deploy your batch and streaming data processing pipelines using Dataflow, including directions for using service features.  
 Usage: Dataflow will read raw healthcare data events in JSON format, parse and transform them into appropriate FHIR resources as per US Core Implementation Guide. For the sake of this example we will be creating a Patient FHIR resource.
 
-# Google Cloud Healthcare API
-Overview: The Cloud Healthcare API is a fully-managed service that makes it easy to access, process, and analyze healthcare data. It provides a RESTful API that supports a wide range of healthcare data formats, including FHIR, HL7v2, and DICOM.\n
-The Cloud Healthcare API is a secure and reliable service that is compliant with HIPAA and HITECH. \n
+# Google Cloud Healthcare API  
+Overview: The Cloud Healthcare API FHIR Store is a fully-managed service that makes it easy to access, process, and analyze healthcare data. It provides a RESTful API that supports a wide range of healthcare data formats, including FHIR, HL7v2, and DICOM.\n
+The Cloud Healthcare API FHIR Store is a secure and reliable service that is compliant with HIPAA and HITECH. \n
 Usage: HCAPI will be used to store transformed FHIR resources (in our case Patient FHIR resource)which will be made available for downstream applications or other processes.
 
 # Google Cloud Storage
@@ -37,13 +37,13 @@ Usage: To store Kafka connection details e.g bootstrap servers, Api Key and secr
 2. Create a GCS Archive and Error bucket. Refer to the following [link](https://cloud.google.com/storage/docs/creating-buckets) for more information on how to create a GCS bucket.
 3. Create a kafka producer and topic. Refer to the following [link](https://kafka.apache.org/quickstart) for more information on setting up standalone Kafka cluster,Kafka producer and topics.  
 4. Create secrets using Google Cloud secret manager to store kafka server details, API key and secrets if using Confluent Kafka. Refer following [link](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets) for more information on creating secrets using Google Cloud Secret manager.  
-5. Create a FHIR store using Healthcare API. Refer to the following [link](https://cloud.google.com/healthcare-api/docs/how-tos/fhir#healthcare-create-fhir-store-console) for more information on how to create a FHIR store and set up necessary permissions.
+5. Create a FHIR Store using Healthcare API. Refer to the following [link](https://cloud.google.com/healthcare-api/docs/how-tos/fhir#healthcare-create-fhir-store-console) for more information on how to create a FHIR Store and set up necessary permissions.
 6. Understand the FHIR Resources and types of FHIR resources. Refer to the following [link](https://build.fhir.org/ig/HL7/US-Core/) for more information on FHIR resources and different types of FHIR resources.
 
 
 # Step by Step workflow
 
-1. Create necessary GCS Bucket, kafka topic and FHIR store as mentioned in the Prerequisites section.  
+1. Create necessary GCS Bucket, kafka topic and FHIR Store as mentioned in the Prerequisites section.  
 
 2. We will use the following parameter values as an example,
     1. GCP Project: demo-project  
@@ -112,7 +112,7 @@ Usage: To store Kafka connection details e.g bootstrap servers, Api Key and secr
 
 6. Below mentioned python command shows an example of triggering a dataflow streaming job with pre-defined parameters and values set an example  
     ```
-    python3 -m dataflow_kafka_to_hcapi \
+    python3 -m dataflow_kafka_to_fhirstore \
     --runner DataflowRunner \
     --project demo-project\
     --region us-central1\

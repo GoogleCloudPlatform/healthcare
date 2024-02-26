@@ -1,7 +1,7 @@
-# DataFlow Pub/Sub to HCAPI Streaming Pipeline
+# DataFlow Pub/Sub to Healthcare API FHIR Store Streaming Pipeline
 
-The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume messages via Google Pub/Sub, transform raw JSON messages to FHIR resource as per [U.S Core Implementation Guide](https://build.fhir.org/ig/HL7/US-Core/) (Preferential) and POST new created FHIR resources to Healthcare API (HCAPI R4 FHIR store) for further reconciliation ingestion via Heathcare Data Engine or standalone FHIR Store which can be used for downstream application.  
-This solution is built using Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Pub/Sub, Google Cloud Healthcare Api and Google Cloud Storage. This pipeline will help users accelerate deploying streaming data pipelines from Google Pub/Sub to Google Healthcare API enabling users to transform their raw data to FHIR resources where streaming application is applicable.  
+The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume messages via Google Pub/Sub, transform raw JSON messages to FHIR resource as per [U.S Core Implementation Guide](https://build.fhir.org/ig/HL7/US-Core/) (Preferential) and POST new created FHIR resources to Healthcare API (HCAPI R4 FHIR Store) for further reconciliation ingestion via Heathcare Data Engine or standalone FHIR Store which can be used for downstream application.  
+This solution is built using Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Pub/Sub, Google Cloud Healthcare Api and Google Cloud Storage. This pipeline will help users accelerate deploying streaming data pipelines from Google Pub/Sub to Google Healthcare API FHIR Store enabling users to transform their raw data to FHIR resources where streaming application is applicable.  
 
 
 # Architecture for the Pipeline is shown below
@@ -31,13 +31,13 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
 1. Create a Google Cloud Project and set up appropriate billing and IAM permissions. Refer following [link](https://developers.google.com/workspace/guides/create-project) for more information on how to create a GCP project.
 2. Create a GCS Archive and Error bucket. Refer following [link](https://cloud.google.com/storage/docs/creating-buckets) for more information on how to create a GCS bucket.
 3. Create a Pub/Sub topic and subscription. Refer following [link](https://cloud.google.com/pubsub/docs/create-topic#pubsub_create_topic-Console) for more information on how to create a Pub/Sub topic and subscription.
-4. Create a FHIR store using Healthcare API. Refer following [link](https://cloud.google.com/healthcare-api/docs/how-tos/fhir#healthcare-create-fhir-store-console) for more information on how to create a FHIR store and set up necessary permissions.
+4. Create a FHIR Store using Healthcare API. Refer following [link](https://cloud.google.com/healthcare-api/docs/how-tos/fhir#healthcare-create-fhir-store-console) for more information on how to create a FHIR Store and set up necessary permissions.
 5. Understanding of FHIR Resources and types of FHIR resources.Refer following [link](https://build.fhir.org/ig/HL7/US-Core/) for more information on FHIR resources and different types of FHIR resources.
 
 
 # Step by Step workflow
 
-1. Create necessary GCS Bucket, Pub/Sub topic and FHIR store as mentioned in the Prerequisites section.  
+1. Create necessary GCS Bucket, Pub/Sub topic and FHIR Store as mentioned in the Prerequisites section.  
 
 2. We will use the following parameter values as an example,
     1. GCP Project: demo-project  
@@ -106,7 +106,7 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
 
 6. Below mentioned python command shows an example of triggering a dataflow streaming job with pre-defined parameters and values set an example  
     ```
-    python3 -m dataflow_pubsub_to_hcapi \
+    python3 -m dataflow_pubsub_to_fhirstore \
     --runner DataflowRunner \
     --project demo-project\
     --region us-central1\

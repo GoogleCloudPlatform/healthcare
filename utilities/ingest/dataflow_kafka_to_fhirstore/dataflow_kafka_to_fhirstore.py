@@ -17,7 +17,7 @@
 # Author: Devansh Modi           #
 ##################################
 
-#Main Dataflow MODULE :- fetching from PubSub, cleaning, filtering, transforming and posting to HCAPI
+#Main Dataflow MODULE :- fetching from PubSub, cleaning, filtering, transforming and posting to Cloud Healthcare API FHIR store
 
 #Importing Necessary Libraries
 from google.cloud import secretmanager
@@ -41,7 +41,7 @@ import configparser
 import time
 
    
-#Below class is used to POST and GET FHIR resources from HealthCare API (We will use Patient FHIR resource as an example)
+#Below class is used to POST and GET FHIR resources from HealthCare API FHIR store (We will use Patient FHIR resource as an example)
 class hcapi_fhir_store:
     def __init__(self, args:dict):
         self.hcapi_project_id = str(args['hcapi_project_id'])
@@ -54,7 +54,7 @@ class hcapi_fhir_store:
 
     def google_api_headers(self):
         """ This function gets access tokens and authorizations\
-            to access cloud healthcare """
+            to access cloud healthcare API Fhir store"""
         creds, project = google.auth.default()
         auth_req = google.auth.transport.requests.Request()
         creds.refresh(auth_req)
@@ -122,7 +122,7 @@ class hcapi_fhir_store:
         try:
             responseFlag = "success"
             reqSession = self.createRequestSession()
-            logging.info("creating headers with new token for HCAPI GET request")
+            logging.info("creating headers with new token for HCAPI Fhir store GET request")
             creds, project = google.auth.default()
             auth_req = google.auth.transport.requests.Request()
             creds.refresh(auth_req)
@@ -131,7 +131,7 @@ class hcapi_fhir_store:
                 "Authorization": f"Bearer {authToken}",
                 "Prefer": "handling=strict"
             }
-            logging.info("Fetching FHIR resource from HCAPI")
+            logging.info("Fetching FHIR resource from HCAPI FHIR store")
             response = reqSession.get(url, headers=authHeaders,timeout=30)
             response.raise_for_status()
             responseJSON = response.json()
@@ -139,7 +139,7 @@ class hcapi_fhir_store:
             reqSession.close()
             responseFlag = "fail"
             logging.error("process to get FHIR resource failed")
-            errorMessage = "Process to fetch FHIR resource from HCAPI failed due to : {}".format(str(type(error).__name__)+" --> "+ str(error))
+            errorMessage = "Process to fetch FHIR resource from HCAPI FHIR store failed due to : {}".format(str(type(error).__name__)+" --> "+ str(error))
             responseJSON = dict()
             responseJSON['errorMessage'] = errorMessage
             return responseJSON,responseFlag
@@ -150,14 +150,14 @@ class hcapi_fhir_store:
     def hcapi_post(self, url:str, data:str):
         """ This function to POST FHIR resource from FHIR store specified """
         """
-        :param str url: HCAPI FHIR URL to fetch data
+        :param str url: HCAPI FHIR store URL to fetch data
         :param str data: JSON payload string
         :return dict responseJSON: response in JSON based on criteria
         :return str responseFlag: repsonse status pass or fail
         """
         try:
             responseFlag = "success"
-            logging.info("creating headers with new token for HCAPI POST request")
+            logging.info("creating headers with new token for HCAPI FHIR store POST request")
             creds, project = google.auth.default()
             auth_req = google.auth.transport.requests.Request()
             creds.refresh(auth_req)
@@ -166,7 +166,7 @@ class hcapi_fhir_store:
                 "Authorization": f"Bearer {authToken}",
                 "Prefer": "handling=strict"
             }
-            logging.info("Posting FHIR resource to HCAPI")
+            logging.info("Posting FHIR resource to HCAPI FHIR store")
             payload_data =json.loads(data)
             reqSession = self.createRequestSession()
             response = requests.post(url, headers=authHeaders, json=payload_data,timeout=30)
@@ -175,7 +175,7 @@ class hcapi_fhir_store:
         except Exception as error:
             reqSession.close()
             logging.error("process to POST FHIR resource failed")
-            errorMessage = "Process to POST FHIR Resource to HCAPI failed due to : {}".format(str(type(error).__name__)+" --> "+ str(error))
+            errorMessage = "Process to POST FHIR Resource to HCAPI FHIR store failed due to : {}".format(str(type(error).__name__)+" --> "+ str(error))
             responseJSON = dict()
             responseJSON['errorMessage'] = errorMessage
             responseFlag = "fail"
@@ -198,9 +198,9 @@ class hcapi_fhir_store:
         return postResponse,responseFlag
 
     def get_fhir_message(self, url_path:str):
-        """ Function to fetch FHIR resources from HCAPI"""
+        """ Function to fetch FHIR resources from HCAPI FHIR store"""
         """
-        :param str url_path: FHIR resource URL to get FHIR resource from HCAPI
+        :param str url_path: FHIR resource URL to get FHIR resource from HCAPI FHIR store
         :return dict responseJSON: response in JSON based on criteria
         :return str responseFlag: repsonse status pass or fail
         """

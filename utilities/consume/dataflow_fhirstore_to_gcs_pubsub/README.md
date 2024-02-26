@@ -1,7 +1,7 @@
-# DataFlow Streaming Pipeline to read from Healthcare API Fhir Store, write to Google Cloud Pub/Sub and Google Cloud Storage
+# DataFlow Streaming Pipeline to read from Healthcare API FHIR Store, write to Google Cloud Pub/Sub and Google Cloud Storage
 
 
-The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume FHIR notification from Google Cloud Healthcare API Fhir Store via Google Pub/Sub, transform FHIR resources as per Business requirements and send to downstream applications via Google Cloud Storage and Google Cloud Pub/Sub.  
+The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume FHIR notification from Google Cloud Healthcare API FHIR Store via Google Pub/Sub, transform FHIR resources as per Business requirements and send to downstream applications via Google Cloud Storage and Google Cloud Pub/Sub.  
 This solution is built using Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Pub/Sub, Google Cloud Healthcare API and Google Cloud Storage.
 This will help users accelerate deploying streaming data pipelines to process fhir data from Google Cloud Healthcare API via Pub/Sub to Google Cloud Pub/Sub and Google Cloud Storage for downstream applications or business requirements.
 
@@ -33,13 +33,13 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
 1. Create a Google Cloud Project and set up appropriate billing and IAM permissions. Refer following [link](https://developers.google.com/workspace/guides/create-project) for more information on how to create a GCP project.
 2. Create a GCS Archive and Error bucket. Refer following [link](https://cloud.google.com/storage/docs/creating-buckets) for more information on how to create a GCS bucket.
 3. Create a Pub/Sub topic and subscription. Refer following [link](https://cloud.google.com/pubsub/docs/create-topic#pubsub_create_topic-Console) for more information on how to create a Pub/Sub topic and subscription.
-4. Create a FHIR store using Healthcare API. Refer following [link](https://cloud.google.com/healthcare-api/docs/how-tos/fhir#healthcare-create-fhir-store-console) for more information on how to create a FHIR store and set up necessary permissions.
+4. Create a FHIR Store using Healthcare API. Refer following [link](https://cloud.google.com/healthcare-api/docs/how-tos/fhir#healthcare-create-fhir-store-console) for more information on how to create a FHIR Store and set up necessary permissions.
 5. Understanding of FHIR Resources and types of FHIR resources.Refer following [link](https://build.fhir.org/ig/HL7/US-Core/) for more information on FHIR resources and different types of FHIR resources.
 
 
 # Step by Step workflow
 
-1. Create necessary GCS Bucket, Pub/Sub topic and FHIR store as mentioned in the Prerequisites section.  
+1. Create necessary GCS Bucket, Pub/Sub topic and FHIR Store as mentioned in the Prerequisites section.  
 
 2. We will use the following parameter values as an example,
     1. GCP Project: demo-project  
@@ -51,7 +51,7 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
     5. Healthcare API Dataset: ehr-demo  
     6. Healthcare API FHIR Store: ehr-demo-fhirstore  
 
-3. We will consume the following Patient FHIR resource from Google Cloud HealthCare API once the UPDATE/CREATE/DELETE action is performed on FHIR store
+3. We will consume the following Patient FHIR resource from Google Cloud HealthCare API once the UPDATE/CREATE/DELETE action is performed on FHIR Store
     ```
     {
         "address": [
@@ -104,7 +104,7 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
 
 5. Below mentioned python command shows an example of triggering a dataflow streaming job with pre-defined parameters and values set an example  
     ```
-    python3 -m dataflow_hcapi_to_gcs_pubsub \
+    python3 -m dataflow_fhirstore_to_gcs_pubsub \
     --runner DataflowRunner \
     --project myehr-demo\
     --region us-central1\
