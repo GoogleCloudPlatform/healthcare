@@ -40,7 +40,6 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
 # Step by Step workflow
 
 1. Create necessary GCS Bucket, Pub/Sub topic and FHIR Store as mentioned in the Prerequisites section.  
-
 2. We will use the following parameter values as an example,
     1. GCP Project: demo-project  
     2. GCS Bucket :-  
@@ -50,7 +49,6 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
     4. Pub/Sub Subscription (will be created by default): projects/demo-project/subscriptions/ehr-portal-events-subscription  
     5. Healthcare API Dataset: ehr-demo  
     6. Healthcare API FHIR Store: ehr-demo-fhirstore  
-
 3. We will consume the following Patient FHIR resource from Google Cloud HealthCare API once the UPDATE/CREATE/DELETE action is performed on FHIR Store
     ```
     {
