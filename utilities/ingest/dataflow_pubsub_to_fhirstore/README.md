@@ -1,14 +1,12 @@
-# DataFlow Streaming Pipeline to read from Healthcare API FHIR Store, write to Google Cloud Pub/Sub and Google Cloud Storage
+# DataFlow Pub/Sub to Healthcare API FHIR Store Streaming Pipeline
 
-
-The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume FHIR notification from Google Cloud Healthcare API FHIR Store via Google Pub/Sub, transform FHIR resources as per Business requirements and send to downstream applications via Google Cloud Storage and Google Cloud Pub/Sub.  
-This solution is built using Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Pub/Sub, Google Cloud Healthcare API and Google Cloud Storage.
-This will help users accelerate deploying streaming data pipelines to process fhir data from Google Cloud Healthcare API via Pub/Sub to Google Cloud Pub/Sub and Google Cloud Storage for downstream applications or business requirements.
+The goal of this DataFlow streaming pipeline (Classic standalone deployment) is to consume messages via Google Pub/Sub, transform raw JSON messages to FHIR resource as per [U.S Core Implementation Guide](https://build.fhir.org/ig/HL7/US-Core/) (Preferential) and POST new created FHIR resources to Healthcare API (HCAPI R4 FHIR Store) for further reconciliation ingestion via Heathcare Data Engine or standalone FHIR Store which can be used for downstream application.  
+This solution is built using Google Cloud tools and services, such as Google Cloud Dataflow, Google Cloud Pub/Sub, Google Cloud Healthcare Api and Google Cloud Storage. This pipeline will help users accelerate deploying streaming data pipelines from Google Pub/Sub to Google Healthcare API FHIR Store enabling users to transform their raw data to FHIR resources where streaming application is applicable.  
 
 
 # Architecture for the Pipeline is shown below
  
- ![Log output image](./images/dataflow_architecture_fhirstore_to_gcs_pubsub.png)
+ ![Log output image](./images/dataflow_architecture_pubsub_to_hcapi.png)
 
 ## Products/tools used for the pipeline
 
@@ -20,13 +18,13 @@ Usage: Vendors/Application (web UI, Mobile Apps, etc.) will send healthcare data
 Overview: Dataflow is a managed service for executing a wide variety of data processing patterns. The documentation on this site shows you how to deploy your batch and streaming data processing pipelines using Dataflow, including directions for using service features.  
 Usage: Dataflow will read raw healthcare data events in JSON format, parse and transform them into appropriate FHIR resources as per US Core Implementation Guide. For the sake of this example we will be creating a Patient FHIR resource.
 
-# Google Cloud Healthcare API 
+# Google Cloud Healthcare API
 Overview: The Cloud Healthcare API is a fully-managed service that makes it easy to access, process, and analyze healthcare data. It provides a RESTful API that supports a wide range of healthcare data formats, including FHIR, HL7v2, and DICOM.\n
 The Cloud Healthcare API is a secure and reliable service that is compliant with HIPAA and HITECH. \n
 Usage: HCAPI will be used to store transformed FHIR resources (in our case Patient FHIR resource)which will be made available for downstream applications or other processes.
 
 # Google Cloud Storage
-Usage: Google Cloud Storage will be used to archive raw healthcare data sent by the source as well as log error message occurred during transformation and while writing output to downstream
+Usage: Google Cloud Storage will be used to archive raw healthcare data sent by the source as well as log error message occurred during transformation or while posting FHIR resource to HCAPI
 
 
 ## Prerequisites before cloning the repository
@@ -40,6 +38,7 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
 # Step by Step workflow
 
 1. Create necessary GCS Bucket, Pub/Sub topic and FHIR Store as mentioned in the Prerequisites section.  
+
 2. We will use the following parameter values as an example,
     1. GCP Project: demo-project  
     2. GCS Bucket :-  
@@ -49,7 +48,13 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
     4. Pub/Sub Subscription (will be created by default): projects/demo-project/subscriptions/ehr-portal-events-subscription  
     5. Healthcare API Dataset: ehr-demo  
     6. Healthcare API FHIR Store: ehr-demo-fhirstore  
-3. We will consume the following Patient FHIR resource from Google Cloud HealthCare API once the UPDATE/CREATE/DELETE action is performed on FHIR Store
+
+3. We will use the following JSON payload for our example as an input which contains [patient](https://build.fhir.org/ig/HL7/US-Core/StructureDefinition-us-core-patient.html) details such as Address, name, gender, etc which will be used for building Patient FHIR resource as per US Core Implementation Guide.  
+    ```
+    {"ADDRESS":"978 Turcotte Overpass","BIRTHDATE":"2004-07-04","COUNTRY":"US","CITY":"Gill","COUNTY":"Franklin County","DRIVERS":"","ETHNICITY":"nonhispanic","FIRST":"Gidget756","GENDER":"Female","HEALTHCARE_COVERAGE":3311.4399999999996,"HEALTHCARE_EXPENSES":404742.42,"Id":"7992bf94-feee-4728-9187-2c911df2819b","LAST":"Rempel203","LAT":42.63299146919133,"LON":-72.5251235198123,"MAIDEN":"","MARITAL":"","EMAIL":"sampleemail@.yahoo.com","PREFIX":"","RACE":"white","SSN":"999-67-4045","STATE":"Massachusetts","SUFFIX":""}  
+    ```  
+
+4. The raw patient data in JSON format will transformed into the final Patient FHIR resource attached below  
     ```
     {
         "address": [
@@ -96,22 +101,20 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
             }
         ]
     }
-    ```
+    ```  
+5. Before triggering Dataflow Job, Refer to the following [link](https://cloud.google.com/dataflow/docs/quickstarts/create-pipeline-python) on how to set up a GCP environment for running a Dataflow job using Python.  
 
-4. Before triggering Dataflow Job, Refer to the following [link](https://cloud.google.com/dataflow/docs/quickstarts/create-pipeline-python) on how to set up a GCP environment for running a Dataflow job using Python.  
-
-5. Below mentioned python command shows an example of triggering a dataflow streaming job with pre-defined parameters and values set an example  
+6. Below mentioned python command shows an example of triggering a dataflow streaming job with pre-defined parameters and values set an example  
     ```
-    python3 -m dataflow_fhirstore_to_gcs_pubsub \
+    python3 -m dataflow_pubsub_to_fhirstore \
     --runner DataflowRunner \
-    --project myehr-demo\
+    --project demo-project\
     --region us-central1\
     --temp_location gs://ehr-demo-dataflow-staging-bucket/tmp/ \
     --no_use_public_ips \
     --subnet regions/us-central1/subnetworks/default\
-    --read_pubsub_subscription 'projects/myehr-demo/subscriptions/ehr-demo-full-fhir-resource-subscription,projects/myehr-demo/subscriptions/ehr-demo-nameonly-resource-subscription'\
-    --write_pubsub_topic 'projects/myehr-demo/topics/ehr-demo-downstream'\
-    --hcapi_project_id 'myehr-demo'\
+    --read_pubsub_subscription 'projects/demo-project/subscriptions/ehr-portal-events-subscription'\
+    --hcapi_project_id 'demo-project'\
     --hcapi_dataset 'ehr-demo'\
     --hcapi_version 'v1'\
     --hcapi_location 'us-central1'\
@@ -121,21 +124,33 @@ Usage: Google Cloud Storage will be used to archive raw healthcare data sent by 
     --gcs_error_bucket 'ehr-demo-error-bucket'\
     --max_num_workers 5\
     --streaming True\
-    --save_main_session True
+    --save_main_session True\
+    --requirements_file requirements.txt
     ```  
-6. After triggering the job the dataflow will generate a Dataflow DAG
+7. After triggering the job the dataflow will generate a Dataflow DAG
 
-    ![Log output image](./images/dataflow_dag_fhirstore_to_gcs_pubsub.png)
+    ![Log output image](./images/dataflow_dag_pubsub_to_hcapi.png)
 
-7. Once the data is read from PubSub read subscriptions it will stored in GCS after specified transformation as per business requirements
+8. Publish the JSON message containing patient details mentioned in step1.  
+    Below mentioned examples show how to publish messages along with sample attributes (topic and timestamp).  
+    **NOTE: attribute topic and timestamp are mandatory else the code will throw errors and data won’t be transformed**
 
-    ![Log output image](./images/GCS_BUCKET_OP.png)
+    1. Navigate to your  new topic created in pub/sub  
+    2. Click on messages and click on Publish message as shown in the screenshot  
+          
+        ![Log output image](./images/sc1.png)
 
-    ![Log output image](./images/GCS_OP.png)
+    3. Copy paste the payload containing patient details as a message body along with attributes topic and timestamp as shown in the screenshot and hit publish message.  
+          
+        ![Log output image](./images/sc2.png)  
 
-8. Similarly Dataflow with write the same output to downstream Pub/Sub topic used by downstream applications as shown below
+9. Dataflow will read the message from Pub/Sub, transform the message, archive it into GCS bucket, build a Patient FHIR resource as per defined transformation and post the message to HCAPI as a Patient FHIR resource.
+10. Below attach screenshot shows the patient FHIR resource posted to HCAPI
+      
+    ![Log output image](./images/sc3.png)  
 
-    ![Log output image](./images/PubSub_OP.png)
+11. Drain the pipeline and stop the Dataflow job to avoid unwanted utilization of resources.
 
+  
+**Note: The above example shows the leveraging Dataflow job to transform raw events, build FHIR resources and POST them to HCAPI. Please update/edit the code based on your custom transformations and business requirements.**  
 
-**Note: The above example shows the leveraging Dataflow job to consume and transform FHIR resources events from Google Cloud Healthcare API, write them to PubSub/GCS. Please update/edit the code based on your custom transformations and business requirements.**  
