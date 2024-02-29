@@ -1,6 +1,6 @@
 # DataFlow Streaming Pipeline to read from Healthcare API FHIR Store via BQ and write to Google Cloud Storage
 
-DataFlow streaming pipeline consumes Pub/Sub FHIR notification(Full Resource or NameOnly) from Google Cloud Healthcare API FHIR Store, query the data from BigQuery and oupout daat to Google Cloud Storage. Users can add other sinks as per their requirements
+The Dataflow streaming pipeline consumes Pub/Sub FHIR notification(Full Resource or NameOnly) from Google Cloud Healthcare API FHIR Store, query the data from BigQuery, and output the data to Google Cloud Storage. Users can add other sinks as per their requirements
 
 
 # Architecture
