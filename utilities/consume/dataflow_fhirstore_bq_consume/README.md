@@ -25,7 +25,7 @@ The Dataflow streaming pipeline consumes Pub/Sub FHIR notification(Full Resource
 
 ## How to run
 
-Below mentioned python command shows an example of triggering a dataflow streaming job with pre-defined parameters and values set an example  
+Below, the mentioned python command shows an example of triggering a dataflow streaming job with pre-defined parameters and values set an example  
 ```
 python3 -m main \
     --runner DataflowRunner \
