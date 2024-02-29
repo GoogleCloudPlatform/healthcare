@@ -12,10 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-##################################
-# Author: Surjit Singh           #
-##################################
-
 
 import argparse
 import logging
@@ -119,8 +115,8 @@ def run(argv=None, save_main_session=True):
         processPubsubMessage = (
             p 
             | 'Read from Pub/Sub Subscription' >> ReadFromPubSub(subscription=known_args.input_pubsub_subscription, with_attributes=True)
-            | 'Apply windowing' >> beam.WindowInto(FixedWindows(60))
-            | 'Add Key to messages' >> beam.WithKeys(lambda _: random.randint(0, 5))
+            | 'Apply windowing' >> beam.WindowInto(FixedWindows(60)) # 60 seconds window Please change as per requirement
+            | 'Add Key to messages' >> beam.WithKeys(lambda _: random.randint(0, 5)) # Using 0-5 rnadomy keys to group messages. Please change as per requirement
             | 'Group By Key' >> beam.GroupByKey()
             | 'Process PubSub messages' >> beam.ParDo(ProcessPubSubMessage())
             | 'Query Records From Bigquery' >> beam.ParDo(QueryRecordsFromBigQueryFn(known_args.bq_table))
