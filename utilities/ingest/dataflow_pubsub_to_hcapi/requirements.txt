@@ -1,8 +1,0 @@
-logging
-apache-beam[gcp]==2.48.0
-requests
-google-auth
-google
-datetime
-argparse
-json
