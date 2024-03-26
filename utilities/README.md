@@ -1,15 +1,15 @@
 # Healthcare Toolkit
 
-The healthcare toolkit is designed to guide various data movement patterns including data ingestion, consumption, and auditing. The utilities provide data movement patterns between various sources/sinks and Google Cloud healthcare products. 
+The healthcare toolkit is designed to guide customers with various data movement patterns including data ingestion, consumption, and auditing. The utilities provide data movement patterns between various sources/sinks and Google Cloud healthcare products. 
 Healthcare Toolkit Utilities.
 
 ## Ingest
-1. [Kafka to FHIR Store](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/ingest/dataflow_kafka_to_fhirstore) - Consume messages via Kafka, and write to a GCP FHIR Store.
-2. [Pub/Sub to FHIR Store](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/ingest/dataflow_pubsub_to_fhirstore) - Consume messages via Pub/Sub, and write to a GCP FHIR Store.
+1. [Kafka to FHIR Store](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/ingest/dataflow_kafka_to_fhirstore) - Consume healthcare messages in a JSON format sent via Apache Kafka, transform and write to Google Cloud Healthcare API FHIR store.
+2. [Pub/Sub to FHIR Store](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/ingest/dataflow_pubsub_to_fhirstore) - Consume healthcare messages in JSON format sent via Pub/Sub, transform and write to Google Cloud Healthcare API FHIR store.
 
 ## Consume
-1. [FHIR Store to GCS](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/consume/dataflow_fhirstore_bq_consume) - Consumes a notification from a GCP FHIR Store, and writes the message to GCS.
-2. [FHIR Store to Pub/Sub + GCS](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/consume/dataflow_fhirstore_to_gcs_pubsub) - Consumes a notification from a GCP FHIR Store, and writes it to GCP Pub/Sub and Google Cloud Storage.
+1. [FHIR Store to GCS](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/consume/dataflow_fhirstore_bq_consume) - Consumes a notification containing FHIR resources in the JSON format along with attributes from Google Cloud Healthcare FHIR Store, reads the latest messages from BigQuery, transforms it and writes the message to GCS.
+2. [FHIR Store to Pub/Sub + GCS](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/consume/dataflow_fhirstore_to_gcs_pubsub) - Consumes a notification containing FHIR resource in the JSON format along with attributes from Google Cloud Healthcare FHIR Store, transforms it and writes the message to Google Cloud Storage and Google Cloud Pub/Sub.
 
 
 ## Audit
