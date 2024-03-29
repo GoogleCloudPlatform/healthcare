@@ -1,7 +1,6 @@
 # Healthcare Toolkit
 
 The healthcare toolkit is designed to guide customers with various data movement patterns including data ingestion, consumption, and auditing. The utilities provide data movement patterns between various sources/sinks and Google Cloud healthcare products. 
-Healthcare Toolkit Utilities.
 
 ## Ingest
 1. [Kafka to FHIR Store](https://github.com/GoogleCloudPlatform/healthcare/tree/master/utilities/ingest/dataflow_kafka_to_fhirstore) - Consumes healthcare messages in a JSON format sent via Apache Kafka, transform and write to Google Cloud Healthcare API FHIR store.
@@ -20,5 +19,5 @@ Healthcare Toolkit Utilities.
 ## Disclaimer
 This repository and its contents are not an official Google Product.
 
-##Contact
-Share your feedback, ideas, thoughts on [Github Issues](https://github.com/GoogleCloudPlatform/healthcare/issues). If you’d like to start a discussion, please do so via [Github Discussions](https://github.com/GoogleCloudPlatform/healthcare/discussions). Please contact [healthcare-toolkit-support@googlegroups.com](healthcare-toolkit-support@googlegroups.com), should you have any use-cases or blockers with these utilities.
+## Contact
+Share your feedback, ideas, thoughts on the [Healthcare Toolkit Intake & Feedback](https://docs.google.com/forms/d/e/1FAIpQLSe9ob8Gmmh-5nQ6WMQH50guBparDgLiCyKzFC9tDyfW-JVH_g/viewform?usp=published_options) form, or via [Github Issues](https://github.com/GoogleCloudPlatform/healthcare/issues). If you’d like to start a discussion, please do so via [Github Discussions](https://github.com/GoogleCloudPlatform/healthcare/discussions). Please contact [healthcare-toolkit-support@googlegroups.com](healthcare-toolkit-support@googlegroups.com), should you have any use-cases or blockers with these utilities.
