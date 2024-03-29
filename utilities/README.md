@@ -19,5 +19,5 @@ The healthcare toolkit is designed to guide customers with various data movement
 ## Disclaimer
 This repository and its contents are not an official Google Product.
 
-##Contact
-Share your feedback, ideas, thoughts on [Github Issues](https://github.com/GoogleCloudPlatform/healthcare/issues). If you’d like to start a discussion, please do so via [Github Discussions](https://github.com/GoogleCloudPlatform/healthcare/discussions). Please contact [healthcare-toolkit-support@googlegroups.com](healthcare-toolkit-support@googlegroups.com), should you have any use-cases or blockers with these utilities.
+## Contact
+Share your feedback, ideas, thoughts on [Healthcare Toolkit Intake & Feedback](https://docs.google.com/forms/d/e/1FAIpQLSe9ob8Gmmh-5nQ6WMQH50guBparDgLiCyKzFC9tDyfW-JVH_g/viewform?usp=published_options) or [Github Issues](https://github.com/GoogleCloudPlatform/healthcare/issues). If you’d like to start a discussion, please do so via [Github Discussions](https://github.com/GoogleCloudPlatform/healthcare/discussions). Please contact [healthcare-toolkit-support@googlegroups.com](healthcare-toolkit-support@googlegroups.com), should you have any use-cases or blockers with these utilities.
