@@ -30,7 +30,7 @@ from apache_beam.io import fileio
 
 
 class QueryRecordsFromBigQueryFn(beam.DoFn):
-    """Query records from BigQuery using resource id and last_updated timestamp""""
+    """Query records from BigQuery using resource id and last_updated timestamp"""
     
     def __init__(self, table):
         self.table_name=table
