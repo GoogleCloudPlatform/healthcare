@@ -1,12 +1,14 @@
 # hl7V2Store to hl7V2Store Data Pipeline
+
+> [!NOTE]
+> This is non-production demo/example code. It comes with no
+guarantees and requires modification before use in any stable, durable or SLA'ed environment.
+
 ## Overview
+
 The purpose of the hl7v2-to-hl7v2 pipeline is to stream HL7 V2 messages
 from one hl7V2Store to another using a source hl7V2Store, its attached Pub/Sub Subscription and a destination hl7V2Store.
----
-**NOTE**:
-This is non-production demo/example code. It comes with no
-guarantees and requires modification before use in any stable, durable or SLA'ed environment.
----
+
 ![image](images/dataflow-hl7v2-to-hl7v2-architecture.png)
 
 ## Environment
