@@ -39,7 +39,6 @@
     <maven-exec-plugin.version>1.6.0</maven-exec-plugin.version>
     <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
     <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
-    <mockito.version>3.7.7</mockito.version>
     <pubsub.version>v1-rev20220904-2.0.0</pubsub.version>
     <slf4j.version>1.7.30</slf4j.version>
     <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
@@ -207,87 +206,10 @@
   </profiles>
 
   <dependencies>
-    <!-- Adds a dependency on the Beam SDK. -->
-    <dependency>
-      <groupId>org.apache.beam</groupId>
-      <artifactId>beam-sdks-java-core</artifactId>
-      <version>${beam.version}</version>
-    </dependency>
-
-    <!-- Adds a dependency on the Beam Google Cloud Platform IO module. -->
-    <dependency>
-      <groupId>org.apache.beam</groupId>
-      <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>
-      <version>${beam.version}</version>
-    </dependency>
-
     <dependency>
       <groupId>org.apache.beam</groupId>
       <artifactId>beam-runners-google-cloud-dataflow-java</artifactId>
       <version>${beam.version}</version>
-    </dependency>
-
-    <!-- Dependencies below this line are specific dependencies needed by the examples code. -->
-    <dependency>
-      <groupId>com.google.api-client</groupId>
-      <artifactId>google-api-client</artifactId>
-      <version>${google-api-client.version}</version>
-      <exclusions>
-        <!-- Exclude an old version of guava that is being pulled
-             in by a transitive dependency of google-api-client -->
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava-jdk5</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.http-client</groupId>
-      <artifactId>google-http-client</artifactId>
-      <exclusions>
-        <!-- Exclude an old version of guava that is being pulled
-             in by a transitive dependency of google-api-client -->
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava-jdk5</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.apis</groupId>
-      <artifactId>google-api-services-pubsub</artifactId>
-      <version>${pubsub.version}</version>
-      <exclusions>
-        <!-- Exclude an old version of guava that is being pulled
-             in by a transitive dependency of google-api-client -->
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava-jdk5</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>${joda.version}</version>
-    </dependency>
-
-    <!-- Add slf4j API frontend binding with JUL backend -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-jdk14</artifactId>
-      <version>${slf4j.version}</version>
-      <!-- When loaded at runtime this will wire up slf4j to the JUL backend -->
-      <scope>runtime</scope>
     </dependency>
 
     <!-- The DirectRunner is needed for unit tests. -->
@@ -297,8 +219,11 @@
       <version>${beam.version}</version>
       <scope>test</scope>
     </dependency>
-
-
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
   </dependencies>
 
   <dependencyManagement>

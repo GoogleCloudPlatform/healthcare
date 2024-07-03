@@ -7,9 +7,10 @@ guarantees and requires modification before use in any stable, durable or SLA'ed
 ## Overview
 
 The purpose of the hl7v2-to-hl7v2 pipeline is to stream HL7 V2 messages
-from one hl7V2Store to another using a source hl7V2Store, its attached Pub/Sub Subscription and a destination hl7V2Store.
+from one [hl7V2Store](https://cloud.google.com/healthcare-api/docs/concepts/hl7v2) to another using a source hl7V2Store, its attached Pub/Sub Subscription and a destination hl7V2Store. Below are two diagrams, the first shows the Google Cloud resource topology of this pipeline's interaction and the second shows the internal-to-Dataflow DAG execution graph.
 
 ![image](images/dataflow-hl7v2-to-hl7v2-architecture.png)
+![image](images/dataflow-hl7v2-to-hl7v2-execution-graph.png)
 
 ## Environment
 This pipeline is agnostic to the location where the source and destination
@@ -18,9 +19,9 @@ element of each Pub/Sub message.
 
 Before running this pipeline, ensure the Dataflow service account has the following IAM
 bindings in addition to normal Dataflow IAM:
-- roles/healthcare.hl7V2StoreViewer on the source Store
-- roles/healthcare.hl7V2Ingest on the destination Store
-- roles/pubsub.subscriber on the source Subscription
+- [roles/healthcare.hl7V2StoreViewer](https://cloud.google.com/healthcare-api/docs/access-control#healthcare.hl7V2StoreViewer) on the source Store
+- [roles/healthcare.hl7V2Ingest](https://cloud.google.com/healthcare-api/docs/access-control#healthcare.hl7V2Ingest) on the destination Store
+- [roles/pubsub.subscriber](https://cloud.google.com/pubsub/docs/access-control#pubsub.subscriber) on the source Subscription
 
 ## Build
 Build the shaded JAR for Dataflow
