@@ -1,0 +1,5 @@
+google-cloud-secret-manager
+apache-beam[gcp]
+requests
+google-auth
+google

@@ -1,0 +1,19 @@
+python3 dataflow_gcs_to_hl7v2store.py \
+--runner DataflowRunner \
+--project surjitsh-sandbox-348315 \
+--region us-central1 \
+--temp_location gs://hh_mls_poc/tmp/ \
+--no_use_public_ips \
+--subnet regions/us-central1/subnetworks/default \
+--read_pubsub_subscription 'projects/surjitsh-sandbox-348315/subscriptions/hl7-input-sub' \
+--gcs_error_bucket 'dev-hl7-error' \
+--hcapi_project_id 'surjitsh-sandbox-348315' \
+--hcapi_dataset 'hdev2' \
+--hcapi_version 'v1' \
+--hcapi_location 'us' \
+--hcapi_hl7_store 'hl7-poc' \
+--hcapi_fhir_store 'harmonized-fhir-store' \
+--max_num_workers 5 \
+--streaming True \
+--save_main_session True \
+--requirements_file requirements.txt
