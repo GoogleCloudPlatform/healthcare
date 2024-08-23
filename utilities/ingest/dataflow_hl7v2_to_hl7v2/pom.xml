@@ -29,7 +29,7 @@
   <properties>
     <beam.version>2.57.0</beam.version>
     <google-api-client.version>2.0.0</google-api-client.version>
-    <guava.version>31.1-jre</guava.version>
+    <guava.version>32.0.0-jre</guava.version>
     <hamcrest.version>2.1</hamcrest.version>
     <jackson.version>2.14.1</jackson.version>
     <joda.version>2.10.10</joda.version>
