@@ -122,7 +122,7 @@ practices.
 *   *Owners Group*: `{PROJECT_ID}-owners@{DOMAIN}`. Provides owners role to the
     project, which allows members to do anything permitted by organization
     policies within the project. Users should only be added to the owners group
-    short term. Each project should typically has its own owners group.
+    short term. Each project should typically have its own owners group.
     When a project needs to be updated, the deployer should only temporarily
     join the owners group of the project being deployed and should not have
     access to other unrelated projects.
