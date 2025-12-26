@@ -62,7 +62,7 @@ properly set up. For new Google Cloud SDK users, it is recommended to run the
 commands, which may prompt you to set up some default configs.
 
 ```shell
-gsutil ls
+gcloud storage ls
 bq ls
 ```
 

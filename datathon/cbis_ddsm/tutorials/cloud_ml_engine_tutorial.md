@@ -18,7 +18,7 @@ gcloud config set project <REPLACE_WITH_TEAM_PROJECT_ID>
 * Next, download the GPU and TPU models from Google Cloud Storage by running the following command.
 
 ```shell
-gsutil cp -r gs://datathon-cbis-ddsm-colab/cbis_ddsm_ml .
+gcloud storage cp --recursive gs://datathon-cbis-ddsm-colab/cbis_ddsm_ml .
 ```
 
 ## Training

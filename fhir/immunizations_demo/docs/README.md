@@ -131,7 +131,7 @@ the frontend application.
     1.  Upload the data to GCS.
 
       ```sh
-      $ gsutil -u ${PROJECT_ID?} cp demo_data.ndjson gs://${PROJECT_ID?}/demo_data.ndjson
+      $ gcloud storage cp demo_data.ndjson gs://${PROJECT_ID?}/demo_data.ndjson
       ```
 
     1.  Import the data into the FHIR store.

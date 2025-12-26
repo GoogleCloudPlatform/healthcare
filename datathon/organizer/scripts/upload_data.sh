@@ -89,8 +89,8 @@ STATE_UPLOAD_BQ="UPLOAD_BQ"
 if [[ ! -e ${STATE_FILE} ]]; then
   echo "Creating the Google Cloud Storage bucket to host data."
   STORAGE_CLASS=multi_regional
-  gsutil mb -p ${PROJECT_ID} -c ${STORAGE_CLASS} -l ${LOCATION} gs://${BUCKET_ID}
-  gsutil requesterpays set on gs://${BUCKET_ID}
+  gcloud storage buckets create gs://${BUCKET_ID} --project=${PROJECT_ID} --default-storage-class=${STORAGE_CLASS} --location=${LOCATION}
+  gcloud storage buckets update gs://${BUCKET_ID} --requester-pays
   echo "Setting Google Cloud Storage bucket access."
   TEMP=`tempfile`
   cat <<EOF >>${TEMP}
@@ -117,7 +117,7 @@ if [[ ! -e ${STATE_FILE} ]]; then
   ]
 }
 EOF
-  gsutil -u ${PROJECT_ID} iam set ${TEMP} gs://${BUCKET_ID}
+  gcloud storage buckets set-iam-policy gs://${BUCKET_ID} ${TEMP}
   echo ${STATE_ENABLE_SERVICES} > ${STATE_FILE}
 else
   echo "Skip creating bucket since it has previously finished."
@@ -165,7 +165,7 @@ fi
 
 if [[ `cat ${STATE_FILE}` == ${STATE_UPLOAD_GCS} ]]; then
   echo "Uploading data to Google Cloud Storage."
-  gsutil -u ${PROJECT_ID} -m cp ${INPUT_DIR}/*.csv.gz gs://${BUCKET_ID}
+  gcloud storage cp ${INPUT_DIR}/*.csv.gz gs://${BUCKET_ID}
   echo ${STATE_UPLOAD_BQ} > ${STATE_FILE}
 else
   echo "Skip uploading data to GCS since it has previously finished."

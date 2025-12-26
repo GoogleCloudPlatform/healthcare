@@ -14,7 +14,7 @@ gcloud compute ssh datathon
 Next step is downloading the models from Google Cloud Storage.
 
 ```shell
-gsutil cp -r gs://datathon-cbis-ddsm-colab/cbis_ddsm_ml .
+gcloud storage cp --recursive gs://datathon-cbis-ddsm-colab/cbis_ddsm_ml .
 ```
 
 Now that we have the model, let's train it on the TPU. Run the following command from the console from previous step.

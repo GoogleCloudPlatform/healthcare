@@ -64,7 +64,7 @@ Storage; it has operations that work similarly to common local file
 system commands.
 
 ```bash
-gsutil mb -c regional -l ${REGION?} gs://${BUCKET?}
+gcloud storage buckets create --default-storage-class=regional --location=${REGION?} gs://${BUCKET?}
 ```
 
 ### Step 3
@@ -108,7 +108,7 @@ Verify that the TensorFlow records were generated correctly by listing
 the contents of the destination folder on Cloud Storage:
 
 ```bash
-gsutil ls gs://${BUCKET?}/tfrecords
+gcloud storage ls gs://${BUCKET?}/tfrecords
 ```
 
 ## Train the Model
@@ -151,7 +151,7 @@ a timestamp. Find the timestamp using `gsutil` and save it as an
 environment variable.
 
 ```bash
-TIMESTAMP=`gsutil ls gs://${BUCKET?}/saved_model/ | grep -oE '\[0-9\]+'`
+TIMESTAMP=`gcloud storage ls gs://${BUCKET?}/saved_model/ | grep -oE '\[0-9\]+'`
 ```
 
 ### Step 2
@@ -390,7 +390,7 @@ prediction. The demo patient is a 34-year old female with no history of
 smoking who is currently 71 kg (roughly 156 pounds):
 
 ```bash
-gsutil cp gs://${DATASET_BUCKET}/synthea/patient_bundle.json .
+gcloud storage cp gs://${DATASET_BUCKET}/synthea/patient_bundle.json .
 ```
 
 ### Step 3
@@ -439,7 +439,7 @@ one of Amberly's checkups to change her smoking status response from
 `Never smoker` to `Every day smoker`.
 
 ```bash
-gsutil cp gs://${DATASET_BUCKET}/synthea/smoking_survey.json .
+gcloud storage cp gs://${DATASET_BUCKET}/synthea/smoking_survey.json .
 curl -X PUT -H "${TOKEN?}" -H "${CT?}" \
   -d @smoking_survey.json \
   "${BASE_URL?}/Observation/a39bb260-4768-4989-8e1b-730c71085f58"
